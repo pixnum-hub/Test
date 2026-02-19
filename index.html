@@ -84,7 +84,7 @@ body{
 }
 
 .value{
-  font-size:24px;
+  font-size:22px;
   margin-top:8px;
   font-weight:600;
 }
@@ -109,7 +109,7 @@ body{
 </div>
 
 <div class="locationTitle" id="locationInfo">
-Loading...
+Detecting...
 </div>
 
 <div class="mainTemp" id="mainTemp">--</div>
@@ -145,6 +145,7 @@ Loading...
 <script>
 document.getElementById("year").innerText=new Date().getFullYear();
 
+/* Weather Icons */
 function getWeatherIcon(code){
 if(code===0)return"☀️";
 if(code<=3)return"⛅";
@@ -156,6 +157,7 @@ if(code<=99)return"⛈";
 return"🌍";
 }
 
+/* AQI */
 function calculateUSaqi(pm25){
 if(pm25<=12)return Math.round((50/12)*pm25);
 if(pm25<=35.4)return Math.round(((100-51)/(35.4-12))*(pm25-12)+51);
@@ -172,11 +174,11 @@ return times.findIndex(t=>t.startsWith(now));
 function generateAdvice(temp,aqi){
 let advice="";
 if(temp>35)advice+="Extreme heat. Stay hydrated. ";
-else if(temp>28)advice+="Warm weather. Light clothes recommended. ";
-else if(temp<10)advice+="Cold weather. Wear warm layers. ";
+else if(temp>28)advice+="Warm weather. Light clothes. ";
+else if(temp<10)advice+="Cold weather. Wear layers. ";
 
 if(aqi>150)advice+="Air unhealthy. Wear mask.";
-else if(aqi>80)advice+="Sensitive groups avoid long exposure.";
+else if(aqi>80)advice+="Sensitive groups limit exposure.";
 else advice+="Air quality acceptable.";
 
 return advice;
@@ -196,6 +198,7 @@ if(temp>=25)return"Low ⚡";
 return"Minimal";
 }
 
+/* Load Weather */
 async function loadWeather(lat,lon){
 try{
 
@@ -247,32 +250,71 @@ document.getElementById("acAdvice").innerText=recommendedAC(temp);
 document.getElementById("aiAdvice").innerText=generateAdvice(temp,aqi)+" Power: "+estimatePower(temp);
 
 }catch{
-alert("Weather/AQI fetch failed.");
+document.getElementById("locationInfo").innerText="Weather fetch failed.";
 }
 }
 
+/* Reverse Geocode + GPS */
+async function detectLocation(){
+if(!navigator.geolocation){
+document.getElementById("locationInfo").innerText="GPS not supported.";
+return;
+}
+
+document.getElementById("locationInfo").innerText="Detecting location...";
+
+navigator.geolocation.getCurrentPosition(async pos=>{
+try{
+let lat=pos.coords.latitude;
+let lon=pos.coords.longitude;
+
+let geoRes=await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=en`);
+let geoData=await geoRes.json();
+
+if(geoData.results && geoData.results.length>0){
+let name=geoData.results[0].name;
+let country=geoData.results[0].country;
+document.getElementById("locationInfo").innerText=name+", "+country;
+}else{
+document.getElementById("locationInfo").innerText="Your Location";
+}
+
+loadWeather(lat,lon);
+
+}catch{
+document.getElementById("locationInfo").innerText="Location detected";
+loadWeather(pos.coords.latitude,pos.coords.longitude);
+}
+
+},error=>{
+if(error.code===1){
+document.getElementById("locationInfo").innerText="Permission denied. Please search city.";
+}else{
+document.getElementById("locationInfo").innerText="Unable to detect location.";
+}
+});
+}
+
+/* Search City */
 async function searchCity(){
 let city=document.getElementById("cityInput").value.trim();
 if(!city)return;
 
+document.getElementById("locationInfo").innerText="Searching...";
+
 let geoData=await(await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+city)).json();
-if(!geoData.results){alert("City not found");return;}
+if(!geoData.results){
+document.getElementById("locationInfo").innerText="City not found";
+return;
+}
 
 let{latitude,longitude,name,country}=geoData.results[0];
 document.getElementById("locationInfo").innerText=name+", "+country;
 loadWeather(latitude,longitude);
 }
 
-function detectLocation(){
-if(navigator.geolocation){
-navigator.geolocation.getCurrentPosition(
-pos=>loadWeather(pos.coords.latitude,pos.coords.longitude),
-()=>alert("Location blocked"));
-}
-}
-
 window.onload=detectLocation;
 </script>
 
 </body>
-                    </html>
+</html>
