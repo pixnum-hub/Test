@@ -73,7 +73,7 @@ body{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:15px;
-  margin-top:30px;
+  margin-top:10px;
 }
 .card{
   background:var(--card-bg);
@@ -84,6 +84,14 @@ body{
 .label{font-size:14px;opacity:0.7;}
 .value{font-size:22px;margin-top:8px;font-weight:600;transition:color var(--transition);}
 .footer{text-align:center;margin-top:30px;font-size:12px;opacity:0.6;}
+/* Segment heading */
+.segment h3{
+  margin-top:30px;
+  margin-bottom:10px;
+  font-size:20px;
+  opacity:0.8;
+  text-align:left;
+}
 /* AQI Colors for text */
 .aqi-green{color:#009966;}
 .aqi-yellow{color:#ffde33;}
@@ -121,18 +129,43 @@ body{
 <div class="mainTemp" id="mainTemp">--</div>
 <div class="weatherIcon" id="weatherIcon">🌤</div>
 
+<!-- Segment: Weather -->
+<div class="segment">
+<h3>Weather</h3>
 <div class="grid">
-<div class="card" id="aqiCard"><div class="label">AQI (US)</div><div class="value" id="aqiValue">--</div></div>
-<div class="card"><div class="label">Wind (km/h)</div><div class="value" id="windValue">--</div></div>
-<div class="card"><div class="label">Humidity (%)</div><div class="value" id="humidityValue">--</div></div>
-<div class="card"><div class="label">Rain (mm)</div><div class="value" id="rainValue">--</div></div>
-<div class="card"><div class="label">PM2.5</div><div class="value" id="pm25Value">--</div></div>
-<div class="card"><div class="label">PM10</div><div class="value" id="pm10Value">--</div></div>
-<div class="card"><div class="label">NO₂</div><div class="value" id="no2Value">--</div></div>
-<div class="card"><div class="label">24h Rain</div><div class="value" id="rain24Value">--</div></div>
-<div class="card"><div class="label">7 Day Rain</div><div class="value" id="rain7Value">--</div></div>
-<div class="card"><div class="label">Recommended AC</div><div class="value" id="acAdvice">--</div></div>
-<div class="card"><div class="label">AI Advice</div><div class="value" id="aiAdvice">--</div></div>
+  <div class="card"><div class="label">Wind (km/h)</div><div class="value" id="windValue">--</div></div>
+  <div class="card"><div class="label">Humidity (%)</div><div class="value" id="humidityValue">--</div></div>
+</div>
+</div>
+
+<!-- Segment: Air Quality -->
+<div class="segment">
+<h3>Air Quality</h3>
+<div class="grid">
+  <div class="card" id="aqiCard"><div class="label">AQI (US)</div><div class="value" id="aqiValue">--</div></div>
+  <div class="card"><div class="label">PM2.5</div><div class="value" id="pm25Value">--</div></div>
+  <div class="card"><div class="label">PM10</div><div class="value" id="pm10Value">--</div></div>
+  <div class="card"><div class="label">NO₂</div><div class="value" id="no2Value">--</div></div>
+</div>
+</div>
+
+<!-- Segment: Precipitation -->
+<div class="segment">
+<h3>Precipitation</h3>
+<div class="grid">
+  <div class="card"><div class="label">Rain (mm)</div><div class="value" id="rainValue">--</div></div>
+  <div class="card"><div class="label">24h Rain</div><div class="value" id="rain24Value">--</div></div>
+  <div class="card"><div class="label">7 Day Rain</div><div class="value" id="rain7Value">--</div></div>
+</div>
+</div>
+
+<!-- Segment: Advice -->
+<div class="segment">
+<h3>Advice / Lifestyle</h3>
+<div class="grid">
+  <div class="card"><div class="label">Recommended AC</div><div class="value" id="acAdvice">--</div></div>
+  <div class="card"><div class="label">AI Advice</div><div class="value" id="aiAdvice">--</div></div>
+</div>
 </div>
 
 <div class="footer">© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
@@ -232,7 +265,6 @@ let rain7=weatherData.daily.precipitation_sum.slice(0,7).reduce((a,b)=>a+b,0);
 let airIndex=getCurrentHourIndex(airData.hourly.time);
 if(airIndex<0)airIndex=0;
 
-// ✅ Fixed AQI & PM values with fallback
 function safeValue(array,index){
   if(!array||array.length===0)return 0;
   let val=array[Math.min(index,array.length-1)];
@@ -262,7 +294,6 @@ document.getElementById("rain7Value").innerText=rain7.toFixed(1);
 document.getElementById("acAdvice").innerText=recommendedAC(temp);
 document.getElementById("aiAdvice").innerText=generateAdvice(temp,aqi)+" Power: "+estimatePower(temp);
 
-// AQI Text & Card Color
 let aqiEl=document.getElementById("aqiValue");
 let aqiCard=document.getElementById("aqiCard");
 aqiEl.className="value"; aqiCard.className="card";
@@ -279,7 +310,6 @@ document.getElementById("locationInfo").innerText="Weather fetch failed.";
 }
 }
 
-// IP fallback
 async function loadIPLocation(){
 try{
 let res=await fetch("https://ipapi.co/json/");
@@ -294,7 +324,6 @@ document.getElementById("locationInfo").innerText=DEFAULT_CITY;
 loadWeather(DEFAULT_LAT,DEFAULT_LON);
 }
 
-// GPS
 function detectLocation(){
 if(!navigator.geolocation){loadIPLocation();return;}
 navigator.geolocation.getCurrentPosition(async pos=>{
@@ -310,7 +339,6 @@ document.getElementById("locationInfo").innerText=geoData.results[0].name+", "+g
 loadWeather(lat,lon);},()=>loadIPLocation());
 }
 
-// Search
 async function searchCity(){
 let city=document.getElementById("cityInput").value.trim();
 if(!city)return;
@@ -322,7 +350,6 @@ document.getElementById("locationInfo").innerText=name+", "+country;
 loadWeather(latitude,longitude);
 }
 
-// Start
 window.onload=detectLocation;
 </script>
 </body>
