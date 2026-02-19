@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rituva Weather</title>
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+
+<style>
+:root{
+--bg:#000;--card:#1a1a1a;--soft:#222;--text:#fff;--muted:#9a9a9a;--radius:26px;
+}
+.light{
+--bg:#f4f6f8;--card:#fff;--soft:#e8eaed;--text:#111;--muted:#666;
+}
+.oled{
+--bg:#000;--card:#000;--soft:#000;--text:#fff;--muted:#777;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,system-ui;transition:.3s}
+.app{max-width:430px;margin:auto;padding:18px}
+h1{text-align:center;font-size:34px}
+h2{font-size:20px;margin:28px 0 14px}
+button,input{width:100%;padding:16px;margin-bottom:10px;border:none;border-radius:var(--radius);background:var(--soft);color:var(--text);font-size:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{background:var(--card);padding:18px;border-radius:var(--radius);text-align:center}
+.card small{color:var(--muted);display:block}
+.card b{font-size:22px;display:block;margin-top:6px}
+.full{grid-column:1/-1}
+.hero{text-align:center;margin:20px 0}
+.hero small{color:var(--muted)}
+.hero b{font-size:72px}
+footer{text-align:center;color:var(--muted);font-size:14px;margin:40px 0 10px}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<h1>🌦️ Rituva</h1>
+
+<button onclick="toggleTheme()">Theme: <span id="themeLabel">Dark</span></button>
+<button onclick="toggleUnit()">°C / °F</button>
+
+<input id="search" placeholder="Search city" onkeydown="if(event.key==='Enter')searchCity()">
+<button onclick="searchCity()">Search</button>
+<button onclick="useMyLocation()">📍 Use My Location</button>
+
+<div class="hero">
+<small id="city">Loading...</small>
+<b id="temp">--</b>
+</div>
+
+<h2>7-Day Forecast</h2>
+<div id="forecast7" class="grid"></div>
+
+<h2>Air Quality</h2>
+<div class="grid">
+<div class="card full">
+<small>AQI</small>
+<b id="aqiValue">--</b>
+<small id="aqiCategory"></small>
+</div>
+</div>
+
+<h2>Status</h2>
+<div class="grid">
+<div class="card full">
+<small>Last Updated</small>
+<b id="updated">--</b>
+</div>
+</div>
+
+<footer>© Manik Roy <span id="year"></span></footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const searchInput = $("search");
+
+let UNIT = localStorage.unit || "C";
+let THEME = localStorage.theme || "dark";
+let lastData = null;
+
+/* ---------------- THEME ---------------- */
+function applyTheme(){
+document.body.classList.remove("light","oled");
+if(THEME==="light") document.body.classList.add("light");
+if(THEME==="oled") document.body.classList.add("oled");
+$("themeLabel").innerText = THEME.charAt(0).toUpperCase()+THEME.slice(1);
+localStorage.theme = THEME;
+}
+applyTheme();
+
+function toggleTheme(){
+THEME = THEME==="dark"?"light":THEME==="light"?"oled":"dark";
+applyTheme();
+}
+
+/* ---------------- UNIT ---------------- */
+function toTemp(c){
+return UNIT==="C"?`${c.toFixed(1)}°C`:`${(c*9/5+32).toFixed(1)}°F`;
+}
+function toggleUnit(){
+UNIT = UNIT==="C"?"F":"C";
+localStorage.unit = UNIT;
+if(lastData) applyData(lastData);
+}
+
+/* ---------------- CACHE ---------------- */
+function saveCache(data){
+localStorage.setItem("weatherCache",JSON.stringify(data));
+}
+function loadCache(){
+try{
+return JSON.parse(localStorage.getItem("weatherCache"));
+}catch{return null;}
+}
+
+/* ---------------- AQI ---------------- */
+function calculateAQI(pm){
+if(pm<=12) return {v:Math.round(pm*4.16),cat:"Good",col:"#00E400"};
+if(pm<=35.4) return {v:75,cat:"Moderate",col:"#FFFF00"};
+if(pm<=55.4) return {v:125,cat:"Unhealthy (SG)",col:"#FF7E00"};
+if(pm<=150) return {v:175,cat:"Unhealthy",col:"#FF0000"};
+return {v:250,cat:"Very Unhealthy",col:"#8F3F97"};
+}
+
+/* ---------------- APPLY DATA ---------------- */
+function applyData({w,a}){
+lastData={w,a};
+
+const temp = w.current?.temperature_2m;
+if(temp===undefined){
+$("temp").innerText="--";
+return;
+}
+
+$("temp").innerText = toTemp(temp);
+
+$("forecast7").innerHTML =
+(w.daily?.time || []).map((d,i)=>{
+return `<div class="card">
+<small>${new Date(d).toLocaleDateString(undefined,{weekday:"short"})}</small>
+<b>${toTemp(w.daily.temperature_2m_min[i])} / ${toTemp(w.daily.temperature_2m_max[i])}</b>
+</div>`;
+}).join("");
+
+const pm = a.hourly?.pm2_5?.[0] || 0;
+const aq = calculateAQI(pm);
+$("aqiValue").innerText = aq.v;
+$("aqiValue").style.color = aq.col;
+$("aqiCategory").innerText = aq.cat;
+$("aqiCategory").style.color = aq.col;
+
+$("updated").innerText = new Date().toLocaleString();
+}
+
+/* ---------------- LOAD DATA ---------------- */
+async function load(lat,lon,name){
+
+if(!lat || !lon || lat===0 || lon===0){
+$("city").innerText="Location Error";
+return;
+}
+
+$("city").innerText=name;
+
+try{
+
+const weatherURL =
+`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&daily=temperature_2m_min,temperature_2m_max,time&timezone=auto`;
+
+const airURL =
+`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5`;
+
+const [wRes,aRes] = await Promise.all([fetch(weatherURL),fetch(airURL)]);
+
+if(!wRes.ok || !aRes.ok) throw new Error("API failed");
+
+const w = await wRes.json();
+const a = await aRes.json();
+
+applyData({w,a});
+saveCache({w,a});
+
+}
+catch(e){
+console.error(e);
+const cached = loadCache();
+if(cached){
+$("city").innerText += " (Offline)";
+applyData(cached);
+}else{
+$("temp").innerText="Offline";
+}
+}
+}
+
+/* ---------------- LOCATION ---------------- */
+function useMyLocation(){
+navigator.geolocation.getCurrentPosition(
+pos=>load(pos.coords.latitude,pos.coords.longitude,"My Location"),
+()=>load(22.57,88.36,"Kolkata")
+);
+}
+
+/* ---------------- SEARCH ---------------- */
+async function searchCity(){
+if(!searchInput.value) return;
+
+const geoURL =
+`https://geocoding-api.open-meteo.com/v1/search?name=${searchInput.value}&count=1`;
+
+const res = await fetch(geoURL);
+const data = await res.json();
+
+if(data.results){
+const r = data.results[0];
+load(r.latitude,r.longitude,r.name);
+}
+}
+
+/* ---------------- INIT ---------------- */
+$("year").innerText = new Date().getFullYear();
+useMyLocation();
+
+</script>
+</body>
+</html>
