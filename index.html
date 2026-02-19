@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Weather & AQI Dashboard</title>
+<title>Live Weather & AQI Dashboard</title>
 
 <style>
 body{
@@ -17,8 +17,9 @@ text-align:center;
 
 header{
 padding:20px;
-font-size:24px;
+font-size:28px;
 font-weight:bold;
+background:rgba(0,0,0,0.3);
 }
 
 .container{
@@ -41,14 +42,21 @@ font-size:40px;
 font-weight:bold;
 }
 
-.small{
-font-size:14px;
-opacity:0.9;
+button{
+padding:10px 15px;
+margin:5px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
 }
 
-#aqiValue{
-font-size:28px;
-font-weight:bold;
+input{
+padding:10px;
+border-radius:6px;
+border:none;
+width:60%;
+max-width:300px;
 }
 
 footer{
@@ -62,24 +70,30 @@ opacity:0.8;
 
 <body>
 
-<header>🌍 Live Weather & AQI Dashboard</header>
+<header>🌍 Live Weather & Air Quality Dashboard</header>
 
 <div class="container">
 
-<div id="locationInfo" class="card">Detecting location...</div>
+<div class="card">
+<input type="text" id="cityInput" placeholder="Enter city name">
+<button onclick="searchCity()">Search</button>
+<button onclick="manualRefresh()">Refresh</button>
+</div>
+
+<div id="locationInfo" class="card">📍 Detecting location...</div>
 
 <div class="card">
 <div id="weatherIcon" class="big">🌍</div>
 <div id="mainTemp" class="big">--°C</div>
-<div class="small">Wind: <span id="windValue">--</span> km/h</div>
-<div class="small">Humidity: <span id="humidityValue">--</span>%</div>
-<div class="small">Rain (1h): <span id="rainValue">--</span> mm</div>
+<div>Wind: <span id="windValue">--</span> km/h</div>
+<div>Humidity: <span id="humidityValue">--</span>%</div>
+<div>Rain (1h): <span id="rainValue">--</span> mm</div>
 </div>
 
 <div class="card">
 <h3>🌫 Air Quality Index</h3>
-<div id="aqiValue">--</div>
-<div class="small">
+<div id="aqiValue" class="big">--</div>
+<div>
 PM2.5: <span id="pm25Value">--</span> |
 PM10: <span id="pm10Value">--</span> |
 NO₂: <span id="no2Value">--</span>
@@ -88,7 +102,7 @@ NO₂: <span id="no2Value">--</span>
 
 <div class="card" id="aqiAdvisoryCard">
 <h3>🏥 AQI Health Advisory</h3>
-<div id="aqiCategory" style="font-weight:bold;margin-bottom:6px;"></div>
+<div id="aqiCategory" style="font-weight:bold;"></div>
 <div id="aqiHealthText"></div>
 </div>
 
@@ -114,6 +128,14 @@ NO₂: <span id="no2Value">--</span>
 
 <script>
 document.getElementById("year").innerText=new Date().getFullYear();
+
+let currentLat=null;
+let currentLon=null;
+
+/* Loading State */
+function showLoading(){
+document.getElementById("locationInfo").innerText="⏳ Loading weather data...";
+}
 
 /* Weather Icon */
 function getWeatherIcon(code){
@@ -142,71 +164,53 @@ function getAQIInfo(aqi){
 if(aqi<=50)return{color:"#00e400",label:"Good",
 health:"Air quality is satisfactory.",
 advice:"Enjoy outdoor activities."};
-
 if(aqi<=100)return{color:"#ffff00",label:"Moderate",
 health:"Air quality acceptable for most people.",
-advice:"Sensitive individuals limit prolonged exposure."};
-
+advice:"Sensitive individuals limit exposure."};
 if(aqi<=150)return{color:"#ff7e00",label:"Unhealthy for Sensitive Groups",
 health:"Children and elderly may be affected.",
 advice:"Limit outdoor activities."};
-
 if(aqi<=200)return{color:"#ff0000",label:"Unhealthy",
-health:"Everyone may begin to experience health effects.",
+health:"Everyone may experience health effects.",
 advice:"Avoid outdoor exercise. Wear mask."};
-
 if(aqi<=300)return{color:"#8f3f97",label:"Very Unhealthy",
 health:"Serious health effects possible.",
 advice:"Stay indoors. Use purifier."};
-
 return{color:"#7e0023",label:"Hazardous",
-health:"Health alert: emergency conditions.",
-advice:"Remain indoors. Avoid outdoor activity."};
+health:"Health alert conditions.",
+advice:"Remain indoors."};
 }
 
-/* Helpers */
 function getCurrentHourIndex(times){
 const now=new Date().toISOString().slice(0,13);
 return times.findIndex(t=>t.startsWith(now));
 }
 
-function generateAdvice(temp,aqi){
-let advice="";
-if(temp>35)advice+="Extreme heat. Stay hydrated. ";
-else if(temp>28)advice+="Warm weather. Light clothes. ";
-else if(temp<10)advice+="Cold weather. Wear layers. ";
-
-if(aqi>150)advice+="Air unhealthy. Wear mask.";
-else if(aqi>80)advice+="Sensitive groups limit exposure.";
-else advice+="Air quality acceptable.";
-
-return advice;
+/* Fetch City Name */
+async function getCityName(lat,lon){
+let url=`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=en`;
+let data=await(await fetch(url)).json();
+if(data.results && data.results.length>0){
+return data.results[0].name+", "+data.results[0].country;
 }
-
-function recommendedAC(temp){
-if(temp>=35)return"24°C";
-if(temp>=30)return"25°C";
-if(temp>=25)return"26°C";
-return"No AC needed";
-}
-
-function estimatePower(temp){
-if(temp>=35)return"High ⚡";
-if(temp>=30)return"Medium ⚡";
-if(temp>=25)return"Low ⚡";
-return"Minimal";
+return "Unknown Location";
 }
 
 /* Load Weather */
 async function loadWeather(lat,lon){
+showLoading();
+currentLat=lat;
+currentLon=lon;
+
 try{
-
 let weatherURL=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relative_humidity_2m,precipitation&daily=precipitation_sum&timezone=auto`;
-
 let airURL=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5,pm10,nitrogen_dioxide&timezone=auto`;
 
 let weatherData=await(await fetch(weatherURL)).json();
 let airData=await(await fetch(airURL)).json();
+
+let city=await getCityName(lat,lon);
+document.getElementById("locationInfo").innerText="📍 "+city;
 
 let temp=weatherData.current_weather.temperature;
 let wind=weatherData.current_weather.windspeed;
@@ -245,47 +249,50 @@ document.getElementById("no2Value").innerText=no2;
 document.getElementById("rain24Value").innerText=rain24.toFixed(1);
 document.getElementById("rain7Value").innerText=rain7.toFixed(1);
 
-document.getElementById("acAdvice").innerText=recommendedAC(temp);
-document.getElementById("aiAdvice").innerText=
-generateAdvice(temp,aqi)+" Power: "+estimatePower(temp);
-
-/* AQI Color + Advisory */
-let aqiValue=document.getElementById("aqiValue");
-aqiValue.innerText=aqi+" ("+aqiInfo.label+")";
-aqiValue.style.color=aqiInfo.color;
-
-let advisoryCard=document.getElementById("aqiAdvisoryCard");
-advisoryCard.style.borderLeft="6px solid "+aqiInfo.color;
+document.getElementById("aqiValue").innerText=aqi+" ("+aqiInfo.label+")";
+document.getElementById("aqiValue").style.color=aqiInfo.color;
 
 document.getElementById("aqiCategory").innerText=aqiInfo.label;
 document.getElementById("aqiCategory").style.color=aqiInfo.color;
+document.getElementById("aqiHealthText").innerText=aqiInfo.health+" "+aqiInfo.advice;
 
-document.getElementById("aqiHealthText").innerText=
-aqiInfo.health+" "+aqiInfo.advice;
+document.getElementById("acAdvice").innerText=(temp>=30?"Set AC to 25°C":"No AC needed");
+document.getElementById("aiAdvice").innerText=
+(temp>30?"Stay hydrated. ":"")+
+(aqi>150?"Wear mask outdoors. ":"Air quality acceptable.");
 
 }catch{
-document.getElementById("locationInfo").innerText="Weather fetch failed.";
+document.getElementById("locationInfo").innerText="❌ Failed to fetch weather.";
 }
 }
 
-/* Auto Location */
+/* Search by City */
+async function searchCity(){
+let city=document.getElementById("cityInput").value;
+if(!city)return;
+showLoading();
+let url=`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`;
+let data=await(await fetch(url)).json();
+if(data.results && data.results.length>0){
+loadWeather(data.results[0].latitude,data.results[0].longitude);
+}else{
+document.getElementById("locationInfo").innerText="City not found.";
+}
+}
+
+/* Manual Refresh */
+function manualRefresh(){
+if(currentLat && currentLon){
+loadWeather(currentLat,currentLon);
+}
+}
+
+/* Auto Detect */
 if(navigator.geolocation){
 navigator.geolocation.getCurrentPosition(
-pos=>{
-let lat=pos.coords.latitude;
-let lon=pos.coords.longitude;
-document.getElementById("locationInfo").innerText=
-"Latitude: "+lat.toFixed(2)+" | Longitude: "+lon.toFixed(2);
-loadWeather(lat,lon);
-},
-()=>{
-document.getElementById("locationInfo").innerText=
-"Location permission denied.";
-}
+pos=>loadWeather(pos.coords.latitude,pos.coords.longitude),
+()=>document.getElementById("locationInfo").innerText="Location permission denied."
 );
-}else{
-document.getElementById("locationInfo").innerText=
-"Geolocation not supported.";
 }
 </script>
 
