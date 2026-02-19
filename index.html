@@ -84,7 +84,6 @@ body{
 .label{font-size:14px;opacity:0.7;}
 .value{font-size:22px;margin-top:8px;font-weight:600;transition:color var(--transition);}
 .footer{text-align:center;margin-top:30px;font-size:12px;opacity:0.6;}
-/* Segment heading */
 .segment h3{
   margin-top:30px;
   margin-bottom:10px;
@@ -92,14 +91,13 @@ body{
   opacity:0.8;
   text-align:left;
 }
-/* AQI Colors for text */
+/* AQI Colors */
 .aqi-green{color:#009966;}
 .aqi-yellow{color:#ffde33;}
 .aqi-orange{color:#ff9933;}
 .aqi-red{color:#cc0033;}
 .aqi-purple{color:#660099;}
 .aqi-maroon{color:#7e0023;}
-/* AQI Card background */
 .card.aqi-green{background:#003300;}
 .card.aqi-yellow{background:#333300;}
 .card.aqi-orange{background:#663300;}
@@ -129,12 +127,43 @@ body{
 <div class="mainTemp" id="mainTemp">--</div>
 <div class="weatherIcon" id="weatherIcon">🌤</div>
 
-<!-- Segment: Weather -->
+<!-- Segment: Weather & Comfort -->
 <div class="segment">
-<h3>Weather</h3>
+<h3>Weather & Comfort</h3>
+<div class="grid">
+  <div class="card"><div class="label">Feels Like (°C)</div><div class="value" id="feelsLike">--</div></div>
+  <div class="card"><div class="label">Dew Point (°C)</div><div class="value" id="dewPoint">--</div></div>
+  <div class="card"><div class="label">Pressure (hPa)</div><div class="value" id="pressure">--</div></div>
+  <div class="card"><div class="label">UV Index</div><div class="value" id="uvIndex">--</div></div>
+</div>
+</div>
+
+<!-- Segment: Wind Details -->
+<div class="segment">
+<h3>Wind Details</h3>
 <div class="grid">
   <div class="card"><div class="label">Wind (km/h)</div><div class="value" id="windValue">--</div></div>
-  <div class="card"><div class="label">Humidity (%)</div><div class="value" id="humidityValue">--</div></div>
+  <div class="card"><div class="label">Wind Gust</div><div class="value" id="windGust">--</div></div>
+  <div class="card"><div class="label">Wind Dir</div><div class="value" id="windDir">--</div></div>
+</div>
+</div>
+
+<!-- Segment: Sun & Moon -->
+<div class="segment">
+<h3>Sun & Moon</h3>
+<div class="grid">
+  <div class="card"><div class="label">Sunrise</div><div class="value" id="sunrise">--</div></div>
+  <div class="card"><div class="label">Sunset</div><div class="value" id="sunset">--</div></div>
+  <div class="card"><div class="label">Moon Phase</div><div class="value" id="moonPhase">--</div></div>
+</div>
+</div>
+
+<!-- Segment: Cloud & Visibility -->
+<div class="segment">
+<h3>Cloud & Visibility</h3>
+<div class="grid">
+  <div class="card"><div class="label">Cloud Cover (%)</div><div class="value" id="cloudCover">--</div></div>
+  <div class="card"><div class="label">Visibility (km)</div><div class="value" id="visibility">--</div></div>
 </div>
 </div>
 
@@ -159,7 +188,7 @@ body{
 </div>
 </div>
 
-<!-- Segment: Advice -->
+<!-- Segment: Advice / Lifestyle -->
 <div class="segment">
 <h3>Advice / Lifestyle</h3>
 <div class="grid">
@@ -173,131 +202,76 @@ body{
 
 <script>
 document.getElementById("year").innerText=new Date().getFullYear();
-const DEFAULT_LAT=22.5726;
-const DEFAULT_LON=88.3639;
-const DEFAULT_CITY="Kolkata, India";
 
+// Default city: Kolkata
+const DEFAULT_LAT=22.5726, DEFAULT_LON=88.3639;
+
+// Theme toggle
 function setTheme(mode){
-  if(mode==='light'){
-    document.documentElement.style.setProperty('--bg-color','#f4f4f4');
-    document.documentElement.style.setProperty('--text-color','#000');
-    document.documentElement.style.setProperty('--card-bg','#e0e0e0');
-  }else if(mode==='dark'){
-    document.documentElement.style.setProperty('--bg-color','#000');
-    document.documentElement.style.setProperty('--text-color','#fff');
-    document.documentElement.style.setProperty('--card-bg','linear-gradient(145deg,#1a1a1a,#111)');
-  }else if(mode==='oled'){
-    document.documentElement.style.setProperty('--bg-color','#000');
-    document.documentElement.style.setProperty('--text-color','#fff');
-    document.documentElement.style.setProperty('--card-bg','#000');
-  }
+  if(mode==='light'){document.documentElement.style.setProperty('--bg-color','#f4f4f4');document.documentElement.style.setProperty('--text-color','#000');document.documentElement.style.setProperty('--card-bg','#e0e0e0');}
+  else if(mode==='dark'){document.documentElement.style.setProperty('--bg-color','#000');document.documentElement.style.setProperty('--text-color','#fff');document.documentElement.style.setProperty('--card-bg','linear-gradient(145deg,#1a1a1a,#111)');}
+  else if(mode==='oled'){document.documentElement.style.setProperty('--bg-color','#000');document.documentElement.style.setProperty('--text-color','#fff');document.documentElement.style.setProperty('--card-bg','#000');}
 }
 
+// Weather icon
 function getWeatherIcon(code){
-if(code===0)return"☀️";
-if(code<=3)return"⛅";
-if(code<=48)return"🌫";
-if(code<=67)return"🌧";
-if(code<=77)return"🌨";
-if(code<=82)return"🌦";
-if(code<=99)return"⛈";
-return"🌍";
+if(code===0)return"☀️";if(code<=3)return"⛅";if(code<=48)return"🌫";if(code<=67)return"🌧";if(code<=77)return"🌨";if(code<=82)return"🌦";if(code<=99)return"⛈";return"🌍";
 }
 
-function calculateUSaqi(pm25){
-if(pm25<=12)return Math.round((50/12)*pm25);
-if(pm25<=35.4)return Math.round(((100-51)/(35.4-12))*(pm25-12)+51);
-if(pm25<=55.4)return Math.round(((150-101)/(55.4-35.4))*(pm25-35.4)+101);
-if(pm25<=150.4)return Math.round(((200-151)/(150.4-55.4))*(pm25-55.4)+151);
-return Math.round(pm25*2);
-}
+// AQI calculation
+function calculateUSaqi(pm25){if(pm25<=12)return Math.round((50/12)*pm25);if(pm25<=35.4)return Math.round(((100-51)/(35.4-12))*(pm25-12)+51);if(pm25<=55.4)return Math.round(((150-101)/(55.4-35.4)*(pm25-35.4)+101));if(pm25<=150.4)return Math.round(((200-151)/(150.4-55.4)*(pm25-55.4)+151));return Math.round(pm25*2);}
+function degToCardinal(deg){const dirs=["N","NE","E","SE","S","SW","W","NW"];return dirs[Math.round(deg/45)%8];}
 
-function getCurrentHourIndex(times){
-const now=new Date().toISOString().slice(0,13);
-return times.findIndex(t=>t.startsWith(now));
-}
-
-function generateAdvice(temp,aqi){
-let advice="";
-if(temp>35)advice+="Extreme heat. Stay hydrated. ";
-else if(temp>28)advice+="Warm weather. Light clothes. ";
-else if(temp<10)advice+="Cold weather. Wear layers. ";
-if(aqi>150)advice+="Air unhealthy. Wear mask.";
-else if(aqi>80)advice+="Sensitive groups limit exposure.";
-else advice+="Air quality acceptable.";
-return advice;
-}
-
-function recommendedAC(temp){
-if(temp>=35)return"24°C";
-if(temp>=30)return"25°C";
-if(temp>=25)return"26°C";
-return"No AC needed";
-}
-
-function estimatePower(temp){
-if(temp>=35)return"High ⚡";
-if(temp>=30)return"Medium ⚡";
-if(temp>=25)return"Low ⚡";
-return"Minimal";
-}
-
+// Load weather safely
 async function loadWeather(lat,lon){
 try{
-let weatherURL=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relative_humidity_2m,precipitation&daily=precipitation_sum&timezone=auto`;
-let airURL=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5,pm10,nitrogen_dioxide&timezone=auto`;
+const wRes=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relative_humidity_2m,apparent_temperature,cloudcover,visibility,windspeed_10m,winddirection_10m&daily=precipitation_sum,sunrise,sunset&timezone=auto`);
+const wData=await wRes.json();
+const c=wData.current_weather;
+const hour=0;
+const temp=c?.temperature??0;
+const wind=c?.windspeed??0;
+const code=c?.weathercode??0;
+const windDir=degToCardinal(c?.winddirection??0);
+const humidity=wData.hourly?.relative_humidity_2m?.[hour]??0;
+const feels=wData.hourly?.apparent_temperature?.[hour]??temp;
+const cloud=wData.hourly?.cloudcover?.[hour]??0;
+const vis=(wData.hourly?.visibility?.[hour]??10000)/1000;
+const rain=wData.hourly?.precipitation?.[hour]??0;
+const rain24=wData.hourly?.precipitation?.slice(Math.max(0,hour-23),hour+1).reduce((a,b)=>a+b,0);
+const rain7=wData.daily?.precipitation_sum?.slice(0,7).reduce((a,b)=>a+b,0);
+const sunrise=wData.daily?.sunrise?.[0]??"--";
+const sunset=wData.daily?.sunset?.[0]??"--";
 
-let weatherData=await(await fetch(weatherURL)).json();
-let airData=await(await fetch(airURL)).json();
-
-let temp=weatherData.current_weather.temperature;
-let wind=weatherData.current_weather.windspeed;
-let code=weatherData.current_weather.weathercode;
-
-let hourIndex=getCurrentHourIndex(weatherData.hourly.time);
-if(hourIndex<0)hourIndex=0;
-
-let humidity=weatherData.hourly.relative_humidity_2m[hourIndex]||0;
-let rain=weatherData.hourly.precipitation[hourIndex]||0;
-let rain24=weatherData.hourly.precipitation.slice(Math.max(0,hourIndex-23),hourIndex+1).reduce((a,b)=>a+b,0);
-let rain7=weatherData.daily.precipitation_sum.slice(0,7).reduce((a,b)=>a+b,0);
-
-let airIndex=getCurrentHourIndex(airData.hourly.time);
-if(airIndex<0)airIndex=0;
-
-function safeValue(array,index){
-  if(!array||array.length===0)return 0;
-  let val=array[Math.min(index,array.length-1)];
-  if(val===null||val===undefined) val=array.find(v=>v!==null&&v!==undefined)||0;
-  return val;
-}
-
-let pm25=safeValue(airData.hourly?.pm2_5,airIndex);
-let pm10=safeValue(airData.hourly?.pm10,airIndex);
-let no2=safeValue(airData.hourly?.nitrogen_dioxide,airIndex);
-
-let aqi=calculateUSaqi(pm25);
+// Air Quality
+const aRes=await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5,pm10,nitrogen_dioxide&timezone=auto`);
+const aData=await aRes.json();
+const pm25=aData.hourly?.pm2_5?.[hour]??0;
+const pm10=aData.hourly?.pm10?.[hour]??0;
+const no2=aData.hourly?.nitrogen_dioxide?.[hour]??0;
+const aqi=calculateUSaqi(pm25);
 
 document.getElementById("mainTemp").innerText=temp+"°C";
 document.getElementById("windValue").innerText=wind;
+document.getElementById("windDir").innerText=windDir;
 document.getElementById("humidityValue").innerText=humidity;
+document.getElementById("feelsLike").innerText=feels;
+document.getElementById("cloudCover").innerText=cloud;
+document.getElementById("visibility").innerText=vis.toFixed(1);
 document.getElementById("rainValue").innerText=rain;
+document.getElementById("rain24Value").innerText=rain24.toFixed(1);
+document.getElementById("rain7Value").innerText=rain7?.toFixed(1)??0;
+document.getElementById("sunrise").innerText=sunrise;
+document.getElementById("sunset").innerText=sunset;
 document.getElementById("weatherIcon").innerText=getWeatherIcon(code);
-
 document.getElementById("pm25Value").innerText=pm25;
 document.getElementById("pm10Value").innerText=pm10;
 document.getElementById("no2Value").innerText=no2;
+document.getElementById("aqiValue").innerText=aqi;
 
-document.getElementById("rain24Value").innerText=rain24.toFixed(1);
-document.getElementById("rain7Value").innerText=rain7.toFixed(1);
-
-document.getElementById("acAdvice").innerText=recommendedAC(temp);
-document.getElementById("aiAdvice").innerText=generateAdvice(temp,aqi)+" Power: "+estimatePower(temp);
-
-let aqiEl=document.getElementById("aqiValue");
-let aqiCard=document.getElementById("aqiCard");
+// AQI color
+const aqiEl=document.getElementById("aqiValue"), aqiCard=document.getElementById("aqiCard");
 aqiEl.className="value"; aqiCard.className="card";
-aqiEl.innerText=aqi;
 if(aqi<=50){aqiEl.classList.add("aqi-green"); aqiCard.classList.add("aqi-green");}
 else if(aqi<=100){aqiEl.classList.add("aqi-yellow"); aqiCard.classList.add("aqi-yellow");}
 else if(aqi<=150){aqiEl.classList.add("aqi-orange"); aqiCard.classList.add("aqi-orange");}
@@ -305,52 +279,51 @@ else if(aqi<=200){aqiEl.classList.add("aqi-red"); aqiCard.classList.add("aqi-red
 else if(aqi<=300){aqiEl.classList.add("aqi-purple"); aqiCard.classList.add("aqi-purple");}
 else{aqiEl.classList.add("aqi-maroon"); aqiCard.classList.add("aqi-maroon");}
 
-}catch{
-document.getElementById("locationInfo").innerText="Weather fetch failed.";
-}
+// Advice
+document.getElementById("acAdvice").innerText=(temp>=30?"AC Recommended":"No AC needed");
+document.getElementById("aiAdvice").innerText=(temp>35?"Hot. Stay hydrated. ":"")+ (aqi>100?"Air unhealthy. Wear mask.":"Air quality acceptable.");
+}catch{document.getElementById("locationInfo").innerText="Weather fetch failed.";}
 }
 
-async function loadIPLocation(){
+// Location detection
+async function detectLocation(){
+if(!navigator.geolocation){loadIP();return;}
+navigator.geolocation.getCurrentPosition(async pos=>{
+loadWeather(pos.coords.latitude,pos.coords.longitude);
+},()=>loadIP());
+}
+
+// IP fallback
+async function loadIP(){
 try{
-let res=await fetch("https://ipapi.co/json/");
-let data=await res.json();
+const res=await fetch("https://ipapi.co/json/");
+const data=await res.json();
 if(data.latitude && data.longitude){
 document.getElementById("locationInfo").innerText=data.city+", "+data.country_name;
 loadWeather(data.latitude,data.longitude);
 return;
 }
 }catch{}
-document.getElementById("locationInfo").innerText=DEFAULT_CITY;
+document.getElementById("locationInfo").innerText="Kolkata, India";
 loadWeather(DEFAULT_LAT,DEFAULT_LON);
 }
 
-function detectLocation(){
-if(!navigator.geolocation){loadIPLocation();return;}
-navigator.geolocation.getCurrentPosition(async pos=>{
-let lat=pos.coords.latitude;
-let lon=pos.coords.longitude;
-try{
-let geoRes=await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=en`);
-let geoData=await geoRes.json();
-if(geoData.results && geoData.results.length>0){
-document.getElementById("locationInfo").innerText=geoData.results[0].name+", "+geoData.results[0].country;
-}else{document.getElementById("locationInfo").innerText="Your Location";}
-}catch{document.getElementById("locationInfo").innerText="Your Location";}
-loadWeather(lat,lon);},()=>loadIPLocation());
-}
-
+// Search city
 async function searchCity(){
-let city=document.getElementById("cityInput").value.trim();
+const city=document.getElementById("cityInput").value.trim();
 if(!city)return;
 document.getElementById("locationInfo").innerText="Searching...";
-let geoData=await(await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+city)).json();
-if(!geoData.results){document.getElementById("locationInfo").innerText="City not found";return;}
-let{latitude,longitude,name,country}=geoData.results[0];
+try{
+const res=await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+city);
+const data=await res.json();
+if(!data.results){document.getElementById("locationInfo").innerText="City not found";return;}
+const {latitude,longitude,name,country}=data.results[0];
 document.getElementById("locationInfo").innerText=name+", "+country;
 loadWeather(latitude,longitude);
+}catch{document.getElementById("locationInfo").innerText="City fetch failed";}
 }
 
-window.onload=detectLocation;
+window.onload=()=>{detectLocation();};
 </script>
 </body>
 </html>
