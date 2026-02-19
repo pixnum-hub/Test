@@ -48,7 +48,7 @@ body{
 
 .locationTitle{
   text-align:center;
-  font-size:24px;
+  font-size:22px;
   margin-top:30px;
   opacity:0.8;
 }
@@ -80,12 +80,12 @@ body{
 }
 
 .label{
-  font-size:20px;
+  font-size:18px;
   opacity:0.7;
 }
 
 .value{
-  font-size:48px;
+  font-size:42px;
   margin-top:10px;
   font-weight:600;
 }
@@ -110,11 +110,11 @@ body{
   </div>
 
   <div class="locationTitle" id="locationInfo">
-    Your Location
+    Loading location...
   </div>
 
   <div class="mainTemp" id="mainTemp">
-    --°C
+    --
   </div>
 
   <div class="weatherIcon" id="weatherIcon">
@@ -122,7 +122,6 @@ body{
   </div>
 
   <div class="grid">
-
     <div class="card">
       <div class="label">AQI (US)</div>
       <div class="value" id="aqiValue">--</div>
@@ -142,7 +141,6 @@ body{
       <div class="label">Rain (mm)</div>
       <div class="value" id="rainValue">--</div>
     </div>
-
   </div>
 
   <div class="footer">
@@ -152,8 +150,7 @@ body{
 </div>
 
 <script>
-document.getElementById("year").innerText =
-  new Date().getFullYear();
+document.getElementById("year").innerText = new Date().getFullYear();
 
 /* Weather Icon */
 function getWeatherIcon(code){
@@ -167,118 +164,114 @@ function getWeatherIcon(code){
   return "🌍";
 }
 
-/* Basic US AQI estimation from PM2.5 */
+/* AQI estimate */
 function getUSaqi(pm25){
   return Math.round(pm25 * 4);
 }
 
-/* Search City */
+/* Search city */
 async function searchCity(){
-  let city = document.getElementById("cityInput").value;
-  if(!city) return;
+  try{
+    let city = document.getElementById("cityInput").value;
+    if(!city) return;
 
-  let geo = await fetch(
-    `https://geocoding-api.open-meteo.com/v1/search?name=${city}`
-  );
-  let geoData = await geo.json();
-  if(!geoData.results) return alert("City not found");
+    let geoRes = await fetch("https://geocoding-api.open-meteo.com/v1/search?name=" + city);
+    let geoData = await geoRes.json();
 
-  let lat = geoData.results[0].latitude;
-  let lon = geoData.results[0].longitude;
-  let name = geoData.results[0].name;
-  let country = geoData.results[0].country;
+    if(!geoData.results){
+      alert("City not found");
+      return;
+    }
 
-  document.getElementById("locationInfo").innerText =
-    `${name}, ${country}`;
+    let lat = geoData.results[0].latitude;
+    let lon = geoData.results[0].longitude;
+    let name = geoData.results[0].name;
+    let country = geoData.results[0].country;
 
-  loadWeather(lat,lon);
+    document.getElementById("locationInfo").innerText =
+      name + ", " + country;
+
+    loadWeather(lat,lon);
+  }catch(err){
+    alert("Error fetching city data");
+  }
 }
 
-/* GPS Detect with Reverse Geocoding */
-async function detectLocation(){
+/* GPS detect */
+function detectLocation(){
   if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(async position=>{
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      let lat = pos.coords.latitude;
+      let lon = pos.coords.longitude;
 
-      let lat = position.coords.latitude;
-      let lon = position.coords.longitude;
+      document.getElementById("locationInfo").innerText = "Detecting...";
 
       let geoRes = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}`
+        "https://geocoding-api.open-meteo.com/v1/reverse?latitude="+lat+"&longitude="+lon
       );
-
       let geoData = await geoRes.json();
 
       let name = "Your Location";
       let country = "";
 
-      if(geoData.results && geoData.results.length > 0){
+      if(geoData.results){
         name = geoData.results[0].name;
         country = geoData.results[0].country;
       }
 
       document.getElementById("locationInfo").innerText =
-        `${name}, ${country}`;
+        name + ", " + country;
 
       loadWeather(lat,lon);
-
-    }, ()=>{
-      alert("Location permission denied.");
     });
-  } else {
-    alert("GPS not supported.");
+  }else{
+    alert("GPS not supported");
   }
 }
 
-/* Load Weather + AQI */
+/* Load weather */
 async function loadWeather(lat,lon){
+  try{
+    let weatherURL =
+      "https://api.open-meteo.com/v1/forecast?latitude="+lat+
+      "&longitude="+lon+
+      "&current_weather=true"+
+      "&hourly=relative_humidity_2m,precipitation"+
+      "&timezone=auto";
 
-  let weatherURL =
-  `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}
-  &current_weather=true
-  &hourly=relative_humidity_2m,precipitation
-  &timezone=auto`;
+    let airURL =
+      "https://air-quality-api.open-meteo.com/v1/air-quality?latitude="+lat+
+      "&longitude="+lon+
+      "&hourly=pm2_5";
 
-  let airURL =
-  `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}
-  &hourly=pm2_5,pm10,nitrogen_dioxide`;
+    let weatherRes = await fetch(weatherURL);
+    let weatherData = await weatherRes.json();
 
-  let weatherRes = await fetch(weatherURL);
-  let weatherData = await weatherRes.json();
+    let airRes = await fetch(airURL);
+    let airData = await airRes.json();
 
-  let airRes = await fetch(airURL);
-  let airData = await airRes.json();
+    let temp = weatherData.current_weather.temperature;
+    let wind = weatherData.current_weather.windspeed;
+    let code = weatherData.current_weather.weathercode;
 
-  let temp = weatherData.current_weather.temperature;
-  let wind = weatherData.current_weather.windspeed;
-  let code = weatherData.current_weather.weathercode;
+    let humidity = weatherData.hourly.relative_humidity_2m[0];
+    let rain = weatherData.hourly.precipitation[0];
+    let pm25 = airData.hourly.pm2_5[0];
 
-  let humidity =
-    weatherData.hourly.relative_humidity_2m[0];
+    document.getElementById("mainTemp").innerText = temp + "°C";
+    document.getElementById("windValue").innerText = wind;
+    document.getElementById("humidityValue").innerText = humidity;
+    document.getElementById("rainValue").innerText = rain;
+    document.getElementById("aqiValue").innerText = getUSaqi(pm25);
+    document.getElementById("weatherIcon").innerText = getWeatherIcon(code);
 
-  let rain =
-    weatherData.hourly.precipitation[0];
-
-  let pm25 =
-    airData.hourly.pm2_5[0];
-
-  document.getElementById("mainTemp").innerText =
-    temp + "°C";
-
-  document.getElementById("windValue").innerText =
-    wind;
-
-  document.getElementById("humidityValue").innerText =
-    humidity;
-
-  document.getElementById("rainValue").innerText =
-    rain;
-
-  document.getElementById("aqiValue").innerText =
-    getUSaqi(pm25);
-
-  document.getElementById("weatherIcon").innerText =
-    getWeatherIcon(code);
+  }catch(err){
+    alert("Weather data failed to load.");
+  }
 }
+
+/* Auto load GPS on open */
+window.onload = detectLocation;
 </script>
 
 </body>
