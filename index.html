@@ -3,20 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Weather AI</title>
+<title>Smart Weather AI - Ultra</title>
 
 <style>
 body{
   margin:0;
   background:#000;
   color:#fff;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:system-ui,-apple-system,sans-serif;
 }
 
 .app{
   max-width:420px;
-  margin:auto;
+  margin:20px auto;
   padding:20px;
+  border:1px solid #222;
+  border-radius:30px;
+  background:#000;
+  box-shadow:0 0 30px rgba(255,255,255,0.05);
 }
 
 .searchBox{
@@ -25,75 +29,70 @@ body{
   gap:15px;
 }
 
-.searchBox input{
+.searchBox input,
+.searchBox button{
   padding:18px;
   border-radius:40px;
   border:none;
-  font-size:20px;
+  font-size:18px;
   background:#1c1c1e;
   color:white;
   outline:none;
 }
 
 .searchBox button{
-  padding:18px;
-  border-radius:40px;
-  border:none;
-  font-size:20px;
   font-weight:600;
-  background:#1c1c1e;
-  color:white;
   cursor:pointer;
 }
 
 .locationTitle{
   text-align:center;
-  font-size:22px;
-  margin-top:30px;
+  font-size:20px;
+  margin-top:25px;
   opacity:0.8;
 }
 
 .mainTemp{
   text-align:center;
-  font-size:90px;
+  font-size:80px;
   font-weight:700;
   margin-top:10px;
 }
 
 .weatherIcon{
   text-align:center;
-  font-size:70px;
-  margin-top:10px;
+  font-size:60px;
+  margin-top:5px;
 }
 
 .grid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:20px;
-  margin-top:40px;
+  gap:15px;
+  margin-top:30px;
 }
 
 .card{
   background:linear-gradient(145deg,#1a1a1a,#111);
-  padding:25px;
-  border-radius:30px;
+  padding:20px;
+  border-radius:25px;
 }
 
 .label{
-  font-size:18px;
+  font-size:14px;
   opacity:0.7;
 }
 
 .value{
-  font-size:42px;
-  margin-top:10px;
+  font-size:24px;
+  margin-top:8px;
   font-weight:600;
 }
 
 .footer{
   text-align:center;
-  margin-top:40px;
-  font-size:14px;
+  margin-top:30px;
+  font-size:12px;
   opacity:0.6;
 }
 </style>
@@ -103,176 +102,177 @@ body{
 
 <div class="app">
 
-  <div class="searchBox">
-    <input type="text" id="cityInput" placeholder="Search city">
-    <button onclick="searchCity()">Search</button>
-    <button onclick="detectLocation()">📍 Use My Location</button>
-  </div>
+<div class="searchBox">
+<input type="text" id="cityInput" placeholder="Search city">
+<button onclick="searchCity()">Search</button>
+<button onclick="detectLocation()">📍 Use My Location</button>
+</div>
 
-  <div class="locationTitle" id="locationInfo">
-    Loading location...
-  </div>
+<div class="locationTitle" id="locationInfo">
+Loading...
+</div>
 
-  <div class="mainTemp" id="mainTemp">
-    --
-  </div>
+<div class="mainTemp" id="mainTemp">--</div>
+<div class="weatherIcon" id="weatherIcon">🌤</div>
 
-  <div class="weatherIcon" id="weatherIcon">
-    🌤
-  </div>
+<div class="grid">
 
-  <div class="grid">
-    <div class="card">
-      <div class="label">AQI (US)</div>
-      <div class="value" id="aqiValue">--</div>
-    </div>
+<div class="card"><div class="label">AQI (US)</div><div class="value" id="aqiValue">--</div></div>
+<div class="card"><div class="label">Wind (km/h)</div><div class="value" id="windValue">--</div></div>
 
-    <div class="card">
-      <div class="label">Wind (km/h)</div>
-      <div class="value" id="windValue">--</div>
-    </div>
+<div class="card"><div class="label">Humidity (%)</div><div class="value" id="humidityValue">--</div></div>
+<div class="card"><div class="label">Rain (mm)</div><div class="value" id="rainValue">--</div></div>
 
-    <div class="card">
-      <div class="label">Humidity (%)</div>
-      <div class="value" id="humidityValue">--</div>
-    </div>
+<div class="card"><div class="label">PM2.5</div><div class="value" id="pm25Value">--</div></div>
+<div class="card"><div class="label">PM10</div><div class="value" id="pm10Value">--</div></div>
 
-    <div class="card">
-      <div class="label">Rain (mm)</div>
-      <div class="value" id="rainValue">--</div>
-    </div>
-  </div>
+<div class="card"><div class="label">NO₂</div><div class="value" id="no2Value">--</div></div>
+<div class="card"><div class="label">24h Rain</div><div class="value" id="rain24Value">--</div></div>
 
-  <div class="footer">
-    © Manik Roy <span id="year"></span>. All Rights Reserved.
-  </div>
+<div class="card"><div class="label">7 Day Rain</div><div class="value" id="rain7Value">--</div></div>
+<div class="card"><div class="label">Recommended AC</div><div class="value" id="acAdvice">--</div></div>
+
+<div class="card"><div class="label">AI Advice</div><div class="value" id="aiAdvice">--</div></div>
+
+</div>
+
+<div class="footer">
+© Manik Roy <span id="year"></span>. All Rights Reserved.
+</div>
 
 </div>
 
 <script>
-document.getElementById("year").innerText = new Date().getFullYear();
+document.getElementById("year").innerText=new Date().getFullYear();
 
-/* Weather Icon */
 function getWeatherIcon(code){
-  if(code === 0) return "☀️";
-  if(code <= 3) return "⛅";
-  if(code <= 48) return "🌫";
-  if(code <= 67) return "🌧";
-  if(code <= 77) return "🌨";
-  if(code <= 82) return "🌦";
-  if(code <= 99) return "⛈";
-  return "🌍";
+if(code===0)return"☀️";
+if(code<=3)return"⛅";
+if(code<=48)return"🌫";
+if(code<=67)return"🌧";
+if(code<=77)return"🌨";
+if(code<=82)return"🌦";
+if(code<=99)return"⛈";
+return"🌍";
 }
 
-/* AQI estimate */
-function getUSaqi(pm25){
-  return Math.round(pm25 * 4);
+function calculateUSaqi(pm25){
+if(pm25<=12)return Math.round((50/12)*pm25);
+if(pm25<=35.4)return Math.round(((100-51)/(35.4-12))*(pm25-12)+51);
+if(pm25<=55.4)return Math.round(((150-101)/(55.4-35.4))*(pm25-35.4)+101);
+if(pm25<=150.4)return Math.round(((200-151)/(150.4-55.4))*(pm25-55.4)+151);
+return Math.round(pm25*2);
 }
 
-/* Search city */
-async function searchCity(){
-  try{
-    let city = document.getElementById("cityInput").value;
-    if(!city) return;
-
-    let geoRes = await fetch("https://geocoding-api.open-meteo.com/v1/search?name=" + city);
-    let geoData = await geoRes.json();
-
-    if(!geoData.results){
-      alert("City not found");
-      return;
-    }
-
-    let lat = geoData.results[0].latitude;
-    let lon = geoData.results[0].longitude;
-    let name = geoData.results[0].name;
-    let country = geoData.results[0].country;
-
-    document.getElementById("locationInfo").innerText =
-      name + ", " + country;
-
-    loadWeather(lat,lon);
-  }catch(err){
-    alert("Error fetching city data");
-  }
+function getCurrentHourIndex(times){
+const now=new Date().toISOString().slice(0,13);
+return times.findIndex(t=>t.startsWith(now));
 }
 
-/* GPS detect */
-function detectLocation(){
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(async pos=>{
-      let lat = pos.coords.latitude;
-      let lon = pos.coords.longitude;
+function generateAdvice(temp,aqi){
+let advice="";
+if(temp>35)advice+="Extreme heat. Stay hydrated. ";
+else if(temp>28)advice+="Warm weather. Light clothes recommended. ";
+else if(temp<10)advice+="Cold weather. Wear warm layers. ";
 
-      document.getElementById("locationInfo").innerText = "Detecting...";
+if(aqi>150)advice+="Air unhealthy. Wear mask.";
+else if(aqi>80)advice+="Sensitive groups avoid long exposure.";
+else advice+="Air quality acceptable.";
 
-      let geoRes = await fetch(
-        "https://geocoding-api.open-meteo.com/v1/reverse?latitude="+lat+"&longitude="+lon
-      );
-      let geoData = await geoRes.json();
-
-      let name = "Your Location";
-      let country = "";
-
-      if(geoData.results){
-        name = geoData.results[0].name;
-        country = geoData.results[0].country;
-      }
-
-      document.getElementById("locationInfo").innerText =
-        name + ", " + country;
-
-      loadWeather(lat,lon);
-    });
-  }else{
-    alert("GPS not supported");
-  }
+return advice;
 }
 
-/* Load weather */
+function recommendedAC(temp){
+if(temp>=35)return"24°C";
+if(temp>=30)return"25°C";
+if(temp>=25)return"26°C";
+return"No AC needed";
+}
+
+function estimatePower(temp){
+if(temp>=35)return"High ⚡";
+if(temp>=30)return"Medium ⚡";
+if(temp>=25)return"Low ⚡";
+return"Minimal";
+}
+
 async function loadWeather(lat,lon){
-  try{
-    let weatherURL =
-      "https://api.open-meteo.com/v1/forecast?latitude="+lat+
-      "&longitude="+lon+
-      "&current_weather=true"+
-      "&hourly=relative_humidity_2m,precipitation"+
-      "&timezone=auto";
+try{
 
-    let airURL =
-      "https://air-quality-api.open-meteo.com/v1/air-quality?latitude="+lat+
-      "&longitude="+lon+
-      "&hourly=pm2_5";
+let weatherURL=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relative_humidity_2m,precipitation&daily=precipitation_sum&timezone=auto`;
 
-    let weatherRes = await fetch(weatherURL);
-    let weatherData = await weatherRes.json();
+let airURL=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5,pm10,nitrogen_dioxide&timezone=auto`;
 
-    let airRes = await fetch(airURL);
-    let airData = await airRes.json();
+let weatherData=await(await fetch(weatherURL)).json();
+let airData=await(await fetch(airURL)).json();
 
-    let temp = weatherData.current_weather.temperature;
-    let wind = weatherData.current_weather.windspeed;
-    let code = weatherData.current_weather.weathercode;
+let temp=weatherData.current_weather.temperature;
+let wind=weatherData.current_weather.windspeed;
+let code=weatherData.current_weather.weathercode;
 
-    let humidity = weatherData.hourly.relative_humidity_2m[0];
-    let rain = weatherData.hourly.precipitation[0];
-    let pm25 = airData.hourly.pm2_5[0];
+let hourIndex=getCurrentHourIndex(weatherData.hourly.time);
+if(hourIndex<0)hourIndex=0;
 
-    document.getElementById("mainTemp").innerText = temp + "°C";
-    document.getElementById("windValue").innerText = wind;
-    document.getElementById("humidityValue").innerText = humidity;
-    document.getElementById("rainValue").innerText = rain;
-    document.getElementById("aqiValue").innerText = getUSaqi(pm25);
-    document.getElementById("weatherIcon").innerText = getWeatherIcon(code);
+let humidity=weatherData.hourly.relative_humidity_2m[hourIndex];
+let rain=weatherData.hourly.precipitation[hourIndex];
 
-  }catch(err){
-    alert("Weather data failed to load.");
-  }
+let rain24=weatherData.hourly.precipitation.slice(Math.max(0,hourIndex-23),hourIndex+1).reduce((a,b)=>a+b,0);
+
+let rain7=weatherData.daily.precipitation_sum.slice(0,7).reduce((a,b)=>a+b,0);
+
+let airIndex=getCurrentHourIndex(airData.hourly.time);
+if(airIndex<0)airIndex=0;
+
+let pm25=airData.hourly.pm2_5[airIndex]||0;
+let pm10=airData.hourly.pm10[airIndex]||0;
+let no2=airData.hourly.nitrogen_dioxide[airIndex]||0;
+
+let aqi=calculateUSaqi(pm25);
+
+document.getElementById("mainTemp").innerText=temp+"°C";
+document.getElementById("windValue").innerText=wind;
+document.getElementById("humidityValue").innerText=humidity;
+document.getElementById("rainValue").innerText=rain;
+document.getElementById("aqiValue").innerText=aqi;
+document.getElementById("weatherIcon").innerText=getWeatherIcon(code);
+
+document.getElementById("pm25Value").innerText=pm25;
+document.getElementById("pm10Value").innerText=pm10;
+document.getElementById("no2Value").innerText=no2;
+
+document.getElementById("rain24Value").innerText=rain24.toFixed(1);
+document.getElementById("rain7Value").innerText=rain7.toFixed(1);
+
+document.getElementById("acAdvice").innerText=recommendedAC(temp);
+document.getElementById("aiAdvice").innerText=generateAdvice(temp,aqi)+" Power: "+estimatePower(temp);
+
+}catch{
+alert("Weather/AQI fetch failed.");
+}
 }
 
-/* Auto load GPS on open */
-window.onload = detectLocation;
+async function searchCity(){
+let city=document.getElementById("cityInput").value.trim();
+if(!city)return;
+
+let geoData=await(await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+city)).json();
+if(!geoData.results){alert("City not found");return;}
+
+let{latitude,longitude,name,country}=geoData.results[0];
+document.getElementById("locationInfo").innerText=name+", "+country;
+loadWeather(latitude,longitude);
+}
+
+function detectLocation(){
+if(navigator.geolocation){
+navigator.geolocation.getCurrentPosition(
+pos=>loadWeather(pos.coords.latitude,pos.coords.longitude),
+()=>alert("Location blocked"));
+}
+}
+
+window.onload=detectLocation;
 </script>
 
 </body>
-</html>
+                    </html>
