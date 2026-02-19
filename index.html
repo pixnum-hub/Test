@@ -32,6 +32,7 @@ body{
   font-size:20px;
   background:#1c1c1e;
   color:white;
+  outline:none;
 }
 
 .searchBox button{
@@ -154,6 +155,7 @@ body{
 document.getElementById("year").innerText =
   new Date().getFullYear();
 
+/* Weather Icon */
 function getWeatherIcon(code){
   if(code === 0) return "☀️";
   if(code <= 3) return "⛅";
@@ -165,10 +167,12 @@ function getWeatherIcon(code){
   return "🌍";
 }
 
+/* Basic US AQI estimation from PM2.5 */
 function getUSaqi(pm25){
   return Math.round(pm25 * 4);
 }
 
+/* Search City */
 async function searchCity(){
   let city = document.getElementById("cityInput").value;
   if(!city) return;
@@ -190,22 +194,42 @@ async function searchCity(){
   loadWeather(lat,lon);
 }
 
-function detectLocation(){
+/* GPS Detect with Reverse Geocoding */
+async function detectLocation(){
   if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(position=>{
+    navigator.geolocation.getCurrentPosition(async position=>{
+
       let lat = position.coords.latitude;
       let lon = position.coords.longitude;
 
+      let geoRes = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}`
+      );
+
+      let geoData = await geoRes.json();
+
+      let name = "Your Location";
+      let country = "";
+
+      if(geoData.results && geoData.results.length > 0){
+        name = geoData.results[0].name;
+        country = geoData.results[0].country;
+      }
+
       document.getElementById("locationInfo").innerText =
-        `Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`;
+        `${name}, ${country}`;
 
       loadWeather(lat,lon);
+
+    }, ()=>{
+      alert("Location permission denied.");
     });
   } else {
-    alert("GPS not supported");
+    alert("GPS not supported.");
   }
 }
 
+/* Load Weather + AQI */
 async function loadWeather(lat,lon){
 
   let weatherURL =
