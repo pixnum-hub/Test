@@ -1,191 +1,308 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rituva Weather</title>
-<meta name="theme-color" content="#000000">
+<title>Smart Climate</title>
 
 <style>
+:root{
+  --bg:#ffffff;
+  --card:#f2f2f2;
+  --text:#000;
+  --sub:#555;
+  --accent:#007aff;
+}
+
+body.dark{
+  --bg:#121212;
+  --card:#1c1c1e;
+  --text:#fff;
+  --sub:#aaa;
+  --accent:#4da3ff;
+}
+
+body.oled{
+  --bg:#000;
+  --card:#0a0a0a;
+  --text:#fff;
+  --sub:#bbb;
+  --accent:#4da3ff;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;}
+
 body{
-margin:0;
-font-family:-apple-system,BlinkMacSystemFont,system-ui;
-background:#000;
-color:#fff;
-text-align:center;
-padding:20px;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  justify-content:center;
+  padding:20px;
+  transition:.3s;
 }
+
+.app{
+  width:100%;
+  max-width:420px;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+
 .card{
-background:#1a1a1a;
-padding:20px;
-border-radius:20px;
-margin:15px 0;
+  background:var(--card);
+  border-radius:22px;
+  padding:20px;
+  text-align:center;
 }
-button,input{
-width:100%;
-padding:14px;
-margin:8px 0;
-border-radius:20px;
-border:none;
-font-size:16px;
+
+.app-title{font-size:28px;font-weight:700;}
+.city{font-size:24px;font-weight:600;margin-top:6px;}
+.location-detail{font-size:16px;color:var(--sub);}
+
+input{
+  width:100%;
+  padding:12px;
+  border-radius:14px;
+  border:none;
+  margin-top:10px;
+  font-size:16px;
 }
-button{background:#333;color:#fff}
-input{background:#222;color:#fff}
-#temp{font-size:60px;margin:10px 0}
-small{color:#aaa}
+
+button{
+  margin-top:10px;
+  padding:12px;
+  border-radius:14px;
+  border:none;
+  background:var(--accent);
+  color:#fff;
+  font-size:15px;
+  cursor:pointer;
+}
+
+.temp{font-size:60px;font-weight:700;margin-top:10px;}
+
+.section-title{font-size:20px;margin-bottom:10px;}
+
+.scroll-row{
+  display:flex;
+  overflow-x:auto;
+  gap:12px;
+  scrollbar-width:none;
+}
+.scroll-row::-webkit-scrollbar{display:none;}
+
+.forecast-item{
+  min-width:85px;
+  background:#1111;
+  padding:12px;
+  border-radius:14px;
+  flex-shrink:0;
+}
+
+.forecast-time{font-size:14px;color:var(--sub);}
+.forecast-temp{font-size:18px;font-weight:600;margin-top:5px;}
 </style>
 </head>
 
 <body>
 
-<h1>🌦️ Rituva</h1>
-
-<input id="search" placeholder="Search city"
-onkeydown="if(event.key==='Enter')searchCity()">
-<button onclick="searchCity()">Search</button>
-<button onclick="useMyLocation()">📍 Use My Location</button>
+<div class="app">
 
 <div class="card">
-<small id="city">Loading...</small>
-<div id="temp">--</div>
-<small id="status">Connecting...</small>
+  <div class="app-title">Smart Climate</div>
+  <div class="city" id="cityName">Loading...</div>
+  <div class="location-detail" id="locationDetail"></div>
+  <input id="searchInput" placeholder="Search city...">
+  <button onclick="searchCity()">Search</button>
+  <button onclick="toggleTheme()">Switch Theme</button>
 </div>
 
 <div class="card">
-<small>AQI</small>
-<div id="aqi">--</div>
-<small id="aqiCat"></small>
+  <div class="temp" id="temp">--°C</div>
+</div>
+
+<div class="card">
+  <div class="section-title">Next 24 Hours</div>
+  <div id="hourly" class="scroll-row"></div>
+</div>
+
+<div class="card">
+  <div class="section-title">7-Day Forecast</div>
+  <div id="daily" class="scroll-row"></div>
+</div>
+
+<div class="card">
+  <div class="section-title">24H Rain Forecast</div>
+  <div id="rainHourly" class="scroll-row"></div>
+</div>
+
+<div class="card">
+  <div class="section-title">Rain Summary</div>
+  <div id="rainSummary"></div>
+</div>
+
+<div class="card">
+  <div class="section-title">Air Quality</div>
+  <div id="aqiData"></div>
+</div>
+
+<div class="card">
+  <div class="section-title">Sunrise & Sunset</div>
+  <div id="sunData"></div>
+</div>
+
+<div class="card">
+  <div class="section-title">Comfort Index</div>
+  <div id="comfortData"></div>
+</div>
+
+<div class="card">
+  <div class="section-title">AC Recommendation</div>
+  <div id="acAdvice"></div>
+</div>
+
 </div>
 
 <script>
 
-const $ = id => document.getElementById(id);
-
-function saveCache(data){
-localStorage.setItem("weatherCache", JSON.stringify(data));
+let themeIndex=0;
+function toggleTheme(){
+  document.body.classList.remove("dark","oled");
+  themeIndex++;
+  if(themeIndex==1) document.body.classList.add("dark");
+  else if(themeIndex==2) document.body.classList.add("oled");
+  else themeIndex=0;
 }
 
-function loadCache(){
-try{
-return JSON.parse(localStorage.getItem("weatherCache"));
-}catch{return null;}
+function getCityName(lat,lon){
+fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}`)
+.then(res=>res.json())
+.then(d=>{
+ if(d.results){
+  let r=d.results[0];
+  cityName.innerText=r.name;
+  locationDetail.innerText=r.admin1+", "+r.country;
+ }
+});
 }
 
-function calculateAQI(pm){
-if(pm<=12) return {v:Math.round(pm*4.16),cat:"Good",col:"#00E400"};
-if(pm<=35.4) return {v:75,cat:"Moderate",col:"#FFFF00"};
-if(pm<=55.4) return {v:125,cat:"Unhealthy (SG)",col:"#FF7E00"};
-if(pm<=150) return {v:175,cat:"Unhealthy",col:"#FF0000"};
-return {v:250,cat:"Very Unhealthy",col:"#8F3F97"};
+function searchCity(){
+ let city=searchInput.value;
+ fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`)
+ .then(res=>res.json())
+ .then(d=>{
+   if(d.results){
+    let lat=d.results[0].latitude;
+    let lon=d.results[0].longitude;
+    getCityName(lat,lon);
+    loadWeather(lat,lon);
+   }
+ });
 }
 
-function applyData({w,a}){
+function loadWeather(lat,lon){
 
-const temp = w.current?.temperature_2m;
+const weatherURL=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}
+&current_weather=true
+&hourly=temperature_2m,precipitation,relative_humidity_2m,dew_point_2m
+&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum
+&timezone=auto`;
 
-if(temp===undefined){
-$("status").innerText="Weather data unavailable";
-return;
+fetch(weatherURL)
+.then(res=>res.json())
+.then(data=>{
+
+temp.innerText=Math.round(data.current_weather.temperature)+"°C";
+
+hourly.innerHTML="";
+for(let i=0;i<24;i++){
+ hourly.innerHTML+=
+ `<div class="forecast-item">
+  <div class="forecast-time">${data.hourly.time[i].split("T")[1].slice(0,5)}</div>
+  <div class="forecast-temp">${Math.round(data.hourly.temperature_2m[i])}°</div>
+ </div>`;
 }
 
-$("temp").innerText = temp.toFixed(1) + "°C";
-$("status").innerText="Live Data";
-
-const pm = a.hourly?.pm2_5?.[0] || 0;
-const aq = calculateAQI(pm);
-
-$("aqi").innerText = aq.v;
-$("aqi").style.color = aq.col;
-$("aqiCat").innerText = aq.cat;
-$("aqiCat").style.color = aq.col;
+daily.innerHTML="";
+for(let i=0;i<7;i++){
+ let date=new Date(data.daily.time[i]);
+ daily.innerHTML+=
+ `<div class="forecast-item">
+  <div class="forecast-time">${date.toLocaleDateString('en',{weekday:'short'})}</div>
+  <div class="forecast-temp">${Math.round(data.daily.temperature_2m_max[i])}°</div>
+ </div>`;
 }
 
-async function load(lat,lon,name){
-
-if(!lat || !lon || lat===0 || lon===0){
-$("city").innerText="Location Error";
-$("status").innerText="Invalid coordinates";
-return;
+rainHourly.innerHTML="";
+let totalRain24=0;
+for(let i=0;i<24;i++){
+ let rain=data.hourly.precipitation[i]||0;
+ totalRain24+=rain;
+ let type="No Rain";
+ if(rain>0 && rain<=0.5) type="Drizzle";
+ else if(rain<=2) type="Light";
+ else if(rain<=7) type="Moderate";
+ else type="Heavy";
+ rainHourly.innerHTML+=
+ `<div class="forecast-item">
+  <div class="forecast-time">${data.hourly.time[i].split("T")[1].slice(0,5)}</div>
+  <div class="forecast-temp">${rain.toFixed(1)}mm</div>
+  <div style="font-size:12px;color:var(--accent);">${type}</div>
+ </div>`;
 }
 
-$("city").innerText=name;
-$("status").innerText="Fetching live data...";
+let totalRain7=0;
+for(let i=0;i<7;i++) totalRain7+=data.daily.precipitation_sum[i]||0;
 
-try{
+rainSummary.innerHTML=
+`24H: ${totalRain24.toFixed(1)}mm<br>
+7 Days: ${totalRain7.toFixed(1)}mm`;
 
-const weatherURL =
-`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&timezone=auto`;
+let sunrise=new Date(data.daily.sunrise[0]);
+let sunset=new Date(data.daily.sunset[0]);
+sunData.innerHTML=
+`🌅 ${sunrise.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}<br>
+🌇 ${sunset.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
 
-const airURL =
-`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5`;
+let humidity=data.hourly.relative_humidity_2m[0];
+let dew=data.hourly.dew_point_2m[0];
+let score=100;
+if(data.current_weather.temperature>30) score-=20;
+if(humidity>80) score-=20;
+if(score<0) score=0;
 
-const wRes = await fetch(weatherURL);
-const aRes = await fetch(airURL);
+comfortData.innerHTML=
+`Humidity: ${humidity}%<br>
+Dew Point: ${Math.round(dew)}°C<br>
+Comfort Score: ${score}/100`;
 
-if(!wRes.ok) throw new Error("Weather API failed");
-if(!aRes.ok) throw new Error("Air API failed");
+let t=data.current_weather.temperature;
+acAdvice.innerText=
+t>=35?"Set AC 23–24°C":
+t>=30?"Set AC 24–26°C":
+"Natural ventilation recommended";
 
-const w = await wRes.json();
-const a = await aRes.json();
+});
 
-applyData({w,a});
-saveCache({w,a});
+const airURL=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5,pm10,us_aqi&timezone=auto`;
 
-}
-catch(error){
-
-console.error("Fetch error:", error);
-
-const cached = loadCache();
-
-if(cached){
-$("status").innerText="Offline (Showing cached data)";
-applyData(cached);
-}else{
-$("status").innerText="Offline – Unable to connect";
-$("temp").innerText="--";
-}
-
-}
-}
-
-function useMyLocation(){
-navigator.geolocation.getCurrentPosition(
-pos => load(pos.coords.latitude,pos.coords.longitude,"My Location"),
-err => {
-console.error("Geolocation error:", err);
-load(22.57,88.36,"Kolkata");
-}
-);
+fetch(airURL)
+.then(r=>r.json())
+.then(a=>{
+aqiData.innerHTML=
+`AQI: ${a.hourly.us_aqi[0]}<br>
+PM2.5: ${a.hourly.pm2_5[0]}<br>
+PM10: ${a.hourly.pm10[0]}`;
+});
 }
 
-async function searchCity(){
-const city = $("search").value;
-if(!city) return;
-
-$("status").innerText="Searching...";
-
-try{
-const geoURL =
-`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`;
-
-const res = await fetch(geoURL);
-const data = await res.json();
-
-if(data.results){
-const r = data.results[0];
-load(r.latitude,r.longitude,r.name);
-}else{
-$("status").innerText="City not found";
-}
-}
-catch(e){
-console.error(e);
-$("status").innerText="Search failed";
-}
-}
-
-useMyLocation();
+navigator.geolocation.getCurrentPosition(pos=>{
+let lat=pos.coords.latitude;
+let lon=pos.coords.longitude;
+getCityName(lat,lon);
+loadWeather(lat,lon);
+});
 
 </script>
 
