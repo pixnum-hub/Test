@@ -1,182 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rituva Weather</title>
+<meta name="theme-color" content="#000000">
 
-  <title>Rituva Weather</title>
-
-  <!-- PWA -->
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#0f2027">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="./icon-192.png">
-
-  <!-- Styles -->
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
-
-    body {
-      background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
-      color: white;
-      text-align: center;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    h1 {
-      font-size: 28px;
-      margin-bottom: 10px;
-    }
-
-    #location {
-      font-size: 18px;
-      margin-bottom: 10px;
-    }
-
-    #temp {
-      font-size: 60px;
-      font-weight: bold;
-    }
-
-    #condition {
-      font-size: 18px;
-      margin-top: 10px;
-      opacity: 0.8;
-    }
-
-    #installBtn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      background: white;
-      color: #0f2027;
-      font-weight: bold;
-      cursor: pointer;
-      display: none;
-    }
-
-    .offline {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: red;
-      padding: 10px;
-      font-size: 14px;
-    }
-
-    .loading {
-      opacity: 0.6;
-    }
-  </style>
+<style>
+body{
+margin:0;
+font-family:-apple-system,BlinkMacSystemFont,system-ui;
+background:#000;
+color:#fff;
+text-align:center;
+padding:20px;
+}
+.card{
+background:#1a1a1a;
+padding:20px;
+border-radius:20px;
+margin:15px 0;
+}
+button,input{
+width:100%;
+padding:14px;
+margin:8px 0;
+border-radius:20px;
+border:none;
+font-size:16px;
+}
+button{background:#333;color:#fff}
+input{background:#222;color:#fff}
+#temp{font-size:60px;margin:10px 0}
+small{color:#aaa}
+</style>
 </head>
 
 <body>
 
-  <h1>Rituva</h1>
-  <div id="location">Detecting location...</div>
-  <div id="temp">--°C</div>
-  <div id="condition">Loading weather...</div>
+<h1>🌦️ Rituva</h1>
 
-  <button id="installBtn">Install App</button>
+<input id="search" placeholder="Search city"
+onkeydown="if(event.key==='Enter')searchCity()">
+<button onclick="searchCity()">Search</button>
+<button onclick="useMyLocation()">📍 Use My Location</button>
 
-  <div id="offlineBanner" class="offline" style="display:none;">
-    You are offline
-  </div>
+<div class="card">
+<small id="city">Loading...</small>
+<div id="temp">--</div>
+<small id="status">Connecting...</small>
+</div>
 
-  <script>
-    const locationEl = document.getElementById("location");
-    const tempEl = document.getElementById("temp");
-    const conditionEl = document.getElementById("condition");
-    const offlineBanner = document.getElementById("offlineBanner");
+<div class="card">
+<small>AQI</small>
+<div id="aqi">--</div>
+<small id="aqiCat"></small>
+</div>
 
-    function fetchWeather(lat, lon) {
-      const apiKey = "YOUR_API_KEY_HERE"; 
-      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+<script>
 
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          locationEl.textContent = data.name;
-          tempEl.textContent = Math.round(data.main.temp) + "°C";
-          conditionEl.textContent = data.weather[0].description;
-        })
-        .catch(() => {
-          conditionEl.textContent = "Unable to fetch weather";
-        });
-    }
+const $ = id => document.getElementById(id);
 
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          fetchWeather(position.coords.latitude, position.coords.longitude);
-        },
-        () => {
-          locationEl.textContent = "Location permission denied";
-        }
-      );
-    }
+function saveCache(data){
+localStorage.setItem("weatherCache", JSON.stringify(data));
+}
 
-    // Offline Detection
-    function updateOnlineStatus() {
-      offlineBanner.style.display = navigator.onLine ? "none" : "block";
-    }
+function loadCache(){
+try{
+return JSON.parse(localStorage.getItem("weatherCache"));
+}catch{return null;}
+}
 
-    window.addEventListener("online", updateOnlineStatus);
-    window.addEventListener("offline", updateOnlineStatus);
-    updateOnlineStatus();
+function calculateAQI(pm){
+if(pm<=12) return {v:Math.round(pm*4.16),cat:"Good",col:"#00E400"};
+if(pm<=35.4) return {v:75,cat:"Moderate",col:"#FFFF00"};
+if(pm<=55.4) return {v:125,cat:"Unhealthy (SG)",col:"#FF7E00"};
+if(pm<=150) return {v:175,cat:"Unhealthy",col:"#FF0000"};
+return {v:250,cat:"Very Unhealthy",col:"#8F3F97"};
+}
 
-    // Service Worker
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js")
-          .then(reg => {
-            console.log("SW Registered");
+function applyData({w,a}){
 
-            reg.onupdatefound = () => {
-              const newWorker = reg.installing;
-              newWorker.onstatechange = () => {
-                if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                  if (confirm("New version available. Refresh?")) {
-                    window.location.reload();
-                  }
-                }
-              };
-            };
-          })
-          .catch(err => console.log("SW Error:", err));
-      });
-    }
+const temp = w.current?.temperature_2m;
 
-    // Install Button Logic
-    let deferredPrompt;
+if(temp===undefined){
+$("status").innerText="Weather data unavailable";
+return;
+}
 
-    window.addEventListener("beforeinstallprompt", (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      document.getElementById("installBtn").style.display = "inline-block";
-    });
+$("temp").innerText = temp.toFixed(1) + "°C";
+$("status").innerText="Live Data";
 
-    document.getElementById("installBtn").addEventListener("click", async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt = null;
-        document.getElementById("installBtn").style.display = "none";
-      }
-    });
+const pm = a.hourly?.pm2_5?.[0] || 0;
+const aq = calculateAQI(pm);
 
-  </script>
+$("aqi").innerText = aq.v;
+$("aqi").style.color = aq.col;
+$("aqiCat").innerText = aq.cat;
+$("aqiCat").style.color = aq.col;
+}
+
+async function load(lat,lon,name){
+
+if(!lat || !lon || lat===0 || lon===0){
+$("city").innerText="Location Error";
+$("status").innerText="Invalid coordinates";
+return;
+}
+
+$("city").innerText=name;
+$("status").innerText="Fetching live data...";
+
+try{
+
+const weatherURL =
+`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&timezone=auto`;
+
+const airURL =
+`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5`;
+
+const wRes = await fetch(weatherURL);
+const aRes = await fetch(airURL);
+
+if(!wRes.ok) throw new Error("Weather API failed");
+if(!aRes.ok) throw new Error("Air API failed");
+
+const w = await wRes.json();
+const a = await aRes.json();
+
+applyData({w,a});
+saveCache({w,a});
+
+}
+catch(error){
+
+console.error("Fetch error:", error);
+
+const cached = loadCache();
+
+if(cached){
+$("status").innerText="Offline (Showing cached data)";
+applyData(cached);
+}else{
+$("status").innerText="Offline – Unable to connect";
+$("temp").innerText="--";
+}
+
+}
+}
+
+function useMyLocation(){
+navigator.geolocation.getCurrentPosition(
+pos => load(pos.coords.latitude,pos.coords.longitude,"My Location"),
+err => {
+console.error("Geolocation error:", err);
+load(22.57,88.36,"Kolkata");
+}
+);
+}
+
+async function searchCity(){
+const city = $("search").value;
+if(!city) return;
+
+$("status").innerText="Searching...";
+
+try{
+const geoURL =
+`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`;
+
+const res = await fetch(geoURL);
+const data = await res.json();
+
+if(data.results){
+const r = data.results[0];
+load(r.latitude,r.longitude,r.name);
+}else{
+$("status").innerText="City not found";
+}
+}
+catch(e){
+console.error(e);
+$("status").innerText="Search failed";
+}
+}
+
+useMyLocation();
+
+</script>
 
 </body>
 </html>
