@@ -1,181 +1,178 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Advanced GPS Connectivity</title>
+<title>Pro GPS Tracker v2</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-:root{
-  --bg:#000;
-  --card:#111;
-  --text:#fff;
-  --green:#00ff88;
-  --yellow:#ffc107;
-  --red:#ff4d4d;
-  --blue:#00aaff;
-}
-
-body{
-  margin:0;
-  font-family:Arial, sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-
-.container{
-  width:95%;
-  max-width:420px;
-  background:var(--card);
-  padding:20px;
-  border-radius:20px;
-  box-shadow:0 0 25px rgba(0,255,136,0.15);
-  text-align:center;
-}
-
-h1{
-  margin-bottom:15px;
-  font-size:22px;
-}
-
-.status{
-  padding:10px;
-  border-radius:12px;
-  margin-bottom:15px;
-  font-weight:bold;
-}
-
-.connected{ background:rgba(0,255,136,0.1); color:var(--green);}
-.moderate{ background:rgba(255,193,7,0.1); color:var(--yellow);}
-.weak{ background:rgba(255,77,77,0.1); color:var(--red);}
-
-.info{
-  margin:8px 0;
-  font-size:14px;
-}
-
-button{
-  margin-top:15px;
-  padding:12px;
-  width:100%;
-  border:none;
-  border-radius:12px;
-  background:var(--green);
-  color:#000;
-  font-weight:bold;
-  cursor:pointer;
-  font-size:15px;
-}
-
-a{
-  color:var(--blue);
-  word-break:break-all;
-  font-size:12px;
-}
+body{margin:0;font-family:Arial;background:#000;color:#fff}
+.container{max-width:500px;margin:auto;padding:10px}
+#map{height:250px;border-radius:12px;margin-bottom:10px}
+button{width:100%;padding:10px;margin:5px 0;border:none;border-radius:10px;font-weight:bold}
+.start{background:#00ff88;color:#000}
+.pause{background:#ffc107;color:#000}
+.stop{background:#ff4d4d;color:#fff}
+.save{background:#00aaff;color:#000}
+.stats{background:#111;padding:10px;border-radius:10px;margin:5px 0}
+canvas{background:#111;border-radius:10px;margin-top:10px}
 </style>
 </head>
-
 <body>
-
 <div class="container">
-  <h1>Advanced GPS Connectivity</h1>
+<h2>Pro GPS Tracker v2</h2>
 
-  <div id="status" class="status weak">
-    GPS Not Started
-  </div>
+<div id="map"></div>
 
-  <div class="info">Latitude: <span id="lat">--</span></div>
-  <div class="info">Longitude: <span id="lon">--</span></div>
-  <div class="info">Accuracy: <span id="accuracy">--</span> meters</div>
-  <div class="info">Speed: <span id="speed">--</span> km/h</div>
-  <div class="info">Direction: <span id="heading">--</span>°</div>
+<div class="stats">
+Trip Time: <span id="timer">0</span> sec<br>
+Distance: <span id="distance">0</span> km<br>
+Avg Speed: <span id="avg">0</span> km/h<br>
+Max Speed: <span id="max">0</span> km/h
+</div>
 
-  <div class="info">
-    <a id="mapLink" target="_blank"></a>
-  </div>
+<button class="start" onclick="startTracking()">Start</button>
+<button class="pause" onclick="pauseTracking()">Pause</button>
+<button class="stop" onclick="stopTracking()">Stop</button>
+<button class="save" onclick="saveTrip()">Save Trip</button>
 
-  <button onclick="startGPS()">Start GPS Tracking</button>
+<canvas id="speedChart"></canvas>
+
+<h3>Saved Trips</h3>
+<div id="trips"></div>
+
 </div>
 
 <script>
-let watchId = null;
-
-function startGPS(){
-  if(!navigator.geolocation){
-    alert("Geolocation not supported by your browser.");
-    return;
-  }
-
-  watchId = navigator.geolocation.watchPosition(
-    position => {
-
-      const lat = position.coords.latitude;
-      const lon = position.coords.longitude;
-      const acc = position.coords.accuracy;
-      const speed = position.coords.speed ? (position.coords.speed * 3.6).toFixed(2) : 0;
-      const heading = position.coords.heading ? position.coords.heading.toFixed(2) : 0;
-
-      document.getElementById("lat").textContent = lat.toFixed(6);
-      document.getElementById("lon").textContent = lon.toFixed(6);
-      document.getElementById("accuracy").textContent = acc.toFixed(2);
-      document.getElementById("speed").textContent = speed;
-      document.getElementById("heading").textContent = heading;
-
-      const mapURL = `https://www.google.com/maps?q=${lat},${lon}`;
-      const mapLink = document.getElementById("mapLink");
-      mapLink.href = mapURL;
-      mapLink.textContent = "Open in Google Maps";
-
-      const statusDiv = document.getElementById("status");
-
-      if(acc <= 20){
-        statusDiv.className = "status connected";
-        statusDiv.textContent = "Strong GPS Signal";
-      } 
-      else if(acc <= 50){
-        statusDiv.className = "status moderate";
-        statusDiv.textContent = "Moderate GPS Signal";
-      } 
-      else{
-        statusDiv.className = "status weak";
-        statusDiv.textContent = "Weak GPS Signal";
-      }
-
-    },
-    error => {
-
-      let message = "";
-
-      switch(error.code){
-        case error.PERMISSION_DENIED:
-          message = "Permission Denied. Please allow location access.";
-          break;
-        case error.POSITION_UNAVAILABLE:
-          message = "Location unavailable. Turn on GPS.";
-          break;
-        case error.TIMEOUT:
-          message = "GPS request timed out.";
-          break;
-        default:
-          message = "Unknown GPS error.";
-      }
-
-      const statusDiv = document.getElementById("status");
-      statusDiv.className = "status weak";
-      statusDiv.textContent = message;
-    },
-    {
-      enableHighAccuracy:true,
-      maximumAge:0,
-      timeout:15000
-    }
-  );
+if('serviceWorker' in navigator){
+ navigator.serviceWorker.register('sw.js');
 }
-</script>
 
+let map=L.map('map').setView([20,77],5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+let polyline=L.polyline([],{color:'lime'}).addTo(map);
+let marker,startMarker,endMarker;
+
+let watchId;
+let startTime;
+let timerInterval;
+let totalDistance=0;
+let maxSpeed=0;
+let lastPos=null;
+let paused=false;
+let tripData=[];
+
+let ctx=document.getElementById("speedChart").getContext("2d");
+let chart=new Chart(ctx,{
+ type:'line',
+ data:{labels:[],datasets:[{label:'Speed',data:[],borderColor:'lime'}]},
+ options:{scales:{x:{display:false},y:{beginAtZero:true}}}
+});
+
+function haversine(lat1,lon1,lat2,lon2){
+ const R=6371;
+ const dLat=(lat2-lat1)*Math.PI/180;
+ const dLon=(lon2-lon1)*Math.PI/180;
+ const a=Math.sin(dLat/2)**2+
+ Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+ Math.sin(dLon/2)**2;
+ return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function startTracking(){
+ paused=false;
+ startTime=Date.now();
+ timerInterval=setInterval(()=>{
+   document.getElementById("timer").innerText=
+   Math.floor((Date.now()-startTime)/1000);
+ },1000);
+
+ watchId=navigator.geolocation.watchPosition(pos=>{
+   if(paused) return;
+
+   let lat=pos.coords.latitude;
+   let lon=pos.coords.longitude;
+   let speed=pos.coords.speed?pos.coords.speed*3.6:0;
+
+   if(lastPos){
+     totalDistance+=haversine(lastPos.lat,lastPos.lon,lat,lon);
+   }
+
+   lastPos={lat,lon};
+
+   if(!startMarker)
+     startMarker=L.marker([lat,lon]).addTo(map);
+
+   if(marker) marker.setLatLng([lat,lon]);
+   else marker=L.marker([lat,lon]).addTo(map);
+
+   polyline.addLatLng([lat,lon]);
+   map.setView([lat,lon],18);
+
+   if(speed>maxSpeed) maxSpeed=speed;
+
+   document.getElementById("distance").innerText=
+   totalDistance.toFixed(3);
+   document.getElementById("max").innerText=
+   maxSpeed.toFixed(2);
+   document.getElementById("avg").innerText=
+   (totalDistance/((Date.now()-startTime)/3600000)).toFixed(2);
+
+   chart.data.labels.push('');
+   chart.data.datasets[0].data.push(speed.toFixed(2));
+   chart.update();
+
+   tripData.push({lat,lon,speed});
+
+ },()=>alert("GPS Error"),{enableHighAccuracy:true});
+}
+
+function pauseTracking(){paused=!paused}
+
+function stopTracking(){
+ navigator.geolocation.clearWatch(watchId);
+ clearInterval(timerInterval);
+ if(lastPos)
+   endMarker=L.marker([lastPos.lat,lastPos.lon]).addTo(map);
+}
+
+function saveTrip(){
+ let name=prompt("Trip Name?");
+ if(!name) return;
+ let trips=JSON.parse(localStorage.getItem("trips"))||[];
+ trips.push({name,data:tripData});
+ localStorage.setItem("trips",JSON.stringify(trips));
+ loadTrips();
+}
+
+function loadTrips(){
+ let trips=JSON.parse(localStorage.getItem("trips"))||[];
+ let div=document.getElementById("trips");
+ div.innerHTML='';
+ trips.forEach((t,i)=>{
+   div.innerHTML+=`<button onclick="replay(${i})">${t.name}</button>`;
+ });
+}
+
+function replay(i){
+ let trips=JSON.parse(localStorage.getItem("trips"));
+ let data=trips[i].data;
+ polyline.setLatLngs([]);
+ let j=0;
+ let replayInterval=setInterval(()=>{
+   if(j>=data.length){clearInterval(replayInterval);return;}
+   polyline.addLatLng([data[j].lat,data[j].lon]);
+   map.setView([data[j].lat,data[j].lon],18);
+   j++;
+ },300);
+}
+
+loadTrips();
+</script>
 </body>
 </html>
