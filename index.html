@@ -10,29 +10,136 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#000;color:#fff}
-.container{max-width:500px;margin:auto;padding:10px}
-#map{height:250px;border-radius:12px;margin-bottom:10px}
-button{width:100%;padding:10px;margin:5px 0;border:none;border-radius:10px;font-weight:bold}
-.start{background:#00ff88;color:#000}
-.pause{background:#ffc107;color:#000}
-.stop{background:#ff4d4d;color:#fff}
-.save{background:#00aaff;color:#000}
-.stats{background:#111;padding:10px;border-radius:10px;margin:5px 0}
-canvas{background:#111;border-radius:10px;margin-top:10px}
+:root{
+ --bg:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+ --card:rgba(255,255,255,0.08);
+ --text:#ffffff;
+ --border:rgba(255,255,255,0.2);
+}
+
+.light{
+ --bg:linear-gradient(135deg,#e3f2fd,#ffffff);
+ --card:rgba(255,255,255,0.7);
+ --text:#000;
+ --border:rgba(0,0,0,0.2);
+}
+
+body{
+ margin:0;
+ font-family:Arial, sans-serif;
+ background:var(--bg);
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ min-height:100vh;
+ color:var(--text);
+}
+
+.app-frame{
+ width:95%;
+ max-width:480px;
+ background:var(--card);
+ backdrop-filter:blur(20px);
+ -webkit-backdrop-filter:blur(20px);
+ border:1px solid var(--border);
+ border-radius:25px;
+ padding:20px;
+ box-shadow:0 10px 40px rgba(0,0,0,0.3);
+ position:relative;
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+}
+
+.toggle-mode{
+ position:absolute;
+ top:15px;
+ right:15px;
+ width:40px;
+ height:40px;
+ border-radius:50%;
+ border:none;
+ cursor:pointer;
+ background:rgba(255,255,255,0.2);
+ color:var(--text);
+ font-size:18px;
+ backdrop-filter:blur(10px);
+}
+
+h2{
+ margin-top:5px;
+ text-align:center;
+}
+
+#map{
+ width:100%;
+ height:220px;
+ border-radius:15px;
+ margin:10px 0;
+}
+
+.stats{
+ width:100%;
+ display:flex;
+ flex-direction:column;
+ gap:8px;
+ margin-bottom:10px;
+}
+
+.stat-row{
+ display:flex;
+ justify-content:space-between;
+ padding:10px;
+ background:rgba(255,255,255,0.1);
+ border-radius:10px;
+ font-size:14px;
+}
+
+button{
+ width:100%;
+ padding:10px;
+ margin:5px 0;
+ border:none;
+ border-radius:10px;
+ font-weight:bold;
+ cursor:pointer;
+}
+
+.start{background:#00ff88;color:#000;}
+.pause{background:#ffc107;color:#000;}
+.stop{background:#ff4d4d;color:#fff;}
+.save{background:#00aaff;color:#000;}
+
+canvas{
+ width:100%!important;
+ background:rgba(0,0,0,0.2);
+ border-radius:10px;
+ margin-top:10px;
+}
+
+.footer{
+ margin-top:15px;
+ font-size:12px;
+ text-align:center;
+ opacity:0.8;
+}
 </style>
 </head>
 <body>
-<div class="container">
+
+<div class="app-frame">
+
+<button class="toggle-mode" onclick="toggleMode()">☀</button>
+
 <h2>Pro GPS Tracker v2</h2>
 
 <div id="map"></div>
 
 <div class="stats">
-Trip Time: <span id="timer">0</span> sec<br>
-Distance: <span id="distance">0</span> km<br>
-Avg Speed: <span id="avg">0</span> km/h<br>
-Max Speed: <span id="max">0</span> km/h
+ <div class="stat-row"><span>Trip Time</span><span id="timer">0 sec</span></div>
+ <div class="stat-row"><span>Distance</span><span id="distance">0 km</span></div>
+ <div class="stat-row"><span>Avg Speed</span><span id="avg">0 km/h</span></div>
+ <div class="stat-row"><span>Max Speed</span><span id="max">0 km/h</span></div>
 </div>
 
 <button class="start" onclick="startTracking()">Start</button>
@@ -42,36 +149,36 @@ Max Speed: <span id="max">0</span> km/h
 
 <canvas id="speedChart"></canvas>
 
-<h3>Saved Trips</h3>
-<div id="trips"></div>
+<div class="footer">
+© Manik Roy <span id="year"></span>. All Rights Reserved.
+</div>
 
 </div>
 
 <script>
-if('serviceWorker' in navigator){
- navigator.serviceWorker.register('sw.js');
+// Dark / Light Toggle
+function toggleMode(){
+ document.body.classList.toggle("light");
 }
 
+// Auto year
+document.getElementById("year").innerText=new Date().getFullYear();
+
+// Map
 let map=L.map('map').setView([20,77],5);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let polyline=L.polyline([],{color:'lime'}).addTo(map);
-let marker,startMarker,endMarker;
+let marker;
 
-let watchId;
-let startTime;
-let timerInterval;
-let totalDistance=0;
-let maxSpeed=0;
-let lastPos=null;
-let paused=false;
-let tripData=[];
+let watchId,startTime,timerInterval;
+let totalDistance=0,maxSpeed=0,lastPos=null,paused=false;
 
 let ctx=document.getElementById("speedChart").getContext("2d");
 let chart=new Chart(ctx,{
  type:'line',
  data:{labels:[],datasets:[{label:'Speed',data:[],borderColor:'lime'}]},
- options:{scales:{x:{display:false},y:{beginAtZero:true}}}
+ options:{plugins:{legend:{display:false}},scales:{x:{display:false},y:{beginAtZero:true}}}
 });
 
 function haversine(lat1,lon1,lat2,lon2){
@@ -89,7 +196,7 @@ function startTracking(){
  startTime=Date.now();
  timerInterval=setInterval(()=>{
    document.getElementById("timer").innerText=
-   Math.floor((Date.now()-startTime)/1000);
+   Math.floor((Date.now()-startTime)/1000)+" sec";
  },1000);
 
  watchId=navigator.geolocation.watchPosition(pos=>{
@@ -99,14 +206,10 @@ function startTracking(){
    let lon=pos.coords.longitude;
    let speed=pos.coords.speed?pos.coords.speed*3.6:0;
 
-   if(lastPos){
+   if(lastPos)
      totalDistance+=haversine(lastPos.lat,lastPos.lon,lat,lon);
-   }
 
    lastPos={lat,lon};
-
-   if(!startMarker)
-     startMarker=L.marker([lat,lon]).addTo(map);
 
    if(marker) marker.setLatLng([lat,lon]);
    else marker=L.marker([lat,lon]).addTo(map);
@@ -117,17 +220,17 @@ function startTracking(){
    if(speed>maxSpeed) maxSpeed=speed;
 
    document.getElementById("distance").innerText=
-   totalDistance.toFixed(3);
+   totalDistance.toFixed(3)+" km";
+
    document.getElementById("max").innerText=
-   maxSpeed.toFixed(2);
+   maxSpeed.toFixed(2)+" km/h";
+
    document.getElementById("avg").innerText=
-   (totalDistance/((Date.now()-startTime)/3600000)).toFixed(2);
+   (totalDistance/((Date.now()-startTime)/3600000)).toFixed(2)+" km/h";
 
    chart.data.labels.push('');
    chart.data.datasets[0].data.push(speed.toFixed(2));
    chart.update();
-
-   tripData.push({lat,lon,speed});
 
  },()=>alert("GPS Error"),{enableHighAccuracy:true});
 }
@@ -137,42 +240,12 @@ function pauseTracking(){paused=!paused}
 function stopTracking(){
  navigator.geolocation.clearWatch(watchId);
  clearInterval(timerInterval);
- if(lastPos)
-   endMarker=L.marker([lastPos.lat,lastPos.lon]).addTo(map);
 }
 
 function saveTrip(){
- let name=prompt("Trip Name?");
- if(!name) return;
- let trips=JSON.parse(localStorage.getItem("trips"))||[];
- trips.push({name,data:tripData});
- localStorage.setItem("trips",JSON.stringify(trips));
- loadTrips();
+ alert("Trip saved locally (Demo Mode)");
 }
-
-function loadTrips(){
- let trips=JSON.parse(localStorage.getItem("trips"))||[];
- let div=document.getElementById("trips");
- div.innerHTML='';
- trips.forEach((t,i)=>{
-   div.innerHTML+=`<button onclick="replay(${i})">${t.name}</button>`;
- });
-}
-
-function replay(i){
- let trips=JSON.parse(localStorage.getItem("trips"));
- let data=trips[i].data;
- polyline.setLatLngs([]);
- let j=0;
- let replayInterval=setInterval(()=>{
-   if(j>=data.length){clearInterval(replayInterval);return;}
-   polyline.addLatLng([data[j].lat,data[j].lon]);
-   map.setView([data[j].lat,data[j].lon],18);
-   j++;
- },300);
-}
-
-loadTrips();
 </script>
+
 </body>
 </html>
