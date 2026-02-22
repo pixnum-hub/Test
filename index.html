@@ -1,153 +1,142 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro GPS Tracker v2</title>
+<title>Tactical GPS System</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="manifest" href="manifest.json">
 
 <style>
 :root{
- --bg:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
- --card:rgba(255,255,255,0.08);
- --text:#ffffff;
- --border:rgba(255,255,255,0.2);
-}
-
-.light{
- --bg:linear-gradient(135deg,#e3f2fd,#ffffff);
- --card:rgba(255,255,255,0.7);
- --text:#000;
- --border:rgba(0,0,0,0.2);
+  --bg:#0a0f1c;
+  --glass:rgba(255,255,255,0.08);
+  --border:rgba(255,255,255,0.2);
+  --text:#ffffff;
+  --accent:#00ff88;
 }
 
 body{
- margin:0;
- font-family:Arial, sans-serif;
- background:var(--bg);
- display:flex;
- justify-content:center;
- align-items:center;
- min-height:100vh;
- color:var(--text);
+  margin:0;
+  background:linear-gradient(135deg,#0a0f1c,#111a2f);
+  font-family:Arial, sans-serif;
+  color:var(--text);
+  display:flex;
+  justify-content:center;
 }
 
 .app-frame{
- width:95%;
- max-width:480px;
- background:var(--card);
- backdrop-filter:blur(20px);
- -webkit-backdrop-filter:blur(20px);
- border:1px solid var(--border);
- border-radius:25px;
- padding:20px;
- box-shadow:0 10px 40px rgba(0,0,0,0.3);
- position:relative;
- display:flex;
- flex-direction:column;
- align-items:center;
+  width:100%;
+  max-width:420px;
+  border:2px solid var(--border);
+  border-radius:20px;
+  margin:20px;
+  padding:20px;
+  backdrop-filter:blur(15px);
+  background:var(--glass);
+  box-shadow:0 0 30px rgba(0,255,136,0.2);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
 }
 
-.toggle-mode{
- position:absolute;
- top:15px;
- right:15px;
- width:40px;
- height:40px;
- border-radius:50%;
- border:none;
- cursor:pointer;
- background:rgba(255,255,255,0.2);
- color:var(--text);
- font-size:18px;
- backdrop-filter:blur(10px);
+.top-toggle{
+  position:absolute;
+  right:25px;
+  top:25px;
+}
+
+.toggle-btn{
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  border:none;
+  background:var(--accent);
+  cursor:pointer;
 }
 
 h2{
- margin-top:5px;
- text-align:center;
+  text-align:center;
+  margin-bottom:10px;
 }
 
-#map{
- width:100%;
- height:220px;
- border-radius:15px;
- margin:10px 0;
+.section{
+  width:100%;
+  margin:10px 0;
 }
 
-.stats{
- width:100%;
- display:flex;
- flex-direction:column;
- gap:8px;
- margin-bottom:10px;
-}
-
-.stat-row{
- display:flex;
- justify-content:space-between;
- padding:10px;
- background:rgba(255,255,255,0.1);
- border-radius:10px;
- font-size:14px;
+input,button{
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:8px;
+  border:none;
+  text-align:center;
 }
 
 button{
- width:100%;
- padding:10px;
- margin:5px 0;
- border:none;
- border-radius:10px;
- font-weight:bold;
- cursor:pointer;
+  background:var(--accent);
+  font-weight:bold;
+  cursor:pointer;
 }
 
-.start{background:#00ff88;color:#000;}
-.pause{background:#ffc107;color:#000;}
-.stop{background:#ff4d4d;color:#fff;}
-.save{background:#00aaff;color:#000;}
-
 canvas{
- width:100%!important;
- background:rgba(0,0,0,0.2);
- border-radius:10px;
- margin-top:10px;
+  background:#000;
+  border-radius:10px;
+  width:100%;
 }
 
 .footer{
- margin-top:15px;
- font-size:12px;
- text-align:center;
- opacity:0.8;
+  margin-top:20px;
+  text-align:center;
+  font-size:12px;
+  opacity:0.7;
 }
 </style>
 </head>
+
 <body>
 
 <div class="app-frame">
 
-<button class="toggle-mode" onclick="toggleMode()">☀</button>
-
-<h2>Pro GPS Tracker v2</h2>
-
-<div id="map"></div>
-
-<div class="stats">
- <div class="stat-row"><span>Trip Time</span><span id="timer">0 sec</span></div>
- <div class="stat-row"><span>Distance</span><span id="distance">0 km</span></div>
- <div class="stat-row"><span>Avg Speed</span><span id="avg">0 km/h</span></div>
- <div class="stat-row"><span>Max Speed</span><span id="max">0 km/h</span></div>
+<div class="top-toggle">
+  <button class="toggle-btn" onclick="toggleMode()">🌙</button>
 </div>
 
-<button class="start" onclick="startTracking()">Start</button>
-<button class="pause" onclick="pauseTracking()">Pause</button>
-<button class="stop" onclick="stopTracking()">Stop</button>
-<button class="save" onclick="saveTrip()">Save Trip</button>
+<h2>🛰 Tactical GPS System</h2>
 
-<canvas id="speedChart"></canvas>
+<div class="section">
+  <div id="coords">Waiting for GPS...</div>
+  <div id="utm"></div>
+  <div id="nato"></div>
+</div>
+
+<div class="section">
+  <button onclick="startTracking()">Start Tracking</button>
+  <button onclick="replayTrack()">Replay Track</button>
+</div>
+
+<div class="section">
+  <button onclick="addWaypoint()">Add Waypoint</button>
+</div>
+
+<div class="section">
+  <input type="number" id="velocity" placeholder="Velocity (m/s)">
+  <input type="number" id="angle" placeholder="Angle (°)">
+  <button onclick="calcBallistic()">Calculate Ballistic</button>
+  <div id="ballistic"></div>
+</div>
+
+<div class="section">
+  <input type="number" id="windSpeed" placeholder="Wind Speed (m/s)">
+  <input type="number" id="windDir" placeholder="Wind Direction (°)">
+  <button onclick="applyWind()">Apply Wind Correction</button>
+  <div id="windResult"></div>
+</div>
+
+<div class="section">
+  <canvas id="compass" height="200"></canvas>
+</div>
 
 <div class="footer">
 © Manik Roy <span id="year"></span>. All Rights Reserved.
@@ -156,94 +145,124 @@ canvas{
 </div>
 
 <script>
-// Dark / Light Toggle
-function toggleMode(){
- document.body.classList.toggle("light");
-}
+document.getElementById("year").textContent = new Date().getFullYear();
 
-// Auto year
-document.getElementById("year").innerText=new Date().getFullYear();
+let track=[];
+let waypoints=[];
+let currentHeading=0;
 
-// Map
-let map=L.map('map').setView([20,77],5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+const a=6378137.0;
+const f=1/298.257223563;
+const k0=0.9996;
+const e=Math.sqrt(f*(2-f));
 
-let polyline=L.polyline([],{color:'lime'}).addTo(map);
-let marker;
+navigator.geolocation.watchPosition(pos=>{
+  const lat=pos.coords.latitude;
+  const lon=pos.coords.longitude;
+  currentHeading=pos.coords.heading||0;
 
-let watchId,startTime,timerInterval;
-let totalDistance=0,maxSpeed=0,lastPos=null,paused=false;
+  document.getElementById("coords").innerHTML=
+  `Lat: ${lat.toFixed(6)}<br>Lon: ${lon.toFixed(6)}`;
 
-let ctx=document.getElementById("speedChart").getContext("2d");
-let chart=new Chart(ctx,{
- type:'line',
- data:{labels:[],datasets:[{label:'Speed',data:[],borderColor:'lime'}]},
- options:{plugins:{legend:{display:false}},scales:{x:{display:false},y:{beginAtZero:true}}}
+  const utm=latLonToUTM(lat,lon);
+  document.getElementById("utm").innerHTML=
+  `UTM Zone ${utm.zone}<br>E: ${utm.easting.toFixed(2)}<br>N: ${utm.northing.toFixed(2)}`;
+
+  document.getElementById("nato").innerHTML=
+  formatNATO(utm.zone,utm.easting,utm.northing);
+
+  drawCompass(currentHeading);
 });
 
-function haversine(lat1,lon1,lat2,lon2){
- const R=6371;
- const dLat=(lat2-lat1)*Math.PI/180;
- const dLon=(lon2-lon1)*Math.PI/180;
- const a=Math.sin(dLat/2)**2+
- Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
- Math.sin(dLon/2)**2;
- return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+function latLonToUTM(lat,lon){
+  const zone=Math.floor((lon+180)/6)+1;
+  const λ0=((zone-1)*6-180+3)*Math.PI/180;
+  const φ=lat*Math.PI/180;
+  const λ=lon*Math.PI/180;
+  const N=a/Math.sqrt(1-Math.pow(e*Math.sin(φ),2));
+  const T=Math.pow(Math.tan(φ),2);
+  const C=Math.pow(e*Math.cos(φ),2)/(1-e*e);
+  const A=(λ-λ0)*Math.cos(φ);
+  const M=a*((1-e*e/4)*φ);
+  const easting=k0*N*(A+(1-T+C)*Math.pow(A,3)/6)+500000;
+  const northing=k0*(M+N*Math.tan(φ)*(A*A/2));
+  return {zone,easting,northing};
+}
+
+function formatNATO(zone,easting,northing){
+  return `NATO: ${zone}Q ${Math.floor(easting)}E ${Math.floor(northing)}N`;
 }
 
 function startTracking(){
- paused=false;
- startTime=Date.now();
- timerInterval=setInterval(()=>{
-   document.getElementById("timer").innerText=
-   Math.floor((Date.now()-startTime)/1000)+" sec";
- },1000);
-
- watchId=navigator.geolocation.watchPosition(pos=>{
-   if(paused) return;
-
-   let lat=pos.coords.latitude;
-   let lon=pos.coords.longitude;
-   let speed=pos.coords.speed?pos.coords.speed*3.6:0;
-
-   if(lastPos)
-     totalDistance+=haversine(lastPos.lat,lastPos.lon,lat,lon);
-
-   lastPos={lat,lon};
-
-   if(marker) marker.setLatLng([lat,lon]);
-   else marker=L.marker([lat,lon]).addTo(map);
-
-   polyline.addLatLng([lat,lon]);
-   map.setView([lat,lon],18);
-
-   if(speed>maxSpeed) maxSpeed=speed;
-
-   document.getElementById("distance").innerText=
-   totalDistance.toFixed(3)+" km";
-
-   document.getElementById("max").innerText=
-   maxSpeed.toFixed(2)+" km/h";
-
-   document.getElementById("avg").innerText=
-   (totalDistance/((Date.now()-startTime)/3600000)).toFixed(2)+" km/h";
-
-   chart.data.labels.push('');
-   chart.data.datasets[0].data.push(speed.toFixed(2));
-   chart.update();
-
- },()=>alert("GPS Error"),{enableHighAccuracy:true});
+  track=[];
+  alertSound();
 }
 
-function pauseTracking(){paused=!paused}
-
-function stopTracking(){
- navigator.geolocation.clearWatch(watchId);
- clearInterval(timerInterval);
+function addWaypoint(){
+  waypoints.push(track[track.length-1]);
+  localStorage.setItem("waypoints",JSON.stringify(waypoints));
+  alertSound();
 }
 
-function saveTrip(){
- alert("Trip saved locally (Demo Mode)");
+function replayTrack(i=0){
+  if(i>=track.length) return;
+  document.getElementById("coords").innerHTML=
+  `Replay: ${track[i].lat}, ${track[i].lon}`;
+  setTimeout(()=>replayTrack(i+1),500);
+}
+
+function calcBallistic(){
+  const v=parseFloat(document.getElementById("velocity").value);
+  const angle=parseFloat(document.getElementById("angle").value);
+  const g=9.81;
+  const θ=angle*Math.PI/180;
+  const range=(v*v*Math.sin(2*θ))/g;
+  const height=(v*v*Math.pow(Math.sin(θ),2))/(2*g);
+  document.getElementById("ballistic").innerHTML=
+  `Range: ${range.toFixed(2)} m<br>Max Height: ${height.toFixed(2)} m`;
+}
+
+function applyWind(){
+  const ws=parseFloat(document.getElementById("windSpeed").value);
+  const wd=parseFloat(document.getElementById("windDir").value);
+  const headingRad=currentHeading*Math.PI/180;
+  const windRad=wd*Math.PI/180;
+  const x=ws*Math.cos(windRad);
+  const y=ws*Math.sin(windRad);
+  const corrected=Math.atan2(y,x)*180/Math.PI;
+  document.getElementById("windResult").innerHTML=
+  `Wind Adjusted Heading: ${corrected.toFixed(2)}°`;
+}
+
+function drawCompass(angle){
+  const c=document.getElementById("compass");
+  const ctx=c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.beginPath();
+  ctx.arc(100,100,80,0,2*Math.PI);
+  ctx.strokeStyle="#00ff88";
+  ctx.stroke();
+  ctx.save();
+  ctx.translate(100,100);
+  ctx.rotate(angle*Math.PI/180);
+  ctx.beginPath();
+  ctx.moveTo(0,-70);
+  ctx.lineTo(0,70);
+  ctx.strokeStyle="red";
+  ctx.stroke();
+  ctx.restore();
+}
+
+function toggleMode(){
+  document.body.style.background=
+  document.body.style.background==="black"
+  ?"linear-gradient(135deg,#0a0f1c,#111a2f)"
+  :"black";
+}
+
+function alertSound(){
+  const audio=new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=");
+  audio.play();
 }
 </script>
 
