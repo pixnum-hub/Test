@@ -216,18 +216,41 @@ body{height:100%;min-height:100dvh;background:var(--bg);color:var(--text);font-f
 .aqi-fill{fill:none;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1),stroke .45s}
 .aqi-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .aqi-num{font-size:1.7rem;font-weight:800;line-height:1}
-.aqi-eu{font-family:var(--fm);font-size:.62rem;color:var(--muted);letter-spacing:.1em}
+.aqi-eu{font-family:var(--fm);font-size:.62rem;color:var(--muted);letter-spacing:.1em;margin-top:2px}
 .aqi-info{flex:1;min-width:0}
-.aqi-level{font-size:1.3rem;font-weight:800;margin-bottom:5px;letter-spacing:-.03em}
-.aqi-desc{font-family:var(--fm);font-size:.73rem;color:var(--muted);line-height:1.5}
-.aqi-scale{display:flex;gap:4px;margin-bottom:14px}
-.seg{flex:1;height:6px;border-radius:3px;opacity:.14;transition:opacity .3s}
-.seg.on{opacity:1}
-.poll-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.poll-chip{background:var(--surf2);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 6px;text-align:center}
-.poll-name{font-family:var(--fm);font-size:.62rem;color:var(--muted);letter-spacing:.05em;margin-bottom:4px}
-.poll-val{font-size:.95rem;font-weight:700;margin-bottom:3px}
+.aqi-level{font-size:1.3rem;font-weight:800;margin-bottom:2px;letter-spacing:-.03em}
+.aqi-cat{font-family:var(--fm);font-size:.68rem;color:var(--muted);margin-bottom:6px}
+.aqi-desc{font-family:var(--fm);font-size:.72rem;color:var(--muted);line-height:1.5}
+.aqi-scale{display:flex;gap:3px;margin-bottom:4px}
+.seg{flex:1;height:7px;border-radius:4px;opacity:.18;transition:opacity .3s,transform .3s}
+.seg.on{opacity:1;transform:scaleY(1.3);transform-origin:center}
+.aqi-scale-labels{display:flex;margin-bottom:12px}
+.aqi-scale-labels span{flex:1;font-family:var(--fm);font-size:.48rem;color:var(--muted);text-align:center;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:clip}
+/* Health guidance box */
+.aqi-guidance{border-radius:var(--r-sm);padding:11px 14px;margin-bottom:4px;border-left:3px solid;font-family:var(--fm);font-size:.72rem;line-height:1.6}
+.aqi-guidance strong{display:block;font-size:.78rem;margin-bottom:4px;font-family:var(--fd)}
+/* Pollutant sub-index table */
+.poll-table{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
+.pt-row{display:grid;grid-template-columns:80px 1fr 54px 80px;align-items:center;gap:8px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 12px;transition:border-color .2s}
+.pt-row.pt-dominant{border-color:var(--accent);background:rgba(56,160,255,.06)}
+.pt-name{font-family:var(--fd);font-size:.8rem;font-weight:700}
+.pt-bar-wrap{background:rgba(255,255,255,.05);border-radius:3px;height:6px;overflow:hidden}
+.pt-bar-fill{height:100%;border-radius:3px;transition:width 1.1s cubic-bezier(.4,0,.2,1)}
+.pt-sub{font-size:.88rem;font-weight:800;text-align:right}
+.pt-badge{font-family:var(--fm);font-size:.52rem;padding:2px 7px;border-radius:4px;text-align:center;white-space:nowrap}
+/* Raw concentration grid - 2 cols to avoid cramping */
+.poll-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.poll-chip{background:var(--surf2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 8px;display:flex;align-items:center;gap:9px}
+.poll-chip-left{flex-shrink:0}
+.poll-name{font-family:var(--fd);font-size:.8rem;font-weight:700;margin-bottom:2px}
+.poll-name-full{font-family:var(--fm);font-size:.58rem;color:var(--muted)}
+.poll-chip-right{flex:1;min-width:0}
+.poll-val{font-size:1rem;font-weight:800;line-height:1;margin-bottom:1px}
 .poll-unit{font-family:var(--fm);font-size:.58rem;color:var(--muted)}
+@media(min-width:561px){
+  .poll-grid{grid-template-columns:repeat(3,1fr)}
+  .pt-row{grid-template-columns:100px 1fr 70px 80px}
+}
 
 /* LOADER */
 #loader{display:none;position:fixed;inset:0;z-index:200;background:rgba(5,13,26,.92);backdrop-filter:blur(10px);flex-direction:column;align-items:center;justify-content:center;gap:14px}
@@ -422,24 +445,43 @@ body{height:100%;min-height:100dvh;background:var(--bg);color:var(--text);font-f
       <!-- PAGE 4: AQI -->
       <section class="page" id="pg4">
         <div class="card">
-          <div class="slbl">Air Quality</div>
+          <div class="slbl">Air Quality Index — US EPA</div>
           <div class="aqi-hero">
             <div class="aqi-ring">
               <svg viewBox="0 0 120 120">
                 <circle class="aqi-track" cx="60" cy="60" r="50" stroke-dasharray="235.6"/>
                 <circle class="aqi-fill" id="aqiFill" cx="60" cy="60" r="50" stroke-dasharray="235.6" stroke-dashoffset="235.6" stroke="#00e5c0"/>
               </svg>
-              <div class="aqi-center"><div class="aqi-num" id="aqiNum">—</div><div class="aqi-eu">EU AQI</div></div>
+              <div class="aqi-center">
+                <div class="aqi-num" id="aqiNum">—</div>
+                <div class="aqi-eu">US AQI</div>
+              </div>
             </div>
-            <div class="aqi-info"><div class="aqi-level" id="aqiLevel">—</div><div class="aqi-desc" id="aqiDesc">—</div></div>
+            <div class="aqi-info">
+              <div class="aqi-level" id="aqiLevel">—</div>
+              <div class="aqi-cat" id="aqiCat">—</div>
+              <div class="aqi-desc" id="aqiDesc">—</div>
+            </div>
           </div>
+          <!-- US AQI 6-category colour bar -->
           <div class="aqi-scale">
-            <div class="seg on" id="s0" style="background:#00e5c0"></div>
-            <div class="seg"    id="s1" style="background:#a0d96b"></div>
-            <div class="seg"    id="s2" style="background:#ffd700"></div>
-            <div class="seg"    id="s3" style="background:#ff8c00"></div>
-            <div class="seg"    id="s4" style="background:#ff4444"></div>
+            <div class="seg" id="s0" style="background:#00e400" title="Good 0–50"></div>
+            <div class="seg" id="s1" style="background:#ffff00" title="Moderate 51–100"></div>
+            <div class="seg" id="s2" style="background:#ff7e00" title="Unhealthy for Sensitive Groups 101–150"></div>
+            <div class="seg" id="s3" style="background:#ff0000" title="Unhealthy 151–200"></div>
+            <div class="seg" id="s4" style="background:#8f3f97" title="Very Unhealthy 201–300"></div>
+            <div class="seg" id="s5" style="background:#7e0023" title="Hazardous 301–500"></div>
           </div>
+          <div class="aqi-scale-labels">
+            <span>Good</span><span>Moderate</span><span>USG</span><span>Unhealthy</span><span>V.Unhealthy</span><span>Hazardous</span>
+          </div>
+          <!-- Health guidance banner -->
+          <div class="aqi-guidance" id="aqiGuidance"></div>
+          <!-- Per-pollutant sub-AQI table -->
+          <div class="slbl" style="margin-top:14px">Pollutant Sub-Indices</div>
+          <div class="poll-table" id="pollTable"></div>
+          <!-- Raw concentration grid -->
+          <div class="slbl" style="margin-top:14px">Raw Concentrations</div>
           <div class="poll-grid" id="pollGrid"></div>
         </div>
       </section>
@@ -464,22 +506,39 @@ const WL={0:'Clear Sky',1:'Mainly Clear',2:'Partly Cloudy',3:'Overcast',45:'Fogg
 const WI={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
 const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const isRainy=w=>w>=51&&w<=82,isThunder=w=>w>=95,isHeavy=w=>w===65||w===82||w>=95;
+// Demo data — all pollutant values are raw µg/m³ concentrations
+// US AQI is computed on-the-fly from these; 'aqi' field is unused for AQI display
 const DEMO={
-  tokyo:{name:'Tokyo',country:'Japan',lat:35.69,lon:139.69,tz:'Asia/Tokyo',temp:22,feel:21,hi:26,lo:18,wc:2,hum:68,wind:14,prec:.2,pres:1013,vis:10,uv:4,aqi:42,pm25:10,pm10:22,o3:45,no2:18,so2:5,co:320,sr:'5:42 AM',ss:'6:30 PM',rainPct:20,rainMm:.5,admin1:''},
-  london:{name:'London',country:'UK',lat:51.51,lon:-.13,tz:'Europe/London',temp:12,feel:10,hi:15,lo:8,wc:61,hum:85,wind:20,prec:3.5,pres:1001,vis:5,uv:2,aqi:55,pm25:14,pm10:28,o3:38,no2:25,so2:7,co:450,sr:'6:50 AM',ss:'5:10 PM',rainPct:78,rainMm:5.2,admin1:''},
-  'new york':{name:'New York',country:'USA',lat:40.71,lon:-74.01,tz:'America/New_York',temp:16,feel:14,hi:20,lo:11,wc:3,hum:72,wind:22,prec:0,pres:1009,vis:9,uv:5,aqi:78,pm25:22,pm10:38,o3:62,no2:31,so2:9,co:580,sr:'6:10 AM',ss:'5:55 PM',rainPct:35,rainMm:0,admin1:''},
-  paris:{name:'Paris',country:'France',lat:48.85,lon:2.35,tz:'Europe/Paris',temp:14,feel:13,hi:17,lo:9,wc:45,hum:90,wind:10,prec:.8,pres:1008,vis:3,uv:2,aqi:65,pm25:18,pm10:32,o3:42,no2:28,so2:8,co:520,sr:'7:25 AM',ss:'5:20 PM',rainPct:55,rainMm:1.2,admin1:''},
-  sydney:{name:'Sydney',country:'Australia',lat:-33.87,lon:151.21,tz:'Australia/Sydney',temp:27,feel:29,hi:30,lo:22,wc:0,hum:58,wind:16,prec:0,pres:1018,vis:15,uv:8,aqi:28,pm25:6,pm10:14,o3:32,no2:12,so2:3,co:250,sr:'5:30 AM',ss:'7:45 PM',rainPct:8,rainMm:0,admin1:''},
-  dubai:{name:'Dubai',country:'UAE',lat:25.20,lon:55.27,tz:'Asia/Dubai',temp:36,feel:40,hi:39,lo:29,wc:0,hum:42,wind:18,prec:0,pres:1005,vis:12,uv:11,aqi:118,pm25:45,pm10:120,o3:72,no2:18,so2:12,co:620,sr:'6:10 AM',ss:'6:00 PM',rainPct:2,rainMm:0,admin1:''},
-  mumbai:{name:'Mumbai',country:'India',lat:19.08,lon:72.88,tz:'Asia/Kolkata',temp:32,feel:36,hi:34,lo:27,wc:80,hum:80,wind:22,prec:5.2,pres:1006,vis:6,uv:9,aqi:152,pm25:65,pm10:130,o3:60,no2:42,so2:18,co:900,sr:'6:20 AM',ss:'6:40 PM',rainPct:85,rainMm:12.5,admin1:''},
-  delhi:{name:'Delhi',country:'India',lat:28.67,lon:77.22,tz:'Asia/Kolkata',temp:29,feel:32,hi:33,lo:22,wc:45,hum:65,wind:8,prec:0,pres:1006,vis:3,uv:7,aqi:215,pm25:98,pm10:185,o3:55,no2:48,so2:22,co:1200,sr:'6:00 AM',ss:'6:20 PM',rainPct:15,rainMm:0,admin1:''},
-  singapore:{name:'Singapore',country:'Singapore',lat:1.35,lon:103.82,tz:'Asia/Singapore',temp:30,feel:35,hi:32,lo:26,wc:95,hum:85,wind:12,prec:8,pres:1010,vis:7,uv:7,aqi:35,pm25:8,pm10:18,o3:28,no2:14,so2:4,co:290,sr:'6:55 AM',ss:'7:05 PM',rainPct:90,rainMm:18,admin1:''},
-  berlin:{name:'Berlin',country:'Germany',lat:52.52,lon:13.40,tz:'Europe/Berlin',temp:9,feel:6,hi:12,lo:4,wc:3,hum:78,wind:25,prec:.5,pres:1012,vis:8,uv:1,aqi:48,pm25:12,pm10:24,o3:35,no2:22,so2:6,co:400,sr:'7:40 AM',ss:'4:50 PM',rainPct:30,rainMm:.5,admin1:''},
-  toronto:{name:'Toronto',country:'Canada',lat:43.65,lon:-79.38,tz:'America/Toronto',temp:8,feel:5,hi:11,lo:2,wc:71,hum:70,wind:28,prec:2,pres:1010,vis:7,uv:3,aqi:32,pm25:8,pm10:16,o3:30,no2:15,so2:4,co:280,sr:'6:30 AM',ss:'5:30 PM',rainPct:60,rainMm:3,admin1:''},
-  bangkok:{name:'Bangkok',country:'Thailand',lat:13.75,lon:100.52,tz:'Asia/Bangkok',temp:34,feel:39,hi:36,lo:28,wc:80,hum:78,wind:10,prec:4,pres:1007,vis:6,uv:10,aqi:88,pm25:35,pm10:72,o3:65,no2:35,so2:14,co:780,sr:'6:15 AM',ss:'6:20 PM',rainPct:75,rainMm:8.5,admin1:''},
-  moscow:{name:'Moscow',country:'Russia',lat:55.75,lon:37.62,tz:'Europe/Moscow',temp:-2,feel:-7,hi:1,lo:-5,wc:73,hum:88,wind:18,prec:1.5,pres:1005,vis:4,uv:1,aqi:40,pm25:10,pm10:20,o3:28,no2:20,so2:8,co:380,sr:'8:10 AM',ss:'4:00 PM',rainPct:65,rainMm:2,admin1:''},
-  cairo:{name:'Cairo',country:'Egypt',lat:30.06,lon:31.25,tz:'Africa/Cairo',temp:25,feel:24,hi:28,lo:18,wc:0,hum:40,wind:15,prec:0,pres:1015,vis:8,uv:8,aqi:95,pm25:38,pm10:85,o3:55,no2:30,so2:15,co:700,sr:'6:00 AM',ss:'5:50 PM',rainPct:2,rainMm:0,admin1:''},
-  seoul:{name:'Seoul',country:'South Korea',lat:37.57,lon:126.98,tz:'Asia/Seoul',temp:5,feel:2,hi:8,lo:0,wc:1,hum:55,wind:20,prec:0,pres:1018,vis:12,uv:3,aqi:62,pm25:20,pm10:42,o3:48,no2:26,so2:7,co:460,sr:'7:00 AM',ss:'5:40 PM',rainPct:10,rainMm:0,admin1:''},
+  // Tokyo: Good air — PM2.5~8→AQI44, PM10~18→AQI16, O3~80µg→AQI20, NO2~34µg→AQI9, SO2~13µg→AQI2, CO~460µg→AQI2 → Overall 44 (Good)
+  tokyo:{name:'Tokyo',country:'Japan',lat:35.69,lon:139.69,tz:'Asia/Tokyo',temp:22,feel:21,hi:26,lo:18,wc:2,hum:68,wind:14,prec:.2,pres:1013,vis:10,uv:4,pm25:8,pm10:18,o3:80,no2:34,so2:13,co:460,sr:'5:42 AM',ss:'6:30 PM',rainPct:20,rainMm:.5,admin1:''},
+  // London: Moderate — PM2.5~15→AQI57, PM10~28→AQI25, O3~100µg→AQI26, NO2~47µg→AQI12 → Overall 57 (Moderate)
+  london:{name:'London',country:'UK',lat:51.51,lon:-.13,tz:'Europe/London',temp:12,feel:10,hi:15,lo:8,wc:61,hum:85,wind:20,prec:3.5,pres:1001,vis:5,uv:2,pm25:15,pm10:28,o3:100,no2:47,so2:21,co:690,sr:'6:50 AM',ss:'5:10 PM',rainPct:78,rainMm:5.2,admin1:''},
+  // New York: Moderate — PM2.5~18→AQI64, PM10~35→AQI31, O3~118µg→AQI31 → Overall 64 (Moderate)
+  'new york':{name:'New York',country:'USA',lat:40.71,lon:-74.01,tz:'America/New_York',temp:16,feel:14,hi:20,lo:11,wc:3,hum:72,wind:22,prec:0,pres:1009,vis:9,uv:5,pm25:18,pm10:35,o3:118,no2:58,so2:21,co:920,sr:'6:10 AM',ss:'5:55 PM',rainPct:35,rainMm:0,admin1:''},
+  // Paris: Moderate — PM2.5~14→AQI55, PM10~26→AQI23 → Overall 55 (Moderate)
+  paris:{name:'Paris',country:'France',lat:48.85,lon:2.35,tz:'Europe/Paris',temp:14,feel:13,hi:17,lo:9,wc:45,hum:90,wind:10,prec:.8,pres:1008,vis:3,uv:2,pm25:14,pm10:26,o3:80,no2:53,so2:16,co:800,sr:'7:25 AM',ss:'5:20 PM',rainPct:55,rainMm:1.2,admin1:''},
+  // Sydney: Good — PM2.5~5→AQI28, O3~60µg→AQI15 → Overall 28 (Good)
+  sydney:{name:'Sydney',country:'Australia',lat:-33.87,lon:151.21,tz:'Australia/Sydney',temp:27,feel:29,hi:30,lo:22,wc:0,hum:58,wind:16,prec:0,pres:1018,vis:15,uv:8,pm25:5,pm10:12,o3:60,no2:23,so2:8,co:350,sr:'5:30 AM',ss:'7:45 PM',rainPct:8,rainMm:0,admin1:''},
+  // Dubai: USG — PM2.5~42→AQI117, PM10~110→AQI78 → Overall 117 (USG)
+  dubai:{name:'Dubai',country:'UAE',lat:25.20,lon:55.27,tz:'Asia/Dubai',temp:36,feel:40,hi:39,lo:29,wc:0,hum:42,wind:18,prec:0,pres:1005,vis:12,uv:11,pm25:42,pm10:110,o3:140,no2:34,so2:31,co:1100,sr:'6:10 AM',ss:'6:00 PM',rainPct:2,rainMm:0,admin1:''},
+  // Mumbai: Unhealthy — PM2.5~68→AQI156, PM10~140→AQI96 → Overall 156 (Unhealthy)
+  mumbai:{name:'Mumbai',country:'India',lat:19.08,lon:72.88,tz:'Asia/Kolkata',temp:32,feel:36,hi:34,lo:27,wc:80,hum:80,wind:22,prec:5.2,pres:1006,vis:6,uv:9,pm25:68,pm10:140,o3:115,no2:79,so2:47,co:1600,sr:'6:20 AM',ss:'6:40 PM',rainPct:85,rainMm:12.5,admin1:''},
+  // Delhi: Very Unhealthy — PM2.5~120→AQI183, PM10~220→AQI126 → Overall 183 (Unhealthy)
+  delhi:{name:'Delhi',country:'India',lat:28.67,lon:77.22,tz:'Asia/Kolkata',temp:29,feel:32,hi:33,lo:22,wc:45,hum:65,wind:8,prec:0,pres:1006,vis:3,uv:7,pm25:120,pm10:220,o3:100,no2:91,so2:52,co:2100,sr:'6:00 AM',ss:'6:20 PM',rainPct:15,rainMm:0,admin1:''},
+  // Singapore: Good — PM2.5~7→AQI39, O3~55µg→AQI14 → Overall 39 (Good)
+  singapore:{name:'Singapore',country:'Singapore',lat:1.35,lon:103.82,tz:'Asia/Singapore',temp:30,feel:35,hi:32,lo:26,wc:95,hum:85,wind:12,prec:8,pres:1010,vis:7,uv:7,pm25:7,pm10:16,o3:55,no2:26,so2:10,co:460,sr:'6:55 AM',ss:'7:05 PM',rainPct:90,rainMm:18,admin1:''},
+  // Berlin: Good — PM2.5~10→AQI50, PM10~20→AQI18 → Overall 50 (Good)
+  berlin:{name:'Berlin',country:'Germany',lat:52.52,lon:13.40,tz:'Europe/Berlin',temp:9,feel:6,hi:12,lo:4,wc:3,hum:78,wind:25,prec:.5,pres:1012,vis:8,uv:1,pm25:10,pm10:20,o3:67,no2:41,so2:16,co:610,sr:'7:40 AM',ss:'4:50 PM',rainPct:30,rainMm:.5,admin1:''},
+  // Toronto: Good — PM2.5~7→AQI39 → Overall 39 (Good)
+  toronto:{name:'Toronto',country:'Canada',lat:43.65,lon:-79.38,tz:'America/Toronto',temp:8,feel:5,hi:11,lo:2,wc:71,hum:70,wind:28,prec:2,pres:1010,vis:7,uv:3,pm25:7,pm10:14,o3:57,no2:28,so2:10,co:440,sr:'6:30 AM',ss:'5:30 PM',rainPct:60,rainMm:3,admin1:''},
+  // Bangkok: USG — PM2.5~38→AQI108, PM10~75→AQI55 → Overall 108 (USG)
+  bangkok:{name:'Bangkok',country:'Thailand',lat:13.75,lon:100.52,tz:'Asia/Bangkok',temp:34,feel:39,hi:36,lo:28,wc:80,hum:78,wind:10,prec:4,pres:1007,vis:6,uv:10,pm25:38,pm10:75,o3:125,no2:66,so2:37,co:1380,sr:'6:15 AM',ss:'6:20 PM',rainPct:75,rainMm:8.5,admin1:''},
+  // Moscow: Good/Moderate — PM2.5~12→AQI50, PM10~22→AQI20 → Overall 50 (Good)
+  moscow:{name:'Moscow',country:'Russia',lat:55.75,lon:37.62,tz:'Europe/Moscow',temp:-2,feel:-7,hi:1,lo:-5,wc:73,hum:88,wind:18,prec:1.5,pres:1005,vis:4,uv:1,pm25:12,pm10:22,o3:55,no2:38,so2:21,co:600,sr:'8:10 AM',ss:'4:00 PM',rainPct:65,rainMm:2,admin1:''},
+  // Cairo: USG — PM2.5~40→AQI112, PM10~95→AQI67 → Overall 112 (USG)
+  cairo:{name:'Cairo',country:'Egypt',lat:30.06,lon:31.25,tz:'Africa/Cairo',temp:25,feel:24,hi:28,lo:18,wc:0,hum:40,wind:15,prec:0,pres:1015,vis:8,uv:8,pm25:40,pm10:95,o3:105,no2:56,so2:39,co:1250,sr:'6:00 AM',ss:'5:50 PM',rainPct:2,rainMm:0,admin1:''},
+  // Seoul: Moderate — PM2.5~20→AQI68, PM10~42→AQI37 → Overall 68 (Moderate)
+  seoul:{name:'Seoul',country:'South Korea',lat:37.57,lon:126.98,tz:'Asia/Seoul',temp:5,feel:2,hi:8,lo:0,wc:1,hum:55,wind:20,prec:0,pres:1018,vis:12,uv:3,pm25:20,pm10:42,o3:94,no2:49,so2:18,co:780,sr:'7:00 AM',ss:'5:40 PM',rainPct:10,rainMm:0,admin1:''},
 };
 
 const $=id=>document.getElementById(id);
@@ -568,7 +627,10 @@ function comfortRec(d){
 }
 
 function lifestyleTips(d){
-  const t=+d.temp,h=+d.hum,wc=d.wc,uv=+(d.uv||0),aqi=+d.aqi,w=+d.wind,pct=+(d.rainPct||0);
+  const t=+d.temp,h=+d.hum,wc=d.wc,uv=+(d.uv||0),w=+d.wind,pct=+(d.rainPct||0);
+  // Always compute US AQI from raw concentrations for consistent tips
+  const{overall}=computeUSAqi(d);
+  const aqi=overall??0;
   const rainy=isRainy(wc)||isThunder(wc),tips=[];
   if(isThunder(wc))tips.push({i:'🏃',c:'Exercise',t:'Postpone all outdoor workouts — thunderstorm risk. Use indoor gym, yoga, or home exercises.',b:'br',l:'Stay Indoors'});
   else if(rainy&&pct>60)tips.push({i:'🏃',c:'Exercise',t:'Rain makes outdoor running slippery. Indoor gym or swimming preferred.',b:'by',l:'Indoor Preferred'});
@@ -584,10 +646,11 @@ function lifestyleTips(d){
   else if(uv>=8)tips.push({i:'☀️',c:'Sun',t:'Very high UV. Reapply SPF 30+ every 2 hours. Seek shade between 10am–4pm.',b:'bo',l:'Very High UV'});
   else if(uv>=5)tips.push({i:'☀️',c:'Sun',t:'Moderate UV. Sunscreen recommended for extended outdoor time. Hat and sunglasses helpful.',b:'by',l:'Moderate UV'});
   else tips.push({i:'☀️',c:'Sun',t:'Low UV today. Basic sun care still good practice for extended outdoor time.',b:'bg',l:'Low UV'});
-  if(aqi>150)tips.push({i:'😷',c:'Air',t:'Hazardous air quality. Wear N95 mask outdoors. Sensitive groups stay indoors with windows shut.',b:'br',l:'Wear N95'});
-  else if(aqi>80)tips.push({i:'😷',c:'Air',t:'Poor air quality. Consider a mask outdoors, especially near heavy traffic.',b:'bo',l:'Mask Recommended'});
-  else if(aqi>40)tips.push({i:'😷',c:'Air',t:'Moderate air quality. Sensitive individuals should limit prolonged outdoor exposure.',b:'by',l:'Caution'});
-  else tips.push({i:'😷',c:'Air',t:'Clean, fresh air. Open windows freely — great for airing out your home.',b:'bg',l:'Clean Air'});
+  if(aqi>200)tips.push({i:'😷',c:'Air',t:'Very Unhealthy air (US AQI >200). Everyone should avoid outdoor exertion. N95 mask essential.',b:'br',l:'Stay Indoors'});
+  else if(aqi>150)tips.push({i:'😷',c:'Air',t:'Unhealthy air (US AQI >150). Everyone may experience health effects. Limit outdoor activity.',b:'br',l:'Unhealthy'});
+  else if(aqi>100)tips.push({i:'😷',c:'Air',t:'Unhealthy for Sensitive Groups (US AQI >100). People with respiratory or heart conditions should limit outdoor exertion.',b:'bo',l:'Sensitive Groups'});
+  else if(aqi>50)tips.push({i:'😷',c:'Air',t:'Moderate air quality (US AQI >50). Unusually sensitive people should consider reducing prolonged outdoor activity.',b:'by',l:'Moderate'});
+  else tips.push({i:'😷',c:'Air',t:'Good air quality (US AQI ≤50). Open windows freely and enjoy the fresh air.',b:'bg',l:'Good Air'});
   if(isThunder(wc))tips.push({i:'🚗',c:'Commute',t:'Avoid travel if possible. If driving: headlights on, reduce speed, triple following distance.',b:'br',l:'Avoid Travel'});
   else if(rainy)tips.push({i:'🚗',c:'Commute',t:'Wet roads reduce grip. Leave earlier, slow down, watch for flooded underpasses.',b:'by',l:'Drive Carefully'});
   else if(w>30)tips.push({i:'🚗',c:'Commute',t:'Strong winds affect cyclists and high-sided vehicles. Grip steering firmly on open roads.',b:'bo',l:'Windy'});
@@ -601,12 +664,177 @@ function lifestyleTips(d){
   return tips;
 }
 
-function aqiInfo(a){
-  if(a<=20)return{lvl:'Good',col:'#00e5c0',desc:'Excellent air. Safe for all activities.',seg:0};
-  if(a<=40)return{lvl:'Fair',col:'#a0d96b',desc:'Acceptable quality. Sensitive people may notice mild effects.',seg:1};
-  if(a<=60)return{lvl:'Moderate',col:'#ffd700',desc:'Sensitive groups may notice effects. General public unlikely affected.',seg:2};
-  if(a<=80)return{lvl:'Poor',col:'#ff8c00',desc:'Health effects possible for sensitive groups.',seg:3};
-  return{lvl:'Very Poor',col:'#ff4444',desc:'Health alert! Limit outdoor time for everyone.',seg:4};
+/* ══════════════════════════════════════════════════════════
+   US EPA AQI CALCULATOR
+   Official breakpoint tables from 40 CFR Part 58, App. G
+   and EPA AQI Technical Assistance Document (2018 revision)
+══════════════════════════════════════════════════════════ */
+
+// Linear interpolation between EPA breakpoints
+function linearScale(Cp, BPLo, BPHi, ILo, IHi){
+  return Math.round(((IHi-ILo)/(BPHi-BPLo))*(Cp-BPLo)+ILo);
+}
+
+// PM2.5 24-hr average (µg/m³) → sub-AQI
+// API gives current µg/m³; we use it as a proxy for 24-hr
+function aqiPM25(c){
+  if(c==null)return null;
+  c=Math.round(c*10)/10; // 1 decimal
+  const bp=[
+    [0.0,  9.0,   0,  50],
+    [9.1,  35.4,  51, 100],
+    [35.5, 55.4, 101, 150],
+    [55.5,125.4, 151, 200],
+    [125.5,225.4,201, 300],
+    [225.5,325.4,301, 500],
+  ];
+  for(const[lo,hi,ilo,ihi]of bp) if(c>=lo&&c<=hi) return linearScale(c,lo,hi,ilo,ihi);
+  return c>325.4?500:0;
+}
+
+// PM10 24-hr average (µg/m³) → sub-AQI
+function aqiPM10(c){
+  if(c==null)return null;
+  c=Math.floor(c);
+  const bp=[
+    [0,  54,   0,  50],
+    [55, 154,  51, 100],
+    [155,254, 101, 150],
+    [255,354, 151, 200],
+    [355,424, 201, 300],
+    [425,604, 301, 500],
+  ];
+  for(const[lo,hi,ilo,ihi]of bp) if(c>=lo&&c<=hi) return linearScale(c,lo,hi,ilo,ihi);
+  return c>604?500:0;
+}
+
+// O₃ 8-hr average (ppm) → sub-AQI
+// API returns µg/m³; at 25°C & 1 atm: 1 ppm O₃ = 1.96 µg/m³ (MW=48, 1ppm=48/24.45 µg/m³)
+function aqiO3(c_ugm3){
+  if(c_ugm3==null)return null;
+  const c=Math.round(c_ugm3/1.96*1000)/1000; // µg/m³ → ppm, 3 decimals
+  // For 0–0.200 ppm use 8-hr table; above use 1-hr table
+  if(c<=0.200){
+    const bp=[
+      [0.000,0.054, 0,  50],
+      [0.055,0.070, 51,100],
+      [0.071,0.085,101,150],
+      [0.086,0.105,151,200],
+      [0.106,0.200,201,300],
+    ];
+    for(const[lo,hi,ilo,ihi]of bp) if(c>=lo&&c<=hi) return linearScale(c,lo,hi,ilo,ihi);
+    return 0; // below detection / lowest breakpoint
+  } else {
+    const bp=[
+      [0.125,0.164,101,150],
+      [0.165,0.204,151,200],
+      [0.205,0.404,201,300],
+      [0.405,0.504,301,400],
+      [0.505,0.604,401,500],
+    ];
+    for(const[lo,hi,ilo,ihi]of bp) if(c>=lo&&c<=hi) return linearScale(c,lo,hi,ilo,ihi);
+    return c>0.604?500:100; // high O₃ above 0.200 ppm is at least USG
+  }
+}
+
+// NO₂ 1-hr (ppb) → sub-AQI  (API µg/m³ ÷ 1.88 ≈ ppb)
+function aqiNO2(c_ugm3){
+  if(c_ugm3==null)return null;
+  const c=Math.round(c_ugm3/1.88); // ppb integer
+  const bp=[
+    [0,   53,   0,  50],
+    [54,  100,  51, 100],
+    [101, 360, 101, 150],
+    [361, 649, 151, 200],
+    [650,1249, 201, 300],
+    [1250,1649,301, 400],
+    [1650,2049,401, 500],
+  ];
+  for(const[lo,hi,ilo,ihi]of bp) if(c>=lo&&c<=hi) return linearScale(c,lo,hi,ilo,ihi);
+  return c>2049?500:0;
+}
+
+// SO₂ 1-hr (ppb) → sub-AQI  (API µg/m³ ÷ 2.62 ≈ ppb)
+function aqiSO2(c_ugm3){
+  if(c_ugm3==null)return null;
+  const c=Math.round(c_ugm3/2.62); // ppb integer
+  const bp=[
+    [0,   35,   0,  50],
+    [36,  75,  51, 100],
+    [76, 185, 101, 150],
+    [186, 304,151, 200],
+    [305, 604,201, 300],
+    [605, 804,301, 400],
+    [805,1004,401, 500],
+  ];
+  for(const[lo,hi,ilo,ihi]of bp) if(c>=lo&&c<=hi) return linearScale(c,lo,hi,ilo,ihi);
+  return c>1004?500:0;
+}
+
+// CO 8-hr (ppm) → sub-AQI  (API gives µg/m³; ÷ 1145 ≈ ppm at STP)
+function aqiCO(c_ugm3){
+  if(c_ugm3==null)return null;
+  const c=Math.round(c_ugm3/1145*10)/10; // ppm, 1 decimal
+  const bp=[
+    [0.0,  4.4,   0,  50],
+    [4.5,  9.4,  51, 100],
+    [9.5, 12.4, 101, 150],
+    [12.5, 15.4,151, 200],
+    [15.5, 30.4,201, 300],
+    [30.5, 40.4,301, 400],
+    [40.5, 50.4,401, 500],
+  ];
+  for(const[lo,hi,ilo,ihi]of bp) if(c>=lo&&c<=hi) return linearScale(c,lo,hi,ilo,ihi);
+  return c>50.4?500:0;
+}
+
+// US AQI category lookup (6 official categories)
+function usAqiCategory(aqi){
+  if(aqi==null||isNaN(aqi))return{lvl:'—',col:'#6a8aaa',bg:'rgba(106,138,170,.08)',desc:'No data.',health:'',sensitive:'',seg:-1};
+  if(aqi<=50)  return{lvl:'Good',             col:'#00e400',bg:'rgba(0,228,0,.08)',      seg:0,
+    desc:'Air quality is satisfactory and poses little or no risk.',
+    health:'Enjoy outdoor activities.',
+    sensitive:'No precautions needed.'};
+  if(aqi<=100) return{lvl:'Moderate',          col:'#e8e800',bg:'rgba(232,232,0,.08)',    seg:1,
+    desc:'Acceptable air quality. Some pollutants may be a concern for a small number of sensitive people.',
+    health:'Unusually sensitive people should consider limiting prolonged outdoor exertion.',
+    sensitive:'Active children and adults, and people with respiratory disease should limit prolonged outdoor exertion.'};
+  if(aqi<=150) return{lvl:'Unhealthy for Sensitive Groups',col:'#ff7e00',bg:'rgba(255,126,0,.08)',seg:2,
+    desc:'Members of sensitive groups may experience health effects. The general public is less likely to be affected.',
+    health:'General public: no precautions needed.',
+    sensitive:'People with heart or lung disease, older adults, children, and people of lower SES should reduce prolonged or heavy exertion.'};
+  if(aqi<=200) return{lvl:'Unhealthy',          col:'#ff0000',bg:'rgba(255,0,0,.08)',      seg:3,
+    desc:'Everyone may begin to experience health effects. Sensitive groups may experience more serious effects.',
+    health:'Everyone should reduce prolonged or heavy exertion.',
+    sensitive:'People with heart or lung disease, older adults, children should avoid prolonged or heavy exertion.'};
+  if(aqi<=300) return{lvl:'Very Unhealthy',     col:'#8f3f97',bg:'rgba(143,63,151,.08)',   seg:4,
+    desc:'Health alert: everyone may experience serious health effects.',
+    health:'Everyone should avoid prolonged or heavy outdoor exertion.',
+    sensitive:'People with heart or lung disease, older adults, children should avoid all outdoor exertion.'};
+  return        {lvl:'Hazardous',               col:'#7e0023',bg:'rgba(126,0,35,.08)',     seg:5,
+    desc:'Health warning of emergency conditions. Everyone is more likely to be affected.',
+    health:'Everyone should avoid all outdoor exertion.',
+    sensitive:'People with heart or lung disease, older adults, children should remain indoors.'};
+}
+
+// Compute overall US AQI from individual pollutant concentrations
+// Returns overall (max sub-AQI), subs array, and dominant pollutant name
+function computeUSAqi(d){
+  // Safe parse: only convert non-null values; avoid 0||null bug
+  const safe=v=>(v!=null&&v!=='')?+v:null;
+  const subs=[
+    {shortName:'PM₂.₅', sub:aqiPM25(safe(d.pm25)), rawVal:d.pm25, unit:'µg/m³', fullName:'Fine Particles (PM2.5)'},
+    {shortName:'PM₁₀',  sub:aqiPM10(safe(d.pm10)), rawVal:d.pm10, unit:'µg/m³', fullName:'Coarse Particles (PM10)'},
+    {shortName:'O₃',    sub:aqiO3(safe(d.o3)),     rawVal:d.o3,   unit:'µg/m³', fullName:'Ozone'},
+    {shortName:'NO₂',   sub:aqiNO2(safe(d.no2)),   rawVal:d.no2,  unit:'µg/m³', fullName:'Nitrogen Dioxide'},
+    {shortName:'SO₂',   sub:aqiSO2(safe(d.so2)),   rawVal:d.so2,  unit:'µg/m³', fullName:'Sulfur Dioxide'},
+    {shortName:'CO',    sub:aqiCO(safe(d.co)),      rawVal:d.co,   unit:'µg/m³', fullName:'Carbon Monoxide'},
+  ];
+  const valid=subs.filter(s=>s.sub!=null&&!isNaN(s.sub));
+  if(!valid.length) return{overall:null, subs, dominant:'—'};
+  const maxSub=Math.max(...valid.map(s=>s.sub));
+  const dominant=valid.find(s=>s.sub===maxSub)?.shortName??'—';
+  return{overall:maxSub, subs, dominant};
 }
 
 function moonPhase(d){
@@ -679,13 +907,66 @@ function render(d){
 
   $('lifeList').innerHTML=lifestyleTips(d).map(t=>`<div class="lt-item"><div class="lt-top"><div class="lt-left"><span class="lt-ico">${t.i}</span><span class="lt-cat">${t.c}</span></div><span class="badge ${t.b}">${t.l}</span></div><div class="lt-tip">${t.t}</div></div>`).join('');
 
-  const ai=aqiInfo(+d.aqi);
-  $('aqiNum').textContent=d.aqi;$('aqiNum').style.color=ai.col;
-  $('aqiLevel').textContent=ai.lvl;$('aqiLevel').style.color=ai.col;$('aqiDesc').textContent=ai.desc;
+  /* AQI — US EPA Standard */
+  const{overall,subs,dominant}=computeUSAqi(d);
+  const usAqi=overall; // strictly computed from pollutant concentrations
+  const ai=usAqiCategory(usAqi);
+  $('aqiNum').textContent=usAqi!=null?usAqi:'—';
+  $('aqiNum').style.color=ai.col;
+  $('aqiLevel').textContent=ai.lvl;
+  $('aqiLevel').style.color=ai.col;
+  $('aqiCat').textContent=usAqi!=null?`Dominant: ${dominant} · Category ${ai.seg+1}/6`:'No pollutant data';
+  $('aqiDesc').textContent=ai.desc;
+  // Gauge — 0–500 scale per US EPA
   const C=235.6;
-  setTimeout(()=>{$('aqiFill').style.strokeDashoffset=C-Math.min(d.aqi/100,1)*C;$('aqiFill').style.stroke=ai.col;},150);
-  for(let i=0;i<5;i++)$('s'+i).classList.toggle('on',i===ai.seg);
-  $('pollGrid').innerHTML=[{n:'PM2.5',v:d.pm25,t:[10,25,50],u:'µg/m³'},{n:'PM10',v:d.pm10,t:[20,50,100],u:'µg/m³'},{n:'O₃',v:d.o3,t:[60,120,180],u:'µg/m³'},{n:'NO₂',v:d.no2,t:[40,90,120],u:'µg/m³'},{n:'SO₂',v:d.so2,t:[100,200,350],u:'µg/m³'},{n:'CO',v:d.co,t:[4400,9400,12400],u:'µg/m³'}].map(p=>{const col=p.v!=null?pCol(p.v,...p.t):'var(--muted)';return`<div class="poll-chip"><div class="poll-name">${p.n}</div><div class="poll-val" style="color:${col}">${p.v??'—'}</div><div class="poll-unit">${p.u}</div></div>`;}).join('');
+  const gaugePct=usAqi!=null?Math.min(usAqi/500,1):0;
+  setTimeout(()=>{$('aqiFill').style.strokeDashoffset=C-gaugePct*C;$('aqiFill').style.stroke=ai.col;},150);
+  // 6-segment scale bar (official US EPA colours)
+  for(let i=0;i<6;i++)$('s'+i).classList.toggle('on',i===ai.seg);
+  // Health guidance
+  $('aqiGuidance').style.cssText=`background:${ai.bg};border-left-color:${ai.col};color:var(--text)`;
+  $('aqiGuidance').innerHTML=usAqi!=null
+    ?`<strong style="color:${ai.col}">👤 General Public</strong>${ai.health}<br><strong style="color:${ai.col};margin-top:6px;display:block">⚠️ Sensitive Groups</strong>${ai.sensitive}`
+    :`<strong style="color:var(--muted)">Live data required for health guidance</strong>`;
+  // Sub-index table — show each pollutant's individual AQI contribution
+  $('pollTable').innerHTML=subs.map(p=>{
+    const sub=p.sub;
+    const sc=usAqiCategory(sub);
+    const isMax=(sub===usAqi&&sub!=null);
+    const barW=sub!=null?Math.min(sub/500*100,100):0;
+    return`<div class="pt-row${isMax?' pt-dominant':''}">
+      <div>
+        <div class="pt-name">${p.shortName}${isMax?' ★':''}</div>
+        <div style="font-family:var(--fm);font-size:.55rem;color:var(--muted)">${p.fullName}</div>
+      </div>
+      <div class="pt-bar-wrap"><div class="pt-bar-fill" style="width:${barW}%;background:${sub!=null?sc.col:'var(--muted)'}"></div></div>
+      <div class="pt-sub" style="color:${sub!=null?sc.col:'var(--muted)'}">${sub??'N/A'}</div>
+      <div class="pt-badge" style="background:${sub!=null?sc.bg:'rgba(106,138,170,.08)'};color:${sub!=null?sc.col:'var(--muted)'};border:1px solid ${sub!=null?sc.col+'55':'var(--border)'}">
+        ${sub!=null?(sub<=50?'Good':sub<=100?'Moderate':sub<=150?'USG':sub<=200?'Unhealthy':sub<=300?'V.Unhealthy':'Hazardous'):'—'}
+      </div>
+    </div>`;
+  }).join('');
+  // Raw concentration chips — show both µg/m³ and converted standard units
+  const rawPollutants=[
+    {short:'PM₂.₅', full:'Fine Particles',        v:d.pm25, u:'µg/m³', conv:null,               sub:subs[0].sub},
+    {short:'PM₁₀',  full:'Coarse Particles',       v:d.pm10, u:'µg/m³', conv:null,               sub:subs[1].sub},
+    {short:'O₃',    full:'Ozone',                  v:d.o3,   u:'µg/m³', conv:d.o3!=null?`${(d.o3/1.96).toFixed(3)} ppm`:null, sub:subs[2].sub},
+    {short:'NO₂',   full:'Nitrogen Dioxide',       v:d.no2,  u:'µg/m³', conv:d.no2!=null?`${Math.round(d.no2/1.88)} ppb`:null, sub:subs[3].sub},
+    {short:'SO₂',   full:'Sulfur Dioxide',         v:d.so2,  u:'µg/m³', conv:d.so2!=null?`${Math.round(d.so2/2.62)} ppb`:null, sub:subs[4].sub},
+    {short:'CO',    full:'Carbon Monoxide',         v:d.co,   u:'µg/m³', conv:d.co!=null?`${(d.co/1145).toFixed(1)} ppm`:null,  sub:subs[5].sub},
+  ];
+  $('pollGrid').innerHTML=rawPollutants.map(p=>{
+    const col=p.sub!=null?usAqiCategory(p.sub).col:'var(--muted)';
+    return`<div class="poll-chip">
+      <div class="poll-chip-left"><div class="poll-name" style="color:${col}">${p.short}</div></div>
+      <div class="poll-chip-right">
+        <div class="poll-val" style="color:${col}">${p.v!=null?p.v:'—'}</div>
+        <div class="poll-unit">${p.u}</div>
+        ${p.conv?`<div class="poll-unit" style="color:${col};opacity:.8">${p.conv}</div>`:''}
+        <div class="poll-name-full">${p.full}</div>
+      </div>
+    </div>`;
+  }).join('');
 
   const pg=$('pg'+curPage);pg.classList.remove('pg-in');void pg.offsetWidth;pg.classList.add('pg-in');
 }
@@ -695,14 +976,36 @@ function setUnit(u){if(unit===u)return;unit=u;$('btnC').className=u==='C'?'on':'
 async function tryLive(lat,lon,tz,name,country,admin1){
   const[wR,aR]=await Promise.all([
     fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&timezone=${encodeURIComponent(tz)}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation,surface_pressure,visibility,uv_index&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,precipitation_sum&forecast_days=7`),
-    fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&timezone=${encodeURIComponent(tz)}&current=european_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide`)
+    fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&timezone=${encodeURIComponent(tz)}&current=us_aqi,european_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide`)
   ]);
   const w=await wR.json(),a=await aR.json();
   const c=w.current,D=w.daily,H=w.hourly,Q=a.current;
   const now=new Date(),ni=H.time.findIndex(t=>new Date(t)>=now);
   const sl=arr=>arr.slice(Math.max(0,ni),ni+24);
   const f12=s=>new Date(s).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:tz});
-  return{name,country,admin1:admin1||'',lat,lon,tz,temp:c.temperature_2m,feel:c.apparent_temperature,hi:D.temperature_2m_max[0],lo:D.temperature_2m_min[0],wc:c.weather_code,hum:c.relative_humidity_2m,wind:Math.round(c.wind_speed_10m),prec:c.precipitation,pres:Math.round(c.surface_pressure),vis:c.visibility!=null?(c.visibility/1000).toFixed(1):10,uv:c.uv_index??0,aqi:Math.round(Q.european_aqi),pm25:Q.pm2_5?.toFixed(1),pm10:Q.pm10?.toFixed(1),o3:Q.ozone?.toFixed(1),no2:Q.nitrogen_dioxide?.toFixed(1),so2:Q.sulphur_dioxide?.toFixed(1),co:Q.carbon_monoxide?.toFixed(0),sr:f12(D.sunrise[0]),ss:f12(D.sunset[0]),rainPct:D.precipitation_probability_max[0]||0,rainMm:D.precipitation_sum?.[0]||c.precipitation||0,forecast:D.time.map((_,i)=>({wc:D.weather_code[i],hi:D.temperature_2m_max[i],lo:D.temperature_2m_min[i],rain:D.precipitation_probability_max[i]})),hourly:sl(H.time).map((_,i)=>({wc:sl(H.weather_code)[i],temp:sl(H.temperature_2m)[i],rain:sl(H.precipitation_probability)[i]}))};
+  return{
+    name,country,admin1:admin1||'',lat,lon,tz,
+    temp:c.temperature_2m, feel:c.apparent_temperature,
+    hi:D.temperature_2m_max[0], lo:D.temperature_2m_min[0],
+    wc:c.weather_code, hum:c.relative_humidity_2m,
+    wind:Math.round(c.wind_speed_10m), prec:c.precipitation,
+    pres:Math.round(c.surface_pressure),
+    vis:c.visibility!=null?(c.visibility/1000).toFixed(1):10,
+    uv:c.uv_index??0,
+    // Store raw pollutant concentrations (µg/m³) — US AQI computed on the fly
+    aqi:Math.round(Q.us_aqi??Q.european_aqi??0),  // fallback display only
+    pm25:Q.pm2_5!=null?Math.round(Q.pm2_5*10)/10:null,
+    pm10:Q.pm10!=null?Math.round(Q.pm10):null,
+    o3:Q.ozone!=null?Math.round(Q.ozone*10)/10:null,
+    no2:Q.nitrogen_dioxide!=null?Math.round(Q.nitrogen_dioxide*10)/10:null,
+    so2:Q.sulphur_dioxide!=null?Math.round(Q.sulphur_dioxide*10)/10:null,
+    co:Q.carbon_monoxide!=null?Math.round(Q.carbon_monoxide):null,
+    sr:f12(D.sunrise[0]), ss:f12(D.sunset[0]),
+    rainPct:D.precipitation_probability_max[0]||0,
+    rainMm:D.precipitation_sum?.[0]||c.precipitation||0,
+    forecast:D.time.map((_,i)=>({wc:D.weather_code[i],hi:D.temperature_2m_max[i],lo:D.temperature_2m_min[i],rain:D.precipitation_probability_max[i]})),
+    hourly:sl(H.time).map((_,i)=>({wc:sl(H.weather_code)[i],temp:sl(H.temperature_2m)[i],rain:sl(H.precipitation_probability)[i]}))
+  };
 }
 
 async function geocode(city){
@@ -721,8 +1024,15 @@ async function load(query){
   }catch(e){}
   const dk=Object.keys(DEMO).find(k=>k===key||DEMO[k].name.toLowerCase()===key);
   if(dk){setStatus(false,`⚡ Preview · ${DEMO[dk].name} — open in browser for live data`);render(DEMO[dk]);showLoader(false);return;}
-  const rand=(a,b)=>Math.round(a+Math.random()*(b-a));const rt=rand(5,38),rw=[0,1,2,3,61,80,95][rand(0,6)];
-  render({name:query.charAt(0).toUpperCase()+query.slice(1),country:'',admin1:'',lat:0,lon:0,tz:'UTC',temp:rt,feel:rt-2,hi:rt+3,lo:rt-5,wc:rw,hum:rand(40,90),wind:rand(5,35),prec:rw>=61?rand(1,10):0,pres:rand(1000,1020),vis:rand(3,15),uv:rand(1,11),aqi:rand(15,180),pm25:rand(5,80),pm10:rand(10,150),o3:rand(20,100),no2:rand(10,50),so2:rand(2,20),co:rand(200,1000),sr:'6:30 AM',ss:'6:30 PM',rainPct:rw>=61?rand(50,90):rand(0,25),rainMm:rw>=61?rand(2,15):0});
+  const rand=(a,b)=>Math.round(a+Math.random()*(b-a));
+  const rt=rand(5,38),rw=[0,1,2,3,61,80,95][rand(0,6)];
+  // Generate realistic raw µg/m³ concentrations — US AQI computed from these
+  render({name:query.charAt(0).toUpperCase()+query.slice(1),country:'',admin1:'',lat:0,lon:0,tz:'UTC',
+    temp:rt,feel:rt-2,hi:rt+3,lo:rt-5,wc:rw,hum:rand(40,90),wind:rand(5,35),
+    prec:rw>=61?rand(1,10):0,pres:rand(1000,1020),vis:rand(3,15),uv:rand(1,11),
+    pm25:rand(2,50), pm10:rand(5,120), o3:rand(30,160), no2:rand(10,120),
+    so2:rand(5,80),  co:rand(300,2000),
+    sr:'6:30 AM',ss:'6:30 PM',rainPct:rw>=61?rand(50,90):rand(0,25),rainMm:rw>=61?rand(2,15):0});
   setStatus(false,'⚡ Preview mode — download & open in browser for live data');showLoader(false);
 }
 
