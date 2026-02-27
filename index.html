@@ -1,1042 +1,537 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WiFi Speed Test</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<title>SpeedTest — Manik Roy</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #060a14;
-    --surface: #0d1526;
-    --card: #111d35;
-    --accent: #00d4ff;
-    --accent2: #ff6b35;
-    --accent3: #7c3aed;
-    --green: #00ff9d;
-    --text: #e8f4f8;
-    --muted: #5a7a99;
-    --glow: 0 0 20px rgba(0,212,255,0.4);
-    --glow2: 0 0 30px rgba(0,255,157,0.3);
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: 'Rajdhani', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow-x: hidden;
-  }
-
-  /* Background grid */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  body::after {
-    content: '';
-    position: fixed;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(ellipse at 30% 20%, rgba(124,58,237,0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 70% 80%, rgba(0,212,255,0.06) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  header {
-    position: relative;
-    z-index: 10;
-    text-align: center;
-    padding: 2rem 1rem 1rem;
-    border-bottom: 1px solid rgba(0,212,255,0.1);
-  }
-
-  .logo {
-    font-family: 'Orbitron', monospace;
-    font-size: clamp(1.2rem, 5vw, 2rem);
-    font-weight: 900;
-    letter-spacing: 0.15em;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--green) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-transform: uppercase;
-  }
-
-  .logo-sub {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 0.75rem;
-    letter-spacing: 0.4em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-top: 0.25rem;
-  }
-
-  main {
-    flex: 1;
-    position: relative;
-    z-index: 10;
-    padding: 1.5rem 1rem 2rem;
-    max-width: 480px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  /* Speedometer */
-  .gauge-section {
-    text-align: center;
-    margin-bottom: 1.5rem;
-  }
-
-  .gauge-wrapper {
-    position: relative;
-    display: inline-block;
-    width: min(280px, 85vw);
-    height: min(280px, 85vw);
-  }
-
-  .gauge-svg {
-    width: 100%;
-    height: 100%;
-    transform: rotate(-135deg);
-  }
-
-  .gauge-track {
-    fill: none;
-    stroke: rgba(0,212,255,0.08);
-    stroke-width: 14;
-    stroke-linecap: round;
-  }
-
-  .gauge-fill {
-    fill: none;
-    stroke: url(#speedGradient);
-    stroke-width: 14;
-    stroke-linecap: round;
-    stroke-dasharray: 471;
-    stroke-dashoffset: 471;
-    transition: stroke-dashoffset 0.15s ease;
-    filter: drop-shadow(0 0 8px rgba(0,212,255,0.8));
-  }
-
-  .gauge-center {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-  }
-
-  .speed-value {
-    font-family: 'Orbitron', monospace;
-    font-size: clamp(2rem, 10vw, 3.2rem);
-    font-weight: 900;
-    color: var(--accent);
-    line-height: 1;
-    text-shadow: var(--glow);
-    transition: color 0.3s;
-  }
-
-  .speed-unit {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: clamp(0.7rem, 3vw, 0.9rem);
-    letter-spacing: 0.2em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-top: 0.2rem;
-  }
-
-  .speed-label {
-    font-size: clamp(0.6rem, 2.5vw, 0.75rem);
-    letter-spacing: 0.3em;
-    color: var(--accent);
-    text-transform: uppercase;
-    margin-top: 0.3rem;
-    opacity: 0.7;
-  }
-
-  /* Status */
-  .status-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-    font-size: 0.85rem;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    text-transform: uppercase;
-  }
-
-  .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--muted);
-    transition: background 0.3s, box-shadow 0.3s;
-  }
-
-  .status-dot.active {
-    background: var(--green);
-    box-shadow: 0 0 10px var(--green);
-    animation: pulse 1.2s infinite;
-  }
-
-  .status-dot.error { background: var(--accent2); }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.8); }
-  }
-
-  /* Metrics cards */
-  .metrics-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .metric-card {
-    background: var(--card);
-    border: 1px solid rgba(0,212,255,0.1);
-    border-radius: 12px;
-    padding: 0.85rem 0.5rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.3s, box-shadow 0.3s;
-  }
-
-  .metric-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .metric-card.active::before { opacity: 1; }
-  .metric-card.active { border-color: rgba(0,212,255,0.3); box-shadow: 0 0 20px rgba(0,212,255,0.05); }
-
-  .metric-icon {
-    font-size: 1.2rem;
-    margin-bottom: 0.3rem;
-  }
-
-  .metric-val {
-    font-family: 'Orbitron', monospace;
-    font-size: clamp(0.9rem, 3.5vw, 1.1rem);
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1.2;
-  }
-
-  .metric-label {
-    font-size: 0.6rem;
-    letter-spacing: 0.15em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-top: 0.2rem;
-  }
-
-  /* Progress bars */
-  .progress-section {
-    background: var(--card);
-    border: 1px solid rgba(0,212,255,0.1);
-    border-radius: 16px;
-    padding: 1.25rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .progress-item {
-    margin-bottom: 1rem;
-  }
-
-  .progress-item:last-child { margin-bottom: 0; }
-
-  .progress-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
-  .progress-name {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .progress-speed {
-    font-family: 'Orbitron', monospace;
-    font-size: 0.85rem;
-    font-weight: 700;
-  }
-
-  .progress-track {
-    height: 6px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 99px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    border-radius: 99px;
-    width: 0%;
-    transition: width 0.2s ease;
-  }
-
-  .dl-fill {
-    background: linear-gradient(90deg, var(--accent3), var(--accent));
-    box-shadow: 0 0 10px rgba(0,212,255,0.5);
-  }
-
-  .ul-fill {
-    background: linear-gradient(90deg, var(--accent2), #ffb347);
-    box-shadow: 0 0 10px rgba(255,107,53,0.5);
-  }
-
-  /* Button */
-  .btn-wrap { text-align: center; }
-
-  .start-btn {
-    position: relative;
-    font-family: 'Orbitron', monospace;
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--bg);
-    background: linear-gradient(135deg, var(--accent), var(--green));
-    border: none;
-    border-radius: 99px;
-    padding: 1rem 3rem;
-    cursor: pointer;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 0 30px rgba(0,212,255,0.3), 0 4px 20px rgba(0,0,0,0.4);
-    width: 100%;
-    max-width: 280px;
-  }
-
-  .start-btn::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-
-  .start-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 0 40px rgba(0,212,255,0.5), 0 8px 30px rgba(0,0,0,0.5);
-  }
-
-  .start-btn:hover:not(:disabled)::before { opacity: 1; }
-  .start-btn:active:not(:disabled) { transform: translateY(0); }
-
-  .start-btn:disabled {
-    background: linear-gradient(135deg, var(--accent3), #5b2fc9);
-    cursor: not-allowed;
-    opacity: 0.8;
-    color: rgba(255,255,255,0.8);
-  }
-
-  /* Result badge */
-  .result-badge {
-    display: none;
-    text-align: center;
-    margin-top: 1.25rem;
-    padding: 1rem;
-    background: rgba(0,255,157,0.05);
-    border: 1px solid rgba(0,255,157,0.2);
-    border-radius: 12px;
-  }
-
-  .result-badge.show { display: block; }
-
-  .result-rating {
-    font-family: 'Orbitron', monospace;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--green);
-    text-shadow: var(--glow2);
-  }
-
-  .result-desc {
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin-top: 0.3rem;
-    letter-spacing: 0.05em;
-  }
-
-  /* Footer */
-  footer {
-    position: relative;
-    z-index: 10;
-    text-align: center;
-    padding: 1.25rem 1rem;
-    border-top: 1px solid rgba(0,212,255,0.08);
-    font-size: 0.75rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-  }
-
-  footer span { color: var(--accent); }
-
-  /* Server info card */
-  .server-card {
-    background: var(--card);
-    border: 1px solid rgba(0,212,255,0.12);
-    border-radius: 16px;
-    padding: 1rem 1.1rem;
-    margin-bottom: 1.5rem;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .server-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent3), var(--accent), var(--green));
-  }
-
-  .server-card-title {
-    font-size: 0.65rem;
-    letter-spacing: 0.25em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-
-  .server-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.6rem 1rem;
-  }
-
-  .server-field { display: flex; flex-direction: column; gap: 0.15rem; }
-
-  .server-field-label {
-    font-size: 0.58rem;
-    letter-spacing: 0.2em;
-    color: var(--muted);
-    text-transform: uppercase;
-  }
-
-  .server-field-val {
-    font-family: 'Orbitron', monospace;
-    font-size: clamp(0.65rem, 2.5vw, 0.78rem);
-    font-weight: 700;
-    color: var(--accent);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .server-field-val.green { color: var(--green); }
-  .server-field-val.orange { color: var(--accent2); }
-
-  .server-status-row {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-top: 0.75rem;
-    padding-top: 0.65rem;
-    border-top: 1px solid rgba(0,212,255,0.07);
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-  }
-
-  .server-online-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 6px var(--green);
-    flex-shrink: 0;
-  }
-
-  @media (min-width: 480px) {
-    main { padding: 2rem 1.5rem 3rem; }
-    .metrics-grid { gap: 1rem; }
-    .metric-card { padding: 1rem 0.75rem; }
-  }
-
-  /* Scanning animation overlay */
-  .scan-line {
-    position: fixed;
-    top: -100%;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    opacity: 0;
-    pointer-events: none;
-    z-index: 100;
-  }
-
-  .scan-line.active {
-    opacity: 0.6;
-    animation: scanDown 2s linear infinite;
-  }
-
-  @keyframes scanDown {
-    0% { top: 0; }
-    100% { top: 100%; }
-  }
+:root {
+  --bg:#0f1117; --bg2:#171b26; --card:#1e2336;
+  --border:rgba(255,255,255,0.07); --text:#e8eaf6; --muted:#7b82a8;
+  --accent:#00e5ff; --accent2:#7c4dff;
+  --ping:#69ff47; --up:#ff6d00; --down:#00e5ff;
+  --track:rgba(255,255,255,0.06);
+  --shadow:0 8px 40px rgba(0,0,0,0.45);
+  --r:20px; --ease:.35s cubic-bezier(.4,0,.2,1);
+}
+[data-theme="light"]{
+  --bg:#f0f2fa; --bg2:#e4e8f5; --card:#fff;
+  --border:rgba(0,0,0,0.08); --text:#1a1d2e; --muted:#6b74a0;
+  --accent:#0076d4; --accent2:#6200ea;
+  --ping:#2e7d32; --up:#e65100; --down:#0076d4;
+  --track:rgba(0,0,0,0.07); --shadow:0 8px 40px rgba(0,0,0,0.12);
+}
+[data-theme="oled"]{
+  --bg:#000; --bg2:#000; --card:#0a0a0a;
+  --border:rgba(255,255,255,0.05); --text:#fff; --muted:#606060;
+  --accent:#00e5ff; --accent2:#7c4dff;
+  --ping:#69ff47; --up:#ff6d00; --down:#00e5ff;
+  --track:rgba(255,255,255,0.04); --shadow:0 8px 40px rgba(0,229,255,0.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg);color:var(--text);
+  font-family:'Rajdhani',sans-serif;transition:background var(--ease),color var(--ease)}
+body{display:flex;flex-direction:column;min-height:100vh}
+
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;background:var(--bg2);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;transition:background var(--ease)}
+.logo{font-family:'Space Mono',monospace;font-size:1rem;font-weight:700;
+  letter-spacing:-.02em;color:var(--accent)}
+.logo span{color:var(--text);font-weight:400}
+.theme-toggle{display:flex;gap:5px;background:var(--track);
+  border:1px solid var(--border);border-radius:50px;padding:4px}
+.tbtn{border:none;background:transparent;color:var(--muted);
+  font-family:'Rajdhani',sans-serif;font-size:.72rem;font-weight:700;
+  letter-spacing:.05em;cursor:pointer;padding:5px 10px;border-radius:50px;transition:.2s}
+.tbtn.active{background:var(--accent);color:#000}
+
+main{flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:28px 16px 36px;gap:22px}
+
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.gauge-container{position:relative;width:230px;height:230px}
+.gauge-svg{width:100%;height:100%;transform:rotate(-90deg);transform-origin:center}
+.g-track{fill:none;stroke:var(--track);stroke-width:13}
+.g-fill{fill:none;stroke:var(--accent);stroke-width:13;stroke-linecap:round;
+  stroke-dasharray:565.49;stroke-dashoffset:565.49;
+  transition:stroke-dashoffset .07s linear,stroke .35s;
+  filter:drop-shadow(0 0 8px var(--accent))}
+.gauge-center{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px}
+.spd-val{font-family:'Space Mono',monospace;font-size:2.9rem;font-weight:700;
+  line-height:1;color:var(--text);letter-spacing:-.03em}
+.spd-unit{font-size:.82rem;font-weight:600;color:var(--muted);letter-spacing:.1em}
+.spd-lbl{font-size:.68rem;font-weight:700;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--accent);margin-top:2px}
+
+.status{font-family:'Space Mono',monospace;font-size:.72rem;padding:6px 18px;
+  border-radius:50px;border:1px solid var(--border);background:var(--card);
+  color:var(--muted);letter-spacing:.08em;transition:all .3s;
+  min-width:180px;text-align:center}
+.status.live{border-color:var(--accent);color:var(--accent);
+  box-shadow:0 0 16px rgba(0,229,255,.15)}
+.status.done{border-color:var(--ping);color:var(--ping)}
+.status.err{border-color:#ff5252;color:#ff5252}
+
+.prog-wrap{width:100%;max-width:420px}
+.prog-bg{height:4px;background:var(--track);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent2),var(--accent));
+  border-radius:4px;transition:width .25s linear}
+
+.start-btn{width:100%;max-width:340px;padding:17px;border:none;border-radius:var(--r);
+  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;
+  font-family:'Rajdhani',sans-serif;font-size:1.15rem;font-weight:700;
+  letter-spacing:.1em;cursor:pointer;box-shadow:0 4px 24px rgba(0,229,255,.22);
+  transition:transform .2s,opacity .2s;position:relative;overflow:hidden}
+.start-btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.12);
+  opacity:0;transition:opacity .2s}
+.start-btn:hover:not(:disabled)::after{opacity:1}
+.start-btn:active:not(:disabled){transform:scale(.97)}
+.start-btn:disabled{opacity:.55;cursor:not-allowed}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+  width:100%;max-width:420px}
+.scard{background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  box-shadow:var(--shadow);transition:background var(--ease),border-color var(--ease)}
+.sicon{width:32px;height:32px;border-radius:10px;display:flex;
+  align-items:center;justify-content:center;font-size:1.1rem}
+.scard.dl .sicon{background:rgba(0,229,255,.12)}
+.scard.ul .sicon{background:rgba(255,109,0,.12)}
+.scard.pg .sicon{background:rgba(105,255,71,.12)}
+.sval{font-family:'Space Mono',monospace;font-size:1.3rem;font-weight:700;line-height:1}
+.scard.dl .sval{color:var(--down)}.scard.ul .sval{color:var(--up)}.scard.pg .sval{color:var(--ping)}
+.sunit{font-size:.62rem;font-weight:600;color:var(--muted);letter-spacing:.08em}
+.slbl{font-size:.7rem;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
+.server-info{font-size:.7rem;color:var(--muted);text-align:center;
+  font-family:'Space Mono',monospace;letter-spacing:.03em;max-width:380px}
+
+.hist{width:100%;max-width:420px}
+.hist-title{font-size:.72rem;font-weight:700;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-left:4px}
+.hist-list{display:flex;flex-direction:column;gap:8px}
+.hitem{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:11px 15px;display:flex;justify-content:space-between;align-items:center;
+  font-size:.8rem;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.htime{color:var(--muted);font-family:'Space Mono',monospace;font-size:.68rem}
+.hspeeds{display:flex;gap:10px}
+.hdl{color:var(--down);font-family:'Space Mono',monospace;font-weight:700}
+.hul{color:var(--up);font-family:'Space Mono',monospace;font-weight:700}
+.hpg{color:var(--ping);font-family:'Space Mono',monospace;font-weight:700}
+
+footer{text-align:center;padding:20px 16px;font-size:.76rem;color:var(--muted);
+  border-top:1px solid var(--border);letter-spacing:.03em;background:var(--bg2);
+  transition:background var(--ease),border-color var(--ease)}
+footer strong{color:var(--text)}
+
+@keyframes pulse{0%,100%{filter:drop-shadow(0 0 6px var(--accent))}
+  50%{filter:drop-shadow(0 0 18px var(--accent))}}
+.testing .g-fill{animation:pulse 1.2s ease-in-out infinite}
+
+@media(min-width:480px){
+  .gauge-container{width:260px;height:260px}
+  .spd-val{font-size:3.4rem}
+}
 </style>
 </head>
 <body>
 
-<div class="scan-line" id="scanLine"></div>
-
 <header>
-  <div class="logo">⚡ SpeedPulse</div>
-  <div class="logo-sub">Network Diagnostics</div>
+  <div class="logo">SPEED<span>test</span></div>
+  <div class="theme-toggle">
+    <button class="tbtn" onclick="setTheme('light')">LIGHT</button>
+    <button class="tbtn active" onclick="setTheme('dark')">DARK</button>
+    <button class="tbtn" onclick="setTheme('oled')">OLED</button>
+  </div>
 </header>
 
 <main>
-  <!-- Gauge -->
-  <div class="gauge-section">
-    <div class="gauge-wrapper">
-      <svg class="gauge-svg" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#7c3aed"/>
-            <stop offset="50%" stop-color="#00d4ff"/>
-            <stop offset="100%" stop-color="#00ff9d"/>
-          </linearGradient>
-        </defs>
-        <circle class="gauge-track" cx="90" cy="90" r="75" stroke-dasharray="471" stroke-dashoffset="118"/>
-        <circle class="gauge-fill" id="gaugeFill" cx="90" cy="90" r="75" stroke-dasharray="471" stroke-dashoffset="471"/>
+  <div class="gauge-wrap">
+    <div class="gauge-container" id="gc">
+      <svg class="gauge-svg" viewBox="0 0 200 200">
+        <circle class="g-track" cx="100" cy="100" r="90"/>
+        <circle class="g-fill"  cx="100" cy="100" r="90" id="gf"/>
       </svg>
       <div class="gauge-center">
-        <div class="speed-value" id="speedValue">0.0</div>
-        <div class="speed-unit">Mbps</div>
-        <div class="speed-label" id="speedLabel">READY</div>
+        <div class="spd-val"  id="sv">—</div>
+        <div class="spd-unit" id="su">Mbps</div>
+        <div class="spd-lbl"  id="sl">READY</div>
       </div>
+    </div>
+    <div class="status" id="sb">PRESS START TO TEST</div>
+  </div>
+
+  <div class="prog-wrap">
+    <div class="prog-bg"><div class="prog-fill" id="pf"></div></div>
+  </div>
+
+  <button class="start-btn" id="btn" onclick="runTest()">▶ START TEST</button>
+
+  <div class="server-info" id="si"></div>
+
+  <div class="stats">
+    <div class="scard dl">
+      <div class="sicon">↓</div>
+      <div class="sval" id="dlv">—</div>
+      <div class="sunit">Mbps</div>
+      <div class="slbl">Download</div>
+    </div>
+    <div class="scard ul">
+      <div class="sicon">↑</div>
+      <div class="sval" id="ulv">—</div>
+      <div class="sunit">Mbps</div>
+      <div class="slbl">Upload</div>
+    </div>
+    <div class="scard pg">
+      <div class="sicon">◎</div>
+      <div class="sval" id="pgv">—</div>
+      <div class="sunit">ms</div>
+      <div class="slbl">Ping</div>
     </div>
   </div>
 
-  <!-- Status -->
-  <div class="status-bar">
-    <div class="status-dot" id="statusDot"></div>
-    <span id="statusText">PRESS START TO BEGIN</span>
-  </div>
-
-  <!-- Metrics -->
-  <div class="metrics-grid">
-    <div class="metric-card" id="card-ping">
-      <div class="metric-icon">📡</div>
-      <div class="metric-val" id="pingVal">—</div>
-      <div class="metric-label">Ping (ms)</div>
-    </div>
-    <div class="metric-card" id="card-jitter">
-      <div class="metric-icon">〰️</div>
-      <div class="metric-val" id="jitterVal">—</div>
-      <div class="metric-label">Jitter (ms)</div>
-    </div>
-    <div class="metric-card" id="card-loss">
-      <div class="metric-icon">📶</div>
-      <div class="metric-val" id="lossVal">—</div>
-      <div class="metric-label">Packet Loss</div>
-    </div>
-  </div>
-
-  <!-- Server Info -->
-  <div class="server-card">
-    <div class="server-card-title">🌐 Test Server</div>
-    <div class="server-grid">
-      <div class="server-field">
-        <div class="server-field-label">Provider</div>
-        <div class="server-field-val green">Cloudflare, Inc.</div>
-      </div>
-      <div class="server-field">
-        <div class="server-field-label">Host</div>
-        <div class="server-field-val">speed.cloudflare.com</div>
-      </div>
-      <div class="server-field">
-        <div class="server-field-label">Protocol</div>
-        <div class="server-field-val orange">HTTPS / HTTP2</div>
-      </div>
-      <div class="server-field">
-        <div class="server-field-label">Network</div>
-        <div class="server-field-val">AS13335 (Anycast)</div>
-      </div>
-      <div class="server-field">
-        <div class="server-field-label">Ping Endpoint</div>
-        <div class="server-field-val">cloudflare.com/cdn-cgi</div>
-      </div>
-      <div class="server-field">
-        <div class="server-field-label">Location</div>
-        <div class="server-field-val" id="serverLocation">Detecting…</div>
-      </div>
-    </div>
-    <div class="server-status-row">
-      <div class="server-online-dot"></div>
-      Server Online · Global CDN · 300+ PoPs Worldwide
-    </div>
-  </div>
-
-  <!-- ISP Info -->
-  <div class="server-card" id="ispCard">
-    <div class="server-card-title">🏢 Your ISP &amp; Connection</div>
-    <div class="server-grid">
-      <div class="server-field">
-        <div class="server-field-label">Public IP</div>
-        <div class="server-field-val orange" id="isp-ip">Detecting…</div>
-      </div>
-      <div class="server-field">
-        <div class="server-field-label">IP Version</div>
-        <div class="server-field-val" id="isp-ipver">—</div>
-      </div>
-      <div class="server-field">
-        <div class="server-field-label">Country</div>
-        <div class="server-field-val green" id="isp-country">—</div>
-      </div>
-      <div class="server-field">
-        <div class="server-field-label">Nearest City</div>
-        <div class="server-field-val" id="isp-city">—</div>
-      </div>
-      <div class="server-field">
-        <div class="server-field-label">TLS Version</div>
-        <div class="server-field-val" id="isp-tls">—</div>
-      </div>
-      <div class="server-field">
-        <div class="server-field-label">HTTP Version</div>
-        <div class="server-field-val" id="isp-http">—</div>
-      </div>
-    </div>
-    <div class="server-status-row">
-      <div class="server-online-dot" style="background:#7c3aed;box-shadow:0 0 6px #7c3aed"></div>
-      <span id="isp-footer">Fetching connection info…</span>
-    </div>
-  </div>
-
-  <!-- Progress bars -->
-  <div class="progress-section">
-    <div class="progress-item">
-      <div class="progress-header">
-        <div class="progress-name">⬇ Download</div>
-        <div class="progress-speed" id="dlSpeed" style="color:#00d4ff">— Mbps</div>
-      </div>
-      <div class="progress-track">
-        <div class="progress-fill dl-fill" id="dlBar"></div>
-      </div>
-    </div>
-    <div class="progress-item">
-      <div class="progress-header">
-        <div class="progress-name">⬆ Upload</div>
-        <div class="progress-speed" id="ulSpeed" style="color:#ff6b35">— Mbps</div>
-      </div>
-      <div class="progress-track">
-        <div class="progress-fill ul-fill" id="ulBar"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Button -->
-  <div class="btn-wrap">
-    <button class="start-btn" id="startBtn" onclick="startTest()">START TEST</button>
-  </div>
-
-  <!-- Result -->
-  <div class="result-badge" id="resultBadge">
-    <div class="result-rating" id="resultRating"></div>
-    <div class="result-desc" id="resultDesc"></div>
+  <div class="hist" id="hist" style="display:none">
+    <div class="hist-title">Recent Tests</div>
+    <div class="hist-list" id="hl"></div>
   </div>
 </main>
 
-<footer>
-  © <span id="footerYear"></span> Manik Roy. All Rights Reserved.
-</footer>
+<footer>© <strong>Manik Roy</strong> <span id="yr"></span>. All Rights Reserved.</footer>
 
 <script>
-  // Auto-update year
-  document.getElementById('footerYear').textContent = new Date().getFullYear();
+'use strict';
 
-  // Detect Cloudflare edge location + client IP
-  (async function detectLocation() {
-    try {
-      const res = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache: 'no-store' });
-      const text = await res.text();
-      const loc = text.match(/loc=([A-Z]+)/)?.[1];
-      const colo = text.match(/colo=([A-Z]+)/)?.[1];
-      const clientIp = text.match(/ip=([^\n]+)/)?.[1]?.trim();
-      const el = document.getElementById('serverLocation');
-      if (colo && loc) {
-        el.textContent = `${colo} (${loc})`;
-        el.classList.add('green');
-      } else if (loc) {
-        el.textContent = loc;
-      }
-      // Seed the IP field early if ipapi is slow
-      if (clientIp) {
-        document.getElementById('ispIp').textContent = clientIp;
-        document.getElementById('ispIpVer').textContent = clientIp.includes(':') ? 'IPv6' : 'IPv4';
-      }
-    } catch {
-      document.getElementById('serverLocation').textContent = 'Global Edge';
-    }
+/* ── year ── */
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+/* ── theme ── */
+function setTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.querySelectorAll('.tbtn').forEach(b =>
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === t));
+  localStorage.setItem('st_theme', t);
+}
+setTheme(localStorage.getItem('st_theme') || 'dark');
+
+/* ── element refs ── */
+const gf  = document.getElementById('gf');
+const sv  = document.getElementById('sv');
+const su  = document.getElementById('su');
+const sl  = document.getElementById('sl');
+const sb  = document.getElementById('sb');
+const btn = document.getElementById('btn');
+const pf  = document.getElementById('pf');
+const gc  = document.getElementById('gc');
+const si  = document.getElementById('si');
+const dlv = document.getElementById('dlv');
+const ulv = document.getElementById('ulv');
+const pgv = document.getElementById('pgv');
+
+/* ── gauge ── */
+const CIRC = 565.49; // 2π × 90
+
+function setGauge(v, max) {
+  gf.style.strokeDashoffset = CIRC * (1 - Math.min(v / (max || 200), 1));
+}
+setGauge(0);
+
+/* smooth needle */
+let _cur = 0, _tgt = 0, _max = 200, _raf = null;
+
+function needleTo(v, max) {
+  _tgt = Math.max(0, v);
+  if (max !== undefined) _max = Math.max(max, 1);
+  if (_raf) return;
+  (function tick() {
+    const d = _tgt - _cur;
+    _cur += d * 0.18;
+    setGauge(_cur, _max);
+    sv.textContent = _cur < 10 ? _cur.toFixed(2) : _cur.toFixed(1);
+    if (Math.abs(d) < 0.04) { _cur = _tgt; setGauge(_cur, _max); _raf = null; }
+    else _raf = requestAnimationFrame(tick);
   })();
+}
 
-  // ── ISP Detection: 100% from Cloudflare trace (no external APIs, no CORS issues) ──
-  (async function detectISP() {
-    const set = (id, val) => {
-      const el = document.getElementById(id);
-      if (el && val) el.textContent = val;
-    };
+function needleReset() {
+  if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+  _cur = 0; _tgt = 0;
+  setGauge(0); sv.textContent = '0';
+}
 
-    // Built-in country code → name map
-    const COUNTRIES = {
-      AF:'Afghanistan',AL:'Albania',DZ:'Algeria',AR:'Argentina',AM:'Armenia',AU:'Australia',AT:'Austria',AZ:'Azerbaijan',
-      BH:'Bahrain',BD:'Bangladesh',BY:'Belarus',BE:'Belgium',BJ:'Benin',BT:'Bhutan',BO:'Bolivia',BA:'Bosnia',BW:'Botswana',
-      BR:'Brazil',BN:'Brunei',BG:'Bulgaria',BF:'Burkina Faso',KH:'Cambodia',CM:'Cameroon',CA:'Canada',CL:'Chile',
-      CN:'China',CO:'Colombia',CD:'Congo (DRC)',CG:'Congo',CR:'Costa Rica',HR:'Croatia',CU:'Cuba',CY:'Cyprus',
-      CZ:'Czech Republic',DK:'Denmark',DO:'Dominican Republic',EC:'Ecuador',EG:'Egypt',SV:'El Salvador',
-      ET:'Ethiopia',FI:'Finland',FR:'France',GE:'Georgia',DE:'Germany',GH:'Ghana',GR:'Greece',GT:'Guatemala',
-      HN:'Honduras',HK:'Hong Kong',HU:'Hungary',IN:'India',ID:'Indonesia',IR:'Iran',IQ:'Iraq',IE:'Ireland',
-      IL:'Israel',IT:'Italy',JM:'Jamaica',JP:'Japan',JO:'Jordan',KZ:'Kazakhstan',KE:'Kenya',KW:'Kuwait',
-      KG:'Kyrgyzstan',LA:'Laos',LB:'Lebanon',LY:'Libya',LT:'Lithuania',LU:'Luxembourg',MO:'Macau',
-      MY:'Malaysia',MV:'Maldives',ML:'Mali',MT:'Malta',MX:'Mexico',MD:'Moldova',MN:'Mongolia',MA:'Morocco',
-      MZ:'Mozambique',MM:'Myanmar',NA:'Namibia',NP:'Nepal',NL:'Netherlands',NZ:'New Zealand',NI:'Nicaragua',
-      NG:'Nigeria',NO:'Norway',OM:'Oman',PK:'Pakistan',PS:'Palestine',PA:'Panama',PY:'Paraguay',PE:'Peru',
-      PH:'Philippines',PL:'Poland',PT:'Portugal',PR:'Puerto Rico',QA:'Qatar',RO:'Romania',RU:'Russia',
-      RW:'Rwanda',SA:'Saudi Arabia',SN:'Senegal',RS:'Serbia',SL:'Sierra Leone',SG:'Singapore',SK:'Slovakia',
-      ZA:'South Africa',KR:'South Korea',SS:'South Sudan',ES:'Spain',LK:'Sri Lanka',SD:'Sudan',SE:'Sweden',
-      CH:'Switzerland',SY:'Syria',TW:'Taiwan',TZ:'Tanzania',TH:'Thailand',TN:'Tunisia',TR:'Turkey',
-      TM:'Turkmenistan',UG:'Uganda',UA:'Ukraine',AE:'UAE',GB:'United Kingdom',US:'United States',
-      UY:'Uruguay',UZ:'Uzbekistan',VE:'Venezuela',VN:'Vietnam',YE:'Yemen',ZM:'Zambia',ZW:'Zimbabwe'
-    };
+/* ── history ── */
+const histData = [];
+function addHistory(dl, ul, ping) {
+  const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  histData.unshift({ dl, ul, ping, t });
+  if (histData.length > 5) histData.pop();
+  document.getElementById('hist').style.display = 'block';
+  document.getElementById('hl').innerHTML = histData.map(h => `
+    <div class="hitem">
+      <span class="htime">${h.t}</span>
+      <div class="hspeeds">
+        <span class="hdl">↓${h.dl}</span>
+        <span class="hul">↑${h.ul}</span>
+        <span class="hpg">◎${h.ping}ms</span>
+      </div>
+    </div>`).join('');
+}
 
-    // Cloudflare PoP → City map
-    const POPS = {
-      AMD:'Ahmedabad',ARN:'Stockholm',ATL:'Atlanta',AMS:'Amsterdam',BLR:'Bengaluru',BOM:'Mumbai',
-      BOS:'Boston',BRU:'Brussels',BUE:'Buenos Aires',CAI:'Cairo',CDG:'Paris',CGK:'Jakarta',
-      CPT:'Cape Town',DAL:'Dallas',DEL:'New Delhi',DEN:'Denver',DFW:'Dallas',DOH:'Doha',
-      DUB:'Dublin',DXB:'Dubai',EZE:'Buenos Aires',FRA:'Frankfurt',GRU:'São Paulo',HKG:'Hong Kong',
-      HYD:'Hyderabad',IAD:'Washington DC',ICN:'Seoul',IST:'Istanbul',JNB:'Johannesburg',
-      KHI:'Karachi',KIX:'Osaka',KUL:'Kuala Lumpur',LAX:'Los Angeles',LHR:'London',
-      LIM:'Lima',MAA:'Chennai',MAD:'Madrid',MAN:'Manchester',MED:'Medina',MEL:'Melbourne',
-      MEX:'Mexico City',MIA:'Miami',MNL:'Manila',MSP:'Minneapolis',MUC:'Munich',NRT:'Tokyo',
-      NYC:'New York',ORD:'Chicago',OTP:'Bucharest',PHL:'Philadelphia',PHX:'Phoenix',
-      PNQ:'Pune',PRG:'Prague',SCL:'Santiago',SEA:'Seattle',SFO:'San Francisco',
-      SIN:'Singapore',SJC:'San Jose',SOF:'Sofia',SYD:'Sydney',TLV:'Tel Aviv',
-      TPE:'Taipei',TUN:'Tunis',VIE:'Vienna',WAW:'Warsaw',YTO:'Toronto',YVR:'Vancouver',
-      ZRH:'Zurich',CCU:'Kolkata',AMD:'Ahmedabad',HYD:'Hyderabad',COK:'Kochi',
-      GAU:'Guwahati',CJB:'Coimbatore',SXR:'Srinagar',LKO:'Lucknow',PAT:'Patna',
-      BBI:'Bhubaneswar',RPR:'Raipur',IXC:'Chandigarh',IXB:'Bagdogra',VNS:'Varanasi'
-    };
+/* ── utils ── */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const toMbps = (bytes, ms) => (bytes * 8) / (ms * 1000);
 
+/* ════════════════════════════════════════════════════════════════════════
+   REAL SPEED TEST  —  speed.cloudflare.com backend
+   ════════════════════════════════════════════════════════════════════════
+
+   Endpoints (public, CORS-open, no auth):
+     GET  /cdn-cgi/trace           — server metadata
+     GET  /__down?bytes=N          — download N bytes of random data
+     POST /__up                    — discard-upload endpoint
+
+   This file must be opened in a real browser with internet access.
+   It will not work inside sandboxed preview environments that block
+   outbound network requests (like Claude's artifact preview).
+   ════════════════════════════════════════════════════════════════════════ */
+
+const CF = 'https://speed.cloudflare.com';
+
+// Payload ladder: 1 KB warmup, then 100 KB, 1 MB, 10 MB
+const DL_BYTES = [1_000, 100_000, 1_000_000, 10_000_000];
+const UL_BYTES = 1_000_000; // 1 MB per round
+const UL_REPS  = 4;
+
+let ctrl = null; // AbortController
+
+/* ── server metadata ── */
+async function fetchMeta() {
+  try {
+    const r = await fetch(`${CF}/cdn-cgi/trace`, { cache: 'no-store', signal: ctrl.signal });
+    const txt = await r.text();
+    const kv = {};
+    txt.trim().split('\n').forEach(l => { const [k, v] = l.split('='); kv[k] = v; });
+    return kv;
+  } catch { return null; }
+}
+
+/* ── ping — 10 samples to /__down?bytes=0 ── */
+async function measurePing() {
+  const times = [];
+  for (let i = 0; i < 10; i++) {
+    if (ctrl.signal.aborted) break;
     try {
-      const r = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache: 'no-store' });
-      const txt = await r.text();
-
-      // Parse all key=value pairs from trace
-      const cf = {};
-      txt.split('\n').forEach(line => {
-        const eq = line.indexOf('=');
-        if (eq > -1) cf[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
-      });
-
-      const ip      = cf['ip']      || '—';
-      const loc     = cf['loc']     || '';
-      const colo    = cf['colo']    || '';
-      const warp    = cf['warp']    || 'off';
-      const gateway = cf['gateway'] || '';
-      const sliver  = cf['sliver']  || '';
-      const fl      = cf['fl']      || '';     // flight/server ID e.g. "123f456"
-      const http    = cf['http']    || '';     // HTTP version
-      const tls     = cf['tls']     || '';     // TLS version
-      const uag     = cf['uag']     || '';     // user agent
-
-      // Derive values
-      const isIPv6     = ip.includes(':');
-      const countryName = COUNTRIES[loc] || loc || '—';
-      const cityName    = POPS[colo] || colo || '—';
-      const connType    = warp === 'on' ? 'Cloudflare WARP VPN'
-                        : gateway ? 'Cloudflare Gateway'
-                        : sliver  ? 'Cloudflare Sliver'
-                        : 'Direct ISP';
-
-      // Mask IP for privacy display: show first 3 octets + ***
-      const maskedIP = isIPv6
-        ? ip.split(':').slice(0, 4).join(':') + ':****'
-        : ip.split('.').slice(0, 3).join('.') + '.*';
-
-      set('ispIp',      ip);
-      set('ispIpVer',   isIPv6 ? 'IPv6' : 'IPv4');
-      set('ispCountry', loc ? `${countryName} (${loc})` : '—');
-      set('ispCity',    cityName !== '—' ? `Near ${cityName}` : 'Detected via edge');
-      set('ispName',    connType);
-      set('ispAsn',     colo ? `CF-${colo}` : '—');
-
-      // Footer: TLS + HTTP info
-      const footerParts = [];
-      if (tls)  footerParts.push(`TLS: ${tls}`);
-      if (http) footerParts.push(`HTTP: ${http}`);
-      footerParts.push(`Edge: ${colo || '—'}`);
-      document.getElementById('ispFooterNote').textContent = footerParts.join(' · ');
-
-      // Update the ISP card label to reflect data source
-      document.querySelector('.server-card:nth-of-type(2) .server-card-title').textContent = '🏢 Your Connection';
-
-      // Relabel ASN field to "Edge Node" since CF trace doesn't give real ASN
-      const asnLabel = document.querySelector('#ispAsn').closest('.server-field').querySelector('.server-field-label');
-      if (asnLabel) asnLabel.textContent = 'Edge Node';
-
-      // Relabel ISP field to "Conn. Type"
-      const ispLabel = document.querySelector('#ispName').closest('.server-field').querySelector('.server-field-label');
-      if (ispLabel) ispLabel.textContent = 'Conn. Type';
-
-    } catch (e) {
-      set('ispName', 'Trace failed');
-      document.getElementById('ispFooterNote').textContent = 'Could not reach Cloudflare trace — check connection';
-    }
-  })();
-
-  // Gauge arc: full arc = 353deg = 471 circumference * (270/360) ≈ 353.25
-  // Track offset = 471 * (90/360) = 117.75 ≈ 118
-  // Filled arc spans 270deg = 353.25 units
-
-  const GAUGE_MAX = 353.25;
-  const GAUGE_BASE = 471;
-
-  function setGauge(pct) {
-    const offset = GAUGE_BASE - (GAUGE_MAX * Math.min(pct, 1));
-    document.getElementById('gaugeFill').style.strokeDashoffset = offset;
-  }
-
-  function animateValue(id, from, to, decimals = 1, suffix = '') {
-    const el = document.getElementById(id);
-    const duration = 600;
-    const start = performance.now();
-    function update(now) {
-      const t = Math.min((now - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - t, 3);
-      const val = from + (to - from) * ease;
-      el.textContent = val.toFixed(decimals) + suffix;
-      if (t < 1) requestAnimationFrame(update);
-    }
-    requestAnimationFrame(update);
-  }
-
-  let testing = false;
-  let testPhase = 'idle'; // idle, ping, download, upload, done
-
-  async function startTest() {
-    if (testing) return;
-    testing = true;
-    testPhase = 'idle';
-
-    const btn = document.getElementById('startBtn');
-    btn.disabled = true;
-    btn.textContent = 'TESTING...';
-
-    document.getElementById('resultBadge').classList.remove('show');
-    document.getElementById('statusDot').className = 'status-dot active';
-    document.getElementById('scanLine').classList.add('active');
-
-    // Reset
-    document.getElementById('pingVal').textContent = '—';
-    document.getElementById('jitterVal').textContent = '—';
-    document.getElementById('lossVal').textContent = '—';
-    document.getElementById('dlSpeed').textContent = '— Mbps';
-    document.getElementById('ulSpeed').textContent = '— Mbps';
-    document.getElementById('dlBar').style.width = '0%';
-    document.getElementById('ulBar').style.width = '0%';
-    document.getElementById('speedValue').textContent = '0.0';
-    setGauge(0);
-
-    // ── PHASE 1: Ping ──
-    await runPingTest();
-
-    // ── PHASE 2: Download ──
-    await runDownloadTest();
-
-    // ── PHASE 3: Upload ──
-    await runUploadTest();
-
-    // ── Done ──
-    finishTest();
-  }
-
-  async function runPingTest() {
-    setStatus('MEASURING LATENCY...');
-    document.getElementById('speedLabel').textContent = 'PING';
-    document.getElementById('card-ping').classList.add('active');
-
-    const pings = [];
-    for (let i = 0; i < 5; i++) {
       const t0 = performance.now();
-      try {
-        await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache: 'no-store', mode: 'no-cors' });
-      } catch (e) {}
-      const rtt = performance.now() - t0;
-      // Keep realistic: clamp between 5 and 120
-      pings.push(Math.max(5, Math.min(120, rtt)));
-      await sleep(150);
-    }
-
-    const avgPing = pings.reduce((a, b) => a + b, 0) / pings.length;
-    const jitter = Math.max(...pings) - Math.min(...pings);
-
-    animateValue('pingVal', 0, avgPing, 0);
-    animateValue('jitterVal', 0, jitter, 0);
-    document.getElementById('card-ping').classList.remove('active');
-    document.getElementById('card-jitter').classList.add('active');
-    await sleep(400);
-    document.getElementById('card-jitter').classList.remove('active');
+      await fetch(`${CF}/__down?bytes=0&_=${Date.now()}${i}`,
+        { cache: 'no-store', signal: ctrl.signal });
+      times.push(performance.now() - t0);
+    } catch(e) { if (e.name === 'AbortError') throw e; }
+    await sleep(25);
   }
+  if (!times.length) throw new Error('Cannot reach speed.cloudflare.com — check your internet connection.');
+  times.sort((a, b) => a - b);
+  const trimmed = times.slice(0, Math.max(times.length - 3, 1)); // drop top 3
+  return Math.round(trimmed[Math.floor(trimmed.length / 2)]);    // median
+}
 
-  async function runDownloadTest() {
-    setStatus('TESTING DOWNLOAD...');
-    document.getElementById('speedLabel').textContent = 'DOWNLOAD';
-
-    let peak = 0;
-    const total = 4; // chunks
-    for (let i = 0; i < total; i++) {
-      const speed = await measureDownloadChunk(i, total);
-      peak = Math.max(peak, speed);
-      const pct = speed / 300; // max scale 300Mbps
-      document.getElementById('dlBar').style.width = (Math.min(pct, 1) * 100) + '%';
-      document.getElementById('dlSpeed').textContent = speed.toFixed(1) + ' Mbps';
-      document.getElementById('speedValue').textContent = speed.toFixed(1);
-      setGauge(pct);
-      await sleep(50);
-    }
-
-    // Simulate packet loss (random small %)
-    const loss = (Math.random() * 0.8).toFixed(1) + '%';
-    document.getElementById('lossVal').textContent = loss;
-    document.getElementById('card-loss').classList.add('active');
-    await sleep(200);
-    document.getElementById('card-loss').classList.remove('active');
-  }
-
-  async function measureDownloadChunk(idx, total) {
-    // Simulate realistic chunk download with timing
-    const sizes = [500000, 1000000, 2000000, 4000000]; // bytes
-    const size = sizes[Math.min(idx, sizes.length - 1)];
+/* ── XHR with live onprogress ── */
+function xhrGet(url, onChunk) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'arraybuffer';
     const t0 = performance.now();
+    let lastBytes = 0, lastTime = t0;
 
-    try {
-      const url = `https://speed.cloudflare.com/__down?bytes=${size}&r=${Math.random()}`;
-      const res = await fetch(url, { cache: 'no-store' });
-      await res.arrayBuffer();
-      const elapsed = (performance.now() - t0) / 1000;
-      const mbps = (size * 8) / (elapsed * 1_000_000);
-      return Math.min(mbps, 999);
-    } catch {
-      // Fallback: simulate based on fake timing
-      await sleep(300 + Math.random() * 400);
-      const elapsed = (performance.now() - t0) / 1000;
-      const fakeSize = sizes[idx] * (0.7 + Math.random() * 0.6);
-      return Math.min((fakeSize * 8) / (elapsed * 1_000_000), 200);
-    }
-  }
+    xhr.onprogress = e => {
+      const now = performance.now();
+      const db = e.loaded - lastBytes;
+      const dt = now - lastTime;
+      if (dt > 100 && db > 0) {
+        onChunk && onChunk(db, dt, e.loaded, e.total || 0);
+        lastBytes = e.loaded;
+        lastTime  = now;
+      }
+    };
 
-  async function runUploadTest() {
-    setStatus('TESTING UPLOAD...');
-    document.getElementById('speedLabel').textContent = 'UPLOAD';
+    xhr.onload  = () => resolve({ bytes: xhr.response.byteLength, ms: performance.now() - t0 });
+    xhr.onerror = () => reject(new Error('Network request failed'));
+    xhr.onabort = () => reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
+    ctrl.signal.addEventListener('abort', () => xhr.abort(), { once: true });
+    xhr.send();
+  });
+}
 
-    for (let i = 0; i < 3; i++) {
-      const speed = await measureUploadChunk(i);
-      const pct = speed / 200;
-      document.getElementById('ulBar').style.width = (Math.min(pct, 1) * 100) + '%';
-      document.getElementById('ulSpeed').textContent = speed.toFixed(1) + ' Mbps';
-      document.getElementById('speedValue').textContent = speed.toFixed(1);
-      setGauge(pct * 0.7);
-      await sleep(100);
-    }
-    await sleep(200);
-  }
+/* ── download ── */
+async function measureDownload(onLive) {
+  const results = [];
+  let gmax = 10;
 
-  async function measureUploadChunk(idx) {
-    const sizes = [200000, 500000, 1000000];
-    const size = sizes[idx];
-    const data = new Uint8Array(size).fill(65);
-    const blob = new Blob([data]);
-    const t0 = performance.now();
+  for (let i = 0; i < DL_BYTES.length; i++) {
+    const isWarmup = (i === 0);
+    const n = DL_BYTES[i];
+    if (!isWarmup)
+      sb.textContent = `DOWNLOADING ${n >= 1e6 ? (n/1e6).toFixed(0)+'MB' : (n/1e3).toFixed(0)+'KB'}… (${i}/${DL_BYTES.length - 1})`;
 
-    try {
-      await fetch('https://speed.cloudflare.com/__up', {
-        method: 'POST',
-        body: blob,
-        cache: 'no-store'
+    const { bytes, ms } = await xhrGet(`${CF}/__down?bytes=${n}&_=${Date.now()}`,
+      (db, dt) => {
+        if (!isWarmup) {
+          const live = toMbps(db, dt);
+          gmax = Math.max(gmax, live * 1.4);
+          onLive(live, gmax);
+        }
       });
-      const elapsed = (performance.now() - t0) / 1000;
-      return Math.min((size * 8) / (elapsed * 1_000_000), 999);
-    } catch {
-      await sleep(300 + Math.random() * 300);
-      const elapsed = (performance.now() - t0) / 1000;
-      const fakeSize = sizes[idx] * (0.5 + Math.random() * 0.5);
-      return Math.min((fakeSize * 8) / (elapsed * 1_000_000), 150);
+
+    if (!isWarmup && bytes > 0 && ms > 50) {
+      const mbps = toMbps(bytes, ms);
+      results.push(mbps);
+      gmax = Math.max(gmax, mbps * 1.3);
+      onLive(mbps, gmax);
     }
+    await sleep(60);
   }
 
-  function finishTest() {
-    const dlText = document.getElementById('dlSpeed').textContent;
-    const dl = parseFloat(dlText) || 0;
+  if (!results.length) throw new Error('Download measurement failed — no data received from speed.cloudflare.com');
 
-    let rating, desc;
-    if (dl >= 100) { rating = '🚀 BLAZING FAST'; desc = 'Excellent for 4K streaming, gaming & large transfers'; }
-    else if (dl >= 50) { rating = '⚡ VERY FAST'; desc = 'Great for HD streaming and video calls'; }
-    else if (dl >= 25) { rating = '✅ GOOD'; desc = 'Suitable for most daily online activities'; }
-    else if (dl >= 10) { rating = '🔶 MODERATE'; desc = 'Works for browsing and SD streaming'; }
-    else { rating = '🐢 SLOW'; desc = 'May struggle with video calls or HD content'; }
+  // Weighted average: small file = TCP still ramping, large file = saturated link
+  if (results.length === 1) return results[0];
+  if (results.length === 2) return results[0] * 0.3 + results[1] * 0.7;
+  return results[0] * 0.10 + results[1] * 0.30 + results[2] * 0.60;
+}
 
-    document.getElementById('speedLabel').textContent = 'COMPLETE';
-    setStatus('TEST COMPLETE');
-    document.getElementById('statusDot').classList.remove('active');
-    document.getElementById('scanLine').classList.remove('active');
-    document.getElementById('resultRating').textContent = rating;
-    document.getElementById('resultDesc').textContent = desc;
-    document.getElementById('resultBadge').classList.add('show');
+/* ── upload ── */
+async function measureUpload(dlMbps, onLive) {
+  const data = new Uint8Array(UL_BYTES);
+  crypto.getRandomValues(data);
+  let gmax = Math.max(dlMbps * 0.6, 5);
+  const speeds = [];
 
-    const btn = document.getElementById('startBtn');
-    btn.disabled = false;
-    btn.textContent = 'RUN AGAIN';
-    testing = false;
+  for (let i = 0; i < UL_REPS; i++) {
+    if (ctrl.signal.aborted) break;
+    sb.textContent = `UPLOADING… (${i + 1}/${UL_REPS})`;
+    try {
+      const t0 = performance.now();
+      const r = await fetch(`${CF}/__up?_=${Date.now()}`, {
+        method: 'POST',
+        body: data.buffer,
+        headers: { 'Content-Type': 'application/octet-stream' },
+        cache: 'no-store',
+        signal: ctrl.signal
+      });
+      await r.arrayBuffer(); // drain response to capture full round-trip
+      const ms  = performance.now() - t0;
+      const mbps = toMbps(UL_BYTES, ms);
+      speeds.push(mbps);
+      gmax = Math.max(gmax, mbps * 1.4);
+      onLive(speeds.reduce((a, b) => a + b) / speeds.length, gmax);
+    } catch(e) { if (e.name === 'AbortError') throw e; }
+    await sleep(60);
   }
 
-  function setStatus(text) {
-    document.getElementById('statusText').textContent = text;
-  }
+  if (!speeds.length) throw new Error('Upload measurement failed');
+  speeds.sort((a, b) => a - b);
+  if (speeds.length > 2) speeds.pop(); // drop highest outlier
+  return speeds.reduce((a, b) => a + b) / speeds.length;
+}
 
-  function sleep(ms) {
-    return new Promise(r => setTimeout(r, ms));
+/* ════════════════════════════════════════════════════════════════════════
+   MAIN
+   ════════════════════════════════════════════════════════════════════════ */
+async function runTest() {
+  if (btn.disabled) return;
+  if (ctrl) ctrl.abort();
+  ctrl = new AbortController();
+
+  btn.disabled = true;
+  gc.classList.add('testing');
+  needleReset();
+  gf.style.stroke = 'var(--accent)';
+  sv.textContent = '—'; su.textContent = 'Mbps'; sl.textContent = 'STARTING';
+  sb.textContent = 'CONNECTING…'; sb.className = 'status live';
+  pf.style.width = '3%';
+  dlv.textContent = ulv.textContent = pgv.textContent = '—';
+  si.textContent = '';
+
+  try {
+    /* server info */
+    const meta = await fetchMeta();
+    if (meta && meta.colo) {
+      si.textContent = `${meta.ip || ''} → Cloudflare ${meta.colo} (${meta.loc || ''})`;
+    }
+
+    /* PING */
+    sb.textContent = 'MEASURING PING…'; sl.textContent = 'MS PING'; su.textContent = 'ms';
+    const ping = await measurePing();
+    pgv.textContent = ping;
+    sv.textContent  = ping;
+    sl.textContent  = 'PING';
+    setGauge(ping, 150);
+    sb.textContent  = `PING: ${ping} ms ✓`;
+    pf.style.width  = '15%';
+    await sleep(300);
+
+    /* DOWNLOAD */
+    gf.style.stroke = 'var(--down)';
+    sb.textContent  = 'TESTING DOWNLOAD…';
+    sl.textContent  = 'Mbps DOWN'; su.textContent = 'Mbps';
+    needleReset(); needleTo(0, 50);
+    let finalDL = 0;
+
+    const dl = await measureDownload((mbps, gmax) => {
+      finalDL = mbps;
+      needleTo(mbps, gmax);
+      pf.style.width = (15 + Math.min(finalDL * 0.8, 52)) + '%';
+    });
+
+    finalDL = dl;
+    dlv.textContent = finalDL.toFixed(1);
+    needleTo(finalDL, Math.max(finalDL * 1.3, 10));
+    sb.textContent = `DOWNLOAD: ${finalDL.toFixed(1)} Mbps ✓`;
+    pf.style.width = '68%';
+    await sleep(350);
+
+    /* UPLOAD */
+    gf.style.stroke = 'var(--up)';
+    sl.textContent  = 'Mbps UP';
+    needleReset(); needleTo(0, Math.max(finalDL * 0.7, 10));
+    let finalUL = 0;
+
+    const ul = await measureUpload(finalDL, (mbps, gmax) => {
+      finalUL = mbps;
+      needleTo(mbps, gmax);
+      pf.style.width = (68 + Math.min(finalUL * 0.5, 28)) + '%';
+    });
+
+    finalUL = ul;
+    ulv.textContent = finalUL.toFixed(1);
+    sb.textContent  = `UPLOAD: ${finalUL.toFixed(1)} Mbps ✓`;
+
+    /* DONE */
+    gc.classList.remove('testing');
+    gf.style.stroke = 'var(--accent)';
+    needleTo(finalDL, Math.max(finalDL * 1.3, 10));
+    sl.textContent  = 'Mbps DOWN'; su.textContent = 'Mbps';
+    sb.textContent  = '✓ TEST COMPLETE'; sb.className = 'status done';
+    pf.style.width  = '100%';
+    btn.disabled    = false; btn.textContent = '↺ RUN AGAIN';
+    addHistory(finalDL.toFixed(1), finalUL.toFixed(1), ping);
+
+  } catch(err) {
+    gc.classList.remove('testing');
+    if (err.name !== 'AbortError') {
+      console.error(err);
+      sb.textContent = '⚠ ' + err.message;
+      sb.className   = 'status err';
+      sv.textContent = '—'; sl.textContent = 'ERROR';
+      si.innerHTML   = '<span style="color:#ff5252;font-size:.68rem">▶ Download this HTML file and open it in your browser for real results.</span>';
+    }
+    btn.disabled    = false;
+    btn.textContent = '↺ RETRY';
   }
+}
 </script>
 </body>
 </html>
