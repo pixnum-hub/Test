@@ -738,6 +738,35 @@ footer {
 .footer-copy span { color: var(--gold); font-style: normal; }
 .footer-sub { font-size: 0.52rem; letter-spacing: 3px; color: var(--text3); margin-top: 6px; opacity: 0.6; text-transform: uppercase; }
 
+/* ══════════════════════════════════════════
+   SPECTRUM VIZ CARD
+══════════════════════════════════════════ */
+.viz-card {
+  width: 100%;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+.viz-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.3;
+  pointer-events: none;
+}
+#vizCanvas {
+  width: 100%;
+  height: 100px;
+  display: block;
+}
+
 /* ── SVG base ── */
 svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -778,6 +807,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
   .eq-track { height: 120px; }
   .eq-dB { font-size: 0.55rem; }
   .eq-hz { font-size: 0.55rem; }
+  #vizCanvas { height: 120px; }
 }
 
 /* Tablet (> 600px) */
@@ -852,6 +882,11 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
     <video id="videoEl"></video>
   </div>
 
+  <!-- SPECTRUM VISUALISER -->
+  <div class="viz-card">
+    <canvas id="vizCanvas"></canvas>
+  </div>
+
   <!-- TRACK INFO -->
   <div class="info-card">
     <div class="track-name" id="trackName">— Nothing playing —</div>
@@ -886,8 +921,9 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
       <button class="cbtn m" onclick="nextTrack()" title="Next">
         <svg width="20" height="20" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
       </button>
-      <button class="cbtn s" id="repeatBtn" title="Repeat" onclick="toggleRepeat()">
+      <button class="cbtn s loop-btn" id="loopBtn" title="Loop: Off" onclick="toggleLoop()" style="position:relative;">
         <svg width="16" height="16" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        <span id="loopBadge" style="display:none;position:absolute;top:0;right:0;background:var(--gold);color:#000;font-size:0.45rem;font-weight:700;border-radius:50%;width:14px;height:14px;display:none;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;line-height:1;"></span>
       </button>
     </div>
     <div class="vol-row">
@@ -978,9 +1014,11 @@ function setTheme(t, el) {
 }
 
 /* ═══════════════════════════
-   AUDIO CTX + FILTERS
+   WEB AUDIO ENGINE
 ═══════════════════════════ */
-let actx, analyser, gain, srcNode;
+let actx, analyser, gain;
+let audioSrc = null;
+let videoSrc = null;
 const filters = [];
 
 const BANDS = [
@@ -1005,13 +1043,14 @@ function initActx() {
   if (actx) return;
   actx = new (window.AudioContext || window.webkitAudioContext)();
   analyser = actx.createAnalyser();
-  analyser.fftSize = 512;
+  analyser.fftSize = 2048;
+  analyser.smoothingTimeConstant = 0.82;
   gain = actx.createGain();
   gain.gain.value = parseFloat(document.getElementById('volSlider').value) / 100;
   let prev = gain;
   BANDS.forEach((b, i) => {
     const f = actx.createBiquadFilter();
-    f.type = i === 0 ? 'lowshelf' : i === BANDS.length-1 ? 'highshelf' : 'peaking';
+    f.type = i === 0 ? 'lowshelf' : i === BANDS.length - 1 ? 'highshelf' : 'peaking';
     f.frequency.value = b.f;
     f.gain.value = 0;
     f.Q.value = 1.4;
@@ -1023,14 +1062,18 @@ function initActx() {
   analyser.connect(actx.destination);
 }
 
-// Connect audio element into the Web Audio graph.
-// Must be called ONCE per Audio element (not per track).
-function connectAudioEl() {
-  if (audio._wired) return;
+function wireAudio() {
+  if (audioSrc) return;
   initActx();
-  srcNode = actx.createMediaElementSource(audio);
-  srcNode.connect(gain);
-  audio._wired = true;
+  audioSrc = actx.createMediaElementSource(audio);
+  audioSrc.connect(gain);
+}
+
+function wireVideo() {
+  if (videoSrc) return;
+  initActx();
+  videoSrc = actx.createMediaElementSource(videoEl);
+  videoSrc.connect(gain);
 }
 
 /* ═══════════════════════════
@@ -1048,75 +1091,119 @@ BANDS.forEach((b, i) => {
     </div>
     <div class="eq-hz">${b.l}</div>`;
   eqGrid.appendChild(col);
-  // Prevent vertical page scroll while dragging EQ sliders
   const slider = col.querySelector('.eq-slider');
   slider.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
-  slider.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
+  slider.addEventListener('touchmove',  e => e.stopPropagation(), { passive: true });
 });
 
 function setBand(i, v) {
   const val = parseFloat(v);
-  const lbl = document.getElementById('edB'+i);
+  const lbl = document.getElementById('edB' + i);
   lbl.textContent = (val >= 0 ? '+' : '') + val.toFixed(0);
   lbl.style.color = val > 0 ? 'var(--gold)' : val < 0 ? 'var(--teal)' : 'var(--text3)';
   if (filters[i]) filters[i].gain.value = val;
 }
 function applyPreset(name) {
   const v = PRESETS[name] || PRESETS.flat;
-  v.forEach((val, i) => { document.getElementById('es'+i).value = val; setBand(i, val); });
+  v.forEach((val, i) => { document.getElementById('es' + i).value = val; setBand(i, val); });
 }
 function resetEQ() {
-  BANDS.forEach((_, i) => { document.getElementById('es'+i).value = 0; setBand(i, 0); });
+  BANDS.forEach((_, i) => { document.getElementById('es' + i).value = 0; setBand(i, 0); });
   document.getElementById('eqPre').value = 'flat';
 }
 
 /* ═══════════════════════════
-   PLAYLIST & PLAYBACK
+   ELEMENTS & STATE
 ═══════════════════════════ */
-let playlist = [], curIdx = -1, playing = false, shuffle = false, repeat = false;
-const audio = new Audio();
-audio.volume = 0.8;
-audio.addEventListener('timeupdate', onTime);
-audio.addEventListener('loadedmetadata', () => { document.getElementById('tTotal').textContent = fmt(audio.duration); });
-audio.addEventListener('ended', onEnded);
+const audio   = new Audio();
+const videoEl = document.getElementById('videoEl');
 
+let playlist = [], curIdx = -1, playing = false;
+let shuffle = false, loopOne = false, loopAll = false;
+
+/* ═══════════════════════════
+   AUDIO EVENTS
+═══════════════════════════ */
+audio.volume = 0.8;
+audio.addEventListener('timeupdate',     () => onTime(audio));
+audio.addEventListener('loadedmetadata', () => onMeta(audio));
+audio.addEventListener('ended',          onAudioEnded);
+
+/* ═══════════════════════════
+   VIDEO EVENTS
+═══════════════════════════ */
+videoEl.addEventListener('timeupdate',     () => onTime(videoEl));
+videoEl.addEventListener('loadedmetadata', () => onMeta(videoEl));
+videoEl.addEventListener('ended',          onVideoEnded);
+videoEl.addEventListener('play',  () => { playing = true;  updatePlayUI(); });
+videoEl.addEventListener('pause', () => { playing = false; updatePlayUI(); });
+
+function onMeta(el) {
+  document.getElementById('tTotal').textContent = fmt(el.duration);
+}
+function onTime(el) {
+  if (!el.duration) return;
+  const p   = el.currentTime / el.duration;
+  const pct = (p * 100).toFixed(2) + '%';
+  document.getElementById('progFill').style.width = pct;
+  const thumb = document.getElementById('progThumb');
+  thumb.style.left = pct;
+  thumb.classList.toggle('at-zero', p === 0);
+  document.getElementById('tElapsed').textContent = fmt(el.currentTime);
+}
+
+function onAudioEnded() {
+  if (loopOne) { audio.currentTime = 0; audio.play().catch(() => {}); }
+  else if (loopAll || playlist.length > 1) { nextTrack(); }
+  else { playing = false; updatePlayUI(); }
+}
+function onVideoEnded() {
+  if (loopOne) { videoEl.currentTime = 0; videoEl.play().catch(() => {}); }
+  else if (loopAll || playlist.length > 1) { nextTrack(); }
+  else { playing = false; updatePlayUI(); }
+}
+
+/* ═══════════════════════════
+   LOAD FILES
+═══════════════════════════ */
 function loadFiles(files, type) {
   const wasEmpty = playlist.length === 0;
-  Array.from(files).forEach(f => playlist.push({name: f.name, url: URL.createObjectURL(f), type}));
+  Array.from(files).forEach(f => playlist.push({ name: f.name, url: URL.createObjectURL(f), type }));
   renderPL();
-  // Load first track metadata but don't auto-play (browser autoplay policy).
-  // User must press Play. If a track was already loaded, keep playing.
   if (wasEmpty && curIdx < 0) loadTrack(0, false);
 }
+
 function renderPL() {
   const body = document.getElementById('playlistBody');
   if (!playlist.length) { body.innerHTML = '<div class="pl-empty">No tracks added yet</div>'; return; }
-  body.innerHTML = playlist.map((t,i) => `
-    <div class="pl-item${i===curIdx?' cur':''}" onclick="loadTrack(${i},true)">
-      <span class="pl-idx">${String(i+1).padStart(2,'0')}</span>
-      <span class="pl-type">${t.type==='video'?'VID':'AUD'}</span>
+  body.innerHTML = playlist.map((t, i) => `
+    <div class="pl-item${i === curIdx ? ' cur' : ''}" onclick="loadTrack(${i}, true)">
+      <span class="pl-idx">${String(i + 1).padStart(2, '0')}</span>
+      <span class="pl-type">${t.type === 'video' ? 'VID' : 'AUD'}</span>
       <span class="pl-name">${t.name}</span>
     </div>`).join('');
 }
-// autoPlay=true  → start playing immediately (user clicked playlist item)
-// autoPlay=false → just load metadata, wait for user to press Play
+
+/* ═══════════════════════════
+   LOAD TRACK
+═══════════════════════════ */
 function loadTrack(i, autoPlay) {
-  if (i<0||i>=playlist.length) return;
+  if (i < 0 || i >= playlist.length) return;
   curIdx = i;
   const t = playlist[i];
 
-  // Stop whatever is currently playing
   audio.pause();
-  const videoEl = document.getElementById('videoEl');
   videoEl.pause();
+  videoEl.src = '';
 
-  const clean = t.name.replace(/\.[^.]+$/,'');
+  const clean = t.name.replace(/\.[^.]+$/, '');
   document.getElementById('trackName').textContent = clean;
-  document.getElementById('trackMeta').textContent = t.type==='video' ? '▶ Video' : '♪ Audio';
+  document.getElementById('trackMeta').textContent = t.type === 'video' ? '▶ Video' : '♪ Audio';
   document.getElementById('progFill').style.width = '0%';
   document.getElementById('progThumb').style.left = '0%';
+  document.getElementById('progThumb').classList.add('at-zero');
   document.getElementById('tElapsed').textContent = '0:00';
-  document.getElementById('tTotal').textContent = '0:00';
+  document.getElementById('tTotal').textContent   = '0:00';
 
   const vc = document.getElementById('videoCard');
   const hc = document.getElementById('heroCard');
@@ -1124,10 +1211,15 @@ function loadTrack(i, autoPlay) {
   if (t.type === 'video') {
     vc.style.display = 'block';
     hc.style.display = 'none';
-    videoEl.src = t.url;
+    videoEl.src  = t.url;
+    videoEl.loop = loopOne;
     videoEl.load();
     if (autoPlay) {
-      videoEl.play().then(() => { playing = true; updatePlayUI(); }).catch(()=>{});
+      wireVideo();
+      actx.resume().then(() => {
+        videoEl.play().catch(err => { console.warn('Video play failed:', err); playing = false; updatePlayUI(); });
+      });
+      playing = true;
     } else {
       playing = false;
     }
@@ -1136,49 +1228,63 @@ function loadTrack(i, autoPlay) {
     hc.style.display = '';
     document.getElementById('artImg').classList.remove('show');
     document.getElementById('artIdle').style.display = '';
-    // Set src — canplay event will fire when ready
-    audio.src = t.url;
+    audio.src  = t.url;
+    audio.loop = loopOne;
     audio.load();
     if (autoPlay) {
-      startPlay();
+      playAudioWhenReady();
     } else {
       playing = false;
     }
   }
+
   updatePlayUI();
   renderPL();
 }
 
-function startPlay() {
-  // Must wire the audio element into Web Audio graph exactly once
-  connectAudioEl();
+/* ═══════════════════════════
+   PLAY AUDIO — wait for canplay
+═══════════════════════════ */
+function playAudioWhenReady() {
+  wireAudio();
+  audio.removeEventListener('canplay', _onCanPlay);
+  if (audio.readyState >= 3) {
+    _doPlayAudio();
+  } else {
+    audio.addEventListener('canplay', _onCanPlay, { once: true });
+  }
+}
+function _onCanPlay() { _doPlayAudio(); }
+function _doPlayAudio() {
   actx.resume().then(() => {
-    audio.play().catch(err => {
-      console.warn('Playback failed:', err);
+    audio.play().then(() => {
+      playing = true;
+      updatePlayUI();
+    }).catch(err => {
+      console.warn('Audio play failed:', err);
       playing = false;
       updatePlayUI();
     });
   });
-  playing = true;
-  updatePlayUI();
 }
 
+/* ═══════════════════════════
+   TOGGLE PLAY / PAUSE
+═══════════════════════════ */
 function togglePlay() {
   if (!playlist.length) return;
   if (curIdx < 0) { loadTrack(0, true); return; }
   const t = playlist[curIdx];
   if (t.type === 'video') {
-    const v = document.getElementById('videoEl');
-    if (v.paused) {
-      v.play().then(() => { playing = true; updatePlayUI(); }).catch(()=>{});
+    if (videoEl.paused) {
+      wireVideo();
+      actx.resume().then(() => videoEl.play().catch(() => {}));
     } else {
-      v.pause();
-      playing = false;
-      updatePlayUI();
+      videoEl.pause();
     }
   } else {
     if (audio.paused) {
-      startPlay();
+      playAudioWhenReady();
     } else {
       audio.pause();
       playing = false;
@@ -1186,30 +1292,55 @@ function togglePlay() {
     }
   }
 }
+
 function updatePlayUI() {
   document.getElementById('icPlay').style.display  = playing ? 'none' : '';
   document.getElementById('icPause').style.display = playing ? '' : 'none';
-  const hc = document.getElementById('heroCard');
+  const hc   = document.getElementById('heroCard');
   const disc = document.getElementById('idleDisc');
   hc.classList.toggle('is-playing', playing);
   disc.classList.toggle('spin', playing);
 }
-function prevTrack() { if (playlist.length) loadTrack(curIdx<=0 ? playlist.length-1 : curIdx-1, true); }
-function nextTrack() { if (playlist.length) loadTrack(shuffle ? Math.floor(Math.random()*playlist.length) : (curIdx+1)%playlist.length, true); }
-function onEnded() { repeat ? (audio.currentTime=0, audio.play()) : nextTrack(); }
-function toggleShuffle() { shuffle=!shuffle; document.getElementById('shuffleBtn').classList.toggle('on',shuffle); }
-function toggleRepeat()  { repeat=!repeat;   document.getElementById('repeatBtn').classList.toggle('on',repeat); }
-function onTime() {
-  if (!audio.duration) return;
-  const p = audio.currentTime / audio.duration;
-  const pct = (p * 100).toFixed(2) + '%';
-  document.getElementById('progFill').style.width = pct;
-  const thumb = document.getElementById('progThumb');
-  thumb.style.left = pct;
-  thumb.classList.toggle('at-zero', p === 0);
-  document.getElementById('tElapsed').textContent = fmt(audio.currentTime);
+
+/* ═══════════════════════════
+   NAVIGATION
+═══════════════════════════ */
+function prevTrack() {
+  if (!playlist.length) return;
+  loadTrack(curIdx <= 0 ? playlist.length - 1 : curIdx - 1, true);
 }
-// Seek
+function nextTrack() {
+  if (!playlist.length) return;
+  loadTrack(shuffle ? Math.floor(Math.random() * playlist.length) : (curIdx + 1) % playlist.length, true);
+}
+
+/* ═══════════════════════════
+   SHUFFLE / LOOP
+═══════════════════════════ */
+function toggleShuffle() {
+  shuffle = !shuffle;
+  document.getElementById('shuffleBtn').classList.toggle('on', shuffle);
+}
+
+function toggleLoop() {
+  if (!loopOne && !loopAll)       { loopOne = true;  loopAll = false; }
+  else if (loopOne && !loopAll)   { loopOne = false; loopAll = true;  }
+  else                             { loopOne = false; loopAll = false; }
+
+  audio.loop   = loopOne;
+  videoEl.loop = loopOne;
+
+  const btn   = document.getElementById('loopBtn');
+  const badge = document.getElementById('loopBadge');
+  btn.classList.toggle('on', loopOne || loopAll);
+  btn.title        = loopOne ? 'Loop: One' : loopAll ? 'Loop: All' : 'Loop: Off';
+  badge.textContent  = loopOne ? '1' : loopAll ? '∞' : '';
+  badge.style.display = (loopOne || loopAll) ? '' : 'none';
+}
+
+/* ═══════════════════════════
+   SEEK
+═══════════════════════════ */
 const progBar = document.getElementById('progBar');
 function getSeekX(e) {
   const r = progBar.getBoundingClientRect();
@@ -1217,71 +1348,81 @@ function getSeekX(e) {
   return Math.max(0, Math.min(clientX - r.left, r.width));
 }
 function doSeek(e) {
-  if (!audio.duration) return;
+  const t = playlist[curIdx];
+  if (!t) return;
+  const el = t.type === 'video' ? videoEl : audio;
+  if (!el.duration) return;
   const r = progBar.getBoundingClientRect();
-  audio.currentTime = (getSeekX(e) / r.width) * audio.duration;
+  el.currentTime = (getSeekX(e) / r.width) * el.duration;
 }
 let isDrag = false;
 progBar.addEventListener('pointerdown', e => { isDrag = true; doSeek(e); e.preventDefault(); });
-window.addEventListener('pointermove', e => { if (isDrag) doSeek(e); });
-window.addEventListener('pointerup', () => { isDrag = false; });
-// Touch fallback
-progBar.addEventListener('touchstart', e => { isDrag = true; doSeek(e); e.preventDefault(); }, { passive: false });
-progBar.addEventListener('touchmove', e => { if (isDrag) doSeek(e); e.preventDefault(); }, { passive: false });
-progBar.addEventListener('touchend', () => { isDrag = false; });
-
-function setVol(v) {
-  const vol = v / 100;
-  audio.volume = vol;
-  if (gain) gain.gain.value = vol;
-  document.getElementById('volPct').textContent = v + '%';
-  document.getElementById('volFill').style.width = v + '%';
-}
-
-// Init vol fill
-document.getElementById('volFill').style.width = '80%';
-document.getElementById('volSlider').addEventListener('change', function() { setVol(this.value); });
-
-function fmt(s) {
-  if (!s||isNaN(s)) return '0:00';
-  const m=Math.floor(s/60), sec=Math.floor(s%60);
-  return m+':'+(sec<10?'0':'')+sec;
-}
-function clearAll() {
-  audio.pause();
-  const videoEl = document.getElementById('videoEl');
-  videoEl.pause(); videoEl.src = '';
-  playlist=[]; curIdx=-1; playing=false;
-  audio.src='';
-  document.getElementById('videoCard').style.display='none';
-  document.getElementById('heroCard').style.display='';
-  document.getElementById('trackName').textContent='— Nothing playing —';
-  document.getElementById('trackMeta').textContent='Open a file to begin';
-  document.getElementById('progFill').style.width='0%';
-  document.getElementById('progThumb').style.left='0%';
-  document.getElementById('tElapsed').textContent='0:00';
-  document.getElementById('tTotal').textContent='0:00';
-  updatePlayUI(); renderPL();
-}
+window.addEventListener('pointermove',  e => { if (isDrag) doSeek(e); });
+window.addEventListener('pointerup',    () => { isDrag = false; });
+progBar.addEventListener('touchstart',  e => { isDrag = true; doSeek(e); e.preventDefault(); }, { passive: false });
+progBar.addEventListener('touchmove',   e => { if (isDrag) doSeek(e); e.preventDefault(); }, { passive: false });
+progBar.addEventListener('touchend',    () => { isDrag = false; });
 
 /* ═══════════════════════════
-   SPECTRUM VISUALISER
+   VOLUME
 ═══════════════════════════ */
+function setVol(v) {
+  const vol = v / 100;
+  audio.volume   = vol;
+  videoEl.volume = vol;
+  if (gain) gain.gain.value = vol;
+  document.getElementById('volPct').textContent  = v + '%';
+  document.getElementById('volFill').style.width = v + '%';
+}
+document.getElementById('volFill').style.width = '80%';
+document.getElementById('volSlider').addEventListener('change', function () { setVol(this.value); });
+
+function fmt(s) {
+  if (!s || isNaN(s)) return '0:00';
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  return m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+function clearAll() {
+  audio.pause(); audio.src = '';
+  videoEl.pause(); videoEl.src = '';
+  playlist = []; curIdx = -1; playing = false;
+  document.getElementById('videoCard').style.display = 'none';
+  document.getElementById('heroCard').style.display  = '';
+  document.getElementById('trackName').textContent   = '— Nothing playing —';
+  document.getElementById('trackMeta').textContent   = 'Open a file to begin';
+  document.getElementById('progFill').style.width    = '0%';
+  document.getElementById('progThumb').style.left    = '0%';
+  document.getElementById('tElapsed').textContent    = '0:00';
+  document.getElementById('tTotal').textContent      = '0:00';
+  updatePlayUI();
+  renderPL();
+}
+
+/* ══════════════════════════════════════════
+   SPECTRUM VISUALISER
+══════════════════════════════════════════ */
 const specCanvas = document.getElementById('specCanvas');
 const sCtx = specCanvas.getContext('2d');
-function resizeSpec() {
-  specCanvas.width  = specCanvas.offsetWidth  * (devicePixelRatio||1);
-  specCanvas.height = specCanvas.offsetHeight * (devicePixelRatio||1);
-}
-resizeSpec();
-window.addEventListener('resize', resizeSpec);
+const vizCanvas  = document.getElementById('vizCanvas');
+const vCtx = vizCanvas.getContext('2d');
+let peakData = [];
 
-function drawSpec() {
-  requestAnimationFrame(drawSpec);
-  resizeSpec();
+function resizeCanvases() {
+  const dpr = devicePixelRatio || 1;
+  [specCanvas, vizCanvas].forEach(c => {
+    c.width  = c.offsetWidth  * dpr;
+    c.height = c.offsetHeight * dpr;
+  });
+}
+resizeCanvases();
+window.addEventListener('resize', resizeCanvases);
+
+/* Hero mini spectrum */
+function drawHeroSpec() {
   const W = specCanvas.width, H = specCanvas.height;
-  sCtx.clearRect(0,0,W,H);
-  const cs = getComputedStyle(document.body);
+  sCtx.clearRect(0, 0, W, H);
+  const cs    = getComputedStyle(document.body);
   const gold  = cs.getPropertyValue('--gold').trim()  || '#f0b840';
   const teal  = cs.getPropertyValue('--teal').trim()  || '#00d4aa';
   const gold2 = cs.getPropertyValue('--gold2').trim() || '#ff8c42';
@@ -1289,43 +1430,145 @@ function drawSpec() {
   if (analyser && playing) {
     const data = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(data);
-    const bars = 56, bw = W/bars;
-    for (let i=0; i<bars; i++) {
-      const v = data[Math.floor(i*data.length/bars)] / 255;
-      const bh = v * H * 0.92;
-      if (bh<1) continue;
-      const grad = sCtx.createLinearGradient(0,H,0,H-bh);
-      grad.addColorStop(0, teal+'cc');
-      grad.addColorStop(0.5, gold+'ee');
-      grad.addColorStop(1, gold2+'ff');
+    const bars = 48, bw = W / bars;
+    for (let i = 0; i < bars; i++) {
+      const v  = data[Math.floor(i * data.length / bars)] / 255;
+      const bh = v * H * 0.95;
+      if (bh < 1) continue;
+      const grad = sCtx.createLinearGradient(0, H, 0, H - bh);
+      grad.addColorStop(0,   teal  + '99');
+      grad.addColorStop(0.5, gold  + 'cc');
+      grad.addColorStop(1,   gold2 + 'ff');
       sCtx.fillStyle = grad;
-      const x=i*bw+1, w2=Math.max(bw-2,1), rr=Math.min(w2/2,3);
+      const x = i * bw + 1, w2 = Math.max(bw - 2, 1), rr = Math.min(w2 / 2, 3);
       sCtx.beginPath();
-      sCtx.moveTo(x,H);
-      sCtx.lineTo(x, H-bh+rr);
-      sCtx.quadraticCurveTo(x, H-bh, x+rr, H-bh);
-      sCtx.lineTo(x+w2-rr, H-bh);
-      sCtx.quadraticCurveTo(x+w2, H-bh, x+w2, H-bh+rr);
-      sCtx.lineTo(x+w2, H);
-      sCtx.closePath();
-      sCtx.fill();
+      sCtx.moveTo(x, H); sCtx.lineTo(x, H - bh + rr);
+      sCtx.quadraticCurveTo(x, H - bh, x + rr, H - bh);
+      sCtx.lineTo(x + w2 - rr, H - bh);
+      sCtx.quadraticCurveTo(x + w2, H - bh, x + w2, H - bh + rr);
+      sCtx.lineTo(x + w2, H); sCtx.closePath(); sCtx.fill();
     }
   } else {
-    const t = Date.now()/1000;
-    [[gold,'44'],[teal,'33'],[gold2,'28']].forEach(([c,a],p) => {
-      sCtx.beginPath();
-      sCtx.strokeStyle = c+a;
-      sCtx.lineWidth = 1.5;
-      for (let x=0; x<=W; x+=2) {
-        const y = H/2 + Math.sin(x/W*Math.PI*3 + t*(0.6+p*0.3)) * H*0.14
-                      + Math.sin(x/W*Math.PI*7 + t*1.1) * H*0.06;
-        x===0 ? sCtx.moveTo(x,y) : sCtx.lineTo(x,y);
+    const t = Date.now() / 1000;
+    [[gold, '40'], [teal, '30'], [gold2, '25']].forEach(([c, a], p) => {
+      sCtx.beginPath(); sCtx.strokeStyle = c + a; sCtx.lineWidth = 1.5;
+      for (let x = 0; x <= W; x += 2) {
+        const y = H / 2 + Math.sin(x / W * Math.PI * 3 + t * (0.5 + p * 0.25)) * H * 0.15
+                        + Math.sin(x / W * Math.PI * 8 + t * 1.2) * H * 0.05;
+        x === 0 ? sCtx.moveTo(x, y) : sCtx.lineTo(x, y);
       }
       sCtx.stroke();
     });
   }
 }
-drawSpec();
-</script>
-</body>
+
+/* Main full spectrum visualiser */
+function drawViz() {
+  const W = vizCanvas.width, H = vizCanvas.height;
+  vCtx.clearRect(0, 0, W, H);
+  const cs    = getComputedStyle(document.body);
+  const gold  = cs.getPropertyValue('--gold').trim()  || '#f0b840';
+  const teal  = cs.getPropertyValue('--teal').trim()  || '#00d4aa';
+  const gold2 = cs.getPropertyValue('--gold2').trim() || '#ff8c42';
+
+  if (analyser && playing) {
+    const freqData = new Uint8Array(analyser.frequencyBinCount);
+    const waveData = new Uint8Array(analyser.fftSize);
+    analyser.getByteFrequencyData(freqData);
+    analyser.getByteTimeDomainData(waveData);
+
+    const bars = 64, bw = W / bars;
+    if (peakData.length !== bars) peakData = new Array(bars).fill(0);
+
+    /* Bars + peaks */
+    for (let i = 0; i < bars; i++) {
+      const v   = freqData[Math.floor(i * freqData.length / bars)] / 255;
+      const bh  = v * H * 0.82;
+      const x   = i * bw + 1, w2 = Math.max(bw - 2, 1), rr = Math.min(w2 / 2, 4);
+      peakData[i] = Math.max(peakData[i] - 1.5, bh);
+
+      /* Bar */
+      const grad = vCtx.createLinearGradient(0, H, 0, H - bh);
+      grad.addColorStop(0,    teal  + 'bb');
+      grad.addColorStop(0.55, gold  + 'dd');
+      grad.addColorStop(1,    gold2 + 'ff');
+      vCtx.fillStyle = grad;
+      vCtx.beginPath();
+      vCtx.moveTo(x, H); vCtx.lineTo(x, H - bh + rr);
+      vCtx.quadraticCurveTo(x, H - bh, x + rr, H - bh);
+      vCtx.lineTo(x + w2 - rr, H - bh);
+      vCtx.quadraticCurveTo(x + w2, H - bh, x + w2, H - bh + rr);
+      vCtx.lineTo(x + w2, H); vCtx.closePath(); vCtx.fill();
+
+      /* Glow on loud bars */
+      if (v > 0.65) {
+        vCtx.save();
+        vCtx.globalAlpha = (v - 0.65) * 0.6;
+        vCtx.shadowColor = gold; vCtx.shadowBlur = 14;
+        vCtx.fillStyle   = gold + '33';
+        vCtx.fillRect(x, H - bh, w2, bh);
+        vCtx.restore();
+      }
+
+      /* Peak line */
+      if (peakData[i] > 3) {
+        vCtx.fillStyle = gold + 'cc';
+        vCtx.fillRect(x, H - peakData[i] - 2, w2, 2);
+      }
+    }
+
+    /* Waveform overlay */
+    vCtx.save();
+    vCtx.globalAlpha = 0.4;
+    vCtx.strokeStyle = teal;
+    vCtx.lineWidth   = 1.5;
+    vCtx.shadowColor = teal; vCtx.shadowBlur = 6;
+    vCtx.beginPath();
+    const step = W / waveData.length;
+    for (let i = 0; i < waveData.length; i++) {
+      const y = ((waveData[i] / 128) - 1) * H * 0.2 + H * 0.5;
+      i === 0 ? vCtx.moveTo(0, y) : vCtx.lineTo(i * step, y);
+    }
+    vCtx.stroke();
+    vCtx.restore();
+
+    /* Mirror reflection */
+    vCtx.save();
+    vCtx.globalAlpha = 0.1;
+    vCtx.scale(1, -1); vCtx.translate(0, -H * 2);
+    for (let i = 0; i < bars; i++) {
+      const v  = freqData[Math.floor(i * freqData.length / bars)] / 255;
+      const bh = v * H * 0.28, x = i * bw + 1, w2 = Math.max(bw - 2, 1);
+      vCtx.fillStyle = gold;
+      vCtx.fillRect(x, H - bh, w2, bh);
+    }
+    vCtx.restore();
+
+  } else {
+    /* Idle waves */
+    const t = Date.now() / 1000;
+    [[gold, 0.16, 0.5], [teal, 0.10, 0.7], [gold2, 0.07, 0.9]].forEach(([c, amp, spd], idx) => {
+      vCtx.beginPath();
+      vCtx.strokeStyle = c + (idx === 0 ? '55' : idx === 1 ? '40' : '30');
+      vCtx.lineWidth   = idx === 0 ? 2 : 1.5;
+      vCtx.shadowColor = c; vCtx.shadowBlur = idx === 0 ? 8 : 4;
+      for (let x = 0; x <= W; x += 3) {
+        const y = H / 2
+          + Math.sin(x / W * Math.PI * 4 + t * spd * 1.5) * H * amp
+          + Math.sin(x / W * Math.PI * 9 + t * spd * 2.3) * H * amp * 0.4;
+        x === 0 ? vCtx.moveTo(x, y) : vCtx.lineTo(x, y);
+      }
+      vCtx.stroke();
+    });
+  }
+}
+
+function animLoop() {
+  requestAnimationFrame(animLoop);
+  resizeCanvases();
+  drawHeroSpec();
+  drawViz();
+}
+animLoop();
+</script></body>
 </html>
