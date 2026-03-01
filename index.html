@@ -1,2365 +1,456 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#080810">
-<title>AURUM — Media Player</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VolMax – Real-Time Volume Booster</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-/* ══════════════════════════════════════════
-   ROOT & THEMES
-══════════════════════════════════════════ */
-:root {
-  --bg:        #080810;
-  --bg2:       #0d0d1a;
-  --glass:     rgba(255,255,255,0.04);
-  --glass2:    rgba(255,255,255,0.08);
-  --border:    rgba(255,255,255,0.08);
-  --border2:   rgba(255,200,80,0.2);
-  --gold:      #f0b840;
-  --gold2:     #ff8c42;
-  --gold3:     #ffe066;
-  --teal:      #00d4aa;
-  --text:      #f0ead8;
-  --text2:     #9090a8;
-  --text3:     #606075;
-  --shadow:    0 32px 80px rgba(0,0,0,0.8);
-  --glow-g:    0 0 40px rgba(240,184,64,0.25);
-  --glow-t:    0 0 30px rgba(0,212,170,0.2);
-  --r:         20px;
-  --r2:        14px;
-  --r3:        10px;
-}
-.t-light {
-  --bg:        #f4f0e8;
-  --bg2:       #ede8dc;
-  --glass:     rgba(0,0,0,0.04);
-  --glass2:    rgba(0,0,0,0.07);
-  --border:    rgba(0,0,0,0.10);
-  --border2:   rgba(160,100,20,0.25);
-  --gold:      #c07a10;
-  --gold2:     #e05a20;
-  --gold3:     #a06010;
-  --teal:      #007a60;
-  --text:      #1a1408;
-  --text2:     #7a6850;
-  --text3:     #b0a080;
-  --shadow:    0 16px 48px rgba(0,0,0,0.12);
-  --glow-g:    0 0 24px rgba(192,122,16,0.15);
-  --glow-t:    0 0 20px rgba(0,122,96,0.12);
-}
-.t-oled {
-  --bg:        #000000;
-  --bg2:       #000000;
-  --glass:     rgba(255,255,255,0.025);
-  --glass2:    rgba(255,255,255,0.05);
-  --border:    rgba(255,255,255,0.05);
-  --border2:   rgba(255,180,50,0.15);
-  --gold:      #ffcc44;
-  --gold2:     #ff7744;
-  --gold3:     #ffee88;
-  --teal:      #00ffcc;
-  --text:      #ffffff;
-  --text2:     #707070;
-  --text3:     #404040;
-  --shadow:    0 32px 80px rgba(0,0,0,0.99);
-  --glow-g:    0 0 50px rgba(255,204,68,0.3);
-  --glow-t:    0 0 40px rgba(0,255,204,0.25);
-}
+  :root { --accent:#ff4d4d; --accent2:#ff8c00; --glow:rgba(255,77,77,0.35); --radius:18px; --trans:0.3s cubic-bezier(.4,0,.2,1); }
+  [data-theme="dark"]  { --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:rgba(255,255,255,0.07); --text:#f0f0f5; --muted:#7a7d99; }
+  [data-theme="light"] { --bg:#f0f0f8; --surface:#ffffff; --surface2:#eaeaf5; --border:rgba(0,0,0,0.08); --text:#1a1a2e; --muted:#6b6b8a; }
+  [data-theme="oled"]  { --bg:#000000; --surface:#0a0a0a; --surface2:#111111; --border:rgba(255,255,255,0.05); --text:#ffffff; --muted:#555577; }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;transition:background var(--trans),color var(--trans);overflow-x:hidden}
+  .orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .orb{position:absolute;border-radius:50%;filter:blur(90px)}
+  .orb1{width:400px;height:400px;background:var(--accent);opacity:.1;top:-100px;right:-100px}
+  .orb2{width:300px;height:300px;background:var(--accent2);opacity:.08;bottom:0;left:-80px}
 
-/* ══════════════════════════════════════════
-   RESET & BASE
-══════════════════════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow-x: hidden;
-  transition: background 0.5s, color 0.5s;
-  /* Safe area for notch / home indicator */
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-  padding-bottom: env(safe-area-inset-bottom);
-  /* Smooth momentum scrolling on iOS */
-  -webkit-overflow-scrolling: touch;
-}
+  header{width:100%;display:flex;justify-content:space-between;align-items:center;padding:20px 28px;position:relative;z-index:10}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:3px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .theme-toggle{display:flex;gap:5px;background:var(--surface);border:1px solid var(--border);border-radius:50px;padding:4px;transition:background var(--trans)}
+  .theme-btn{border:none;background:transparent;color:var(--muted);cursor:pointer;border-radius:50px;padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;transition:all .25s}
+  .theme-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 15px var(--glow)}
 
-/* ── ANIMATED BG ORBS ── */
-.bg-orb {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(90px);
-  pointer-events: none;
-  z-index: 0;
-  animation: drift 18s ease-in-out infinite alternate;
-}
-.bg-orb-1 { width: 400px; height: 400px; top: -100px; right: -120px; background: radial-gradient(circle, rgba(240,184,64,0.12), transparent 70%); }
-.bg-orb-2 { width: 350px; height: 350px; bottom: 10%; left: -100px; background: radial-gradient(circle, rgba(0,212,170,0.08), transparent 70%); animation-delay: -9s; }
-.bg-orb-3 { width: 250px; height: 250px; top: 40%; left: 40%; background: radial-gradient(circle, rgba(255,140,66,0.06), transparent 70%); animation-delay: -5s; }
-@keyframes drift {
-  0%   { transform: translate(0,0) scale(1); }
-  100% { transform: translate(30px,40px) scale(1.15); }
-}
-.t-oled .bg-orb { opacity: 0.6; }
-.t-light .bg-orb { opacity: 0.3; }
+  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:12px 20px;position:relative;z-index:5;width:100%;max-width:460px}
 
-/* ── GRAIN ── */
-.grain {
-  position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.025;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 200px;
-}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;width:100%;display:flex;flex-direction:column;align-items:center;gap:20px;box-shadow:0 20px 60px rgba(0,0,0,.25);transition:background var(--trans),border-color var(--trans)}
 
-/* ── APP SHELL ── */
-.app {
-  position: relative; z-index: 2;
-  width: 100%; max-width: 480px;
-  padding: max(16px, env(safe-area-inset-top)) 16px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) both;
-}
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+  /* Status */
+  .status-row{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:50px;padding:6px 14px;font-size:.72rem;font-weight:600;color:var(--muted);transition:all var(--trans)}
+  .dot{width:8px;height:8px;border-radius:50%;background:#333;flex-shrink:0;transition:background .3s,box-shadow .3s}
+  .dot.green{background:#44ff88;box-shadow:0 0 8px #44ff88;animation:blink 1.5s ease-in-out infinite}
+  .dot.red{background:#ff4444;box-shadow:0 0 8px #ff4444}
+  .dot.yellow{background:#ffcc00;box-shadow:0 0 8px #ffcc00;animation:blink 1s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
 
-/* ══════════════════════════════════════════
-   HEADER
-══════════════════════════════════════════ */
-.header {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2px;
-}
-.logo-wrap { display: flex; flex-direction: column; }
-.logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 2.2rem;
-  letter-spacing: 6px;
-  line-height: 1;
-  background: linear-gradient(135deg, var(--gold3), var(--gold), var(--gold2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 0 12px rgba(240,184,64,0.4));
-}
-.logo-sub {
-  font-size: 0.55rem;
-  letter-spacing: 4px;
-  color: var(--text3);
-  text-transform: uppercase;
-  margin-top: -2px;
-}
-.theme-ring { display: flex; gap: 10px; align-items: center; }
-.t-dot {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: all 0.25s;
-  position: relative;
-  /* Expand tap area invisibly */
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-}
-.t-dot::after {
-  content: '';
-  position: absolute;
-  inset: -8px;
-  border-radius: 50%;
-}
-.t-dot:active { transform: scale(0.9); }
-.t-dot.on { border-color: var(--gold); box-shadow: 0 0 10px rgba(240,184,64,0.5); }
-.t-dot[data-t="dark"]  { background: conic-gradient(#0d0d1a 0deg, #1a1a2e 180deg, #0d0d1a 360deg); }
-.t-dot[data-t="light"] { background: conic-gradient(#f4f0e8 0deg, #ddd0b8 180deg, #f4f0e8 360deg); }
-.t-dot[data-t="oled"]  { background: #000; border: 2px solid #222; }
-.t-dot[data-t="oled"]::before { content:''; position:absolute; inset:3px; border-radius:50%; background:radial-gradient(circle at 40% 35%, rgba(255,204,68,0.4), transparent); z-index:1; }
+  /* Canvas */
+  .viz-wrap{width:100%;height:60px;border-radius:10px;overflow:hidden;background:var(--surface2)}
+  canvas{display:block;width:100%;height:100%}
 
-/* ══════════════════════════════════════════
-   HERO CARD (Art + Visualiser)
-══════════════════════════════════════════ */
-.hero-card {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  max-height: 280px;
-  border-radius: 24px;
-  position: relative;
-  overflow: hidden;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.06);
-  transition: box-shadow 0.5s;
-}
-.hero-card.is-playing { box-shadow: var(--shadow), var(--glow-g); }
-.art-img {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  display: none;
-  transition: opacity 0.6s;
-}
-.art-img.show { display: block; }
-.art-idle {
-  position: absolute; inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
-.idle-disc {
-  width: 90px; height: 90px;
-  border-radius: 50%;
-  border: 2px solid var(--border2);
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-  animation: spinSlow 12s linear infinite paused;
-}
-.idle-disc.spin { animation-play-state: running; }
-.idle-disc::before {
-  content: '';
-  position: absolute; inset: 8px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,200,80,0.12);
-}
-.idle-disc::after {
-  content: '';
-  position: absolute; inset: 22px;
-  border-radius: 50%;
-  background: var(--bg);
-}
-.disc-inner {
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  background: var(--gold);
-  box-shadow: var(--glow-g);
-  z-index: 1;
-}
-@keyframes spinSlow { to { transform: rotate(360deg); } }
-.idle-txt { font-size: 0.6rem; letter-spacing: 4px; color: var(--text3); text-transform: uppercase; }
-.art-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%);
-  pointer-events: none;
-}
-  100% { transform: translate(-50%,-50%) scale(5); opacity: 0; }
-}
+  /* Dial */
+  .dial-wrap{position:relative;width:180px;height:180px;display:flex;align-items:center;justify-content:center}
+  .dial-svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+  .dial-track{fill:none;stroke:var(--surface2);stroke-width:10;stroke-linecap:round}
+  .dial-arc{fill:none;stroke-width:10;stroke-linecap:round;stroke:url(#dg);stroke-dasharray:415;stroke-dashoffset:415;transition:stroke-dashoffset .1s ease;filter:drop-shadow(0 0 6px rgba(255,77,77,.5))}
+  .dial-inner{position:absolute;inset:15px;background:var(--surface);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 2px 12px rgba(0,0,0,.3);transition:background var(--trans)}
+  .dial-num{font-family:'Bebas Neue',sans-serif;font-size:3rem;line-height:1;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .dial-sub{font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600}
 
-/* ── VIDEO ── */
-.video-card {
-  width: 100%;
-  border-radius: 24px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  background: #000;
-  display: none;
-  box-shadow: var(--shadow);
-}
-.video-card video { width: 100%; display: block; }
+  /* dB bar */
+  .db-row{width:100%;display:grid;grid-template-columns:28px 1fr 52px;align-items:center;gap:8px}
+  .db-lbl{font-size:.68rem;color:var(--muted);font-weight:600}
+  .db-track{height:7px;background:var(--surface2);border-radius:4px;overflow:hidden}
+  .db-fill{height:100%;border-radius:4px;width:0%;transition:width .04s linear;background:linear-gradient(to right,#44ff88,#ffcc00,#ff4d4d)}
+  .db-num{font-size:.68rem;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+  .clip-label{font-size:.66rem;color:var(--accent);font-weight:700;letter-spacing:1px;text-align:center;height:16px;transition:opacity .2s;opacity:0}
+  .clip-label.on{opacity:1}
 
-/* ══════════════════════════════════════════
-   TRACK INFO
-══════════════════════════════════════════ */
-.info-card {
-  width: 100%;
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 16px 20px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow);
-}
-.info-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 20%; right: 20%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  opacity: 0.5;
-}
-.track-name {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 1.2rem;
-  font-weight: 600;
-  letter-spacing: 1px;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2;
-}
-.track-meta {
-  margin-top: 5px;
-  font-size: 0.6rem;
-  letter-spacing: 3px;
-  color: var(--gold);
-  text-transform: uppercase;
-  opacity: 0.8;
-}
+  /* Slider */
+  .slider-wrap{width:100%;display:flex;flex-direction:column;gap:8px}
+  .sl-hdr{display:flex;justify-content:space-between;font-size:.75rem;font-weight:500;color:var(--muted)}
+  input[type=range]{-webkit-appearance:none;width:100%;height:5px;border-radius:3px;background:var(--surface2);outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 10px var(--glow);cursor:pointer;transition:transform .2s}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px;border:none;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));cursor:pointer}
 
-/* ══════════════════════════════════════════
-   PROGRESS
-══════════════════════════════════════════ */
-.progress-card {
-  width: 100%;
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 14px 20px 12px;
-  box-shadow: var(--shadow);
-}
-.prog-bar {
-  width: 100%;
-  height: 6px;
-  background: var(--glass2);
-  border-radius: 3px;
-  cursor: pointer;
-  position: relative;
-  touch-action: none;
-  /* Big invisible tap area above and below */
-  padding: 12px 0;
-  margin: -12px 0;
-}
-.prog-fill {
-  position: absolute;
-  left: 0; top: 12px; bottom: 12px;
-  width: 0%;
-  border-radius: 3px;
-  background: linear-gradient(90deg, var(--teal), var(--gold), var(--gold2));
-  background-size: 200% 100%;
-  animation: shimmer 3s linear infinite;
-  transition: width 0.1s linear;
-  pointer-events: none;
-}
-@keyframes shimmer { 0%{background-position:0% 0%} 100%{background-position:200% 0%} }
-.prog-thumb {
-  position: absolute;
-  top: 50%;
-  /* Always visible on mobile — only hidden when at 0 */
-  transform: translate(-50%,-50%) scale(1);
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  background: var(--gold);
-  box-shadow: var(--glow-g);
-  transition: left 0.1s linear, transform 0.15s;
-  pointer-events: none;
-  /* Expand touch target */
-  outline: 8px solid transparent;
-}
-.prog-thumb.at-zero { transform: translate(-50%,-50%) scale(0); }
-.prog-times {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 18px;
-  font-size: 0.65rem;
-  color: var(--text3);
-  letter-spacing: 1.5px;
-}
+  /* Buttons */
+  .btn-row{display:flex;gap:9px;width:100%}
+  .btn{flex:1;padding:11px 6px;border:1px solid var(--border);border-radius:11px;background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s}
+  .btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
+  .btn.pri{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;box-shadow:0 6px 20px var(--glow)}
+  .btn.pri:hover{transform:translateY(-3px);box-shadow:0 10px 28px var(--glow);color:#fff}
+  .btn.muted-on{border-color:var(--accent);color:var(--accent)}
 
-/* ══════════════════════════════════════════
-   CONTROLS
-══════════════════════════════════════════ */
-.ctrl-card {
-  width: 100%;
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 20px 20px 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 18px;
-  box-shadow: var(--shadow);
-}
-.ctrl-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-}
-.cbtn {
-  display: flex; align-items: center; justify-content: center;
-  background: var(--glass2);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  color: var(--text2);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
-  user-select: none;
-  flex-shrink: 0;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-.cbtn:active { transform: scale(0.88); background: var(--glass2); }
-.cbtn.s { width: 44px; height: 44px; }
-.cbtn.m { width: 52px; height: 52px; }
-.cbtn.on { color: var(--gold); border-color: var(--border2); }
-.play-btn {
-  width: 72px; height: 72px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold), var(--gold2));
-  border: none;
-  color: #000;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--glow-g), 0 8px 24px rgba(0,0,0,0.5);
-  transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
-  flex-shrink: 0;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-.play-btn:active { transform: scale(0.92); box-shadow: 0 0 20px rgba(240,184,64,0.4), 0 4px 12px rgba(0,0,0,0.5); }
-/* Volume */
-.vol-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-}
-.vol-ico { color: var(--text3); flex-shrink: 0; }
-.range-wrap { flex: 1; position: relative; height: 6px; }
-.range-track { position: absolute; inset: 0; background: var(--glass2); border-radius: 3px; }
-.range-fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, var(--teal), var(--gold)); border-radius: 3px; pointer-events: none; width: 80%; }
-input.styled-range {
-  position: absolute;
-  left: 0; right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  /* Tall enough for comfortable touch: min 44px */
-  height: 44px;
-  margin-top: -3px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  outline: none;
-  cursor: pointer;
-  width: 100%;
-  touch-action: manipulation;
-}
-input.styled-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background: var(--gold);
-  box-shadow: 0 0 10px rgba(240,184,64,0.5);
-  border: 2px solid var(--bg);
-  transition: transform 0.15s;
-}
-input.styled-range:active::-webkit-slider-thumb { transform: scale(1.2); }
-.vol-pct { font-size: 0.65rem; color: var(--text3); min-width: 32px; text-align: right; letter-spacing: 1px; }
+  /* Source card */
+  .src-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;width:100%;display:flex;flex-direction:column;gap:12px;box-shadow:0 10px 40px rgba(0,0,0,.15);transition:background var(--trans),border-color var(--trans)}
+  .src-card h3{font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .src-btns{display:flex;gap:8px}
+  .src-btn{flex:1;border:1px solid var(--border);background:var(--surface2);color:var(--muted);border-radius:10px;padding:10px 6px;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .2s;text-align:center}
+  .src-btn:hover,.src-btn.on{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;box-shadow:0 4px 12px var(--glow)}
+  .file-hint{font-size:.72rem;color:var(--muted);text-align:center}
+  .prog-row{display:flex;align-items:center;gap:8px;display:none}
+  .prog-track{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;cursor:pointer}
+  .prog-fill{height:100%;border-radius:3px;background:linear-gradient(to right,var(--accent),var(--accent2));width:0%;transition:width .1s linear}
+  .time-lbl{font-size:.68rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 
-/* ══════════════════════════════════════════
-   OPEN FILES
-══════════════════════════════════════════ */
-.open-card {
-  width: 100%;
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 16px 20px;
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-.card-label {
-  font-size: 0.55rem;
-  letter-spacing: 4px;
-  color: var(--text3);
-  text-transform: uppercase;
-}
-.open-row { display: flex; gap: 10px; width: 100%; }
-.open-btn {
-  flex: 1;
-  min-height: 64px;
-  padding: 14px 8px;
-  background: var(--glass2);
-  border: 1px solid var(--border);
-  border-radius: var(--r3);
-  color: var(--text2);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.68rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-.open-btn:active {
-  border-color: var(--border2);
-  color: var(--gold);
-  background: rgba(240,184,64,0.08);
-  transform: scale(0.97);
-}
-.open-btn svg { width: 26px; height: 26px; }
-input[type="file"] { display: none; }
+  /* Presets */
+  .presets{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.15);transition:background var(--trans),border-color var(--trans)}
+  .presets h3{font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-weight:600}
+  .pg{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+  .pb{border:1px solid var(--border);background:var(--surface2);color:var(--muted);border-radius:9px;padding:8px 4px;font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:600;cursor:pointer;transition:all .2s;text-align:center}
+  .pb:hover{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
 
-/* ══════════════════════════════════════════
-   PLAYLIST
-══════════════════════════════════════════ */
-.playlist-card {
-  width: 100%;
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  overflow: hidden;
-  box-shadow: var(--shadow);
-}
-.playlist-head {
-  padding: 14px 20px 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-}
-.sec-title {
-  font-size: 0.55rem;
-  letter-spacing: 4px;
-  color: var(--gold);
-  text-transform: uppercase;
-}
-.ghost-btn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text3);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.6rem;
-  letter-spacing: 1px;
-  padding: 8px 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-height: 36px;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-.ghost-btn:active { border-color: var(--gold2); color: var(--gold2); transform: scale(0.95); }
-.playlist-body {
-  max-height: 220px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border2) transparent;
-}
-.pl-item {
-  padding: 14px 20px;
-  min-height: 52px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s;
-  position: relative;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-.pl-item:last-child { border-bottom: none; }
-.pl-item:active { background: var(--glass2); }
-.pl-item.cur { background: rgba(240,184,64,0.06); }
-.pl-item.cur::before {
-  content: '';
-  position: absolute; left: 0; top: 0; bottom: 0;
-  width: 2px;
-  background: linear-gradient(to bottom, var(--gold), var(--gold2));
-}
-.pl-idx { font-size: 0.6rem; color: var(--text3); min-width: 18px; text-align: right; }
-.pl-item.cur .pl-idx { color: var(--gold); }
-.pl-type { font-size: 0.5rem; color: var(--text3); border: 1px solid var(--border); border-radius: 4px; padding: 2px 5px; letter-spacing: 1px; flex-shrink: 0; }
-.pl-item.cur .pl-type { border-color: var(--border2); color: var(--gold); }
-.pl-name { font-size: 0.7rem; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; letter-spacing: 0.5px; }
-.pl-item.cur .pl-name { color: var(--text); }
-.pl-empty { padding: 30px 20px; text-align: center; font-size: 0.65rem; color: var(--text3); letter-spacing: 2px; }
-
-/* ══════════════════════════════════════════
-   11-BAND EQ
-══════════════════════════════════════════ */
-.eq-card {
-  width: 100%;
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 16px 14px;
-  box-shadow: var(--shadow);
-}
-.eq-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-.eq-sel {
-  background: var(--glass2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text2);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.6rem;
-  letter-spacing: 1px;
-  padding: 6px 10px;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-.eq-sel:hover { border-color: var(--border2); }
-.eq-grid {
-  display: grid;
-  grid-template-columns: repeat(11, 1fr);
-  gap: 2px;
-}
-.eq-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.eq-dB {
-  font-size: 0.5rem;
-  color: var(--gold);
-  min-height: 14px;
-  text-align: center;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-.eq-track {
-  height: 110px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  width: 100%;
-}
-.eq-zero { position: absolute; width: 100%; height: 1px; background: var(--border); top: 50%; pointer-events: none; }
-input.eq-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  writing-mode: vertical-lr;
-  direction: rtl;
-  width: 4px;
-  height: 104px;
-  background: var(--glass2);
-  border-radius: 2px;
-  outline: none;
-  cursor: ns-resize;
-  /* Prevent page scroll while dragging EQ vertical sliders */
-  touch-action: none;
-}
-input.eq-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background: var(--gold);
-  border: 2px solid var(--bg);
-  box-shadow: 0 0 8px rgba(240,184,64,0.6);
-  cursor: grab;
-  transition: transform 0.15s;
-}
-input.eq-slider:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.25); }
-.eq-hz { font-size: 0.5rem; color: var(--text3); text-align: center; letter-spacing: 0; white-space: nowrap; overflow: hidden; max-width: 100%; }
-.eq-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
-
-/* ══════════════════════════════════════════
-   SETTINGS CARDS (Audio & Video)
-══════════════════════════════════════════ */
-.settings-card {
-  width: 100%;
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  overflow: hidden;
-  box-shadow: var(--shadow);
-}
-.settings-head {
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  transition: background 0.2s;
-}
-.settings-head:active { background: var(--glass2); }
-.settings-head-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.settings-icon {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  background: var(--glass2);
-  border: 1px solid var(--border2);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--gold);
-  flex-shrink: 0;
-}
-.settings-chevron {
-  color: var(--text3);
-  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-  flex-shrink: 0;
-}
-.settings-card.open .settings-chevron { transform: rotate(180deg); }
-.settings-body {
-  display: none;
-  padding: 0 20px 18px;
-  border-top: 1px solid var(--border);
-  flex-direction: column;
-  gap: 16px;
-}
-.settings-card.open .settings-body { display: flex; }
-
-/* Setting row */
-.set-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 44px;
-}
-.set-label-wrap { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.set-label {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--text);
-}
-.set-hint {
-  font-size: 0.62rem;
-  color: var(--text3);
-  line-height: 1.3;
-}
-.set-value {
-  font-size: 0.7rem;
-  color: var(--gold);
-  min-width: 36px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-
-/* Full-width slider row */
-.set-slider-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.set-slider-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.set-range-wrap { position: relative; width: 100%; height: 6px; }
-.set-range-track { position: absolute; inset: 0; background: var(--glass2); border-radius: 3px; }
-.set-range-fill  { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, var(--teal), var(--gold)); border-radius: 3px; pointer-events: none; }
-input.set-range {
-  position: absolute; left: 0; right: 0; top: 50%;
-  transform: translateY(-50%);
-  height: 44px;
-  -webkit-appearance: none; appearance: none;
-  background: transparent; outline: none;
-  cursor: pointer; width: 100%;
-  touch-action: manipulation;
-}
-input.set-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background: var(--gold);
-  border: 2px solid var(--bg);
-  box-shadow: 0 0 8px rgba(240,184,64,0.5);
-  transition: transform 0.15s;
-}
-input.set-range:active::-webkit-slider-thumb { transform: scale(1.2); }
-input.set-range::-moz-range-thumb {
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background: var(--gold);
-  border: 2px solid var(--bg);
-  cursor: pointer;
-}
-
-/* Toggle switch */
-.toggle-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  flex-shrink: 0;
-}
-.toggle {
-  position: relative;
-  width: 48px; height: 26px;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-.toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
-.toggle-track {
-  position: absolute; inset: 0;
-  background: var(--glass2);
-  border: 1px solid var(--border);
-  border-radius: 13px;
-  transition: background 0.25s, border-color 0.25s;
-}
-.toggle input:checked ~ .toggle-track {
-  background: var(--gold);
-  border-color: var(--gold);
-}
-.toggle-thumb {
-  position: absolute;
-  top: 3px; left: 3px;
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  background: var(--text3);
-  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), background 0.25s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-}
-.toggle input:checked ~ .toggle-thumb {
-  transform: translateX(22px);
-  background: #000;
-}
-
-/* Select dropdown */
-.set-select {
-  background: var(--glass2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.72rem;
-  padding: 8px 12px;
-  outline: none;
-  cursor: pointer;
-  max-width: 160px;
-  width: 100%;
-  transition: border-color 0.2s;
-  touch-action: manipulation;
-}
-.set-select:focus { border-color: var(--border2); }
-
-/* Divider */
-.set-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 4px 0;
-}
-
-/* Playback speed display */
-.speed-btns {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.speed-btn {
-  padding: 5px 10px;
-  background: var(--glass2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text2);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.65rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-.speed-btn:active, .speed-btn.on { background: var(--gold); color: #000; border-color: var(--gold); }
-
-/* ══════════════════════════════════════════
-   FOOTER
-══════════════════════════════════════════ */
-footer {
-  position: relative; z-index: 2;
-  width: 100%; max-width: 480px;
-  padding: 20px 16px max(28px, calc(env(safe-area-inset-bottom) + 20px));
-  text-align: center;
-  margin-top: 8px;
-}
-.footer-line {
-  width: 80%; margin: 0 auto 14px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border2), transparent);
-}
-.footer-copy {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.78rem;
-  font-style: normal;
-  color: var(--text3);
-  letter-spacing: 1px;
-  line-height: 1.8;
-}
-.footer-copy span { color: var(--gold); font-style: normal; }
-.footer-sub { font-size: 0.52rem; letter-spacing: 3px; color: var(--text3); margin-top: 6px; opacity: 0.6; text-transform: uppercase; }
-
-
-/* ── SVG base ── */
-svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-
-/* ══════════════════════════════════════════
-   MOBILE-FIRST RESPONSIVE
-══════════════════════════════════════════ */
-
-/* Tiny phones (< 360px) */
-@media (max-width: 359px) {
-  .app { padding-left: 10px; padding-right: 10px; gap: 10px; }
-  .logo { font-size: 1.8rem; letter-spacing: 4px; }
-  .logo-sub { font-size: 0.48rem; letter-spacing: 2px; }
-  .eq-hz { display: none; }
-  .eq-dB { font-size: 0.44rem; }
-  input.eq-slider { height: 88px; }
-  .eq-track { height: 96px; }
-  .cbtn.s { width: 40px; height: 40px; }
-  .cbtn.m { width: 46px; height: 46px; }
-  .play-btn { width: 62px; height: 62px; }
-  .ctrl-row { gap: 8px; }
-  .track-name { font-size: 1.1rem; }
-}
-
-/* Small phones (360–430px) — default styles already target this range */
-
-/* Larger phones / small tablets (> 430px) */
-@media (min-width: 430px) {
-  .app { gap: 14px; padding-left: 20px; padding-right: 20px; }
-  .logo { font-size: 2.5rem; }
-  .hero-card { max-height: 320px; }
-  .track-name { font-size: 1.5rem; }
-  .cbtn.s { width: 48px; height: 48px; }
-  .cbtn.m { width: 56px; height: 56px; }
-  .play-btn { width: 76px; height: 76px; }
-  .ctrl-row { gap: 16px; }
-  .pl-item { padding: 16px 24px; }
-  input.eq-slider { height: 112px; }
-  .eq-track { height: 120px; }
-  .eq-dB { font-size: 0.55rem; }
-  .eq-hz { font-size: 0.55rem; }
-}
-
-/* Tablet (> 600px) */
-@media (min-width: 600px) {
-  .app { max-width: 480px; }
-  footer { max-width: 480px; }
-  .hero-card { max-height: 360px; }
-}
-
-/* Landscape orientation on phones */
-@media (max-height: 500px) and (orientation: landscape) {
-  .hero-card { max-height: 160px; aspect-ratio: unset; height: 160px; }
-  .app { gap: 8px; padding-top: 10px; }
-  .idle-disc { width: 60px; height: 60px; }
-  .eq-track { height: 80px; }
-  input.eq-slider { height: 76px; }
-  .ctrl-row { gap: 12px; }
-}
-
-/* Reduce motion for accessibility */
-@media (prefers-reduced-motion: reduce) {
-  .bg-orb, .idle-disc, .prog-fill { animation: none !important; }
-  .app { animation: none; }
-  * { transition-duration: 0.01ms !important; }
-}
-
-/* High contrast mode support */
-@media (forced-colors: active) {
-  .play-btn { background: ButtonText; color: ButtonFace; }
-  .cbtn { border-color: ButtonText; }
-}
+  footer{padding:16px 20px;font-size:.7rem;color:var(--muted);text-align:center;letter-spacing:.5px;position:relative;z-index:5;transition:color var(--trans)}
+  #fileInput{display:none}
 </style>
 </head>
 <body>
+<div class="orbs"><div class="orb orb1"></div><div class="orb orb2"></div></div>
 
-<div class="bg-orb bg-orb-1"></div>
-<div class="bg-orb bg-orb-2"></div>
-<div class="bg-orb bg-orb-3"></div>
-<div class="grain"></div>
-
-<div class="app">
-
-  <!-- HEADER -->
-  <header class="header">
-    <div class="logo-wrap">
-      <div class="logo">AURUM</div>
-      <div class="logo-sub">High Fidelity Media Player</div>
-    </div>
-    <div class="theme-ring">
-      <div class="t-dot on" data-t="dark"  title="Dark"  onclick="setTheme('dark',this)"></div>
-      <div class="t-dot"   data-t="light" title="Light" onclick="setTheme('light',this)"></div>
-      <div class="t-dot"   data-t="oled"  title="OLED"  onclick="setTheme('oled',this)"></div>
-    </div>
-  </header>
-
-  <!-- HERO: Art + Visualiser -->
-  <div class="hero-card" id="heroCard">
-    <div class="art-idle" id="artIdle">
-      <div class="idle-disc" id="idleDisc"><div class="disc-inner"></div></div>
-      <div class="idle-txt">No media loaded</div>
-    </div>
-    <img class="art-img" id="artImg" alt="">
-    <div class="art-overlay"></div>
+<header>
+  <div class="logo">VolMax</div>
+  <div class="theme-toggle">
+    <button class="theme-btn" data-t="light">Light</button>
+    <button class="theme-btn active" data-t="dark">Dark</button>
+    <button class="theme-btn" data-t="oled">OLED</button>
   </div>
+</header>
 
-  <!-- VIDEO -->
-  <div class="video-card" id="videoCard">
-    <video id="videoEl"></video>
-  </div>
-  <!-- TRACK INFO -->
-  <div class="info-card">
-    <div class="track-name" id="trackName">— Nothing playing —</div>
-    <div class="track-meta" id="trackMeta">Open a file to begin</div>
-  </div>
+<main>
+  <!-- Status -->
+  <div class="status-row"><div class="dot" id="dot"></div><span id="statusTxt">No Source — Load a file or mic</span></div>
 
-  <!-- PROGRESS -->
-  <div class="progress-card">
-    <div class="prog-bar" id="progBar">
-      <div class="prog-fill" id="progFill"></div>
-      <div class="prog-thumb" id="progThumb" style="left:0%"></div>
+  <!-- Main card -->
+  <div class="card">
+    <div class="viz-wrap"><canvas id="cv"></canvas></div>
+
+    <div class="dial-wrap">
+      <svg class="dial-svg" viewBox="0 0 160 160">
+        <defs><linearGradient id="dg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ff4d4d"/><stop offset="100%" stop-color="#ff8c00"/></linearGradient></defs>
+        <circle class="dial-track" cx="80" cy="80" r="66"/>
+        <circle class="dial-arc" id="arc" cx="80" cy="80" r="66"/>
+      </svg>
+      <div class="dial-inner">
+        <div class="dial-num" id="gainNum">100</div>
+        <div class="dial-sub">Gain %</div>
+      </div>
     </div>
-    <div class="prog-times">
-      <span id="tElapsed">0:00</span>
-      <span id="tTotal">0:00</span>
+
+    <div class="db-row">
+      <div class="db-lbl">dB</div>
+      <div class="db-track"><div class="db-fill" id="dbFill"></div></div>
+      <div class="db-num" id="dbNum">−∞</div>
+    </div>
+    <div class="clip-label" id="clipLbl">⚠ CLIPPING</div>
+
+    <div class="slider-wrap">
+      <div class="sl-hdr"><span>0%</span><span id="slLbl">100%</span><span>600%</span></div>
+      <input type="range" id="sl" min="0" max="600" value="100">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" id="muteBtn" onclick="toggleMute()">Mute</button>
+      <button class="btn pri" id="boostBtn" onclick="toggleBoost()">⚡ Boost</button>
+      <button class="btn" onclick="resetAll()">Reset</button>
     </div>
   </div>
 
-  <!-- CONTROLS -->
-  <div class="ctrl-card">
-    <div class="ctrl-row">
-      <button class="cbtn s" id="shuffleBtn" title="Shuffle" onclick="toggleShuffle()">
-        <svg width="16" height="16" viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
-      </button>
-      <button class="cbtn m" onclick="prevTrack()" title="Previous">
-        <svg width="20" height="20" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
-      </button>
-      <button class="play-btn" id="playBtn" onclick="togglePlay()">
-        <svg id="icPlay"  width="28" height="28" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
-        <svg id="icPause" width="28" height="28" viewBox="0 0 24 24" style="display:none"><rect x="6" y="4" width="4" height="16" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" fill="currentColor" stroke="none"/></svg>
-      </button>
-      <button class="cbtn m" onclick="nextTrack()" title="Next">
-        <svg width="20" height="20" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-      </button>
-      <button class="cbtn s loop-btn" id="loopBtn" title="Loop: Off" onclick="toggleLoop()" style="position:relative;">
-        <svg width="16" height="16" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-        <span id="loopBadge" style="display:none;position:absolute;top:0;right:0;background:var(--gold);color:#000;font-size:0.45rem;font-weight:700;border-radius:50%;width:14px;height:14px;display:none;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;line-height:1;"></span>
-      </button>
+  <!-- Source -->
+  <div class="src-card">
+    <h3>Audio Source</h3>
+    <div class="src-btns">
+      <button class="src-btn" id="btnMic" onclick="startMic()">🎙 Microphone</button>
+      <button class="src-btn" id="btnFile" onclick="document.getElementById('fileInput').click()">🎵 Audio File</button>
+      <button class="src-btn" id="btnStop" onclick="stopAll()">⏹ Stop</button>
     </div>
-    <div class="vol-row">
-      <svg class="vol-ico" width="16" height="16" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/></svg>
-      <div class="range-wrap">
-        <div class="range-track"></div>
-        <div class="range-fill" id="volFill"></div>
-        <input type="range" class="styled-range" id="volSlider" min="0" max="100" value="80" oninput="setVol(this.value)">
-      </div>
-      <svg class="vol-ico" width="16" height="16" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-      <span class="vol-pct" id="volPct">80%</span>
+    <input type="file" id="fileInput" accept="audio/*,video/*" onchange="loadFile(event)">
+    <div class="prog-row" id="progRow">
+      <span class="time-lbl" id="tCur">0:00</span>
+      <div class="prog-track" id="progTrack"><div class="prog-fill" id="progFill"></div></div>
+      <span class="time-lbl" id="tTot">0:00</span>
     </div>
+    <div class="file-hint" id="hint">Tap Microphone to capture live audio, or load any audio/video file</div>
   </div>
 
-  <!-- OPEN FILES -->
-  <div class="open-card">
-    <div class="card-label">▸ Open Media ◂</div>
-    <div class="open-row">
-      <button class="open-btn" onclick="document.getElementById('audioIn').click()">
-        <svg width="24" height="24" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-        Audio
-      </button>
-      <button class="open-btn" onclick="document.getElementById('videoIn').click()">
-        <svg width="24" height="24" viewBox="0 0 24 24"><rect x="2" y="7" width="15" height="11" rx="2"/><path d="M22 8l-5 4 5 4V8z"/></svg>
-        Video
-      </button>
-    </div>
-    <input type="file" id="audioIn" accept="audio/*" multiple onchange="loadFiles(this.files,'audio')">
-    <input type="file" id="videoIn" accept="video/*" multiple onchange="loadFiles(this.files,'video')">
-  </div>
-
-  <!-- PLAYLIST -->
-  <div class="playlist-card">
-    <div class="playlist-head">
-      <div class="sec-title">Playlist</div>
-      <button class="ghost-btn" onclick="clearAll()">Clear</button>
-    </div>
-    <div class="playlist-body" id="playlistBody">
-      <div class="pl-empty">No tracks added yet</div>
+  <!-- Presets -->
+  <div class="presets">
+    <h3>Gain Presets</h3>
+    <div class="pg">
+      <button class="pb" onclick="setP(50)">50%</button>
+      <button class="pb" onclick="setP(100)">Normal</button>
+      <button class="pb" onclick="setP(200)">2×</button>
+      <button class="pb" onclick="setP(400)">4×</button>
     </div>
   </div>
+</main>
 
-  <!-- 11-BAND EQ -->
-  <div class="eq-card">
-    <div class="eq-top">
-      <div class="sec-title">11-Band Equaliser</div>
-      <select class="eq-sel" id="eqPre" onchange="applyPreset(this.value)">
-        <option value="flat">Flat</option>
-        <option value="bass">Bass Boost</option>
-        <option value="treble">Treble Boost</option>
-        <option value="vocal">Vocal</option>
-        <option value="rock">Rock</option>
-        <option value="jazz">Jazz</option>
-        <option value="classical">Classical</option>
-        <option value="pop">Pop</option>
-        <option value="electronic">Electronic</option>
-        <option value="hiphop">Hip Hop</option>
-        <option value="lofi">Lo-Fi</option>
-      </select>
-    </div>
-    <div class="eq-grid" id="eqGrid"></div>
-    <div class="eq-actions">
-      <button class="ghost-btn" onclick="resetEQ()">Reset EQ</button>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════
-       AUDIO SETTINGS
-  ════════════════════════════ -->
-  <div class="settings-card" id="audioSettingsCard">
-    <div class="settings-head" onclick="toggleCard('audioSettingsCard')">
-      <div class="settings-head-left">
-        <div class="settings-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-        </div>
-        <div>
-          <div class="sec-title">Audio Settings</div>
-          <div class="set-hint">Playback, effects &amp; processing</div>
-        </div>
-      </div>
-      <svg class="settings-chevron" width="18" height="18" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <div class="settings-body">
-
-      <!-- Playback Speed -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Playback Speed</span>
-            <span class="set-hint">Adjust audio playback rate</span>
-          </div>
-          <span class="set-value" id="audioSpeedVal">1.0×</span>
-        </div>
-        <div class="speed-btns">
-          <button class="speed-btn" onclick="setAudioSpeed(0.25)">0.25×</button>
-          <button class="speed-btn" onclick="setAudioSpeed(0.5)">0.5×</button>
-          <button class="speed-btn" onclick="setAudioSpeed(0.75)">0.75×</button>
-          <button class="speed-btn on" id="aspd1" onclick="setAudioSpeed(1.0)">1×</button>
-          <button class="speed-btn" onclick="setAudioSpeed(1.25)">1.25×</button>
-          <button class="speed-btn" onclick="setAudioSpeed(1.5)">1.5×</button>
-          <button class="speed-btn" onclick="setAudioSpeed(2.0)">2×</button>
-        </div>
-      </div>
-
-      <div class="set-divider"></div>
-
-      <!-- Master Gain / Boost -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Master Gain Boost</span>
-            <span class="set-hint">Pre-amplifier boost (0–200%)</span>
-          </div>
-          <span class="set-value" id="gainBoostVal">100%</span>
-        </div>
-        <div class="set-range-wrap">
-          <div class="set-range-track"></div>
-          <div class="set-range-fill" id="gainBoostFill" style="width:50%"></div>
-          <input type="range" class="set-range" id="gainBoostSlider" min="0" max="200" value="100" oninput="setGainBoost(this.value)">
-        </div>
-      </div>
-
-      <div class="set-divider"></div>
-
-      <!-- Bass Boost -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Bass Boost</span>
-            <span class="set-hint">Low-frequency enhancement</span>
-          </div>
-          <span class="set-value" id="bassBoostVal">0 dB</span>
-        </div>
-        <div class="set-range-wrap">
-          <div class="set-range-track"></div>
-          <div class="set-range-fill" id="bassBoostFill" style="width:50%"></div>
-          <input type="range" class="set-range" id="bassBoostSlider" min="-15" max="15" value="0" oninput="setBassBoost(this.value)">
-        </div>
-      </div>
-
-      <!-- Treble Boost -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Treble Boost</span>
-            <span class="set-hint">High-frequency enhancement</span>
-          </div>
-          <span class="set-value" id="trebleBoostVal">0 dB</span>
-        </div>
-        <div class="set-range-wrap">
-          <div class="set-range-track"></div>
-          <div class="set-range-fill" id="trebleBoostFill" style="width:50%"></div>
-          <input type="range" class="set-range" id="trebleBoostSlider" min="-15" max="15" value="0" oninput="setTrebleBoost(this.value)">
-        </div>
-      </div>
-
-      <div class="set-divider"></div>
-
-      <!-- Stereo Balance -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Stereo Balance</span>
-            <span class="set-hint">Left ← Centre → Right</span>
-          </div>
-          <span class="set-value" id="balanceVal">C</span>
-        </div>
-        <div class="set-range-wrap">
-          <div class="set-range-track"></div>
-          <div class="set-range-fill" id="balanceFill" style="width:50%;left:50%;transform:scaleX(0)"></div>
-          <input type="range" class="set-range" id="balanceSlider" min="-100" max="100" value="0" oninput="setBalance(this.value)">
-        </div>
-      </div>
-
-      <div class="set-divider"></div>
-
-      <!-- Fade In Duration -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Fade In</span>
-            <span class="set-hint">Gradual volume ramp at start</span>
-          </div>
-          <span class="set-value" id="fadeInVal">Off</span>
-        </div>
-        <div class="set-range-wrap">
-          <div class="set-range-track"></div>
-          <div class="set-range-fill" id="fadeInFill" style="width:0%"></div>
-          <input type="range" class="set-range" id="fadeInSlider" min="0" max="5" value="0" step="0.5" oninput="setFadeIn(this.value)">
-        </div>
-      </div>
-
-      <!-- Fade Out Duration -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Fade Out</span>
-            <span class="set-hint">Gradual volume ramp at end</span>
-          </div>
-          <span class="set-value" id="fadeOutVal">Off</span>
-        </div>
-        <div class="set-range-wrap">
-          <div class="set-range-track"></div>
-          <div class="set-range-fill" id="fadeOutFill" style="width:0%"></div>
-          <input type="range" class="set-range" id="fadeOutSlider" min="0" max="5" value="0" step="0.5" oninput="setFadeOut(this.value)">
-        </div>
-      </div>
-
-      <div class="set-divider"></div>
-
-      <!-- Mute Toggle -->
-      <div class="set-row">
-        <div class="set-label-wrap">
-          <span class="set-label">Mute</span>
-          <span class="set-hint">Silence audio output</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="muteToggle" onchange="setMute(this.checked)">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-
-      <!-- Mono Mix -->
-      <div class="set-row">
-        <div class="set-label-wrap">
-          <span class="set-label">Mono Mix</span>
-          <span class="set-hint">Combine L+R to single channel</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="monoToggle" onchange="setMono(this.checked)">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-
-      <!-- Audio Output Channel -->
-      <div class="set-row">
-        <div class="set-label-wrap">
-          <span class="set-label">Output Mode</span>
-          <span class="set-hint">Channel routing</span>
-        </div>
-        <select class="set-select" id="outputModeSelect" onchange="setOutputMode(this.value)">
-          <option value="stereo">Stereo</option>
-          <option value="left">Left Only</option>
-          <option value="right">Right Only</option>
-          <option value="swap">L/R Swap</option>
-        </select>
-      </div>
-
-      <div class="set-divider"></div>
-
-      <!-- Normalise -->
-      <div class="set-row">
-        <div class="set-label-wrap">
-          <span class="set-label">Auto Normalise</span>
-          <span class="set-hint">Level-match track volumes</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="normaliseToggle" onchange="setNormalise(this.checked)">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-
-      <!-- Crossfade -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Crossfade</span>
-            <span class="set-hint">Overlap between tracks (0–5s)</span>
-          </div>
-          <span class="set-value" id="crossfadeVal">Off</span>
-        </div>
-        <div class="set-range-wrap">
-          <div class="set-range-track"></div>
-          <div class="set-range-fill" id="crossfadeFill" style="width:0%"></div>
-          <input type="range" class="set-range" id="crossfadeSlider" min="0" max="5" value="0" step="0.5" oninput="setCrossfade(this.value)">
-        </div>
-      </div>
-
-      <!-- Gapless Playback -->
-      <div class="set-row">
-        <div class="set-label-wrap">
-          <span class="set-label">Gapless Playback</span>
-          <span class="set-hint">No silence between tracks</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="gaplessToggle" onchange="setGapless(this.checked)">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ════════════════════════════
-       VIDEO SETTINGS
-  ════════════════════════════ -->
-  <div class="settings-card" id="videoSettingsCard">
-    <div class="settings-head" onclick="toggleCard('videoSettingsCard')">
-      <div class="settings-head-left">
-        <div class="settings-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24"><rect x="2" y="7" width="15" height="11" rx="2"/><path d="M22 8l-5 4 5 4V8z"/></svg>
-        </div>
-        <div>
-          <div class="sec-title">Video Settings</div>
-          <div class="set-hint">Playback, display &amp; picture</div>
-        </div>
-      </div>
-      <svg class="settings-chevron" width="18" height="18" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <div class="settings-body">
-
-      <!-- Video Playback Speed -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Playback Speed</span>
-            <span class="set-hint">Adjust video playback rate</span>
-          </div>
-          <span class="set-value" id="videoSpeedVal">1.0×</span>
-        </div>
-        <div class="speed-btns">
-          <button class="speed-btn" onclick="setVideoSpeed(0.25)">0.25×</button>
-          <button class="speed-btn" onclick="setVideoSpeed(0.5)">0.5×</button>
-          <button class="speed-btn" onclick="setVideoSpeed(0.75)">0.75×</button>
-          <button class="speed-btn on" id="vspd1" onclick="setVideoSpeed(1.0)">1×</button>
-          <button class="speed-btn" onclick="setVideoSpeed(1.25)">1.25×</button>
-          <button class="speed-btn" onclick="setVideoSpeed(1.5)">1.5×</button>
-          <button class="speed-btn" onclick="setVideoSpeed(2.0)">2×</button>
-        </div>
-      </div>
-
-      <div class="set-divider"></div>
-
-      <!-- Brightness -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Brightness</span>
-            <span class="set-hint">Video brightness level</span>
-          </div>
-          <span class="set-value" id="brightnessVal">100%</span>
-        </div>
-        <div class="set-range-wrap">
-          <div class="set-range-track"></div>
-          <div class="set-range-fill" id="brightnessFill" style="width:50%"></div>
-          <input type="range" class="set-range" id="brightnessSlider" min="0" max="200" value="100" oninput="setVideoFilter()">
-        </div>
-      </div>
-
-      <!-- Contrast -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Contrast</span>
-            <span class="set-hint">Tonal range of the picture</span>
-          </div>
-          <span class="set-value" id="contrastVal">100%</span>
-        </div>
-        <div class="set-range-wrap">
-          <div class="set-range-track"></div>
-          <div class="set-range-fill" id="contrastFill" style="width:50%"></div>
-          <input type="range" class="set-range" id="contrastSlider" min="0" max="200" value="100" oninput="setVideoFilter()">
-        </div>
-      </div>
-
-      <!-- Saturation -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Saturation</span>
-            <span class="set-hint">Colour intensity</span>
-          </div>
-          <span class="set-value" id="saturationVal">100%</span>
-        </div>
-        <div class="set-range-wrap">
-          <div class="set-range-track"></div>
-          <div class="set-range-fill" id="saturationFill" style="width:50%"></div>
-          <input type="range" class="set-range" id="saturationSlider" min="0" max="200" value="100" oninput="setVideoFilter()">
-        </div>
-      </div>
-
-      <!-- Hue Rotate -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Hue Shift</span>
-            <span class="set-hint">Rotate colour wheel (0–360°)</span>
-          </div>
-          <span class="set-value" id="hueVal">0°</span>
-        </div>
-        <div class="set-range-wrap">
-          <div class="set-range-track"></div>
-          <div class="set-range-fill" id="hueFill" style="width:0%"></div>
-          <input type="range" class="set-range" id="hueSlider" min="0" max="360" value="0" oninput="setVideoFilter()">
-        </div>
-      </div>
-
-      <!-- Sharpness (blur inverse) -->
-      <div class="set-slider-row">
-        <div class="set-slider-top">
-          <div class="set-label-wrap">
-            <span class="set-label">Sharpness</span>
-            <span class="set-hint">Edge definition (high = sharp)</span>
-          </div>
-          <span class="set-value" id="sharpnessVal">100%</span>
-        </div>
-        <div class="set-range-wrap">
-          <div class="set-range-track"></div>
-          <div class="set-range-fill" id="sharpnessFill" style="width:100%"></div>
-          <input type="range" class="set-range" id="sharpnessSlider" min="0" max="100" value="100" oninput="setVideoFilter()">
-        </div>
-      </div>
-
-      <div class="set-divider"></div>
-
-      <!-- Aspect Ratio -->
-      <div class="set-row">
-        <div class="set-label-wrap">
-          <span class="set-label">Aspect Ratio</span>
-          <span class="set-hint">How video fills the frame</span>
-        </div>
-        <select class="set-select" id="aspectSelect" onchange="setAspectRatio(this.value)">
-          <option value="contain">Contain (letterbox)</option>
-          <option value="cover">Cover (crop)</option>
-          <option value="fill">Stretch (fill)</option>
-          <option value="16/9">16:9</option>
-          <option value="4/3">4:3</option>
-          <option value="1/1">1:1 Square</option>
-          <option value="21/9">21:9 Cinematic</option>
-        </select>
-      </div>
-
-      <!-- Rotation -->
-      <div class="set-row">
-        <div class="set-label-wrap">
-          <span class="set-label">Rotation</span>
-          <span class="set-hint">Rotate the video frame</span>
-        </div>
-        <select class="set-select" id="rotationSelect" onchange="setRotation(this.value)">
-          <option value="0">0° (Normal)</option>
-          <option value="90">90° Clockwise</option>
-          <option value="180">180° Flip</option>
-          <option value="270">270° Counter-CW</option>
-        </select>
-      </div>
-
-      <div class="set-divider"></div>
-
-      <!-- Mirror / Flip -->
-      <div class="set-row">
-        <div class="set-label-wrap">
-          <span class="set-label">Mirror Horizontal</span>
-          <span class="set-hint">Flip video left-right</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="mirrorHToggle" onchange="setVideoTransform()">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-
-      <div class="set-row">
-        <div class="set-label-wrap">
-          <span class="set-label">Mirror Vertical</span>
-          <span class="set-hint">Flip video top-bottom</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="mirrorVToggle" onchange="setVideoTransform()">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-
-      <div class="set-divider"></div>
-
-      <!-- Mute Video Audio -->
-      <div class="set-row">
-        <div class="set-label-wrap">
-          <span class="set-label">Mute Video Audio</span>
-          <span class="set-hint">Silence the video's audio track</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="videoMuteToggle" onchange="setVideoMute(this.checked)">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-
-      <!-- Picture-in-Picture -->
-      <div class="set-row">
-        <div class="set-label-wrap">
-          <span class="set-label">Picture-in-Picture</span>
-          <span class="set-hint">Float video in corner overlay</span>
-        </div>
-        <button class="ghost-btn" onclick="togglePiP()">Enter PiP</button>
-      </div>
-
-      <!-- Fullscreen -->
-      <div class="set-row">
-        <div class="set-label-wrap">
-          <span class="set-label">Fullscreen</span>
-          <span class="set-hint">Expand video to full display</span>
-        </div>
-        <button class="ghost-btn" onclick="toggleFullscreen()">Fullscreen</button>
-      </div>
-
-      <div class="set-divider"></div>
-
-      <!-- Reset Video -->
-      <div class="set-row" style="justify-content:flex-end">
-        <button class="ghost-btn" onclick="resetVideoSettings()">Reset Video</button>
-      </div>
-
-    </div>
-  </div>
-
-</div><!-- /.app -->
-
-<footer>
-  <div class="footer-line"></div>
-  <div class="footer-copy">© <span id="yr"></span> Manik Roy. All Rights Reserved.</div>
-  <div class="footer-sub">Aurum · Web Media Engine · v3.0</div>
-</footer>
+<footer>&copy; <span id="yr"></span> Manik Roy. All Rights Reserved.</footer>
 
 <script>
-/* ═══════════════════════════
-   YEAR
-═══════════════════════════ */
+// Year
 document.getElementById('yr').textContent = new Date().getFullYear();
 
-/* ═══════════════════════════
-   THEME
-═══════════════════════════ */
-function setTheme(t, el) {
-  document.body.className = t === 'dark' ? '' : 't-' + t;
-  document.querySelectorAll('.t-dot').forEach(d => d.classList.remove('on'));
-  el.classList.add('on');
+// Theme
+document.querySelectorAll('.theme-btn').forEach(b => b.addEventListener('click', () => {
+  document.documentElement.dataset.theme = b.dataset.t;
+  document.querySelectorAll('.theme-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+}));
+
+// ── Audio engine ──────────────────────────────────────────────
+let ctx, gainNode, analyser, compressor, src;
+let micStream = null;
+let audioBuffer = null;
+let bufSrc = null;
+let muted = false, boosted = false;
+let currentGainVal = 1.0;
+let rafId = null;
+let startTime = 0, pauseOffset = 0, isPlaying = false;
+let clipTimer = null;
+
+function boot() {
+  if (ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  gainNode = ctx.createGain();
+  compressor = ctx.createDynamicsCompressor();
+  compressor.threshold.value = -1;
+  compressor.knee.value = 0;
+  compressor.ratio.value = 20;
+  compressor.attack.value = 0.001;
+  compressor.release.value = 0.1;
+  analyser = ctx.createAnalyser();
+  analyser.fftSize = 512;
+  analyser.smoothingTimeConstant = 0.8;
+  gainNode.connect(analyser);
+  analyser.connect(compressor);
+  compressor.connect(ctx.destination);
 }
 
-/* ═══════════════════════════
-   WEB AUDIO ENGINE
-═══════════════════════════ */
-let actx, gain;
-let audioSrc = null;
-let videoSrc = null;
-const filters = [];
-
-const BANDS = [
-  {f:32,l:'32'},{f:64,l:'64'},{f:125,l:'125'},{f:250,l:'250'},{f:500,l:'500'},
-  {f:1e3,l:'1K'},{f:2e3,l:'2K'},{f:4e3,l:'4K'},{f:8e3,l:'8K'},{f:12e3,l:'12K'},{f:16e3,l:'16K'}
-];
-const PRESETS = {
-  flat:       [0,0,0,0,0,0,0,0,0,0,0],
-  bass:       [8,7,5,2,0,-1,-1,-2,-2,-3,-3],
-  treble:     [-3,-2,-1,0,0,1,2,4,6,7,8],
-  vocal:      [-4,-2,0,2,4,5,4,2,0,-2,-3],
-  rock:       [5,4,3,1,-1,-1,1,3,4,5,5],
-  jazz:       [3,2,1,2,3,3,2,1,2,2,2],
-  classical:  [5,4,3,2,0,-1,0,2,3,4,4],
-  pop:        [-2,0,2,4,5,4,2,0,-1,-2,-2],
-  electronic: [6,5,2,0,-2,0,2,4,5,6,6],
-  hiphop:     [6,5,4,1,-1,0,1,2,3,4,3],
-  lofi:       [4,3,2,-1,-3,-4,-3,-2,0,1,2]
-};
-
-function initActx() {
-  if (actx) return;
-  actx = new (window.AudioContext || window.webkitAudioContext)();
-  gain = actx.createGain();
-  gain.gain.value = parseFloat(document.getElementById('volSlider').value) / 100;
-  let prev = gain;
-  BANDS.forEach((b, i) => {
-    const f = actx.createBiquadFilter();
-    f.type = i === 0 ? 'lowshelf' : i === BANDS.length - 1 ? 'highshelf' : 'peaking';
-    f.frequency.value = b.f;
-    f.gain.value = 0;
-    f.Q.value = 1.4;
-    prev.connect(f);
-    prev = f;
-    filters.push(f);
-  });
-  prev.connect(actx.destination);
+function setGain(pct) {
+  currentGainVal = muted ? 0 : (boosted ? (pct / 100) * 2.5 : pct / 100);
+  if (gainNode) gainNode.gain.setTargetAtTime(currentGainVal, ctx.currentTime, 0.02);
+  updateDial(pct);
 }
 
-function wireAudio() {
-  if (audioSrc) return;
-  initActx();
-  audioSrc = actx.createMediaElementSource(audio);
-  audioSrc.connect(gain);
+// ── Dial & slider ─────────────────────────────────────────────
+const sl = document.getElementById('sl');
+const arc = document.getElementById('arc');
+const C = 2 * Math.PI * 66; // r=66
+
+function updateDial(pct) {
+  document.getElementById('gainNum').textContent = muted ? 0 : Math.round(pct);
+  document.getElementById('slLbl').textContent = (muted ? 0 : Math.round(pct)) + '%';
+  const frac = Math.min(pct / 600, 1) * 0.75;
+  arc.style.strokeDashoffset = C - frac * C;
 }
 
-function wireVideo() {
-  if (videoSrc) return;
-  initActx();
-  videoSrc = actx.createMediaElementSource(videoEl);
-  videoSrc.connect(gain);
+sl.addEventListener('input', () => setGain(+sl.value));
+updateDial(100);
+
+// ── Mic ───────────────────────────────────────────────────────
+async function startMic() {
+  try {
+    stopAll(false);
+    boot();
+    if (ctx.state === 'suspended') await ctx.resume();
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    src = ctx.createMediaStreamSource(micStream);
+    src.connect(gainNode);
+    setStatus('green', '🎙 Microphone Live');
+    setActive('btnMic');
+    startViz();
+    document.getElementById('hint').textContent = 'Microphone is active — speak or play audio near it';
+  } catch(e) {
+    setStatus('red', 'Mic blocked: ' + e.message);
+    document.getElementById('hint').textContent = '⚠ ' + (e.name === 'NotAllowedError' ? 'Permission denied — allow mic in browser settings' : e.message);
+  }
 }
 
-/* ═══════════════════════════
-   BUILD EQ SLIDERS
-═══════════════════════════ */
-const eqGrid = document.getElementById('eqGrid');
-BANDS.forEach((b, i) => {
-  const col = document.createElement('div');
-  col.className = 'eq-col';
-  col.innerHTML = `
-    <div class="eq-dB" id="edB${i}">0</div>
-    <div class="eq-track">
-      <div class="eq-zero"></div>
-      <input class="eq-slider" type="range" id="es${i}" min="-15" max="15" value="0" step="0.5" oninput="setBand(${i},this.value)">
-    </div>
-    <div class="eq-hz">${b.l}</div>`;
-  eqGrid.appendChild(col);
-  const slider = col.querySelector('.eq-slider');
-  slider.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
-  slider.addEventListener('touchmove',  e => e.stopPropagation(), { passive: true });
+// ── File loader ───────────────────────────────────────────────
+async function loadFile(evt) {
+  const file = evt.target.files[0];
+  evt.target.value = '';
+  if (!file) return;
+  stopAll(false);
+  boot();
+  if (ctx.state === 'suspended') await ctx.resume();
+  setStatus('yellow', 'Loading…');
+  document.getElementById('hint').textContent = '⏳ Decoding: ' + file.name;
+  try {
+    const ab = await file.arrayBuffer();
+    audioBuffer = await ctx.decodeAudioData(ab);
+    pauseOffset = 0;
+    playBuffer();
+    setActive('btnFile');
+    document.getElementById('progRow').style.display = 'flex';
+    document.getElementById('hint').textContent = '🎵 ' + file.name;
+  } catch(e) {
+    setStatus('red', 'Decode error');
+    document.getElementById('hint').textContent = '⚠ Could not decode: ' + e.message;
+  }
+}
+
+function playBuffer() {
+  if (!audioBuffer) return;
+  if (bufSrc) { try { bufSrc.stop(); bufSrc.disconnect(); } catch(e){} }
+  bufSrc = ctx.createBufferSource();
+  bufSrc.buffer = audioBuffer;
+  bufSrc.connect(gainNode);
+  bufSrc.start(0, pauseOffset);
+  startTime = ctx.currentTime - pauseOffset;
+  isPlaying = true;
+  bufSrc.onended = () => {
+    if (isPlaying) { pauseOffset = 0; isPlaying = false; setStatus('green', 'Playback finished'); }
+  };
+  setStatus('green', 'Playing Audio');
+  startViz();
+  updateProgress();
+}
+
+function updateProgress() {
+  if (!audioBuffer) return;
+  const elapsed = isPlaying ? ctx.currentTime - startTime : pauseOffset;
+  const dur = audioBuffer.duration;
+  document.getElementById('progFill').style.width = Math.min(elapsed / dur * 100, 100) + '%';
+  document.getElementById('tCur').textContent = fmt(elapsed);
+  document.getElementById('tTot').textContent = fmt(dur);
+  if (isPlaying) requestAnimationFrame(updateProgress);
+}
+
+document.getElementById('progTrack').addEventListener('click', e => {
+  if (!audioBuffer) return;
+  const r = e.currentTarget.getBoundingClientRect();
+  const frac = (e.clientX - r.left) / r.width;
+  pauseOffset = frac * audioBuffer.duration;
+  if (isPlaying) playBuffer();
 });
-
-function setBand(i, v) {
-  const val = parseFloat(v);
-  const lbl = document.getElementById('edB' + i);
-  lbl.textContent = (val >= 0 ? '+' : '') + val.toFixed(0);
-  lbl.style.color = val > 0 ? 'var(--gold)' : val < 0 ? 'var(--teal)' : 'var(--text3)';
-  if (filters[i]) filters[i].gain.value = val;
-}
-function applyPreset(name) {
-  const v = PRESETS[name] || PRESETS.flat;
-  v.forEach((val, i) => { document.getElementById('es' + i).value = val; setBand(i, val); });
-}
-function resetEQ() {
-  BANDS.forEach((_, i) => { document.getElementById('es' + i).value = 0; setBand(i, 0); });
-  document.getElementById('eqPre').value = 'flat';
-}
-
-/* ═══════════════════════════
-   ELEMENTS & STATE
-═══════════════════════════ */
-const audio   = new Audio();
-const videoEl = document.getElementById('videoEl');
-
-let playlist = [], curIdx = -1, playing = false;
-let shuffle = false, loopOne = false, loopAll = false;
-
-/* ═══════════════════════════
-   AUDIO EVENTS
-═══════════════════════════ */
-audio.volume = 0.8;
-audio.addEventListener('timeupdate',     () => onTime(audio));
-audio.addEventListener('loadedmetadata', () => onMeta(audio));
-audio.addEventListener('ended',          onAudioEnded);
-
-/* ═══════════════════════════
-   VIDEO EVENTS
-═══════════════════════════ */
-videoEl.addEventListener('timeupdate',     () => onTime(videoEl));
-videoEl.addEventListener('loadedmetadata', () => onMeta(videoEl));
-videoEl.addEventListener('ended',          onVideoEnded);
-videoEl.addEventListener('play',  () => { playing = true;  updatePlayUI(); });
-videoEl.addEventListener('pause', () => { playing = false; updatePlayUI(); });
-
-function onMeta(el) {
-  document.getElementById('tTotal').textContent = fmt(el.duration);
-}
-function onTime(el) {
-  if (!el.duration) return;
-  const p   = el.currentTime / el.duration;
-  const pct = (p * 100).toFixed(2) + '%';
-  document.getElementById('progFill').style.width = pct;
-  const thumb = document.getElementById('progThumb');
-  thumb.style.left = pct;
-  thumb.classList.toggle('at-zero', p === 0);
-  document.getElementById('tElapsed').textContent = fmt(el.currentTime);
-}
-
-function onAudioEnded() {
-  if (loopOne) { audio.currentTime = 0; audio.play().catch(() => {}); }
-  else if (loopAll || playlist.length > 1) { nextTrack(); }
-  else { playing = false; updatePlayUI(); }
-}
-function onVideoEnded() {
-  if (loopOne) { videoEl.currentTime = 0; videoEl.play().catch(() => {}); }
-  else if (loopAll || playlist.length > 1) { nextTrack(); }
-  else { playing = false; updatePlayUI(); }
-}
-
-/* ═══════════════════════════
-   LOAD FILES
-═══════════════════════════ */
-function loadFiles(files, type) {
-  const wasEmpty = playlist.length === 0;
-  Array.from(files).forEach(f => playlist.push({ name: f.name, url: URL.createObjectURL(f), type }));
-  renderPL();
-  if (wasEmpty && curIdx < 0) loadTrack(0, false);
-}
-
-function renderPL() {
-  const body = document.getElementById('playlistBody');
-  if (!playlist.length) { body.innerHTML = '<div class="pl-empty">No tracks added yet</div>'; return; }
-  body.innerHTML = playlist.map((t, i) => `
-    <div class="pl-item${i === curIdx ? ' cur' : ''}" onclick="loadTrack(${i}, true)">
-      <span class="pl-idx">${String(i + 1).padStart(2, '0')}</span>
-      <span class="pl-type">${t.type === 'video' ? 'VID' : 'AUD'}</span>
-      <span class="pl-name">${t.name}</span>
-    </div>`).join('');
-}
-
-/* ═══════════════════════════
-   LOAD TRACK
-═══════════════════════════ */
-function loadTrack(i, autoPlay) {
-  if (i < 0 || i >= playlist.length) return;
-  curIdx = i;
-  const t = playlist[i];
-
-  audio.pause();
-  videoEl.pause();
-  videoEl.src = '';
-
-  const clean = t.name.replace(/\.[^.]+$/, '');
-  document.getElementById('trackName').textContent = clean;
-  document.getElementById('trackMeta').textContent = t.type === 'video' ? '▶ Video' : '♪ Audio';
-  document.getElementById('progFill').style.width = '0%';
-  document.getElementById('progThumb').style.left = '0%';
-  document.getElementById('progThumb').classList.add('at-zero');
-  document.getElementById('tElapsed').textContent = '0:00';
-  document.getElementById('tTotal').textContent   = '0:00';
-
-  const vc = document.getElementById('videoCard');
-  const hc = document.getElementById('heroCard');
-
-  if (t.type === 'video') {
-    vc.style.display = 'block';
-    hc.style.display = 'none';
-    videoEl.src  = t.url;
-    videoEl.loop = loopOne;
-    videoEl.load();
-    if (autoPlay) {
-      wireVideo();
-      actx.resume().then(() => {
-        videoEl.play().catch(err => { console.warn('Video play failed:', err); playing = false; updatePlayUI(); });
-      });
-      playing = true;
-    } else {
-      playing = false;
-    }
-  } else {
-    vc.style.display = 'none';
-    hc.style.display = '';
-    document.getElementById('artImg').classList.remove('show');
-    document.getElementById('artIdle').style.display = '';
-    audio.src  = t.url;
-    audio.loop = loopOne;
-    audio.load();
-    if (autoPlay) {
-      playAudioWhenReady();
-    } else {
-      playing = false;
-    }
-  }
-
-  updatePlayUI();
-  renderPL();
-}
-
-/* ═══════════════════════════
-   PLAY AUDIO — wait for canplay
-═══════════════════════════ */
-function playAudioWhenReady() {
-  wireAudio();
-  audio.removeEventListener('canplay', _onCanPlay);
-  if (audio.readyState >= 3) {
-    _doPlayAudio();
-  } else {
-    audio.addEventListener('canplay', _onCanPlay, { once: true });
-  }
-}
-function _onCanPlay() { _doPlayAudio(); }
-function _doPlayAudio() {
-  actx.resume().then(() => {
-    audio.play().then(() => {
-      playing = true;
-      updatePlayUI();
-      applyFadeIn(audio);
-    }).catch(err => {
-      console.warn('Audio play failed:', err);
-      playing = false;
-      updatePlayUI();
-    });
-  });
-}
-
-/* ═══════════════════════════
-   TOGGLE PLAY / PAUSE
-═══════════════════════════ */
-function togglePlay() {
-  if (!playlist.length) return;
-  if (curIdx < 0) { loadTrack(0, true); return; }
-  const t = playlist[curIdx];
-  if (t.type === 'video') {
-    if (videoEl.paused) {
-      wireVideo();
-      actx.resume().then(() => videoEl.play().catch(() => {}));
-    } else {
-      videoEl.pause();
-    }
-  } else {
-    if (audio.paused) {
-      playAudioWhenReady();
-    } else {
-      audio.pause();
-      playing = false;
-      updatePlayUI();
-    }
-  }
-}
-
-function updatePlayUI() {
-  document.getElementById('icPlay').style.display  = playing ? 'none' : '';
-  document.getElementById('icPause').style.display = playing ? '' : 'none';
-  const hc   = document.getElementById('heroCard');
-  const disc = document.getElementById('idleDisc');
-  hc.classList.toggle('is-playing', playing);
-  disc.classList.toggle('spin', playing);
-}
-
-/* ═══════════════════════════
-   NAVIGATION
-═══════════════════════════ */
-function prevTrack() {
-  if (!playlist.length) return;
-  loadTrack(curIdx <= 0 ? playlist.length - 1 : curIdx - 1, true);
-}
-function nextTrack() {
-  if (!playlist.length) return;
-  loadTrack(shuffle ? Math.floor(Math.random() * playlist.length) : (curIdx + 1) % playlist.length, true);
-}
-
-/* ═══════════════════════════
-   SHUFFLE / LOOP
-═══════════════════════════ */
-function toggleShuffle() {
-  shuffle = !shuffle;
-  document.getElementById('shuffleBtn').classList.toggle('on', shuffle);
-}
-
-function toggleLoop() {
-  if (!loopOne && !loopAll)       { loopOne = true;  loopAll = false; }
-  else if (loopOne && !loopAll)   { loopOne = false; loopAll = true;  }
-  else                             { loopOne = false; loopAll = false; }
-
-  audio.loop   = loopOne;
-  videoEl.loop = loopOne;
-
-  const btn   = document.getElementById('loopBtn');
-  const badge = document.getElementById('loopBadge');
-  btn.classList.toggle('on', loopOne || loopAll);
-  btn.title        = loopOne ? 'Loop: One' : loopAll ? 'Loop: All' : 'Loop: Off';
-  badge.textContent  = loopOne ? '1' : loopAll ? '∞' : '';
-  badge.style.display = (loopOne || loopAll) ? '' : 'none';
-}
-
-/* ═══════════════════════════
-   SEEK
-═══════════════════════════ */
-const progBar = document.getElementById('progBar');
-function getSeekX(e) {
-  const r = progBar.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  return Math.max(0, Math.min(clientX - r.left, r.width));
-}
-function doSeek(e) {
-  const t = playlist[curIdx];
-  if (!t) return;
-  const el = t.type === 'video' ? videoEl : audio;
-  if (!el.duration) return;
-  const r = progBar.getBoundingClientRect();
-  el.currentTime = (getSeekX(e) / r.width) * el.duration;
-}
-let isDrag = false;
-progBar.addEventListener('pointerdown', e => { isDrag = true; doSeek(e); e.preventDefault(); });
-window.addEventListener('pointermove',  e => { if (isDrag) doSeek(e); });
-window.addEventListener('pointerup',    () => { isDrag = false; });
-progBar.addEventListener('touchstart',  e => { isDrag = true; doSeek(e); e.preventDefault(); }, { passive: false });
-progBar.addEventListener('touchmove',   e => { if (isDrag) doSeek(e); e.preventDefault(); }, { passive: false });
-progBar.addEventListener('touchend',    () => { isDrag = false; });
-
-/* ═══════════════════════════
-   VOLUME
-═══════════════════════════ */
-function setVol(v) {
-  const vol = v / 100;
-  audio.volume   = vol;
-  videoEl.volume = vol;
-  if (gain) gain.gain.value = vol;
-  document.getElementById('volPct').textContent  = v + '%';
-  document.getElementById('volFill').style.width = v + '%';
-}
-document.getElementById('volFill').style.width = '80%';
-document.getElementById('volSlider').addEventListener('change', function () { setVol(this.value); });
 
 function fmt(s) {
-  if (!s || isNaN(s)) return '0:00';
-  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
-  return m + ':' + (sec < 10 ? '0' : '') + sec;
+  s = Math.max(0, s | 0);
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 }
 
-function clearAll() {
-  audio.pause(); audio.src = '';
-  videoEl.pause(); videoEl.src = '';
-  playlist = []; curIdx = -1; playing = false;
-  document.getElementById('videoCard').style.display = 'none';
-  document.getElementById('heroCard').style.display  = '';
-  document.getElementById('trackName').textContent   = '— Nothing playing —';
-  document.getElementById('trackMeta').textContent   = 'Open a file to begin';
-  document.getElementById('progFill').style.width    = '0%';
-  document.getElementById('progThumb').style.left    = '0%';
-  document.getElementById('tElapsed').textContent    = '0:00';
-  document.getElementById('tTotal').textContent      = '0:00';
-  updatePlayUI();
-  renderPL();
-}
-
-/* ════════════════════════════════════════
-   SETTINGS — Card Toggle
-════════════════════════════════════════ */
-function toggleCard(id) {
-  document.getElementById(id).classList.toggle('open');
-}
-
-/* ════════════════════════════════════════
-   AUDIO SETTINGS
-════════════════════════════════════════ */
-
-// ── Playback Speed ──
-function setAudioSpeed(rate) {
-  audio.playbackRate = rate;
-  document.getElementById('audioSpeedVal').textContent = rate + '×';
-  document.querySelectorAll('#audioSettingsCard .speed-btn').forEach(b => {
-    b.classList.toggle('on', parseFloat(b.textContent) === rate);
-  });
-}
-
-// ── Master Gain Boost ──
-let gainBoostNode = null;
-function setGainBoost(val) {
-  const pct = parseInt(val);
-  document.getElementById('gainBoostVal').textContent = pct + '%';
-  document.getElementById('gainBoostFill').style.width = (pct / 200 * 100) + '%';
-  if (gain) gain.gain.value = (pct / 100) * (parseInt(document.getElementById('volSlider').value) / 100);
-}
-
-// ── Bass / Treble Boost (dedicated biquad filters) ──
-let bassFilter = null, trebleFilter = null;
-
-function ensureBassFilter() {
-  if (bassFilter) return;
-  initActx();
-  // Already have EQ filters — we use the first (lowshelf) for direct bass boost display
-  bassFilter = filters[0];
-}
-function ensureTrebleFilter() {
-  if (trebleFilter) return;
-  initActx();
-  trebleFilter = filters[filters.length - 1];
-}
-
-function setBassBoost(val) {
-  const dB = parseFloat(val);
-  document.getElementById('bassBoostVal').textContent = (dB >= 0 ? '+' : '') + dB + ' dB';
-  document.getElementById('bassBoostFill').style.width = ((dB + 15) / 30 * 100) + '%';
-  ensureBassFilter();
-  if (bassFilter) {
-    bassFilter.gain.value = dB;
-    // Sync EQ slider 0
-    const sl = document.getElementById('es0');
-    if (sl) { sl.value = dB; setBand(0, dB); }
+// ── Stop ──────────────────────────────────────────────────────
+function stopAll(resetUI = true) {
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if (bufSrc) { try { bufSrc.stop(); bufSrc.disconnect(); } catch(e){} bufSrc = null; }
+  if (src) { try { src.disconnect(); } catch(e){} src = null; }
+  isPlaying = false; audioBuffer = null; pauseOffset = 0;
+  cancelAnimationFrame(rafId);
+  clearViz();
+  if (resetUI) {
+    setStatus('', 'Stopped');
+    document.getElementById('hint').textContent = 'Tap Microphone to capture live audio, or load any audio/video file';
+    document.getElementById('progRow').style.display = 'none';
+    document.querySelectorAll('.src-btn').forEach(b => b.classList.remove('on'));
+    document.getElementById('dbNum').textContent = '−∞';
+    document.getElementById('dbFill').style.width = '0%';
   }
 }
 
-function setTrebleBoost(val) {
-  const dB = parseFloat(val);
-  document.getElementById('trebleBoostVal').textContent = (dB >= 0 ? '+' : '') + dB + ' dB';
-  document.getElementById('trebleBoostFill').style.width = ((dB + 15) / 30 * 100) + '%';
-  ensureTrebleFilter();
-  if (trebleFilter) {
-    trebleFilter.gain.value = dB;
-    // Sync EQ slider last
-    const sl = document.getElementById('es' + (BANDS.length - 1));
-    if (sl) { sl.value = dB; setBand(BANDS.length - 1, dB); }
-  }
+// ── Mute / Boost / Reset ─────────────────────────────────────
+function toggleMute() {
+  muted = !muted;
+  const b = document.getElementById('muteBtn');
+  b.textContent = muted ? 'Unmute' : 'Mute';
+  b.classList.toggle('muted-on', muted);
+  setGain(+sl.value);
 }
-
-// ── Stereo Balance (uses ChannelSplitter + Merger) ──
-let splitter = null, merger = null, leftGain = null, rightGain = null, balanceWired = false;
-
-function ensureBalance() {
-  if (balanceWired) return;
-  initActx();
-  splitter  = actx.createChannelSplitter(2);
-  merger    = actx.createChannelMerger(2);
-  leftGain  = actx.createGain();
-  rightGain = actx.createGain();
-  leftGain.gain.value  = 1;
-  rightGain.gain.value = 1;
-  // Insert between last EQ filter and destination
-  const lastFilter = filters[filters.length - 1];
-  lastFilter.disconnect();
-  lastFilter.connect(splitter);
-  splitter.connect(leftGain,  0);
-  splitter.connect(rightGain, 1);
-  leftGain.connect(merger,  0, 0);
-  rightGain.connect(merger, 0, 1);
-  merger.connect(actx.destination);
-  balanceWired = true;
+function toggleBoost() {
+  boosted = !boosted;
+  const b = document.getElementById('boostBtn');
+  b.textContent = boosted ? '⚡ Boosted!' : '⚡ Boost';
+  b.style.background = boosted ? 'linear-gradient(135deg,#ff8c00,#ffd700)' : '';
+  setGain(+sl.value);
 }
+function resetAll() {
+  muted = false; boosted = false; sl.value = 100;
+  document.getElementById('muteBtn').textContent = 'Mute';
+  document.getElementById('muteBtn').classList.remove('muted-on');
+  document.getElementById('boostBtn').textContent = '⚡ Boost';
+  document.getElementById('boostBtn').style.background = '';
+  setGain(100);
+}
+function setP(v) { sl.value = v; setGain(v); }
 
-function setBalance(val) {
-  const v = parseInt(val);
-  let label = 'C';
-  if (v < -5)  label = 'L' + Math.abs(v);
-  if (v > 5)   label = 'R' + v;
-  document.getElementById('balanceVal').textContent = label;
-  // Visual fill — centred track
-  const fill = document.getElementById('balanceFill');
-  fill.style.transform = '';
-  fill.style.left = '';
-  if (v === 0) {
-    fill.style.width = '0%';
-  } else if (v < 0) {
-    fill.style.width = (Math.abs(v)) + '%';
-    fill.style.left = (50 + v) + '%';
-  } else {
-    fill.style.width = v + '%';
-    fill.style.left = '50%';
-  }
-  ensureBalance();
-  if (leftGain && rightGain) {
-    if (v <= 0) {
-      leftGain.gain.value  = 1;
-      rightGain.gain.value = 1 + (v / 100);
-    } else {
-      leftGain.gain.value  = 1 - (v / 100);
-      rightGain.gain.value = 1;
+// ── Visualizer ────────────────────────────────────────────────
+const cv = document.getElementById('cv');
+const cx = cv.getContext('2d');
+const fData = new Uint8Array(512 / 2);
+const tData = new Uint8Array(512);
+const fFloat = new Float32Array(512 / 2);
+
+function startViz() {
+  cancelAnimationFrame(rafId);
+  function frame() {
+    rafId = requestAnimationFrame(frame);
+    const W = cv.offsetWidth, H = cv.offsetHeight;
+    cv.width = W; cv.height = H;
+    analyser.getByteFrequencyData(fData);
+    analyser.getByteTimeDomainData(tData);
+    analyser.getFloatTimeDomainData(fFloat);
+
+    // bg
+    const th = document.documentElement.dataset.theme;
+    cx.fillStyle = th === 'oled' ? '#111' : th === 'light' ? '#eaeaf5' : '#22263a';
+    cx.fillRect(0, 0, W, H);
+
+    // freq bars
+    const bars = fData.length;
+    const bW = W / bars * 2.2;
+    for (let i = 0; i < bars; i++) {
+      const v = fData[i] / 255;
+      const bH = v * H;
+      const grad = cx.createLinearGradient(0, H, 0, H - bH);
+      grad.addColorStop(0, `rgba(255,${60 + v * 100},${20},0.9)`);
+      grad.addColorStop(1, `rgba(255,${140 + v * 80},0,0.5)`);
+      cx.fillStyle = grad;
+      cx.beginPath();
+      cx.roundRect(i * (bW + 1.5), H - bH, bW, bH, 2);
+      cx.fill();
+    }
+
+    // waveform
+    cx.beginPath();
+    cx.strokeStyle = 'rgba(255,255,255,0.3)';
+    cx.lineWidth = 1.5;
+    const sw = W / tData.length;
+    for (let i = 0; i < tData.length; i++) {
+      const y = (tData[i] / 128) * H / 2;
+      i === 0 ? cx.moveTo(0, y) : cx.lineTo(i * sw, y);
+    }
+    cx.stroke();
+
+    // RMS dB meter
+    let sum = 0;
+    for (let i = 0; i < fFloat.length; i++) sum += fFloat[i] * fFloat[i];
+    const rms = Math.sqrt(sum / fFloat.length);
+    const db = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
+    const dbPct = isFinite(db) ? Math.min(100, Math.max(0, (db + 60) / 60 * 100)) : 0;
+    document.getElementById('dbFill').style.width = dbPct + '%';
+    document.getElementById('dbNum').textContent = isFinite(db) ? db.toFixed(1) + ' dB' : '−∞';
+    if (db > -1.5) {
+      document.getElementById('clipLbl').classList.add('on');
+      clearTimeout(clipTimer);
+      clipTimer = setTimeout(() => document.getElementById('clipLbl').classList.remove('on'), 700);
     }
   }
+  frame();
 }
 
-// ── Fade In ──
-let fadeInDur = 0;
-function setFadeIn(val) {
-  fadeInDur = parseFloat(val);
-  document.getElementById('fadeInVal').textContent = fadeInDur === 0 ? 'Off' : fadeInDur + 's';
-  document.getElementById('fadeInFill').style.width = (fadeInDur / 5 * 100) + '%';
+function clearViz() {
+  const W = cv.offsetWidth, H = cv.offsetHeight;
+  cv.width = W; cv.height = H;
+  const th = document.documentElement.dataset.theme;
+  cx.fillStyle = th === 'oled' ? '#111' : th === 'light' ? '#eaeaf5' : '#22263a';
+  cx.fillRect(0, 0, W, H);
 }
 
-// ── Fade Out ──
-let fadeOutDur = 0;
-function setFadeOut(val) {
-  fadeOutDur = parseFloat(val);
-  document.getElementById('fadeOutVal').textContent = fadeOutDur === 0 ? 'Off' : fadeOutDur + 's';
-  document.getElementById('fadeOutFill').style.width = (fadeOutDur / 5 * 100) + '%';
+// ── Helpers ───────────────────────────────────────────────────
+function setStatus(type, txt) {
+  const d = document.getElementById('dot');
+  d.className = 'dot' + (type ? ' ' + type : '');
+  document.getElementById('statusTxt').textContent = txt;
+}
+function setActive(id) {
+  document.querySelectorAll('.src-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
 }
 
-// Apply fade-in when a track starts
-function applyFadeIn(el) {
-  if (!fadeInDur || !gain) return;
-  const vol = parseInt(document.getElementById('volSlider').value) / 100;
-  gain.gain.setValueAtTime(0, actx.currentTime);
-  gain.gain.linearRampToValueAtTime(vol, actx.currentTime + fadeInDur);
-}
-
-// Apply fade-out triggered from timeupdate
-function checkFadeOut(el) {
-  if (!fadeOutDur || !gain || !el.duration) return;
-  const remaining = el.duration - el.currentTime;
-  if (remaining > 0 && remaining <= fadeOutDur) {
-    const vol = parseInt(document.getElementById('volSlider').value) / 100;
-    const ratio = remaining / fadeOutDur;
-    if (gain.gain.value > 0.01) gain.gain.value = vol * ratio;
-  }
-}
-audio.addEventListener('timeupdate', () => checkFadeOut(audio));
-videoEl.addEventListener('timeupdate', () => checkFadeOut(videoEl));
-
-// ── Mute ──
-function setMute(on) {
-  audio.muted   = on;
-  videoEl.muted = on;
-}
-
-// ── Mono Mix (ChannelMerger) ──
-let monoMerger = null, monoWired = false;
-function setMono(on) {
-  if (on && !monoWired) {
-    initActx();
-    monoMerger = actx.createChannelMerger(1);
-    // Ensure balance is not wired — use simpler path
-    const lastFilter = balanceWired ? merger : filters[filters.length - 1];
-    if (!balanceWired) {
-      lastFilter.disconnect();
-      lastFilter.connect(monoMerger, 0, 0);
-    }
-    monoMerger.connect(actx.destination);
-    monoWired = true;
-  } else if (!on && monoWired) {
-    // Reconnect to destination directly
-    const lastFilter = balanceWired ? merger : filters[filters.length - 1];
-    if (!balanceWired) {
-      lastFilter.disconnect(monoMerger);
-      lastFilter.connect(actx.destination);
-    }
-    monoWired = false;
-  }
-}
-
-// ── Output Mode ──
-function setOutputMode(mode) {
-  ensureBalance();
-  switch (mode) {
-    case 'stereo':
-      leftGain.gain.value = 1; rightGain.gain.value = 1;
-      document.getElementById('balanceSlider').value = 0;
-      setBalance(0); break;
-    case 'left':
-      leftGain.gain.value = 1; rightGain.gain.value = 0; break;
-    case 'right':
-      leftGain.gain.value = 0; rightGain.gain.value = 1; break;
-    case 'swap':
-      leftGain.gain.value = 0; rightGain.gain.value = 0;
-      splitter.connect(rightGain, 0); // left channel → right out
-      splitter.connect(leftGain,  1); // right channel → left out
-      break;
-  }
-}
-
-// ── Auto Normalise (basic gain levelling) ──
-let normalising = false;
-function setNormalise(on) {
-  normalising = on;
-}
-// Rough normalise: read peak from first N samples — applied at loadedmetadata
-audio.addEventListener('loadedmetadata', () => {
-  if (normalising && gain) gain.gain.value = parseInt(document.getElementById('volSlider').value) / 100;
-});
-
-// ── Crossfade ──
-let crossfadeDur = 0;
-function setCrossfade(val) {
-  crossfadeDur = parseFloat(val);
-  document.getElementById('crossfadeVal').textContent = crossfadeDur === 0 ? 'Off' : crossfadeDur + 's';
-  document.getElementById('crossfadeFill').style.width = (crossfadeDur / 5 * 100) + '%';
-}
-
-// ── Gapless Playback ──
-let gapless = false;
-function setGapless(on) {
-  gapless = on;
-}
-
-/* ════════════════════════════════════════
-   VIDEO SETTINGS
-════════════════════════════════════════ */
-
-// ── Video Speed ──
-function setVideoSpeed(rate) {
-  videoEl.playbackRate = rate;
-  document.getElementById('videoSpeedVal').textContent = rate + '×';
-  document.querySelectorAll('#videoSettingsCard .speed-btn').forEach(b => {
-    b.classList.toggle('on', parseFloat(b.textContent) === rate);
-  });
-}
-
-// ── Video Filters (brightness / contrast / saturation / hue / sharpness) ──
-function setVideoFilter() {
-  const brightness = document.getElementById('brightnessSlider').value;
-  const contrast   = document.getElementById('contrastSlider').value;
-  const saturation = document.getElementById('saturationSlider').value;
-  const hue        = document.getElementById('hueSlider').value;
-  const sharpness  = document.getElementById('sharpnessSlider').value;
-  const blurVal    = ((100 - parseInt(sharpness)) / 100 * 3).toFixed(2); // 0–3px blur
-
-  videoEl.style.filter = [
-    `brightness(${brightness}%)`,
-    `contrast(${contrast}%)`,
-    `saturate(${saturation}%)`,
-    `hue-rotate(${hue}deg)`,
-    blurVal > 0 ? `blur(${blurVal}px)` : ''
-  ].filter(Boolean).join(' ');
-
-  document.getElementById('brightnessVal').textContent = brightness + '%';
-  document.getElementById('contrastVal').textContent   = contrast + '%';
-  document.getElementById('saturationVal').textContent = saturation + '%';
-  document.getElementById('hueVal').textContent        = hue + '°';
-  document.getElementById('sharpnessVal').textContent  = sharpness + '%';
-
-  document.getElementById('brightnessFill').style.width  = (brightness / 200 * 100) + '%';
-  document.getElementById('contrastFill').style.width    = (contrast   / 200 * 100) + '%';
-  document.getElementById('saturationFill').style.width  = (saturation / 200 * 100) + '%';
-  document.getElementById('hueFill').style.width         = (hue / 360 * 100) + '%';
-  document.getElementById('sharpnessFill').style.width   = sharpness + '%';
-}
-
-// ── Aspect Ratio ──
-function setAspectRatio(val) {
-  const v = document.getElementById('videoEl');
-  if (['contain','cover','fill'].includes(val)) {
-    v.style.objectFit = val;
-    v.style.aspectRatio = '';
-  } else {
-    v.style.objectFit = 'fill';
-    v.style.aspectRatio = val;
-  }
-}
-
-// ── Rotation & Mirror ──
-function setRotation(deg) {
-  setVideoTransform();
-}
-function setVideoTransform() {
-  const deg   = parseInt(document.getElementById('rotationSelect').value);
-  const flipH = document.getElementById('mirrorHToggle').checked;
-  const flipV = document.getElementById('mirrorVToggle').checked;
-  const scaleX = flipH ? -1 : 1;
-  const scaleY = flipV ? -1 : 1;
-  videoEl.style.transform = `rotate(${deg}deg) scale(${scaleX}, ${scaleY})`;
-}
-
-// ── Video Mute ──
-function setVideoMute(on) {
-  videoEl.muted = on;
-}
-
-// ── Picture-in-Picture ──
-async function togglePiP() {
-  if (!document.pictureInPictureEnabled) {
-    alert('Picture-in-Picture is not supported in this browser.');
-    return;
-  }
-  try {
-    if (document.pictureInPictureElement) {
-      await document.exitPictureInPicture();
-    } else {
-      if (!videoEl.src) { alert('Load a video first.'); return; }
-      await videoEl.requestPictureInPicture();
-    }
-  } catch (e) {
-    alert('PiP error: ' + e.message);
-  }
-}
-
-// ── Fullscreen ──
-function toggleFullscreen() {
-  if (!videoEl.src) { alert('Load a video first.'); return; }
-  const el = document.getElementById('videoCard');
-  if (!document.fullscreenElement) {
-    (el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen).call(el);
-  } else {
-    (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen).call(document);
-  }
-}
-
-// ── Reset Video Settings ──
-function resetVideoSettings() {
-  // Sliders
-  ['brightnessSlider','contrastSlider','saturationSlider'].forEach(id => {
-    document.getElementById(id).value = 100;
-  });
-  document.getElementById('hueSlider').value = 0;
-  document.getElementById('sharpnessSlider').value = 100;
-  setVideoFilter();
-  // Selects
-  document.getElementById('aspectSelect').value   = 'contain';
-  document.getElementById('rotationSelect').value = '0';
-  setAspectRatio('contain');
-  // Toggles
-  document.getElementById('mirrorHToggle').checked = false;
-  document.getElementById('mirrorVToggle').checked = false;
-  document.getElementById('videoMuteToggle').checked = false;
-  setVideoTransform();
-  videoEl.muted = false;
-  // Speed
-  setVideoSpeed(1.0);
-}
-
-
+// Resume on any interaction (autoplay policy)
+document.addEventListener('click', () => { if (ctx && ctx.state === 'suspended') ctx.resume(); }, { once: false });
+</script>
+</body>
 </html>
