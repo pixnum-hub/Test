@@ -257,28 +257,6 @@ body {
   background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%);
   pointer-events: none;
 }
-.hero-spectrum {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 70px;
-  pointer-events: none;
-}
-/* Pulse rings */
-.pulse-ring {
-  position: absolute;
-  width: 60px; height: 60px;
-  border-radius: 50%;
-  top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  border: 1px solid var(--gold);
-  opacity: 0;
-  pointer-events: none;
-}
-.is-playing .pulse-ring:nth-child(1) { animation: pring 2.4s ease-out infinite; }
-.is-playing .pulse-ring:nth-child(2) { animation: pring 2.4s ease-out infinite 0.8s; }
-.is-playing .pulse-ring:nth-child(3) { animation: pring 2.4s ease-out infinite 1.6s; }
-@keyframes pring {
-  0%   { transform: translate(-50%,-50%) scale(1); opacity: 0.5; }
   100% { transform: translate(-50%,-50%) scale(5); opacity: 0; }
 }
 
@@ -738,34 +716,6 @@ footer {
 .footer-copy span { color: var(--gold); font-style: normal; }
 .footer-sub { font-size: 0.52rem; letter-spacing: 3px; color: var(--text3); margin-top: 6px; opacity: 0.6; text-transform: uppercase; }
 
-/* ══════════════════════════════════════════
-   SPECTRUM VIZ CARD
-══════════════════════════════════════════ */
-.viz-card {
-  width: 100%;
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  position: relative;
-}
-.viz-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 15%; right: 15%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  opacity: 0.3;
-  pointer-events: none;
-}
-#vizCanvas {
-  width: 100%;
-  height: 100px;
-  display: block;
-}
 
 /* ── SVG base ── */
 svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -807,7 +757,6 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
   .eq-track { height: 120px; }
   .eq-dB { font-size: 0.55rem; }
   .eq-hz { font-size: 0.55rem; }
-  #vizCanvas { height: 120px; }
 }
 
 /* Tablet (> 600px) */
@@ -829,7 +778,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
 
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
-  .bg-orb, .pulse-ring, .idle-disc, .prog-fill { animation: none !important; }
+  .bg-orb, .idle-disc, .prog-fill { animation: none !important; }
   .app { animation: none; }
   * { transition-duration: 0.01ms !important; }
 }
@@ -865,28 +814,18 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
 
   <!-- HERO: Art + Visualiser -->
   <div class="hero-card" id="heroCard">
-    <div class="pulse-ring"></div>
-    <div class="pulse-ring"></div>
-    <div class="pulse-ring"></div>
     <div class="art-idle" id="artIdle">
       <div class="idle-disc" id="idleDisc"><div class="disc-inner"></div></div>
       <div class="idle-txt">No media loaded</div>
     </div>
     <img class="art-img" id="artImg" alt="">
     <div class="art-overlay"></div>
-    <canvas class="hero-spectrum" id="specCanvas"></canvas>
   </div>
 
   <!-- VIDEO -->
   <div class="video-card" id="videoCard">
     <video id="videoEl"></video>
   </div>
-
-  <!-- SPECTRUM VISUALISER -->
-  <div class="viz-card">
-    <canvas id="vizCanvas"></canvas>
-  </div>
-
   <!-- TRACK INFO -->
   <div class="info-card">
     <div class="track-name" id="trackName">— Nothing playing —</div>
@@ -1016,7 +955,7 @@ function setTheme(t, el) {
 /* ═══════════════════════════
    WEB AUDIO ENGINE
 ═══════════════════════════ */
-let actx, analyser, gain;
+let actx, gain;
 let audioSrc = null;
 let videoSrc = null;
 const filters = [];
@@ -1042,9 +981,6 @@ const PRESETS = {
 function initActx() {
   if (actx) return;
   actx = new (window.AudioContext || window.webkitAudioContext)();
-  analyser = actx.createAnalyser();
-  analyser.fftSize = 2048;
-  analyser.smoothingTimeConstant = 0.82;
   gain = actx.createGain();
   gain.gain.value = parseFloat(document.getElementById('volSlider').value) / 100;
   let prev = gain;
@@ -1058,8 +994,7 @@ function initActx() {
     prev = f;
     filters.push(f);
   });
-  prev.connect(analyser);
-  analyser.connect(actx.destination);
+  prev.connect(actx.destination);
 }
 
 function wireAudio() {
@@ -1399,176 +1334,5 @@ function clearAll() {
   renderPL();
 }
 
-/* ══════════════════════════════════════════
-   SPECTRUM VISUALISER
-══════════════════════════════════════════ */
-const specCanvas = document.getElementById('specCanvas');
-const sCtx = specCanvas.getContext('2d');
-const vizCanvas  = document.getElementById('vizCanvas');
-const vCtx = vizCanvas.getContext('2d');
-let peakData = [];
-
-function resizeCanvases() {
-  const dpr = devicePixelRatio || 1;
-  [specCanvas, vizCanvas].forEach(c => {
-    c.width  = c.offsetWidth  * dpr;
-    c.height = c.offsetHeight * dpr;
-  });
-}
-resizeCanvases();
-window.addEventListener('resize', resizeCanvases);
-
-/* Hero mini spectrum */
-function drawHeroSpec() {
-  const W = specCanvas.width, H = specCanvas.height;
-  sCtx.clearRect(0, 0, W, H);
-  const cs    = getComputedStyle(document.body);
-  const gold  = cs.getPropertyValue('--gold').trim()  || '#f0b840';
-  const teal  = cs.getPropertyValue('--teal').trim()  || '#00d4aa';
-  const gold2 = cs.getPropertyValue('--gold2').trim() || '#ff8c42';
-
-  if (analyser && playing) {
-    const data = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(data);
-    const bars = 48, bw = W / bars;
-    for (let i = 0; i < bars; i++) {
-      const v  = data[Math.floor(i * data.length / bars)] / 255;
-      const bh = v * H * 0.95;
-      if (bh < 1) continue;
-      const grad = sCtx.createLinearGradient(0, H, 0, H - bh);
-      grad.addColorStop(0,   teal  + '99');
-      grad.addColorStop(0.5, gold  + 'cc');
-      grad.addColorStop(1,   gold2 + 'ff');
-      sCtx.fillStyle = grad;
-      const x = i * bw + 1, w2 = Math.max(bw - 2, 1), rr = Math.min(w2 / 2, 3);
-      sCtx.beginPath();
-      sCtx.moveTo(x, H); sCtx.lineTo(x, H - bh + rr);
-      sCtx.quadraticCurveTo(x, H - bh, x + rr, H - bh);
-      sCtx.lineTo(x + w2 - rr, H - bh);
-      sCtx.quadraticCurveTo(x + w2, H - bh, x + w2, H - bh + rr);
-      sCtx.lineTo(x + w2, H); sCtx.closePath(); sCtx.fill();
-    }
-  } else {
-    const t = Date.now() / 1000;
-    [[gold, '40'], [teal, '30'], [gold2, '25']].forEach(([c, a], p) => {
-      sCtx.beginPath(); sCtx.strokeStyle = c + a; sCtx.lineWidth = 1.5;
-      for (let x = 0; x <= W; x += 2) {
-        const y = H / 2 + Math.sin(x / W * Math.PI * 3 + t * (0.5 + p * 0.25)) * H * 0.15
-                        + Math.sin(x / W * Math.PI * 8 + t * 1.2) * H * 0.05;
-        x === 0 ? sCtx.moveTo(x, y) : sCtx.lineTo(x, y);
-      }
-      sCtx.stroke();
-    });
-  }
-}
-
-/* Main full spectrum visualiser */
-function drawViz() {
-  const W = vizCanvas.width, H = vizCanvas.height;
-  vCtx.clearRect(0, 0, W, H);
-  const cs    = getComputedStyle(document.body);
-  const gold  = cs.getPropertyValue('--gold').trim()  || '#f0b840';
-  const teal  = cs.getPropertyValue('--teal').trim()  || '#00d4aa';
-  const gold2 = cs.getPropertyValue('--gold2').trim() || '#ff8c42';
-
-  if (analyser && playing) {
-    const freqData = new Uint8Array(analyser.frequencyBinCount);
-    const waveData = new Uint8Array(analyser.fftSize);
-    analyser.getByteFrequencyData(freqData);
-    analyser.getByteTimeDomainData(waveData);
-
-    const bars = 64, bw = W / bars;
-    if (peakData.length !== bars) peakData = new Array(bars).fill(0);
-
-    /* Bars + peaks */
-    for (let i = 0; i < bars; i++) {
-      const v   = freqData[Math.floor(i * freqData.length / bars)] / 255;
-      const bh  = v * H * 0.82;
-      const x   = i * bw + 1, w2 = Math.max(bw - 2, 1), rr = Math.min(w2 / 2, 4);
-      peakData[i] = Math.max(peakData[i] - 1.5, bh);
-
-      /* Bar */
-      const grad = vCtx.createLinearGradient(0, H, 0, H - bh);
-      grad.addColorStop(0,    teal  + 'bb');
-      grad.addColorStop(0.55, gold  + 'dd');
-      grad.addColorStop(1,    gold2 + 'ff');
-      vCtx.fillStyle = grad;
-      vCtx.beginPath();
-      vCtx.moveTo(x, H); vCtx.lineTo(x, H - bh + rr);
-      vCtx.quadraticCurveTo(x, H - bh, x + rr, H - bh);
-      vCtx.lineTo(x + w2 - rr, H - bh);
-      vCtx.quadraticCurveTo(x + w2, H - bh, x + w2, H - bh + rr);
-      vCtx.lineTo(x + w2, H); vCtx.closePath(); vCtx.fill();
-
-      /* Glow on loud bars */
-      if (v > 0.65) {
-        vCtx.save();
-        vCtx.globalAlpha = (v - 0.65) * 0.6;
-        vCtx.shadowColor = gold; vCtx.shadowBlur = 14;
-        vCtx.fillStyle   = gold + '33';
-        vCtx.fillRect(x, H - bh, w2, bh);
-        vCtx.restore();
-      }
-
-      /* Peak line */
-      if (peakData[i] > 3) {
-        vCtx.fillStyle = gold + 'cc';
-        vCtx.fillRect(x, H - peakData[i] - 2, w2, 2);
-      }
-    }
-
-    /* Waveform overlay */
-    vCtx.save();
-    vCtx.globalAlpha = 0.4;
-    vCtx.strokeStyle = teal;
-    vCtx.lineWidth   = 1.5;
-    vCtx.shadowColor = teal; vCtx.shadowBlur = 6;
-    vCtx.beginPath();
-    const step = W / waveData.length;
-    for (let i = 0; i < waveData.length; i++) {
-      const y = ((waveData[i] / 128) - 1) * H * 0.2 + H * 0.5;
-      i === 0 ? vCtx.moveTo(0, y) : vCtx.lineTo(i * step, y);
-    }
-    vCtx.stroke();
-    vCtx.restore();
-
-    /* Mirror reflection */
-    vCtx.save();
-    vCtx.globalAlpha = 0.1;
-    vCtx.scale(1, -1); vCtx.translate(0, -H * 2);
-    for (let i = 0; i < bars; i++) {
-      const v  = freqData[Math.floor(i * freqData.length / bars)] / 255;
-      const bh = v * H * 0.28, x = i * bw + 1, w2 = Math.max(bw - 2, 1);
-      vCtx.fillStyle = gold;
-      vCtx.fillRect(x, H - bh, w2, bh);
-    }
-    vCtx.restore();
-
-  } else {
-    /* Idle waves */
-    const t = Date.now() / 1000;
-    [[gold, 0.16, 0.5], [teal, 0.10, 0.7], [gold2, 0.07, 0.9]].forEach(([c, amp, spd], idx) => {
-      vCtx.beginPath();
-      vCtx.strokeStyle = c + (idx === 0 ? '55' : idx === 1 ? '40' : '30');
-      vCtx.lineWidth   = idx === 0 ? 2 : 1.5;
-      vCtx.shadowColor = c; vCtx.shadowBlur = idx === 0 ? 8 : 4;
-      for (let x = 0; x <= W; x += 3) {
-        const y = H / 2
-          + Math.sin(x / W * Math.PI * 4 + t * spd * 1.5) * H * amp
-          + Math.sin(x / W * Math.PI * 9 + t * spd * 2.3) * H * amp * 0.4;
-        x === 0 ? vCtx.moveTo(x, y) : vCtx.lineTo(x, y);
-      }
-      vCtx.stroke();
-    });
-  }
-}
-
-function animLoop() {
-  requestAnimationFrame(animLoop);
-  resizeCanvases();
-  drawHeroSpec();
-  drawViz();
-}
-animLoop();
 </script></body>
 </html>
