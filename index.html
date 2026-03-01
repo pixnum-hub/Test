@@ -900,7 +900,7 @@ function initActx() {
   analyser = actx.createAnalyser();
   analyser.fftSize = 512;
   gain = actx.createGain();
-  gain.gain.value = 0.8;
+  gain.gain.value = parseFloat(document.getElementById('volSlider').value) / 100;
   let prev = gain;
   BANDS.forEach((b, i) => {
     const f = actx.createBiquadFilter();
@@ -914,6 +914,16 @@ function initActx() {
   });
   prev.connect(analyser);
   analyser.connect(actx.destination);
+}
+
+// Connect audio element into the Web Audio graph.
+// Must be called ONCE per Audio element (not per track).
+function connectAudioEl() {
+  if (audio._wired) return;
+  initActx();
+  srcNode = actx.createMediaElementSource(audio);
+  srcNode.connect(gain);
+  audio._wired = true;
 }
 
 /* ═══════════════════════════
@@ -960,70 +970,110 @@ audio.addEventListener('loadedmetadata', () => { document.getElementById('tTotal
 audio.addEventListener('ended', onEnded);
 
 function loadFiles(files, type) {
+  const wasEmpty = playlist.length === 0;
   Array.from(files).forEach(f => playlist.push({name: f.name, url: URL.createObjectURL(f), type}));
   renderPL();
-  if (curIdx < 0) loadTrack(0);
+  // Load first track metadata but don't auto-play (browser autoplay policy).
+  // User must press Play. If a track was already loaded, keep playing.
+  if (wasEmpty && curIdx < 0) loadTrack(0, false);
 }
 function renderPL() {
   const body = document.getElementById('playlistBody');
   if (!playlist.length) { body.innerHTML = '<div class="pl-empty">No tracks added yet</div>'; return; }
   body.innerHTML = playlist.map((t,i) => `
-    <div class="pl-item${i===curIdx?' cur':''}" onclick="loadTrack(${i})">
+    <div class="pl-item${i===curIdx?' cur':''}" onclick="loadTrack(${i},true)">
       <span class="pl-idx">${String(i+1).padStart(2,'0')}</span>
       <span class="pl-type">${t.type==='video'?'VID':'AUD'}</span>
       <span class="pl-name">${t.name}</span>
     </div>`).join('');
 }
-function loadTrack(i) {
+// autoPlay=true  → start playing immediately (user clicked playlist item)
+// autoPlay=false → just load metadata, wait for user to press Play
+function loadTrack(i, autoPlay) {
   if (i<0||i>=playlist.length) return;
   curIdx = i;
   const t = playlist[i];
-  audio.pause(); audio.src = '';
+
+  // Stop whatever is currently playing
+  audio.pause();
+  const videoEl = document.getElementById('videoEl');
+  videoEl.pause();
+
   const clean = t.name.replace(/\.[^.]+$/,'');
   document.getElementById('trackName').textContent = clean;
   document.getElementById('trackMeta').textContent = t.type==='video' ? '▶ Video' : '♪ Audio';
   document.getElementById('progFill').style.width = '0%';
   document.getElementById('progThumb').style.left = '0%';
   document.getElementById('tElapsed').textContent = '0:00';
+  document.getElementById('tTotal').textContent = '0:00';
+
   const vc = document.getElementById('videoCard');
   const hc = document.getElementById('heroCard');
-  if (t.type==='video') {
-    vc.style.display='block'; hc.style.display='none';
-    document.getElementById('videoEl').src = t.url;
-    document.getElementById('videoEl').play();
-    playing = true;
+
+  if (t.type === 'video') {
+    vc.style.display = 'block';
+    hc.style.display = 'none';
+    videoEl.src = t.url;
+    videoEl.load();
+    if (autoPlay) {
+      videoEl.play().then(() => { playing = true; updatePlayUI(); }).catch(()=>{});
+    } else {
+      playing = false;
+    }
   } else {
-    vc.style.display='none'; hc.style.display='';
+    vc.style.display = 'none';
+    hc.style.display = '';
     document.getElementById('artImg').classList.remove('show');
-    document.getElementById('artIdle').style.display='';
+    document.getElementById('artIdle').style.display = '';
+    // Set src — canplay event will fire when ready
     audio.src = t.url;
-    startPlay();
+    audio.load();
+    if (autoPlay) {
+      startPlay();
+    } else {
+      playing = false;
+    }
   }
+  updatePlayUI();
   renderPL();
 }
+
 function startPlay() {
-  initActx(); actx.resume();
-  if (!audio._src) {
-    srcNode = actx.createMediaElementSource(audio);
-    srcNode.connect(gain);
-    audio._src = true;
-  }
-  audio.play().catch(()=>{});
+  // Must wire the audio element into Web Audio graph exactly once
+  connectAudioEl();
+  actx.resume().then(() => {
+    audio.play().catch(err => {
+      console.warn('Playback failed:', err);
+      playing = false;
+      updatePlayUI();
+    });
+  });
   playing = true;
   updatePlayUI();
 }
+
 function togglePlay() {
   if (!playlist.length) return;
-  if (curIdx<0) { loadTrack(0); return; }
+  if (curIdx < 0) { loadTrack(0, true); return; }
   const t = playlist[curIdx];
-  if (t.type==='video') {
+  if (t.type === 'video') {
     const v = document.getElementById('videoEl');
-    v.paused ? v.play() : v.pause();
-    playing = !v.paused;
+    if (v.paused) {
+      v.play().then(() => { playing = true; updatePlayUI(); }).catch(()=>{});
+    } else {
+      v.pause();
+      playing = false;
+      updatePlayUI();
+    }
   } else {
-    if (audio.paused) startPlay(); else { audio.pause(); playing = false; }
+    if (audio.paused) {
+      startPlay();
+    } else {
+      audio.pause();
+      playing = false;
+      updatePlayUI();
+    }
   }
-  updatePlayUI();
 }
 function updatePlayUI() {
   document.getElementById('icPlay').style.display  = playing ? 'none' : '';
@@ -1033,8 +1083,8 @@ function updatePlayUI() {
   hc.classList.toggle('is-playing', playing);
   disc.classList.toggle('spin', playing);
 }
-function prevTrack() { if (playlist.length) loadTrack(curIdx<=0 ? playlist.length-1 : curIdx-1); }
-function nextTrack() { if (playlist.length) loadTrack(shuffle ? Math.floor(Math.random()*playlist.length) : (curIdx+1)%playlist.length); }
+function prevTrack() { if (playlist.length) loadTrack(curIdx<=0 ? playlist.length-1 : curIdx-1, true); }
+function nextTrack() { if (playlist.length) loadTrack(shuffle ? Math.floor(Math.random()*playlist.length) : (curIdx+1)%playlist.length, true); }
 function onEnded() { repeat ? (audio.currentTime=0, audio.play()) : nextTrack(); }
 function toggleShuffle() { shuffle=!shuffle; document.getElementById('shuffleBtn').classList.toggle('on',shuffle); }
 function toggleRepeat()  { repeat=!repeat;   document.getElementById('repeatBtn').classList.toggle('on',repeat); }
@@ -1073,13 +1123,17 @@ function fmt(s) {
   return m+':'+(sec<10?'0':'')+sec;
 }
 function clearAll() {
-  audio.pause(); playlist=[]; curIdx=-1; playing=false;
-  audio.src=''; document.getElementById('videoEl').src='';
+  audio.pause();
+  const videoEl = document.getElementById('videoEl');
+  videoEl.pause(); videoEl.src = '';
+  playlist=[]; curIdx=-1; playing=false;
+  audio.src='';
   document.getElementById('videoCard').style.display='none';
   document.getElementById('heroCard').style.display='';
   document.getElementById('trackName').textContent='— Nothing playing —';
   document.getElementById('trackMeta').textContent='Open a file to begin';
   document.getElementById('progFill').style.width='0%';
+  document.getElementById('progThumb').style.left='0%';
   document.getElementById('tElapsed').textContent='0:00';
   document.getElementById('tTotal').textContent='0:00';
   updatePlayUI(); renderPL();
