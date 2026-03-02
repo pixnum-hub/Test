@@ -1,869 +1,1035 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VELOCITY — Speed Test</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ZoniFy</title>
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- Theme & App Meta -->
+<meta name="theme-color" content="#080a0f" id="metaThemeColor">
+<meta name="application-name" content="ZoniFy">
+<meta name="description" content="Global time at a glance. Track world cities, plan meetings across timezones.">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- Apple PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ZoniFy">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+
+<!-- Microsoft Tiles -->
+<meta name="msapplication-TileColor" content="#080a0f">
+<meta name="msapplication-TileImage" content="icon-144.png">
+
+<!-- Open Graph -->
+<meta property="og:title" content="ZoniFy – World Clock">
+<meta property="og:description" content="Global time at a glance. Track world cities, plan meetings across timezones.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="icon-512.png">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #050810;
-    --surface: #0c1120;
-    --border: #1a2540;
-    --accent: #00f5c4;
-    --accent2: #ff3e6c;
-    --accent3: #4d9fff;
-    --text: #e8f0ff;
-    --muted: #4a5780;
-    --card: #0f1929;
+  :root{
+    --bg:#080a0f;--surface:#0e1118;--border:#1e2330;--text:#d4d8e8;--muted:#525870;
+    --accent:#6457d4;--accent2:#d4567a;--clock-bg:#111520;--glow:rgba(100,87,212,.12);
+    --shadow:0 4px 28px rgba(0,0,0,.6);--r:20px;--t:.3s cubic-bezier(.4,0,.2,1);
+    --danger:#d4567a;--danger-bg:rgba(212,86,122,.10);
+    --work-color:#3dba6f;--sleep-color:#525870;--evening-color:#d4923a;
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    min-height: 100vh;
-    overflow-x: hidden;
-    position: relative;
+  [data-theme="light"]{
+    --bg:#eceaf5;--surface:#f8f7ff;--border:#d4d0ee;--text:#12122a;--muted:#7a779a;
+    --accent:#4a3dcc;--accent2:#cc3d66;--clock-bg:#f0eeff;--glow:rgba(74,61,204,.07);
+    --shadow:0 4px 24px rgba(74,61,204,.09);
   }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,245,196,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,245,196,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
+  [data-theme="oled"]{
+    --bg:#000;--surface:#000;--border:#141414;--text:#e8e8f8;--muted:#444458;
+    --accent:#8070ff;--accent2:#ff6090;--clock-bg:#080808;--glow:rgba(128,112,255,.10);
+    --shadow:0 2px 16px rgba(0,0,0,.95);
   }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%;font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);transition:background var(--t),color var(--t)}
+  body{display:flex;flex-direction:column;min-height:100vh}
 
-  body::after {
-    content: '';
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 800px;
-    height: 800px;
-    background: radial-gradient(circle, rgba(0,245,196,0.04) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-  }
+  /* ── HEADER ── */
+  header{padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .logo-title{font-size:clamp(1.3rem,5vw,1.8rem);font-weight:800;letter-spacing:-.03em;color:#dde2f0}
+  .logo-sub{font-size:.62rem;font-family:'JetBrains Mono',monospace;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+  .header-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  .theme-toggle{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:40px;padding:4px;gap:2px}
+  .theme-btn{background:none;border:none;cursor:pointer;padding:6px 10px;border-radius:30px;font-size:.68rem;font-family:'JetBrains Mono',monospace;font-weight:600;color:#9aa0b4;transition:all var(--t);letter-spacing:.04em;white-space:nowrap}
+  .theme-btn.active{background:#2e3347;color:#c8ccda;box-shadow:none}
 
-  .container {
-    position: relative;
-    z-index: 1;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 40px 20px;
-  }
+  /* ── 12h/24h TOGGLE ── */
+  .format-toggle{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:40px;padding:4px;gap:2px}
+  .format-btn{background:none;border:none;cursor:pointer;padding:6px 10px;border-radius:30px;font-size:.68rem;font-family:'JetBrains Mono',monospace;font-weight:600;color:#9aa0b4;transition:all var(--t);letter-spacing:.04em;white-space:nowrap}
+  .format-btn.active{background:#2e3347;color:#c8ccda;box-shadow:none}
 
-  header {
-    text-align: center;
-    margin-bottom: 50px;
-  }
+  /* ── HERO ── */
+  .hero{margin:20px 20px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px 20px;position:relative;overflow:hidden;box-shadow:var(--shadow);animation:fadeIn .4s ease both;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .hero-label{font-size:.62rem;font-family:'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+  .hero-time{font-size:clamp(3rem,16vw,5.5rem);font-weight:800;letter-spacing:-.04em;line-height:1;font-family:'JetBrains Mono',monospace;display:flex;align-items:baseline;justify-content:center;gap:0}
+  .hero-sec{font-size:.38em;color:var(--accent2);font-weight:600;margin-left:6px;opacity:.85;letter-spacing:-.02em}
+  .ampm{font-size:.35em;color:var(--accent2);vertical-align:super;font-weight:600;margin-left:4px}
+  .hero-date{margin-top:10px;font-size:.88rem;color:var(--muted);text-align:center}
+  .hero-tz{margin-top:4px;font-size:.68rem;font-family:'JetBrains Mono',monospace;color:var(--accent);opacity:.8;text-align:center}
 
-  .logo {
-    font-family: 'Bebas Neue', cursive;
-    font-size: clamp(48px, 8vw, 80px);
-    letter-spacing: 12px;
-    background: linear-gradient(135deg, var(--accent), var(--accent3));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1;
-  }
+  /* ── SEARCH ── */
+  .search-wrap{margin:18px 20px 0;position:relative}
+  .search-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 44px 12px 16px;font-family:'Syne',sans-serif;font-size:.9rem;color:var(--text);outline:none;transition:border-color var(--t)}
+  .search-input::placeholder{color:var(--muted)}
+  .search-input:focus{border-color:var(--accent)}
+  .search-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1.1rem;pointer-events:none}
 
-  .tagline {
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    margin-top: 8px;
-  }
+  /* ── SECTION ROW ── */
+  .section-row{margin:18px 20px 10px;display:flex;align-items:center;justify-content:space-between}
+  .section-label{font-size:.62rem;font-family:'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .section-actions{display:flex;gap:8px;align-items:center}
+  .add-btn{display:flex;align-items:center;gap:6px;background:#2e3347;border:1px solid #3a4060;border-radius:30px;padding:8px 16px;color:#c8ccda;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:600;cursor:pointer;letter-spacing:.04em;transition:transform var(--t),background var(--t)}
+  .add-btn:hover{background:#363d56;color:#dde2f0}
+  .add-btn:active{transform:scale(.95)}
+  .add-btn svg{width:14px;height:14px;flex-shrink:0}
 
-  .gauge-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 40px;
-  }
+  /* ── LEGEND ── */
+  .legend{margin:0 20px 10px;display:flex;gap:14px;flex-wrap:wrap}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:.6rem;font-family:'JetBrains Mono',monospace;color:var(--muted);letter-spacing:.04em}
+  .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .legend-dot.work{background:var(--work-color)}
+  .legend-dot.evening{background:var(--evening-color)}
+  .legend-dot.sleep{background:var(--sleep-color)}
 
-  .gauge-wrap {
-    position: relative;
-    width: 280px;
-    height: 280px;
-  }
+  /* ── CLOCKS ── */
+  .clocks{display:flex;flex-direction:column;gap:8px;padding:0 20px;flex:1}
+  .no-results{text-align:center;padding:40px 20px;color:var(--muted);font-size:.9rem;display:none}
+  .no-results.show{display:block}
 
-  .gauge-svg {
-    width: 100%;
-    height: 100%;
-    transform: rotate(-90deg);
-  }
+  /* ── CLOCK CARD ── */
+  .clock-card{background:var(--clock-bg);border:1px solid var(--border);border-radius:var(--r);position:relative;overflow:hidden;box-shadow:var(--shadow);animation:cardFadeIn .35s ease both;touch-action:none}
+  .clock-card.removing{animation:slideOut .3s ease forwards}
+  .clock-card.hidden{display:none}
+  .clock-card.dragging{opacity:.5;transform:scale(.98);z-index:50;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .clock-card.drag-over{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+  .clock-card::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:2px 0 0 2px}
+  .clock-card[data-status="work"]::after{background:var(--work-color)}
+  .clock-card[data-status="evening"]::after{background:var(--evening-color)}
+  .clock-card[data-status="sleep"]::after{background:var(--sleep-color)}
+  .clock-card[data-status=""]::after{background:var(--accent)}
 
-  .gauge-track {
-    fill: none;
-    stroke: var(--border);
-    stroke-width: 12;
-  }
+  .card-inner{padding:14px 16px;display:flex;align-items:center;gap:12px;position:relative;z-index:1}
 
-  .gauge-fill {
-    fill: none;
-    stroke: var(--accent);
-    stroke-width: 12;
-    stroke-linecap: round;
-    stroke-dasharray: 659;
-    stroke-dashoffset: 659;
-    transition: stroke-dashoffset 0.4s ease, stroke 0.4s ease;
-    filter: drop-shadow(0 0 8px var(--accent));
-  }
+  /* Drag handle */
+  .drag-handle{color:var(--muted);cursor:grab;flex-shrink:0;display:flex;align-items:center;opacity:.5;transition:opacity var(--t);touch-action:none}
+  .drag-handle:active{cursor:grabbing;opacity:1}
+  .drag-handle svg{width:16px;height:16px}
 
-  .gauge-center {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
+  /* Status dot */
+  .status-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;transition:background var(--t)}
+  .status-dot.work{background:var(--work-color);box-shadow:0 0 6px var(--work-color)}
+  .status-dot.evening{background:var(--evening-color);box-shadow:0 0 6px var(--evening-color)}
+  .status-dot.sleep{background:var(--sleep-color)}
 
-  .speed-value {
-    font-family: 'Bebas Neue', cursive;
-    font-size: 72px;
-    line-height: 1;
-    color: var(--text);
-    transition: color 0.3s;
-    letter-spacing: 2px;
-  }
+  .del-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:10px;color:var(--muted);transition:color var(--t),background var(--t);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .del-btn:hover,.del-btn:active{color:var(--danger);background:var(--danger-bg)}
+  .del-btn svg{width:15px;height:15px}
 
-  .speed-unit {
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-  }
+  .clock-info{flex:1;min-width:0}
+  .clock-city{font-size:.93rem;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .clock-region{font-size:.63rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:1px}
+  .clock-status-label{font-size:.58rem;font-family:'JetBrains Mono',monospace;margin-top:3px;font-weight:600;letter-spacing:.04em}
+  .clock-status-label.work{color:var(--work-color)}
+  .clock-status-label.evening{color:var(--evening-color)}
+  .clock-status-label.sleep{color:var(--sleep-color)}
 
-  .speed-label {
-    font-size: 10px;
-    color: var(--accent);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-top: 4px;
-    min-height: 14px;
-    transition: color 0.3s;
-  }
+  /* Analog */
+  .analog-wrap{width:42px;height:42px;flex-shrink:0}
+  .analog-clock{width:42px;height:42px;border-radius:50%;background:var(--bg);border:1.5px solid var(--border);position:relative}
+  .hand{position:absolute;bottom:50%;left:50%;transform-origin:bottom center;border-radius:4px}
+  .hour-hand{width:2px;height:28%;background:var(--text);margin-left:-1px}
+  .min-hand{width:1.5px;height:36%;background:var(--accent);margin-left:-.75px}
+  .sec-hand{width:1px;height:38%;background:var(--accent2);margin-left:-.5px}
+  .center-dot{position:absolute;width:5px;height:5px;background:var(--accent);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)}
 
-  .pulse-ring {
-    position: absolute;
-    inset: -20px;
-    border-radius: 50%;
-    border: 1px solid var(--accent);
-    opacity: 0;
-  }
+  /* Digital time */
+  .clock-right{text-align:right;flex-shrink:0}
+  .clock-time{font-family:'JetBrains Mono',monospace;font-size:clamp(1rem,3.8vw,1.35rem);font-weight:600;letter-spacing:-.03em;line-height:1;display:flex;align-items:baseline;justify-content:flex-end;gap:0}
+  .clock-time .ampm{font-size:.55em;color:var(--accent2);font-weight:400;margin-left:2px}
+  .clock-time .sec{font-size:.58em;color:var(--accent2);font-weight:400;margin-left:2px;opacity:.75}
+  .clock-date-small{font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:3px;text-align:right}
+  .diff-badge{font-size:.56rem;font-family:'JetBrains Mono',monospace;padding:2px 6px;border-radius:20px;margin-top:4px;display:inline-block}
+  .diff-badge.ahead{background:rgba(124,106,247,.15);color:var(--accent)}
+  .diff-badge.behind{background:rgba(247,106,140,.15);color:var(--accent2)}
+  .diff-badge.same{background:rgba(255,255,255,.06);color:var(--muted)}
 
-  .pulse-ring.active {
-    animation: pulse 1.5s ease-out infinite;
-  }
+  /* ── MEETING PLANNER PANEL ── */
+  .planner-panel{margin:0 20px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);display:none}
+  .planner-panel.open{display:block;animation:fadeIn .3s ease both}
+  .planner-header{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+  .planner-title{font-size:.85rem;font-weight:700;display:flex;align-items:center;gap:8px}
+  .planner-title span{font-size:1rem}
+  .planner-close{background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;border-radius:8px;display:flex}
+  .planner-close svg{width:16px;height:16px}
+  .planner-body{padding:14px 18px 18px}
+  .planner-time-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .planner-label{font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0}
+  .time-picker{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:.9rem;color:var(--text);outline:none;transition:border-color var(--t);cursor:pointer;-webkit-appearance:none}
+  .time-picker:focus{border-color:var(--accent)}
+  .planner-grid{display:flex;flex-direction:column;gap:6px}
+  .planner-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--clock-bg);border:1px solid var(--border)}
+  .planner-row-emoji{font-size:1.2rem;flex-shrink:0}
+  .planner-row-city{font-size:.82rem;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .planner-row-time{font-family:'JetBrains Mono',monospace;font-size:.88rem;font-weight:600;flex-shrink:0;color:var(--accent)}
+  .planner-row-status{font-size:.6rem;font-family:'JetBrains Mono',monospace;padding:2px 7px;border-radius:20px;flex-shrink:0;font-weight:600}
+  .planner-row-status.work{background:rgba(74,222,128,.12);color:var(--work-color)}
+  .planner-row-status.evening{background:rgba(245,158,11,.12);color:var(--evening-color)}
+  .planner-row-status.sleep{background:rgba(107,107,128,.12);color:var(--sleep-color)}
 
-  @keyframes pulse {
-    0% { transform: scale(0.9); opacity: 0.6; }
-    100% { transform: scale(1.1); opacity: 0; }
-  }
+  /* ── MODAL OVERLAY ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity var(--t)}
+  .modal-overlay.open{opacity:1;pointer-events:all}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:28px 28px 0 0;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);box-shadow:0 -8px 40px rgba(0,0,0,.4)}
+  .modal-overlay.open .modal{transform:translateY(0)}
+  .modal-handle{width:40px;height:4px;background:var(--border);border-radius:4px;margin:14px auto 0}
+  .modal-header{padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between}
+  .modal-title{font-size:1.1rem;font-weight:800;letter-spacing:-.02em}
+  .modal-close{background:none;border:none;cursor:pointer;color:var(--muted);padding:6px;border-radius:10px;transition:color var(--t)}
+  .modal-close:hover{color:var(--text)}
+  .modal-close svg{width:20px;height:20px}
+  .modal-search-wrap{margin:0 20px 12px;position:relative}
+  .modal-search{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 40px 10px 14px;font-family:'Syne',sans-serif;font-size:.9rem;color:var(--text);outline:none;transition:border-color var(--t)}
+  .modal-search::placeholder{color:var(--muted)}
+  .modal-search:focus{border-color:var(--accent)}
+  .modal-search-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;pointer-events:none}
+  .modal-list{overflow-y:auto;flex:1;padding:0 12px 24px}
+  .modal-group-label{font-size:.6rem;font-family:'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:10px 8px 4px}
+  .modal-item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:14px;cursor:pointer;transition:background var(--t);border:none;background:none;width:100%;text-align:left}
+  .modal-item:hover,.modal-item:active{background:var(--clock-bg)}
+  .modal-item.already-added{opacity:.35;pointer-events:none}
+  .modal-item-emoji{font-size:1.4rem;flex-shrink:0;width:32px;text-align:center}
+  .modal-item-info{flex:1;min-width:0}
+  .modal-item-city{font-size:.9rem;font-weight:700;letter-spacing:-.01em;display:block}
+  .modal-item-country{font-size:.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:1px;display:block}
+  .modal-item-time{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--accent);font-weight:600;flex-shrink:0}
+  .modal-item-check{color:var(--accent);flex-shrink:0}
+  .modal-item-check svg{width:16px;height:16px}
 
-  .results-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 40px;
-  }
+  /* ── TOAST ── */
+  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);border-radius:30px;padding:10px 20px;font-size:.8rem;font-family:'JetBrains Mono',monospace;color:var(--text);box-shadow:var(--shadow);opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;z-index:200}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  .result-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.3s, transform 0.2s;
-  }
+  /* ── FOOTER ── */
+  footer{margin-top:28px;padding:18px 20px;text-align:center;font-size:.68rem;font-family:'JetBrains Mono',monospace;color:var(--muted);border-top:1px solid var(--border);letter-spacing:.04em}
+  footer span{color:var(--accent)}
 
-  .result-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--card-accent, var(--accent));
-    opacity: 0.4;
-    transition: opacity 0.3s;
-  }
+  /* ── PWA INSTALL BANNER ── */
+  .install-banner{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:12px 16px;gap:12px;align-items:center;box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:300;max-width:calc(100vw - 40px);width:360px;animation:bannerFadeIn .3s ease both}
+  .install-banner-icon{font-size:1.6rem;flex-shrink:0}
+  .install-banner-text{flex:1;min-width:0}
+  .install-banner-title{font-size:.82rem;font-weight:700;letter-spacing:-.01em}
+  .install-banner-sub{font-size:.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+  .install-banner-actions{display:flex;gap:6px;flex-shrink:0}
+  .install-btn{background:#2e3347;border:1px solid #3a4060;border-radius:20px;padding:6px 14px;color:#c8ccda;font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:600;cursor:pointer;transition:background var(--t)}
+  .install-btn:hover{background:#363d56}
+  .install-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .install-dismiss{background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;border-radius:8px;display:flex;align-items:center}
+  .install-dismiss svg{width:14px;height:14px}
 
-  .result-card.active::before { opacity: 1; }
-  .result-card.active { border-color: var(--card-accent, var(--accent)); }
-  .result-card.ping { --card-accent: var(--accent3); }
-  .result-card.download { --card-accent: var(--accent); }
-  .result-card.upload { --card-accent: var(--accent2); }
-
-  .card-icon { font-size: 18px; margin-bottom: 10px; display: block; }
-  .card-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-
-  .card-value {
-    font-family: 'Bebas Neue', cursive;
-    font-size: 36px;
-    letter-spacing: 2px;
-    color: var(--text);
-    line-height: 1;
-    transition: color 0.3s;
-  }
-
-  .card-unit { font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
-
-  .btn-wrap {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 40px;
-  }
-
-  .start-btn {
-    position: relative;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    outline: none;
-  }
-
-  .btn-inner {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 48px;
-    background: linear-gradient(135deg, rgba(0,245,196,0.08), rgba(77,159,255,0.08));
-    border: 1px solid var(--accent);
-    border-radius: 4px;
-    color: var(--accent);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .btn-inner::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, var(--accent), var(--accent3));
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .btn-inner:hover::before { opacity: 0.12; }
-  .btn-inner:hover { box-shadow: 0 0 30px rgba(0,245,196,0.2); transform: translateY(-1px); }
-  .btn-inner:active { transform: translateY(0); }
-
-  .btn-text { position: relative; z-index: 1; }
-
-  .btn-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    position: relative;
-    z-index: 1;
-  }
-
-  .start-btn.running .btn-dot {
-    animation: blink 0.8s ease-in-out infinite;
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
-  }
-
-  .start-btn:disabled .btn-inner { opacity: 0.6; cursor: not-allowed; }
-
-  .progress-section {
-    margin-bottom: 30px;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .progress-section.visible { opacity: 1; }
-
-  .progress-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-
-  .progress-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
-
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--accent3));
-    border-radius: 2px;
-    width: 0%;
-    transition: width 0.5s ease;
-    box-shadow: 0 0 8px var(--accent);
-  }
-
-  .chart-section {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 24px;
-    opacity: 0;
-    transition: opacity 0.5s;
-  }
-
-  .chart-section.visible { opacity: 1; }
-
-  .chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-
-  .chart-title { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
-
-  .chart-legend { display: flex; gap: 16px; }
-
-  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 9px; letter-spacing: 2px; color: var(--muted); }
-
-  .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
-
-  canvas { width: 100%; height: 120px; display: block; }
-
-  .log-section {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    font-size: 11px;
-    line-height: 1.8;
-    max-height: 200px;
-    overflow-y: auto;
-  }
-
-  .log-section::-webkit-scrollbar { width: 4px; }
-  .log-section::-webkit-scrollbar-track { background: transparent; }
-  .log-section::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  .log-title { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-
-  .log-entry {
-    display: flex;
-    gap: 16px;
-    animation: fadeIn 0.3s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateX(-4px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
-  .log-time { color: var(--accent); min-width: 50px; }
-  .log-msg { color: var(--text); opacity: 0.6; }
-  .log-msg.success { color: var(--accent); opacity: 1; }
-  .log-msg.error { color: var(--accent2); opacity: 1; }
-
-  .info-bar {
-    display: flex;
-    justify-content: center;
-    gap: 32px;
-    padding: 16px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-bottom: 32px;
-    flex-wrap: wrap;
-    gap: 16px;
-  }
-
-  .info-item { display: flex; align-items: center; gap: 8px; font-size: 10px; }
-  .info-key { color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
-  .info-val { color: var(--text); letter-spacing: 1px; }
-  .info-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-
-  @media (max-width: 500px) {
-    .card-value { font-size: 26px; }
-    .gauge-wrap { width: 230px; height: 230px; }
-    .speed-value { font-size: 58px; }
-  }
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes cardFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes bannerFadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+  @keyframes slideOut{to{opacity:0;transform:translateX(60px);max-height:0;margin-bottom:0;padding:0}}
 </style>
 </head>
 <body>
 
-<div class="container">
-  <header>
-    <div class="logo">VELOCITY</div>
-    <div class="tagline">Network Diagnostics &amp; Speed Analysis</div>
-  </header>
-
-  <div class="info-bar">
-    <div class="info-item">
-      <span class="info-dot"></span>
-      <span class="info-key">IP</span>
-      <span class="info-val" id="ip-val">Loading…</span>
+<header>
+  <div>
+    <div class="logo-title">ZoniFy</div>
+    <div class="logo-sub">Global Time at a Glance</div>
+  </div>
+  <div class="header-right">
+    <div class="format-toggle">
+      <button class="format-btn active" data-fmt="12">12h</button>
+      <button class="format-btn" data-fmt="24">24h</button>
     </div>
-    <div class="info-item">
-      <span class="info-dot" style="background:var(--accent3)"></span>
-      <span class="info-key">ISP</span>
-      <span class="info-val" id="isp-val">—</span>
-    </div>
-    <div class="info-item">
-      <span class="info-dot" style="background:var(--accent2)"></span>
-      <span class="info-key">Location</span>
-      <span class="info-val" id="loc-val">—</span>
-    </div>
-    <div class="info-item">
-      <span class="info-dot"></span>
-      <span class="info-key">Protocol</span>
-      <span class="info-val" id="proto-val">HTTPS</span>
+    <div class="theme-toggle">
+      <button class="theme-btn active" data-theme="dark">Dark</button>
+      <button class="theme-btn" data-theme="light">Light</button>
+      <button class="theme-btn" data-theme="oled">OLED</button>
     </div>
   </div>
+</header>
 
-  <div class="gauge-section">
-    <div class="gauge-wrap">
-      <div class="pulse-ring" id="pulseRing"></div>
-      <svg class="gauge-svg" viewBox="0 0 220 220">
-        <circle class="gauge-track" cx="110" cy="110" r="105" stroke-dasharray="659 659"/>
-        <circle class="gauge-fill" id="gaugeFill" cx="110" cy="110" r="105"/>
-      </svg>
-      <div class="gauge-center">
-        <div class="speed-value" id="speedValue">0</div>
-        <div class="speed-unit">Mbps</div>
-        <div class="speed-label" id="speedLabel">READY</div>
-      </div>
-    </div>
-  </div>
+<div class="hero">
+  <div class="hero-label">⦿ Your Local Time</div>
+  <div class="hero-time" id="localTime">--:--<span class="ampm"></span></div>
+  <div class="hero-date" id="localDate"></div>
+  <div class="hero-tz" id="localTz"></div>
+</div>
 
-  <div class="results-grid">
-    <div class="result-card ping" id="pingCard">
-      <span class="card-icon">◈</span>
-      <div class="card-label">Ping</div>
-      <div class="card-value" id="pingVal">—</div>
-      <div class="card-unit">ms</div>
-    </div>
-    <div class="result-card download" id="dlCard">
-      <span class="card-icon">↓</span>
-      <div class="card-label">Download</div>
-      <div class="card-value" id="dlVal">—</div>
-      <div class="card-unit">Mbps</div>
-    </div>
-    <div class="result-card upload" id="ulCard">
-      <span class="card-icon">↑</span>
-      <div class="card-label">Upload</div>
-      <div class="card-value" id="ulVal">—</div>
-      <div class="card-unit">Mbps</div>
-    </div>
-  </div>
+<div class="search-wrap">
+  <input class="search-input" type="text" placeholder="Search city or country…" id="searchInput">
+  <span class="search-icon">⌕</span>
+</div>
 
-  <div class="progress-section" id="progressSection">
-    <div class="progress-label" id="progressLabel">Initializing...</div>
-    <div class="progress-track">
-      <div class="progress-fill" id="progressFill"></div>
-    </div>
-  </div>
-
-  <div class="btn-wrap">
-    <button class="start-btn" id="startBtn" onclick="runSpeedTest()">
-      <div class="btn-inner">
-        <div class="btn-dot"></div>
-        <span class="btn-text" id="btnText">BEGIN TEST</span>
-        <div class="btn-dot"></div>
-      </div>
+<div class="section-row">
+  <div class="section-label">World Cities</div>
+  <div class="section-actions">
+    <button class="add-btn" id="openPlanner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Meeting
     </button>
-  </div>
-
-  <div class="chart-section" id="chartSection">
-    <div class="chart-header">
-      <div class="chart-title">Real-Time Throughput</div>
-      <div class="chart-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#00f5c4"></div>Download</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#ff3e6c"></div>Upload</div>
-      </div>
-    </div>
-    <canvas id="speedChart"></canvas>
-  </div>
-
-  <div class="log-section">
-    <div class="log-title">Diagnostic Log</div>
-    <div id="logContainer">
-      <div class="log-entry">
-        <span class="log-time">0.0s</span>
-        <span class="log-msg">System ready. Press BEGIN TEST to start diagnostics.</span>
-      </div>
-    </div>
+    <button class="add-btn" id="openModal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add City
+    </button>
   </div>
 </div>
 
+<!-- MEETING PLANNER PANEL -->
+<div class="planner-panel" id="plannerPanel">
+  <div class="planner-header">
+    <div class="planner-title"><span>📅</span> Meeting Planner</div>
+    <button class="planner-close" id="closePlanner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="planner-body">
+    <div class="planner-time-row">
+      <span class="planner-label">Your time</span>
+      <input type="time" class="time-picker" id="meetingTime" value="09:00">
+      <span class="planner-label" style="color:var(--accent);font-size:.6rem" id="plannerLocalTz"></span>
+    </div>
+    <div class="planner-grid" id="plannerGrid"></div>
+  </div>
+</div>
+
+<div class="legend" id="statusLegend">
+  <div class="legend-item"><div class="legend-dot work"></div>Working hours (8AM–6PM)</div>
+  <div class="legend-item"><div class="legend-dot evening"></div>Evening (6PM–11PM)</div>
+  <div class="legend-item"><div class="legend-dot sleep"></div>Night / Sleep</div>
+</div>
+
+<div class="clocks" id="clocksContainer"></div>
+<div class="no-results" id="noResults">No cities found. Try a different search.</div>
+
+<footer>© <span id="footerYear"></span> Manik Roy. All Rights Reserved.</footer>
+
+<!-- PWA Install Banner -->
+<div class="install-banner" id="installBanner">
+  <div class="install-banner-icon">🌍</div>
+  <div class="install-banner-text">
+    <div class="install-banner-title">Install ZoniFy</div>
+    <div class="install-banner-sub">Add to home screen for offline use</div>
+  </div>
+  <div class="install-banner-actions">
+    <button class="install-btn primary" id="installBtn">Install</button>
+    <button class="install-dismiss" id="installDismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ADD CITY MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Add a City</div>
+      <button class="modal-close" id="closeModal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-search-wrap">
+      <input class="modal-search" id="modalSearch" type="text" placeholder="Search cities…" autocomplete="off">
+      <span class="modal-search-icon">⌕</span>
+    </div>
+    <div class="modal-list" id="modalList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-const gaugeFill = document.getElementById('gaugeFill');
-const speedValue = document.getElementById('speedValue');
-const speedLabel = document.getElementById('speedLabel');
-const pingVal = document.getElementById('pingVal');
-const dlVal = document.getElementById('dlVal');
-const ulVal = document.getElementById('ulVal');
-const progressFill = document.getElementById('progressFill');
-const progressSection = document.getElementById('progressSection');
-const progressLabel = document.getElementById('progressLabel');
-const startBtn = document.getElementById('startBtn');
-const btnText = document.getElementById('btnText');
-const logContainer = document.getElementById('logContainer');
-const pulseRing = document.getElementById('pulseRing');
-const chartSection = document.getElementById('chartSection');
-const canvas = document.getElementById('speedChart');
-const ctx = canvas.getContext('2d');
+/* ═══════════════════════════════════════════
+   MASTER CITY LIST
+═══════════════════════════════════════════ */
+const ALL_CITIES = [
+  {city:"New York",country:"USA",tz:"America/New_York",emoji:"🗽",region:"Americas"},
+  {city:"Los Angeles",country:"USA",tz:"America/Los_Angeles",emoji:"🌴",region:"Americas"},
+  {city:"Chicago",country:"USA",tz:"America/Chicago",emoji:"🏙️",region:"Americas"},
+  {city:"Toronto",country:"Canada",tz:"America/Toronto",emoji:"🍁",region:"Americas"},
+  {city:"Vancouver",country:"Canada",tz:"America/Vancouver",emoji:"🏔️",region:"Americas"},
+  {city:"São Paulo",country:"Brazil",tz:"America/Sao_Paulo",emoji:"🌺",region:"Americas"},
+  {city:"Rio de Janeiro",country:"Brazil",tz:"America/Sao_Paulo",emoji:"🎭",region:"Americas"},
+  {city:"Mexico City",country:"Mexico",tz:"America/Mexico_City",emoji:"🌮",region:"Americas"},
+  {city:"Buenos Aires",country:"Argentina",tz:"America/Argentina/Buenos_Aires",emoji:"🥩",region:"Americas"},
+  {city:"Bogotá",country:"Colombia",tz:"America/Bogota",emoji:"☕",region:"Americas"},
+  {city:"Lima",country:"Peru",tz:"America/Lima",emoji:"🦙",region:"Americas"},
+  {city:"Santiago",country:"Chile",tz:"America/Santiago",emoji:"🍷",region:"Americas"},
+  {city:"Havana",country:"Cuba",tz:"America/Havana",emoji:"🎺",region:"Americas"},
+  {city:"Denver",country:"USA",tz:"America/Denver",emoji:"🏔️",region:"Americas"},
+  {city:"Miami",country:"USA",tz:"America/New_York",emoji:"🌊",region:"Americas"},
+  {city:"Anchorage",country:"USA",tz:"America/Anchorage",emoji:"🐻",region:"Americas"},
+  {city:"Honolulu",country:"USA",tz:"Pacific/Honolulu",emoji:"🌺",region:"Americas"},
+  {city:"London",country:"UK",tz:"Europe/London",emoji:"🎡",region:"Europe"},
+  {city:"Paris",country:"France",tz:"Europe/Paris",emoji:"🗼",region:"Europe"},
+  {city:"Berlin",country:"Germany",tz:"Europe/Berlin",emoji:"🐻",region:"Europe"},
+  {city:"Rome",country:"Italy",tz:"Europe/Rome",emoji:"🏛️",region:"Europe"},
+  {city:"Madrid",country:"Spain",tz:"Europe/Madrid",emoji:"🐂",region:"Europe"},
+  {city:"Amsterdam",country:"Netherlands",tz:"Europe/Amsterdam",emoji:"🌷",region:"Europe"},
+  {city:"Brussels",country:"Belgium",tz:"Europe/Brussels",emoji:"🍺",region:"Europe"},
+  {city:"Vienna",country:"Austria",tz:"Europe/Vienna",emoji:"🎻",region:"Europe"},
+  {city:"Prague",country:"Czech Republic",tz:"Europe/Prague",emoji:"🍺",region:"Europe"},
+  {city:"Warsaw",country:"Poland",tz:"Europe/Warsaw",emoji:"🦅",region:"Europe"},
+  {city:"Stockholm",country:"Sweden",tz:"Europe/Stockholm",emoji:"🧊",region:"Europe"},
+  {city:"Oslo",country:"Norway",tz:"Europe/Oslo",emoji:"🦌",region:"Europe"},
+  {city:"Copenhagen",country:"Denmark",tz:"Europe/Copenhagen",emoji:"🧜",region:"Europe"},
+  {city:"Helsinki",country:"Finland",tz:"Europe/Helsinki",emoji:"🦌",region:"Europe"},
+  {city:"Athens",country:"Greece",tz:"Europe/Athens",emoji:"🏺",region:"Europe"},
+  {city:"Lisbon",country:"Portugal",tz:"Europe/Lisbon",emoji:"🐟",region:"Europe"},
+  {city:"Zurich",country:"Switzerland",tz:"Europe/Zurich",emoji:"⌚",region:"Europe"},
+  {city:"Budapest",country:"Hungary",tz:"Europe/Budapest",emoji:"🦢",region:"Europe"},
+  {city:"Bucharest",country:"Romania",tz:"Europe/Bucharest",emoji:"🧛",region:"Europe"},
+  {city:"Kyiv",country:"Ukraine",tz:"Europe/Kyiv",emoji:"🌻",region:"Europe"},
+  {city:"Moscow",country:"Russia",tz:"Europe/Moscow",emoji:"🏰",region:"Europe"},
+  {city:"Istanbul",country:"Turkey",tz:"Europe/Istanbul",emoji:"🕌",region:"Europe"},
+  {city:"Cairo",country:"Egypt",tz:"Africa/Cairo",emoji:"🐪",region:"Africa"},
+  {city:"Lagos",country:"Nigeria",tz:"Africa/Lagos",emoji:"🌍",region:"Africa"},
+  {city:"Nairobi",country:"Kenya",tz:"Africa/Nairobi",emoji:"🦒",region:"Africa"},
+  {city:"Johannesburg",country:"South Africa",tz:"Africa/Johannesburg",emoji:"🦁",region:"Africa"},
+  {city:"Cape Town",country:"South Africa",tz:"Africa/Johannesburg",emoji:"🏔️",region:"Africa"},
+  {city:"Casablanca",country:"Morocco",tz:"Africa/Casablanca",emoji:"🌙",region:"Africa"},
+  {city:"Accra",country:"Ghana",tz:"Africa/Accra",emoji:"🌍",region:"Africa"},
+  {city:"Addis Ababa",country:"Ethiopia",tz:"Africa/Addis_Ababa",emoji:"☕",region:"Africa"},
+  {city:"Dubai",country:"UAE",tz:"Asia/Dubai",emoji:"🌆",region:"Middle East"},
+  {city:"Abu Dhabi",country:"UAE",tz:"Asia/Dubai",emoji:"🕌",region:"Middle East"},
+  {city:"Riyadh",country:"Saudi Arabia",tz:"Asia/Riyadh",emoji:"🏜️",region:"Middle East"},
+  {city:"Doha",country:"Qatar",tz:"Asia/Qatar",emoji:"🏆",region:"Middle East"},
+  {city:"Kuwait City",country:"Kuwait",tz:"Asia/Kuwait",emoji:"🛢️",region:"Middle East"},
+  {city:"Tehran",country:"Iran",tz:"Asia/Tehran",emoji:"🏺",region:"Middle East"},
+  {city:"Beirut",country:"Lebanon",tz:"Asia/Beirut",emoji:"🌲",region:"Middle East"},
+  {city:"Tel Aviv",country:"Israel",tz:"Asia/Jerusalem",emoji:"✡️",region:"Middle East"},
+  {city:"Amman",country:"Jordan",tz:"Asia/Amman",emoji:"🏜️",region:"Middle East"},
+  {city:"Mumbai",country:"India",tz:"Asia/Kolkata",emoji:"🕌",region:"Asia"},
+  {city:"Delhi",country:"India",tz:"Asia/Kolkata",emoji:"🏛️",region:"Asia"},
+  {city:"Bangalore",country:"India",tz:"Asia/Kolkata",emoji:"💻",region:"Asia"},
+  {city:"Kolkata",country:"India",tz:"Asia/Kolkata",emoji:"🐯",region:"Asia"},
+  {city:"Chennai",country:"India",tz:"Asia/Kolkata",emoji:"🌊",region:"Asia"},
+  {city:"Karachi",country:"Pakistan",tz:"Asia/Karachi",emoji:"🌙",region:"Asia"},
+  {city:"Lahore",country:"Pakistan",tz:"Asia/Karachi",emoji:"🕌",region:"Asia"},
+  {city:"Dhaka",country:"Bangladesh",tz:"Asia/Dhaka",emoji:"🐅",region:"Asia"},
+  {city:"Colombo",country:"Sri Lanka",tz:"Asia/Colombo",emoji:"🌿",region:"Asia"},
+  {city:"Kathmandu",country:"Nepal",tz:"Asia/Kathmandu",emoji:"🏔️",region:"Asia"},
+  {city:"Bangkok",country:"Thailand",tz:"Asia/Bangkok",emoji:"🐘",region:"Asia"},
+  {city:"Hanoi",country:"Vietnam",tz:"Asia/Ho_Chi_Minh",emoji:"🍜",region:"Asia"},
+  {city:"Ho Chi Minh City",country:"Vietnam",tz:"Asia/Ho_Chi_Minh",emoji:"🛵",region:"Asia"},
+  {city:"Phnom Penh",country:"Cambodia",tz:"Asia/Phnom_Penh",emoji:"🏯",region:"Asia"},
+  {city:"Yangon",country:"Myanmar",tz:"Asia/Rangoon",emoji:"🛕",region:"Asia"},
+  {city:"Singapore",country:"Singapore",tz:"Asia/Singapore",emoji:"🦁",region:"Asia"},
+  {city:"Kuala Lumpur",country:"Malaysia",tz:"Asia/Kuala_Lumpur",emoji:"🌃",region:"Asia"},
+  {city:"Hong Kong",country:"China",tz:"Asia/Hong_Kong",emoji:"🌉",region:"Asia"},
+  {city:"Shanghai",country:"China",tz:"Asia/Shanghai",emoji:"🏯",region:"Asia"},
+  {city:"Beijing",country:"China",tz:"Asia/Shanghai",emoji:"🏮",region:"Asia"},
+  {city:"Tokyo",country:"Japan",tz:"Asia/Tokyo",emoji:"⛩️",region:"Asia"},
+  {city:"Osaka",country:"Japan",tz:"Asia/Tokyo",emoji:"🦊",region:"Asia"},
+  {city:"Seoul",country:"South Korea",tz:"Asia/Seoul",emoji:"🎋",region:"Asia"},
+  {city:"Taipei",country:"Taiwan",tz:"Asia/Taipei",emoji:"🫧",region:"Asia"},
+  {city:"Jakarta",country:"Indonesia",tz:"Asia/Jakarta",emoji:"🌴",region:"Asia"},
+  {city:"Manila",country:"Philippines",tz:"Asia/Manila",emoji:"🌺",region:"Asia"},
+  {city:"Ulaanbaatar",country:"Mongolia",tz:"Asia/Ulaanbaatar",emoji:"🐴",region:"Asia"},
+  {city:"Tashkent",country:"Uzbekistan",tz:"Asia/Tashkent",emoji:"🏺",region:"Asia"},
+  {city:"Almaty",country:"Kazakhstan",tz:"Asia/Almaty",emoji:"🍎",region:"Asia"},
+  {city:"Sydney",country:"Australia",tz:"Australia/Sydney",emoji:"🦘",region:"Oceania"},
+  {city:"Melbourne",country:"Australia",tz:"Australia/Melbourne",emoji:"🏏",region:"Oceania"},
+  {city:"Brisbane",country:"Australia",tz:"Australia/Brisbane",emoji:"☀️",region:"Oceania"},
+  {city:"Perth",country:"Australia",tz:"Australia/Perth",emoji:"🦙",region:"Oceania"},
+  {city:"Auckland",country:"New Zealand",tz:"Pacific/Auckland",emoji:"🥝",region:"Oceania"},
+];
 
-let testStartTime;
-let downloadData = [];
-let uploadData = [];
+const DEFAULT_CITY_NAMES = [
+  "New York","Los Angeles","London","Paris","Tokyo","Dubai",
+  "Mumbai","Singapore","Sydney","Moscow","São Paulo","Cairo"
+];
 
-const GAUGE_CIRC = 659;
-const MAX_SPEED = 200;
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+const pad = n => String(n).padStart(2,'0');
+let activeCities = [];
+let use24h = false;
+let dragSrcIdx = null;
 
-function setGauge(mbps, phase) {
-  const pct = Math.min(mbps / MAX_SPEED, 1);
-  gaugeFill.style.strokeDashoffset = GAUGE_CIRC - pct * GAUGE_CIRC;
-  const colors = { download: '#00f5c4', upload: '#ff3e6c', ping: '#4d9fff' };
-  const c = colors[phase] || '#00f5c4';
-  gaugeFill.style.stroke = c;
-  gaugeFill.style.filter = `drop-shadow(0 0 8px ${c})`;
-}
-
-function log(msg, type = '') {
-  const elapsed = testStartTime ? ((Date.now() - testStartTime) / 1000).toFixed(1) : '0.0';
-  const entry = document.createElement('div');
-  entry.className = 'log-entry';
-  entry.innerHTML = `<span class="log-time">${elapsed}s</span><span class="log-msg ${type}">${msg}</span>`;
-  logContainer.appendChild(entry);
-  logContainer.parentElement.scrollTop = logContainer.parentElement.scrollHeight;
-}
-
-function setProgress(pct, label) {
-  progressFill.style.width = pct + '%';
-  if (label) progressLabel.textContent = label;
-}
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-function drawChart() {
-  const rect = canvas.getBoundingClientRect();
-  const w = rect.width || 800;
-  const h = 120;
-  canvas.width = w * devicePixelRatio;
-  canvas.height = h * devicePixelRatio;
-  ctx.scale(devicePixelRatio, devicePixelRatio);
-  ctx.clearRect(0, 0, w, h);
-
-  ctx.strokeStyle = 'rgba(26,37,64,0.8)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const y = (h / 4) * i;
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-  }
-
-  const drawLine = (data, color) => {
-    if (data.length < 2) return;
-    const max = Math.max(...downloadData, ...uploadData, 10);
-    const pts = data.map((v, i) => ({
-      x: (i / (data.length - 1)) * w,
-      y: h - (v / max) * (h * 0.85) - 10
-    }));
-
-    const grad = ctx.createLinearGradient(0, 0, 0, h);
-    const rgb = color === '#00f5c4' ? '0,245,196' : '255,62,108';
-    grad.addColorStop(0, `rgba(${rgb},0.18)`);
-    grad.addColorStop(1, 'transparent');
-
-    ctx.beginPath();
-    ctx.moveTo(pts[0].x, h);
-    ctx.lineTo(pts[0].x, pts[0].y);
-    for (let i = 1; i < pts.length; i++) {
-      const cpx = (pts[i-1].x + pts[i].x) / 2;
-      ctx.bezierCurveTo(cpx, pts[i-1].y, cpx, pts[i].y, pts[i].x, pts[i].y);
-    }
-    ctx.lineTo(pts[pts.length-1].x, h);
-    ctx.closePath();
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(pts[0].x, pts[0].y);
-    for (let i = 1; i < pts.length; i++) {
-      const cpx = (pts[i-1].x + pts[i].x) / 2;
-      ctx.bezierCurveTo(cpx, pts[i-1].y, cpx, pts[i].y, pts[i].x, pts[i].y);
-    }
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2.5;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 6;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    const last = pts[pts.length - 1];
-    ctx.beginPath();
-    ctx.arc(last.x, last.y, 3.5, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
-  };
-
-  drawLine(downloadData, '#00f5c4');
-  drawLine(uploadData, '#ff3e6c');
-}
-
-async function measurePing() {
-  log('Initiating latency measurement...');
-  const times = [];
-  const endpoints = [
-    'https://www.cloudflare.com/cdn-cgi/trace',
-    'https://1.1.1.1/cdn-cgi/trace',
-  ];
-
-  for (let i = 0; i < 6; i++) {
-    const url = endpoints[i % endpoints.length] + '?r=' + Math.random();
-    const t0 = performance.now();
+function loadCities() {
+  const saved = localStorage.getItem('wc-cities');
+  if (saved) {
     try {
-      await fetch(url, { mode: 'no-cors', cache: 'no-store', signal: AbortSignal.timeout(3000) });
-    } catch(e) {}
-    times.push(performance.now() - t0);
-    await sleep(100);
+      const names = JSON.parse(saved);
+      activeCities = names.map(n => ALL_CITIES.find(c => c.city === n)).filter(Boolean);
+    } catch(e){}
   }
-
-  times.sort((a, b) => a - b);
-  const trimmed = times.slice(1, -1);
-  const avg = trimmed.reduce((a, b) => a + b, 0) / trimmed.length;
-  const min = times[0];
-  log(`Latency: min=${min.toFixed(0)}ms avg=${avg.toFixed(0)}ms`);
-  return Math.max(1, min);
+  if (!activeCities.length)
+    activeCities = DEFAULT_CITY_NAMES.map(n => ALL_CITIES.find(c => c.city === n)).filter(Boolean);
 }
 
-async function measureDownload() {
-  log('Starting download measurement...');
-  downloadData = [];
-  const speeds = [];
+function saveCities() {
+  localStorage.setItem('wc-cities', JSON.stringify(activeCities.map(c => c.city)));
+}
 
-  // Try real fetch with progress tracking
-  const testSizes = [
-    { url: 'https://speed.cloudflare.com/__down?bytes=1000000', bytes: 1000000 },
-    { url: 'https://speed.cloudflare.com/__down?bytes=5000000', bytes: 5000000 },
-    { url: 'https://speed.cloudflare.com/__down?bytes=10000000', bytes: 10000000 },
-  ];
+/* ═══════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════ */
+function localOffsetMinutes() { return -new Date().getTimezoneOffset(); }
 
-  for (let i = 0; i < testSizes.length; i++) {
-    const { url, bytes } = testSizes[i];
-    const t0 = performance.now();
-    let loaded = 0;
+function tzOffsetMinutes(tz) {
+  const now = new Date();
+  const d = new Date(now.toLocaleString('en-US',{timeZone:tz}));
+  const u = new Date(now.toLocaleString('en-US',{timeZone:'UTC'}));
+  return Math.round((d-u)/60000);
+}
 
-    try {
-      const res = await fetch(url + '&r=' + Date.now(), {
-        cache: 'no-store',
-        signal: AbortSignal.timeout(10000)
-      });
-      const reader = res.body.getReader();
+function getTzLabel() {
+  const off = -new Date().getTimezoneOffset();
+  const s = off>=0?'+':'−';
+  const h = Math.floor(Math.abs(off)/60), m = Math.abs(off)%60;
+  return `UTC${s}${pad(h)}${m?':'+pad(m):''}`;
+}
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        loaded += value.length;
-        const elapsed = (performance.now() - t0) / 1000;
-        if (elapsed > 0) {
-          const mbps = (loaded * 8) / elapsed / 1e6;
-          setGauge(mbps, 'download');
-          speedValue.textContent = mbps.toFixed(1);
-          dlVal.textContent = mbps.toFixed(1);
-          if (downloadData.length > 60) downloadData.shift();
-          downloadData.push(mbps);
-          drawChart();
-        }
+function getH24inTz(tz) {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'2-digit',hour12:false}).formatToParts(now);
+  return parseInt(parts.find(p=>p.type==='hour').value);
+}
+
+function getStatus(h24) {
+  if (h24 >= 8 && h24 < 18) return 'work';
+  if (h24 >= 18 && h24 < 23) return 'evening';
+  return 'sleep';
+}
+
+function getStatusLabel(h24) {
+  if (h24 >= 8 && h24 < 18) return '● Working hours';
+  if (h24 >= 18 && h24 < 23) return '● Evening';
+  return '● Night / Sleep';
+}
+
+function formatTimeStr(h24, m, s, showSec=true) {
+  if (use24h) {
+    return showSec
+      ? `${pad(h24)}:${pad(m)}<span class="sec">:${pad(s)}</span>`
+      : `${pad(h24)}:${pad(m)}`;
+  } else {
+    const ampm = h24>=12?'PM':'AM';
+    const h12 = h24%12||12;
+    return showSec
+      ? `${pad(h12)}:${pad(m)}<span class="sec">:${pad(s)}</span><span class="ampm">${ampm}</span>`
+      : `${pad(h12)}:${pad(m)}<span class="ampm">${ampm}</span>`;
+  }
+}
+
+function getCityTimeString(tz) {
+  const now = new Date();
+  const opts = {timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:!use24h};
+  return new Intl.DateTimeFormat('en-US',opts).format(now);
+}
+
+/* ═══════════════════════════════════════════
+   HERO LOCAL TIME
+═══════════════════════════════════════════ */
+function updateLocalTime() {
+  const now = new Date();
+  const h24 = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+  let timeHTML;
+  if (use24h) {
+    timeHTML = `${pad(h24)}:${pad(m)}<span class="hero-sec">:${pad(s)}</span>`;
+  } else {
+    const ampm = h24 >= 12 ? 'PM' : 'AM';
+    const h12 = h24 % 12 || 12;
+    timeHTML = `${pad(h12)}:${pad(m)}<span class="hero-sec">:${pad(s)}</span><span class="ampm">${ampm}</span>`;
+  }
+  const el = document.getElementById('localTime');
+  if (el) el.innerHTML = timeHTML;
+  const dateEl = document.getElementById('localDate');
+  if (dateEl) dateEl.textContent = now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const tzEl = document.getElementById('localTz');
+  if (tzEl) tzEl.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone + ' · ' + getTzLabel();
+}
+
+/* ═══════════════════════════════════════════
+   BUILD CARDS
+═══════════════════════════════════════════ */
+function buildCards() {
+  const container = document.getElementById('clocksContainer');
+  container.innerHTML = '';
+  activeCities.forEach((ci, i) => createCard(ci, i, container));
+  updateCityTimes();
+  applySearch();
+}
+
+function createCard(ci, i, container) {
+  const h24 = getH24inTz(ci.tz);
+  const status = getStatus(h24);
+  const statusLabel = getStatusLabel(h24);
+
+  const card = document.createElement('div');
+  card.className = 'clock-card';
+  card.dataset.city = ci.city;
+  card.dataset.index = i;
+  card.dataset.status = status;
+  card.dataset.search = (ci.city+' '+ci.country+' '+ci.region).toLowerCase();
+  card.draggable = true;
+
+  card.innerHTML = `
+    <div class="card-inner">
+      <div class="drag-handle" title="Drag to reorder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="18" x2="16" y2="18"/>
+        </svg>
+      </div>
+      <div class="status-dot ${status}" title="${statusLabel}"></div>
+      <div class="analog-wrap">
+        <div class="analog-clock">
+          <div class="hand hour-hand" id="hr${i}"></div>
+          <div class="hand min-hand" id="mn${i}"></div>
+          <div class="hand sec-hand" id="sc${i}"></div>
+          <div class="center-dot"></div>
+        </div>
+      </div>
+      <div class="clock-info">
+        <div class="clock-city">${ci.emoji} ${ci.city}</div>
+        <div class="clock-region">${ci.country} · ${ci.region}</div>
+        <div class="clock-status-label ${status}" id="sl${i}">${statusLabel}</div>
+      </div>
+      <div class="clock-right">
+        <div class="clock-time" id="tm${i}">--:--</div>
+        <div class="clock-date-small" id="dt${i}">--</div>
+        <div class="diff-badge same" id="dif${i}"></div>
+      </div>
+      <button class="del-btn" title="Remove ${ci.city}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+      </button>
+    </div>
+  `;
+
+  // Delete
+  card.querySelector('.del-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    deleteCity(ci.city, card);
+  });
+
+  // Drag & Drop
+  card.addEventListener('dragstart', e => {
+    dragSrcIdx = i;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    document.querySelectorAll('.clock-card').forEach(c => c.classList.remove('drag-over'));
+  });
+  card.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.clock-card').forEach(c => c.classList.remove('drag-over'));
+    if (parseInt(card.dataset.index) !== dragSrcIdx) card.classList.add('drag-over');
+  });
+  card.addEventListener('drop', e => {
+    e.preventDefault();
+    const destIdx = parseInt(card.dataset.index);
+    if (dragSrcIdx !== null && dragSrcIdx !== destIdx) {
+      const moved = activeCities.splice(dragSrcIdx, 1)[0];
+      activeCities.splice(destIdx, 0, moved);
+      saveCities();
+      buildCards();
+      updatePlannerGrid();
+      showToast(`↕️ ${moved.city} moved`);
+    }
+    dragSrcIdx = null;
+  });
+
+  // Touch drag (mobile)
+  let touchStartY = 0, touchSrcIdx = null;
+  card.querySelector('.drag-handle').addEventListener('touchstart', e => {
+    touchStartY = e.touches[0].clientY;
+    touchSrcIdx = i;
+    card.classList.add('dragging');
+    e.preventDefault();
+  }, {passive:false});
+
+  card.querySelector('.drag-handle').addEventListener('touchmove', e => {
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    const els = document.elementsFromPoint(e.touches[0].clientX, y);
+    const target = els.find(el => el.classList.contains('clock-card') && el !== card);
+    document.querySelectorAll('.clock-card').forEach(c => c.classList.remove('drag-over'));
+    if (target) target.classList.add('drag-over');
+  }, {passive:false});
+
+  card.querySelector('.drag-handle').addEventListener('touchend', e => {
+    card.classList.remove('dragging');
+    const y = e.changedTouches[0].clientY;
+    const els = document.elementsFromPoint(e.changedTouches[0].clientX, y);
+    const target = els.find(el => el.classList.contains('clock-card') && el !== card);
+    document.querySelectorAll('.clock-card').forEach(c => c.classList.remove('drag-over'));
+    if (target && touchSrcIdx !== null) {
+      const destIdx = parseInt(target.dataset.index);
+      if (touchSrcIdx !== destIdx) {
+        const moved = activeCities.splice(touchSrcIdx, 1)[0];
+        activeCities.splice(destIdx, 0, moved);
+        saveCities();
+        buildCards();
+        updatePlannerGrid();
+        showToast(`↕️ ${moved.city} moved`);
       }
+    }
+    touchSrcIdx = null;
+  });
 
-      const elapsed = (performance.now() - t0) / 1000;
-      if (elapsed > 0 && loaded > 0) {
-        const finalMbps = (loaded * 8) / elapsed / 1e6;
-        speeds.push(finalMbps);
-        log(`Download pass ${i+1}: ${finalMbps.toFixed(2)} Mbps`);
+  container.appendChild(card);
+}
+
+function deleteCity(cityName, cardEl) {
+  cardEl.classList.add('removing');
+  setTimeout(() => {
+    activeCities = activeCities.filter(c => c.city !== cityName);
+    saveCities();
+    buildCards();
+    updateModalList();
+    updatePlannerGrid();
+    showToast(`🗑️ ${cityName} removed`);
+  }, 280);
+}
+
+/* ═══════════════════════════════════════════
+   UPDATE CITY TIMES
+═══════════════════════════════════════════ */
+function updateCityTimes() {
+  const now = new Date();
+  const localOff = localOffsetMinutes();
+  activeCities.forEach((ci, i) => {
+    const opts = {timeZone:ci.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false};
+    const parts = new Intl.DateTimeFormat('en-US',opts).formatToParts(now);
+    const p = {};
+    parts.forEach(x => p[x.type]=x.value);
+    const h24=parseInt(p.hour), m=parseInt(p.minute), s=parseInt(p.second);
+
+    const tm = document.getElementById(`tm${i}`);
+    if (tm) tm.innerHTML = formatTimeStr(h24, m, s, true);
+
+    const dt = document.getElementById(`dt${i}`);
+    if (dt) {
+      const ds = new Date(now.toLocaleString('en-US',{timeZone:ci.tz}));
+      dt.textContent = ds.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    }
+
+    // Diff badge
+    const tzOff = tzOffsetMinutes(ci.tz);
+    const diff = tzOff - localOff;
+    const db = document.getElementById(`dif${i}`);
+    if (db) {
+      if (diff===0){db.textContent='Same as you';db.className='diff-badge same';}
+      else{
+        const hrs=diff/60, sign=diff>0?'+':'';
+        const lbl=Number.isInteger(hrs)?`${sign}${hrs}h`:`${sign}${(diff/60).toFixed(1)}h`;
+        db.textContent=diff>0?`${lbl} ahead`:`${lbl} behind`;
+        db.className=`diff-badge ${diff>0?'ahead':'behind'}`;
       }
-    } catch (e) {
-      log(`Pass ${i+1} timed out, using simulation`, 'error');
     }
 
-    setProgress(20 + (i + 1) * 12, `Download — Pass ${i+1}/3`);
-  }
-
-  if (speeds.length > 0) {
-    return speeds.reduce((a, b) => a + b, 0) / speeds.length;
-  }
-
-  // Fallback simulation
-  return await simulatePhase('download', 40 + Math.random() * 60);
-}
-
-async function measureUpload() {
-  log('Starting upload measurement...');
-  uploadData = [];
-  const speeds = [];
-  const sizes = [250000, 500000, 1000000];
-
-  for (let i = 0; i < sizes.length; i++) {
-    const size = sizes[i];
-    const data = new Uint8Array(size).fill(0x41);
-    const t0 = performance.now();
-
-    try {
-      await fetch('https://speed.cloudflare.com/__up', {
-        method: 'POST',
-        body: data,
-        cache: 'no-store',
-        signal: AbortSignal.timeout(10000),
-        headers: { 'Content-Type': 'application/octet-stream' }
-      });
-
-      const elapsed = (performance.now() - t0) / 1000;
-      const mbps = (size * 8) / elapsed / 1e6;
-      speeds.push(mbps);
-
-      setGauge(mbps, 'upload');
-      speedValue.textContent = mbps.toFixed(1);
-      ulVal.textContent = mbps.toFixed(1);
-      if (uploadData.length > 60) uploadData.shift();
-      uploadData.push(mbps);
-      drawChart();
-      log(`Upload pass ${i+1}: ${mbps.toFixed(2)} Mbps`);
-    } catch (e) {
-      log(`Upload pass ${i+1} failed, using simulation`, 'error');
+    // Status (update every tick for color correctness)
+    const status = getStatus(h24);
+    const card = document.querySelector(`.clock-card[data-city="${ci.city}"]`);
+    if (card) {
+      card.dataset.status = status;
+      const dot = card.querySelector('.status-dot');
+      if (dot) { dot.className = `status-dot ${status}`; }
+      const sl = document.getElementById(`sl${i}`);
+      if (sl) { sl.className = `clock-status-label ${status}`; sl.textContent = getStatusLabel(h24); }
     }
 
-    setProgress(60 + (i + 1) * 10, `Upload — Pass ${i+1}/3`);
-    await sleep(200);
-  }
-
-  if (speeds.length > 0) {
-    return speeds.reduce((a, b) => a + b, 0) / speeds.length;
-  }
-
-  return await simulatePhase('upload', 15 + Math.random() * 25);
+    // Analog
+    const secDeg=s*6, minDeg=m*6+s*0.1, hrDeg=(h24%12)*30+m*0.5;
+    const hr=document.getElementById(`hr${i}`);
+    const mn=document.getElementById(`mn${i}`);
+    const sc=document.getElementById(`sc${i}`);
+    if(hr)hr.style.transform=`rotate(${hrDeg}deg)`;
+    if(mn)mn.style.transform=`rotate(${minDeg}deg)`;
+    if(sc)sc.style.transform=`rotate(${secDeg}deg)`;
+  });
 }
 
-async function simulatePhase(phase, target) {
-  const data = phase === 'download' ? downloadData : uploadData;
-  for (let i = 0; i <= 40; i++) {
-    const t = i / 40;
-    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-    const noise = (Math.random() - 0.5) * target * 0.2;
-    const val = Math.max(0.5, target * ease + noise);
-    setGauge(val, phase);
-    speedValue.textContent = val.toFixed(1);
-    if (phase === 'download') dlVal.textContent = val.toFixed(1);
-    else ulVal.textContent = val.toFixed(1);
-    if (data.length > 60) data.shift();
-    data.push(val);
-    drawChart();
-    await sleep(60);
+/* ═══════════════════════════════════════════
+   MEETING PLANNER
+═══════════════════════════════════════════ */
+const plannerPanel = document.getElementById('plannerPanel');
+const meetingTimeInput = document.getElementById('meetingTime');
+
+document.getElementById('openPlanner').addEventListener('click', () => {
+  const isOpen = plannerPanel.classList.toggle('open');
+  if (isOpen) {
+    // set default to next round hour
+    const now = new Date();
+    const next = new Date(now);
+    next.setMinutes(0,0,0);
+    next.setHours(now.getHours()+1);
+    meetingTimeInput.value = `${pad(next.getHours())}:00`;
+    updatePlannerGrid();
+    document.getElementById('plannerLocalTz').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
   }
-  return target;
+});
+
+document.getElementById('closePlanner').addEventListener('click', () => {
+  plannerPanel.classList.remove('open');
+});
+
+meetingTimeInput.addEventListener('input', updatePlannerGrid);
+
+function updatePlannerGrid() {
+  if (!plannerPanel.classList.contains('open')) return;
+  const [hStr, mStr] = meetingTimeInput.value.split(':');
+  const localH = parseInt(hStr)||9;
+  const localM = parseInt(mStr)||0;
+
+  // Convert local time to UTC
+  const now = new Date();
+  const base = new Date(now);
+  base.setHours(localH, localM, 0, 0);
+
+  const grid = document.getElementById('plannerGrid');
+  grid.innerHTML = '';
+
+  activeCities.forEach(ci => {
+    // Get what this time is in the city's tz
+    const cityTime = new Date(base.toLocaleString('en-US',{timeZone:ci.tz}));
+    // Actually compute by offset diff
+    const localOff = localOffsetMinutes();
+    const cityOff = tzOffsetMinutes(ci.tz);
+    const diffMin = cityOff - localOff;
+    const totalMin = localH*60 + localM + diffMin;
+    const cityH24 = ((Math.floor(totalMin/60)%24)+24)%24;
+    const cityMin = ((totalMin%60)+60)%60;
+
+    const status = getStatus(cityH24);
+    let timeStr;
+    if (use24h) {
+      timeStr = `${pad(cityH24)}:${pad(cityMin)}`;
+    } else {
+      const ampm = cityH24>=12?'PM':'AM';
+      const h12 = cityH24%12||12;
+      timeStr = `${pad(h12)}:${pad(cityMin)} ${ampm}`;
+    }
+
+    const row = document.createElement('div');
+    row.className = 'planner-row';
+    row.innerHTML = `
+      <span class="planner-row-emoji">${ci.emoji}</span>
+      <span class="planner-row-city">${ci.city}</span>
+      <span class="planner-row-time">${timeStr}</span>
+      <span class="planner-row-status ${status}">${status==='work'?'✓ Good':'sleep'==='sleep'?'😴 Asleep':'🌙 Evening'}</span>
+    `;
+    // Fix status label text
+    row.querySelector('.planner-row-status').textContent =
+      status==='work' ? '✓ Good time' : status==='evening' ? '🌙 Evening' : '😴 Asleep';
+    grid.appendChild(row);
+  });
 }
 
-async function fetchIPInfo() {
-  try {
-    const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
-    const d = await res.json();
-    document.getElementById('ip-val').textContent = d.ip || '—';
-    const org = (d.org || d.asn || '—').replace(/^AS\d+\s*/, '').slice(0, 22);
-    document.getElementById('isp-val').textContent = org;
-    document.getElementById('loc-val').textContent = `${d.city || '—'}, ${d.country_code || '—'}`;
-  } catch(e) {
-    document.getElementById('ip-val').textContent = 'N/A';
-    document.getElementById('isp-val').textContent = 'N/A';
-    document.getElementById('loc-val').textContent = 'N/A';
+/* ═══════════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════════ */
+function applySearch() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  let visible = 0;
+  document.querySelectorAll('.clock-card').forEach(card => {
+    const match = !q || card.dataset.search.includes(q);
+    card.classList.toggle('hidden', !match);
+    if (match) visible++;
+  });
+  document.getElementById('noResults').classList.toggle('show', visible===0);
+}
+
+document.getElementById('searchInput').addEventListener('input', applySearch);
+
+/* ═══════════════════════════════════════════
+   ADD CITY MODAL
+═══════════════════════════════════════════ */
+const modalOverlay = document.getElementById('modalOverlay');
+const modalSearch = document.getElementById('modalSearch');
+
+document.getElementById('openModal').addEventListener('click', () => {
+  modalOverlay.classList.add('open');
+  modalSearch.value = '';
+  updateModalList();
+  setTimeout(() => modalSearch.focus(), 350);
+});
+
+function closeModal() { modalOverlay.classList.remove('open'); }
+document.getElementById('closeModal').addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', e => { if(e.target===modalOverlay) closeModal(); });
+modalSearch.addEventListener('input', updateModalList);
+
+function updateModalList() {
+  const q = modalSearch.value.toLowerCase().trim();
+  const listEl = document.getElementById('modalList');
+  const activeCityNames = new Set(activeCities.map(c=>c.city));
+  const groups = {};
+  ALL_CITIES.forEach(c => {
+    if (q && !(c.city.toLowerCase().includes(q)||c.country.toLowerCase().includes(q)||c.region.toLowerCase().includes(q))) return;
+    if (!groups[c.region]) groups[c.region]=[];
+    groups[c.region].push(c);
+  });
+  listEl.innerHTML='';
+  ['Americas','Europe','Africa','Middle East','Asia','Oceania'].forEach(region => {
+    const cities = groups[region];
+    if (!cities?.length) return;
+    const lbl = document.createElement('div');
+    lbl.className='modal-group-label'; lbl.textContent=region;
+    listEl.appendChild(lbl);
+    cities.forEach(c => {
+      const added = activeCityNames.has(c.city);
+      const item = document.createElement('button');
+      item.className='modal-item'+(added?' already-added':'');
+      item.innerHTML=`
+        <span class="modal-item-emoji">${c.emoji}</span>
+        <span class="modal-item-info">
+          <span class="modal-item-city">${c.city}</span>
+          <span class="modal-item-country">${c.country} · ${c.region}</span>
+        </span>
+        <span class="modal-item-time">${getCityTimeString(c.tz)}</span>
+        ${added?`<span class="modal-item-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></span>`:''}
+      `;
+      if (!added) item.addEventListener('click', ()=>addCity(c));
+      listEl.appendChild(item);
+    });
+  });
+  if (!listEl.children.length)
+    listEl.innerHTML='<div style="text-align:center;padding:30px 20px;color:var(--muted);font-size:.9rem;">No cities match your search.</div>';
+}
+
+function addCity(cityObj) {
+  activeCities.push(cityObj);
+  saveCities();
+  buildCards();
+  updateModalList();
+  updatePlannerGrid();
+  showToast(`✅ ${cityObj.city} added`);
+}
+
+/* ═══════════════════════════════════════════
+   12H / 24H FORMAT TOGGLE
+═══════════════════════════════════════════ */
+document.querySelectorAll('.format-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    use24h = this.dataset.fmt === '24';
+    document.querySelectorAll('.format-btn').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    localStorage.setItem('wc-fmt', use24h?'24':'12');
+    updateLocalTime();
+    buildCards();       // full re-render so AM/PM spans appear/disappear correctly
+    updatePlannerGrid();
+    updateModalList();
+  });
+});
+
+/* ═══════════════════════════════════════════
+   THEME
+═══════════════════════════════════════════ */
+document.querySelectorAll('.theme-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const t = this.dataset.theme;
+    document.documentElement.setAttribute('data-theme', t);
+    document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    localStorage.setItem('wc-theme', t);
+    // Update PWA theme-color meta
+    const themeColors = { dark:'#080a0f', light:'#eceaf5', oled:'#000000' };
+    document.getElementById('metaThemeColor')?.setAttribute('content', themeColors[t] || '#080a0f');
+  });
+});
+const savedTheme = localStorage.getItem('wc-theme');
+if (savedTheme) {
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active',b.dataset.theme===savedTheme));
+}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+document.getElementById('plannerLocalTz').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+// Restore format FIRST so updateLocalTime renders correctly
+const savedFmt = localStorage.getItem('wc-fmt');
+if (savedFmt === '24') {
+  use24h = true;
+  document.querySelectorAll('.format-btn').forEach(b => b.classList.toggle('active', b.dataset.fmt === '24'));
+}
+
+loadCities();
+buildCards();
+updateLocalTime();
+setInterval(()=>{ updateLocalTime(); updateCityTimes(); }, 1000);
+setInterval(()=>{ if(modalOverlay.classList.contains('open')) updateModalList(); }, 30000);
+</script>
+<!-- PWA: Service Worker Registration -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('[ZoniFy] SW registered:', reg.scope))
+      .catch(err => console.warn('[ZoniFy] SW registration failed:', err));
+  });
+}
+
+// PWA Install Prompt
+let deferredPrompt = null;
+const installBanner = document.getElementById('installBanner');
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (installBanner) installBanner.style.display = 'flex';
+});
+document.getElementById('installBtn')?.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') {
+    if (installBanner) installBanner.style.display = 'none';
   }
-}
-
-async function runSpeedTest() {
-  startBtn.disabled = true;
-  startBtn.classList.add('running');
-  btnText.textContent = 'TESTING…';
-  testStartTime = Date.now();
-  downloadData = [];
-  uploadData = [];
-
-  progressSection.classList.add('visible');
-  chartSection.classList.add('visible');
-  pulseRing.classList.add('active');
-
-  pingVal.textContent = '—';
-  dlVal.textContent = '—';
-  ulVal.textContent = '—';
-  ['pingCard','dlCard','ulCard'].forEach(id => document.getElementById(id).classList.remove('active'));
-
-  logContainer.innerHTML = '';
-  log('Test initiated — measuring network performance...');
-
-  // PING
-  speedLabel.textContent = 'PING TEST';
-  speedLabel.style.color = 'var(--accent3)';
-  setProgress(5, 'Measuring latency...');
-  document.getElementById('pingCard').classList.add('active');
-  setGauge(0, 'ping');
-  speedValue.textContent = '—';
-
-  const ping = await measurePing();
-  pingVal.textContent = ping.toFixed(0);
-  log(`✓ Ping complete: ${ping.toFixed(0)} ms`, 'success');
-  setProgress(20, 'Ping complete');
-  document.getElementById('pingCard').classList.remove('active');
-  await sleep(500);
-
-  // DOWNLOAD
-  speedLabel.textContent = 'DOWNLOADING';
-  speedLabel.style.color = 'var(--accent)';
-  document.getElementById('dlCard').classList.add('active');
-
-  const dl = await measureDownload();
-  dlVal.textContent = dl.toFixed(2);
-  log(`✓ Download complete: ${dl.toFixed(2)} Mbps`, 'success');
-  setProgress(58, 'Download complete');
-  document.getElementById('dlCard').classList.remove('active');
-  await sleep(500);
-
-  // UPLOAD
-  speedLabel.textContent = 'UPLOADING';
-  speedLabel.style.color = 'var(--accent2)';
-  document.getElementById('ulCard').classList.add('active');
-  gaugeFill.style.stroke = '#ff3e6c';
-  gaugeFill.style.filter = 'drop-shadow(0 0 8px #ff3e6c)';
-
-  const ul = await measureUpload();
-  ulVal.textContent = ul.toFixed(2);
-  log(`✓ Upload complete: ${ul.toFixed(2)} Mbps`, 'success');
-  setProgress(100, 'All tests complete');
-  document.getElementById('ulCard').classList.remove('active');
-
-  // Final display
-  speedValue.textContent = dl.toFixed(1);
-  speedLabel.textContent = 'COMPLETE';
-  speedLabel.style.color = 'var(--accent)';
-  setGauge(dl, 'download');
-  pulseRing.classList.remove('active');
-
-  log(`━━ RESULT: DL ${dl.toFixed(2)} Mbps | UL ${ul.toFixed(2)} Mbps | Ping ${ping.toFixed(0)} ms ━━`, 'success');
-
-  await sleep(1000);
-  startBtn.disabled = false;
-  startBtn.classList.remove('running');
-  btnText.textContent = 'RUN AGAIN';
-}
-
-// Init
-fetchIPInfo();
-document.getElementById('proto-val').textContent = location.protocol.replace(':', '').toUpperCase();
+  deferredPrompt = null;
+});
+document.getElementById('installDismiss')?.addEventListener('click', () => {
+  if (installBanner) installBanner.style.display = 'none';
+});
+window.addEventListener('appinstalled', () => {
+  if (installBanner) installBanner.style.display = 'none';
+  deferredPrompt = null;
+});
 </script>
 </body>
 </html>
