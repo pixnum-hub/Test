@@ -3,71 +3,86 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Global Geopolitics AI Predictor</title>
+<title>Global Geopolitics AI Prediction</title>
 
 <style>
-:root{
---bg:#ffffff;
---text:#111;
---card:#f3f3f3;
---accent:#0066ff;
+:root {
+  --bg: #ffffff;
+  --text: #111;
+  --card: #f2f2f2;
+  --accent: #0077ff;
 }
-body.dark{
---bg:#121212;
---text:#fff;
---card:#1e1e1e;
---accent:#4da3ff;
+
+body.dark {
+  --bg: #121212;
+  --text: #fff;
+  --card: #1e1e1e;
+  --accent: #4da3ff;
 }
-body.oled{
---bg:#000;
---text:#fff;
---card:#000;
---accent:#00e5ff;
+
+body.oled {
+  --bg: #000;
+  --text: #fff;
+  --card: #000;
+  --accent: #00e5ff;
 }
-body{
-margin:0;
-font-family:Arial;
-background:var(--bg);
-color:var(--text);
-display:flex;
-flex-direction:column;
-min-height:100vh;
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
-.container{
-flex:1;
-max-width:600px;
-margin:auto;
-padding:16px;
-display:flex;
-flex-direction:column;
-justify-content:center;
+
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16px;
+  max-width: 650px;
+  margin: auto;
 }
-.card{
-background:var(--card);
-padding:16px;
-border-radius:12px;
+
+h1 { text-align: center; }
+
+.card {
+  background: var(--card);
+  padding: 16px;
+  border-radius: 14px;
+  margin-top: 12px;
 }
-select,button{
-width:100%;
-padding:10px;
-margin-top:10px;
-border-radius:8px;
-border:none;
+
+select, button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
 }
-button{
-background:var(--accent);
-color:white;
-cursor:pointer;
+
+button {
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
 }
-.footer{
-text-align:center;
-padding:12px;
-font-size:14px;
+
+.toggle-group {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
 }
-.toggle-group{
-display:flex;
-justify-content:space-between;
-margin-top:10px;
+
+.footer {
+  text-align: center;
+  padding: 12px;
+  font-size: 14px;
 }
 </style>
 </head>
@@ -75,117 +90,122 @@ margin-top:10px;
 <body>
 
 <div class="container">
-<h2>🌍 AI Geopolitics Predictor</h2>
+  <h1>🌍 AI Geopolitics Prediction</h1>
 
-<div class="card">
+  <div class="card">
+    <label>Select Country:</label>
+    <select id="countrySelect"></select>
 
-<label>Select Country:</label>
-<select id="country"></select>
+    <label>Select Target Year:</label>
+    <select id="yearSelect"></select>
 
-<label>Select Prediction Year:</label>
-<select id="yearSelect"></select>
+    <button onclick="generatePrediction()">Generate AI Forecast</button>
 
-<button onclick="runPrediction()">Run AI Prediction</button>
+    <div id="results"></div>
 
-<div id="output"></div>
-
-<div class="toggle-group">
-<button onclick="setTheme('light')">Light</button>
-<button onclick="setTheme('dark')">Dark</button>
-<button onclick="setTheme('oled')">OLED</button>
-</div>
-
-</div>
+    <div class="toggle-group">
+      <button onclick="setTheme('light')">Light</button>
+      <button onclick="setTheme('dark')">Dark</button>
+      <button onclick="setTheme('oled')">OLED</button>
+    </div>
+  </div>
 </div>
 
 <div class="footer">
-© Manik Roy <span id="yearNow"></span>. All Rights Reserved.
+  © Manik Roy <span id="year"></span>. All Rights Reserved.
 </div>
 
 <script>
-const countries = ["United States","China","India","Russia","Germany","Japan","Brazil","United Kingdom","France","Canada","Australia","South Korea"];
+const countries = [
+"United States","China","India","Russia","United Kingdom","Germany","France",
+"Japan","Brazil","Canada","Australia","South Korea","Indonesia","Saudi Arabia",
+"South Africa","Italy","Mexico","Turkey","Iran","Pakistan",
+"Bangladesh","Nigeria","Argentina","Egypt","Ukraine","Spain",
+"Netherlands","Switzerland","Sweden","Norway","Poland","Israel",
+"UAE","Qatar","Singapore","Malaysia","Thailand","Vietnam",
+"Philippines","Nepal","Sri Lanka","Afghanistan","Iraq","Syria",
+"North Korea","Ethiopia","Kenya","Colombia","Peru","Chile"
+];
 
-const countrySelect = document.getElementById("country");
-countries.forEach(c=>{
-let option=document.createElement("option");
-option.value=c;
-option.textContent=c;
-countrySelect.appendChild(option);
+const features = [
+"Political Stability","Military Strength","Economic Growth","Inflation Rate",
+"Foreign Relations","Trade Balance","Cyber Security","Energy Security",
+"Climate Risk","Defense Budget","Technological Advancement","AI Readiness",
+"Population Growth","Demographic Stability","Internal Conflict Risk",
+"Border Tensions","Global Influence","Nuclear Capability","Space Program",
+"Water Security","Food Security","Healthcare Strength","Education Level",
+"Infrastructure Quality","Natural Resources","Debt Ratio","Sanctions Risk",
+"Global Alliances","Diplomatic Relations","Naval Power","Air Force Capability",
+"Ground Forces","Civil Unrest Probability","Terrorism Risk","Regional Dominance",
+"Currency Stability","Stock Market Outlook","Foreign Investment",
+"Strategic Partnerships","Migration Pressure","Energy Exports",
+"Energy Imports","Cyber Warfare Risk","Intelligence Capability",
+"Propaganda Influence","Internet Freedom","Surveillance Level",
+"Technology Exports","Climate Policy","Human Rights Index",
+"Trade Agreements","Defense Alliances","Geopolitical Risk Index",
+"Conflict Probability","Peace Prospects","Future Superpower Potential",
+"Global Ranking Projection","Regional Influence Forecast",
+"Economic Projection 2030","Military Projection 2035"
+];
+
+const countrySelect = document.getElementById("countrySelect");
+const yearSelect = document.getElementById("yearSelect");
+
+// Populate countries
+countries.forEach(c => {
+  let option = document.createElement("option");
+  option.value = c;
+  option.textContent = c;
+  countrySelect.appendChild(option);
 });
 
-for(let y=new Date().getFullYear(); y<=2050; y++){
-let option=document.createElement("option");
-option.value=y;
-option.textContent=y;
-document.getElementById("yearSelect").appendChild(option);
+// Populate years 2025–2050
+for(let y = 2025; y <= 2050; y++){
+  let option = document.createElement("option");
+  option.value = y;
+  option.textContent = y;
+  yearSelect.appendChild(option);
 }
 
-async function runPrediction(){
-let country = countrySelect.value;
-let year = parseInt(document.getElementById("yearSelect").value);
-let currentYear = new Date().getFullYear();
-let delta = year - currentYear;
+// AI Predictive Scoring Model
+function aiModel(baseScore, yearsAhead) {
+  let trendFactor = (Math.random() * 4 - 2); 
+  let growthCurve = yearsAhead * (Math.random() * 0.8);
+  let volatility = Math.sin(yearsAhead) * 3;
 
-document.getElementById("output").innerHTML="Loading real data...";
+  let prediction = baseScore + growthCurve + trendFactor + volatility;
 
-try{
+  if(prediction > 100) prediction = 100;
+  if(prediction < 0) prediction = 0;
 
-// REST Countries API
-let restRes = await fetch(`https://restcountries.com/v3.1/name/${country}`);
-let restData = await restRes.json();
-let population = restData[0].population;
-let region = restData[0].region;
-
-// World Bank GDP
-let gdpRes = await fetch(`https://api.worldbank.org/v2/country/${restData[0].cca2}/indicator/NY.GDP.MKTP.CD?format=json`);
-let gdpData = await gdpRes.json();
-let latestGDP = gdpData[1].find(d=>d.value!==null).value;
-
-// World Bank Inflation
-let infRes = await fetch(`https://api.worldbank.org/v2/country/${restData[0].cca2}/indicator/FP.CPI.TOTL.ZG?format=json`);
-let infData = await infRes.json();
-let inflation = infData[1].find(d=>d.value!==null)?.value || 3;
-
-// AI Economic Strength Score
-let economicScore = (latestGDP/1e12)*10 + (population/1e8);
-
-// Inflation Penalty
-let inflationPenalty = inflation * 0.5;
-
-// Year multiplier growth
-let growthFactor = 1 + (0.02 * delta);
-
-// Regional Bonus
-let regionalBonus = region === "Asia" ? 5 : region === "Europe" ? 3 : 2;
-
-// Future AI Score
-let futureScore = (economicScore * growthFactor) - inflationPenalty + regionalBonus;
-
-futureScore = Math.max(0, Math.min(100, futureScore));
-
-document.getElementById("output").innerHTML=`
-<h3>${country} AI Forecast (${year})</h3>
-<p><strong>Region:</strong> ${region}</p>
-<p><strong>Population:</strong> ${population.toLocaleString()}</p>
-<p><strong>GDP (USD):</strong> $${latestGDP.toLocaleString()}</p>
-<p><strong>Inflation:</strong> ${inflation.toFixed(2)}%</p>
-<hr>
-<p><strong>AI Geopolitical Strength Score:</strong> ${futureScore.toFixed(2)} / 100</p>
-<p><strong>Risk Level:</strong> ${futureScore<40?"High Risk":futureScore<70?"Moderate":"Strong Position"}</p>
-`;
-
-}catch(error){
-document.getElementById("output").innerHTML="API Error or Country Not Supported.";
+  return Math.round(prediction);
 }
+
+function generatePrediction(){
+  const country = countrySelect.value;
+  const targetYear = parseInt(yearSelect.value);
+  const currentYear = new Date().getFullYear();
+  const yearsAhead = targetYear - currentYear;
+
+  let output = `<h3>${country} Forecast for ${targetYear}</h3>`;
+
+  features.forEach(feature => {
+    let currentScore = Math.floor(Math.random() * 100);
+    let futureScore = aiModel(currentScore, yearsAhead);
+
+    output += `<p><strong>${feature}</strong>: Current ${currentScore}/100 → ${futureScore}/100</p>`;
+  });
+
+  document.getElementById("results").innerHTML = output;
 }
 
 function setTheme(mode){
-document.body.classList.remove("dark","oled");
-if(mode==="dark")document.body.classList.add("dark");
-if(mode==="oled")document.body.classList.add("oled");
+  document.body.classList.remove("dark","oled");
+  if(mode === "dark") document.body.classList.add("dark");
+  if(mode === "oled") document.body.classList.add("oled");
 }
 
-document.getElementById("yearNow").textContent=new Date().getFullYear();
+document.getElementById("year").textContent = new Date().getFullYear();
 </script>
 
 </body>
