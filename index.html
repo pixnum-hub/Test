@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WallWise – Home Painting Estimator</title>
+
+<style>
+  :root {
+    --accent: #FF6B35;
+    --accent2: #FFD166;
+    --radius: 16px;
+    --transition: 0.3s cubic-bezier(.4,0,.2,1);
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --text: #f0f2ff;
+    --text2: #8890b5;
+    --card-shadow: 0 4px 30px rgba(0,0,0,0.5);
+  }
+  [data-theme="light"] {
+    --bg: #f4f5fb;
+    --surface: #ffffff;
+    --surface2: #eef0fa;
+    --border: #d8dce8;
+    --text: #0f1117;
+    --text2: #5a607a;
+    --card-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  [data-theme="oled"] {
+    --bg: #000000;
+    --surface: #0a0a0a;
+    --surface2: #111111;
+    --border: #1e1e1e;
+    --text: #ffffff;
+    --text2: #666;
+    --card-shadow: 0 4px 30px rgba(0,0,0,0.9);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: background var(--transition), color var(--transition);
+  }
+
+  /* THEME TOGGLE */
+  .theme-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 10px 16px;
+    gap: 6px;
+    transition: background var(--transition);
+  }
+  .theme-btn {
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .theme-btn.active, .theme-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+
+  /* CURRENCY TOGGLE */
+  .currency-toggle {
+    display: flex;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    overflow: hidden;
+    margin-right: 6px;
+    flex-shrink: 0;
+  }
+  .curr-btn {
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    padding: 5px 11px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+  }
+  .curr-btn.active {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 36px 20px 20px;
+  }
+  .logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    border-radius: 999px;
+    padding: 6px 16px;
+    margin-bottom: 16px;
+  }
+  .logo-badge span { font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: 0.5px; }
+  header h1 {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: clamp(28px, 7vw, 48px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1px;
+  }
+  header h1 em { color: var(--accent); font-style: normal; }
+  header p {
+    color: var(--text2);
+    font-size: 15px;
+    margin-top: 8px;
+    font-weight: 300;
+  }
+
+  /* MAIN */
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 540px;
+    margin: 0 auto;
+    padding: 12px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--card-shadow);
+    transition: background var(--transition), border-color var(--transition);
+  }
+  .card-title {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .card-title .icon {
+    width: 24px; height: 24px;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+  }
+
+  /* FORM */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+  .input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .input-unit {
+    position: absolute;
+    right: 12px;
+    font-size: 12px;
+    color: var(--text2);
+    font-weight: 500;
+    pointer-events: none;
+  }
+  input[type="number"], select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    transition: border-color var(--transition), background var(--transition);
+    appearance: none;
+    outline: none;
+  }
+  input[type="number"]:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+  input[type="number"] { padding-right: 44px; }
+
+  /* ROOM ROWS */
+  .rooms-list { display: flex; flex-direction: column; gap: 10px; }
+  .room-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    align-items: end;
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+    animation: slideIn 0.25s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .room-row:hover { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+  .room-row label { margin-bottom: 4px; }
+  .remove-btn {
+    width: 36px; height: 36px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: #ef4444;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .remove-btn:hover { background: #ef444420; border-color: #ef4444; }
+  .add-btn {
+    width: 100%;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border: 1.5px dashed color-mix(in srgb, var(--accent) 40%, transparent);
+    color: var(--accent);
+    border-radius: 10px;
+    padding: 10px;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 4px;
+  }
+  .add-btn:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+
+  /* PAINT OPTIONS */
+  .paint-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .paint-option {
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    background: var(--surface2);
+  }
+  .paint-option:hover { border-color: var(--accent); }
+  .paint-option.selected {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+  .paint-option .name {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+    display: block;
+  }
+  .paint-option .price {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+    display: block;
+  }
+  .paint-option .dot {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    margin: 0 auto 8px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .paint-option .dot:hover { transform: scale(1.15); }
+
+  /* Editable fields inside paint tiles */
+  .paint-option .edit-name {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px dashed transparent;
+    text-align: center;
+    outline: none;
+    padding: 1px 2px;
+    border-radius: 4px;
+    transition: border-color 0.2s, background 0.2s;
+    cursor: text;
+  }
+  .paint-option .edit-name:focus {
+    border-bottom-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+  .paint-option .edit-price {
+    font-size: 12px;
+    color: var(--accent);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    width: 100%;
+  }
+  .edit-price .sym {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .edit-price input {
+    width: 52px;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px dashed transparent;
+    color: var(--accent);
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    outline: none;
+    padding: 1px 2px;
+    border-radius: 3px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .edit-price input:focus {
+    border-bottom-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+  .edit-price input::-webkit-inner-spin-button,
+  .edit-price input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .edit-price input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+  .edit-hint {
+    font-size: 10px;
+    color: var(--text2);
+    text-align: center;
+    margin-top: -4px;
+    margin-bottom: 4px;
+    opacity: 0.65;
+  }
+
+  /* COATS TOGGLE */
+  .coats-toggle { display: flex; gap: 8px; }
+  .coat-btn {
+    flex: 1;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    border-radius: 10px;
+    padding: 10px;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .coat-btn.selected {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* CALCULATE BTN */
+  .calc-btn {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 16px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 40%, transparent);
+    position: relative;
+    overflow: hidden;
+  }
+  .calc-btn:active { transform: scale(0.98); }
+  .calc-btn:hover { opacity: 0.9; }
+
+  /* RESULTS */
+  .results {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .results.visible { display: flex; animation: slideIn 0.3s ease; }
+  .result-hero {
+    background: linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent2) 70%, var(--accent)) 100%);
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    text-align: center;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .result-hero::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+  }
+  .result-hero .label { font-size: 13px; font-weight: 500; opacity: 0.85; letter-spacing: 0.5px; text-transform: uppercase; }
+  .result-hero .amount {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: clamp(38px, 10vw, 56px);
+    font-weight: 800;
+    line-height: 1;
+    margin: 8px 0;
+  }
+  .result-hero .range { font-size: 13px; opacity: 0.8; }
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .breakdown-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+  .breakdown-item .bi-label { font-size: 11px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
+  .breakdown-item .bi-val {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-top: 4px;
+  }
+  .breakdown-item .bi-val.accent { color: var(--accent); }
+  .tips {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .tips h3 {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+  .tip-item {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+  .tip-item:last-child { margin-bottom: 0; }
+  .tip-item::before { content: '→'; color: var(--accent); flex-shrink: 0; font-weight: 700; }
+
+  /* RESET BTN */
+  .reset-btn {
+    width: 100%;
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--text2);
+    border-radius: 14px;
+    padding: 13px;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .reset-btn:hover { border-color: var(--text2); color: var(--text); }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 20px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text2);
+    transition: border-color var(--transition);
+  }
+  footer span { color: var(--accent); font-weight: 600; }
+
+  /* DISCLAIMER */
+  .disclaimer {
+    background: color-mix(in srgb, var(--accent2) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent2) 30%, transparent);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+  .disclaimer strong { color: var(--accent2); }
+
+  /* RESULT ACTION BUTTONS */
+  .result-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border-radius: 12px;
+    padding: 13px 10px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+  .action-btn.save {
+    background: color-mix(in srgb, #22c55e 15%, transparent);
+    border: 1.5px solid color-mix(in srgb, #22c55e 40%, transparent);
+    color: #22c55e;
+  }
+  .action-btn.save:hover { background: color-mix(in srgb, #22c55e 25%, transparent); }
+  .action-btn.pdf {
+    background: color-mix(in srgb, #3b82f6 15%, transparent);
+    border: 1.5px solid color-mix(in srgb, #3b82f6 40%, transparent);
+    color: #3b82f6;
+  }
+  .action-btn.pdf:hover { background: color-mix(in srgb, #3b82f6 25%, transparent); }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #22c55e;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    z-index: 999;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* SAVED ESTIMATES */
+  .saved-section { display: flex; flex-direction: column; gap: 10px; }
+  .saved-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2px;
+  }
+  .saved-header h3 {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .clear-all-btn {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    font-size: 12px;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 4px 0;
+  }
+  .saved-empty {
+    text-align: center;
+    color: var(--text2);
+    font-size: 13px;
+    padding: 20px 0;
+  }
+  .saved-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.2s ease;
+    transition: border-color 0.2s;
+  }
+  .saved-item:hover { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+  .saved-info { flex: 1; min-width: 0; }
+  .saved-name {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .saved-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .saved-cost {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .saved-del {
+    background: transparent;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 15px;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s;
+    flex-shrink: 0;
+  }
+  .saved-del:hover { color: #ef4444; }
+
+  /* MARKUP CARD */
+  .markup-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .markup-total {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .markup-total .mt-label { font-size: 13px; color: var(--text2); font-weight: 500; }
+  .markup-total .mt-val {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--accent);
+  }
+
+  /* PROJECT NAME input */
+  input[type="text"].proj-name {
+    width: 100%;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color var(--transition);
+  }
+  input[type="text"].proj-name:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+
+  /* BREAKDOWN extra row for markup */
+  .breakdown-item.full {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    padding: 12px 14px;
+  }
+  .breakdown-item.full .bi-label { margin-bottom: 0; }
+  .breakdown-item.full .bi-val { font-size: 16px; }
+
+  @media (max-width: 360px) {
+    .paint-grid { grid-template-columns: 1fr; }
+    .breakdown-grid { grid-template-columns: 1fr; }
+    .result-actions { grid-template-columns: 1fr; }
+    .markup-row { grid-template-columns: 1fr; }
+  }
+
+  /* ── PDF PRINT STYLES ─────────────────────────────────────── */
+  @media print {
+    body { background: white !important; color: #111 !important; }
+    .theme-bar, header p, main > *:not(.results), .calc-btn,
+    .result-actions, .reset-btn, footer, .tips, .disclaimer { display: none !important; }
+    main { padding: 0 !important; max-width: 100% !important; }
+    .results { display: flex !important; }
+    .result-hero { background: #FF6B35 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breakdown-item { border: 1px solid #ddd !important; background: #f9f9f9 !important; }
+    .card { box-shadow: none !important; }
+    .print-header { display: block !important; }
+    .print-markup { display: flex !important; }
+  }
+  .print-header { display: none; padding-bottom: 16px; border-bottom: 2px solid #FF6B35; margin-bottom: 16px; }
+  .print-header h2 { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 22px; font-weight: 800; color: #FF6B35; }
+  .print-header p { font-size: 12px; color: #666; margin-top: 4px; }
+  .print-markup { display: none; }
+</head>
+<body>
+
+<!-- THEME BAR -->
+<div class="theme-bar">
+  <div class="currency-toggle">
+    <button class="curr-btn active" id="curr-usd" onclick="setCurrency('USD')">$</button>
+    <button class="curr-btn" id="curr-inr" onclick="setCurrency('INR')">₹</button>
+  </div>
+  <button class="theme-btn" id="btn-light" onclick="setTheme('light')">☀️ Light</button>
+  <button class="theme-btn active" id="btn-dark" onclick="setTheme('dark')">🌙 Dark</button>
+  <button class="theme-btn" id="btn-oled" onclick="setTheme('oled')">⚫ OLED</button>
+</div>
+
+<!-- HEADER -->
+<header>
+  <h1><em>WallWise</em></h1>
+  <p>Accurate estimates for home painting projects</p>
+</header>
+
+<!-- MAIN -->
+<main>
+
+  <!-- PROJECT NAME -->
+  <div class="card">
+    <div class="card-title"><div class="icon">📋</div>Project Details</div>
+    <div class="field" style="margin-bottom:0">
+      <label>Project / Client Name</label>
+      <input type="text" class="proj-name" id="projectName" placeholder="e.g. Johnson Residence – Living Room">
+    </div>
+  </div>
+
+  <!-- ROOMS CARD -->
+  <div class="card">
+    <div class="card-title"><div class="icon">🏠</div>Room Dimensions</div>
+    <div class="rooms-list" id="roomsList"></div>
+    <button class="add-btn" onclick="addRoom()">+ Add Another Room</button>
+  </div>
+
+  <!-- CEILING HEIGHT -->
+  <div class="card">
+    <div class="card-title"><div class="icon">📐</div>Ceiling Height</div>
+    <div class="field">
+      <label>Height (in feet)</label>
+      <div class="input-wrap">
+        <input type="number" id="ceilHeight" value="9" min="6" max="20" step="0.5">
+        <span class="input-unit">ft</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Doors & Windows to Subtract</label>
+      <div class="input-wrap">
+        <input type="number" id="openings" value="2" min="0" max="20">
+        <span class="input-unit">count</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Include Ceiling?</label>
+      <div class="coats-toggle">
+        <button class="coat-btn selected" id="ceil-yes" onclick="toggleCeiling(true)">Yes</button>
+        <button class="coat-btn" id="ceil-no" onclick="toggleCeiling(false)">No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINT TYPE -->
+  <div class="card">
+    <div class="card-title"><div class="icon">🪣</div>Paint Quality</div>
+    <p class="edit-hint">✏️ Tap name or price to edit</p>
+    <div class="paint-grid" id="paintGrid">
+      <div class="paint-option selected" data-type="economy" data-cost="18">
+        <div class="dot" style="background:#94a3b8" onclick="selectPaintTile(this.parentElement)"></div>
+        <input class="edit-name" type="text" value="Economy" onclick="event.stopPropagation()" oninput="syncPaintLabel(this)">
+        <div class="edit-price">
+          <span class="sym" id="sym-economy">~$</span>
+          <input type="number" id="price-economy" value="18" min="1" max="99999" onclick="event.stopPropagation()" oninput="syncPaintCost(this, 'economy')" onchange="syncPaintCost(this,'economy')">
+          <span class="sym">/gal</span>
+        </div>
+      </div>
+      <div class="paint-option" data-type="standard" data-cost="32">
+        <div class="dot" style="background:#60a5fa" onclick="selectPaintTile(this.parentElement)"></div>
+        <input class="edit-name" type="text" value="Standard" onclick="event.stopPropagation()" oninput="syncPaintLabel(this)">
+        <div class="edit-price">
+          <span class="sym" id="sym-standard">~$</span>
+          <input type="number" id="price-standard" value="32" min="1" max="99999" onclick="event.stopPropagation()" oninput="syncPaintCost(this,'standard')" onchange="syncPaintCost(this,'standard')">
+          <span class="sym">/gal</span>
+        </div>
+      </div>
+      <div class="paint-option" data-type="premium" data-cost="52">
+        <div class="dot" style="background:#a78bfa" onclick="selectPaintTile(this.parentElement)"></div>
+        <input class="edit-name" type="text" value="Premium" onclick="event.stopPropagation()" oninput="syncPaintLabel(this)">
+        <div class="edit-price">
+          <span class="sym" id="sym-premium">~$</span>
+          <input type="number" id="price-premium" value="52" min="1" max="99999" onclick="event.stopPropagation()" oninput="syncPaintCost(this,'premium')" onchange="syncPaintCost(this,'premium')">
+          <span class="sym">/gal</span>
+        </div>
+      </div>
+      <div class="paint-option" data-type="luxury" data-cost="80">
+        <div class="dot" style="background:#fbbf24" onclick="selectPaintTile(this.parentElement)"></div>
+        <input class="edit-name" type="text" value="Luxury" onclick="event.stopPropagation()" oninput="syncPaintLabel(this)">
+        <div class="edit-price">
+          <span class="sym" id="sym-luxury">~$</span>
+          <input type="number" id="price-luxury" value="80" min="1" max="99999" onclick="event.stopPropagation()" oninput="syncPaintCost(this,'luxury')" onchange="syncPaintCost(this,'luxury')">
+          <span class="sym">/gal</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COATS -->
+  <div class="card">
+    <div class="card-title"><div class="icon">🖌️</div>Number of Coats</div>
+    <div class="coats-toggle" id="coatsBtns">
+      <button class="coat-btn selected" onclick="selectCoats(this, 1)">1 Coat</button>
+      <button class="coat-btn" onclick="selectCoats(this, 2)">2 Coats</button>
+      <button class="coat-btn" onclick="selectCoats(this, 3)">3 Coats</button>
+    </div>
+  </div>
+
+  <!-- LABOR -->
+  <div class="card">
+    <div class="card-title"><div class="icon">👷</div>Labor</div>
+    <div class="field">
+      <label>Labor Rate (per sq ft)</label>
+      <div class="input-wrap" id="laborWrap">
+        <input type="number" id="laborRate" value="2.50" min="0" max="10000" step="0.25">
+        <span class="input-unit">$/sqft</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Include Labor in Estimate?</label>
+      <div class="coats-toggle">
+        <button class="coat-btn selected" id="labor-yes" onclick="toggleLabor(true)">Yes</button>
+        <button class="coat-btn" id="labor-no" onclick="toggleLabor(false)">No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRIMER -->
+  <div class="card">
+    <div class="card-title"><div class="icon">⬜</div>Additional Options</div>
+    <div class="field">
+      <label>Include Primer?</label>
+      <div class="coats-toggle">
+        <button class="coat-btn selected" id="primer-yes" onclick="togglePrimer(true)">Yes (+15%)</button>
+        <button class="coat-btn" id="primer-no" onclick="togglePrimer(false)">No</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Surface Condition</label>
+      <div class="input-wrap">
+        <select id="surface">
+          <option value="1">Good – Minor touch-ups only</option>
+          <option value="1.15" selected>Fair – Some prep needed</option>
+          <option value="1.3">Poor – Heavy prep / repair</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTRACTOR MARKUP -->
+  <div class="card">
+    <div class="card-title"><div class="icon">💼</div>Contractor Markup</div>
+    <div class="markup-row">
+      <div class="field" style="margin-bottom:0">
+        <label>Markup %</label>
+        <div class="input-wrap">
+          <input type="number" id="markupPct" value="0" min="0" max="300" step="1">
+          <span class="input-unit">%</span>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>Tax Rate %</label>
+        <div class="input-wrap">
+          <input type="number" id="taxPct" value="0" min="0" max="50" step="0.5">
+          <span class="input-unit">%</span>
+        </div>
+      </div>
+    </div>
+    <div class="markup-total" id="markupPreview" style="display:none">
+      <span class="mt-label">Client Quote (with markup + tax)</span>
+      <span class="mt-val" id="markupVal">$0</span>
+    </div>
+  </div>
+
+  <!-- CALCULATE -->
+  <button class="calc-btn" onclick="calculate()">Calculate Estimate →</button>
+
+  <!-- RESULTS -->
+  <div class="results" id="results">
+    <!-- Print only header -->
+    <div class="print-header">
+      <h2>WallWise – Painting Estimate</h2>
+      <p id="printMeta"></p>
+    </div>
+    <div class="result-hero">
+      <div class="label">Total Estimated Cost</div>
+      <div class="amount" id="totalCost">$0</div>
+      <div class="range" id="costRange">Range: $0 – $0</div>
+    </div>
+    <div class="breakdown-grid">
+      <div class="breakdown-item">
+        <div class="bi-label">Paintable Area</div>
+        <div class="bi-val accent" id="totalArea">0 sqft</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="bi-label">Paint Needed</div>
+        <div class="bi-val accent" id="gallons">0 gal</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="bi-label">Paint Cost</div>
+        <div class="bi-val" id="paintCost">$0</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="bi-label">Labor Cost</div>
+        <div class="bi-val" id="laborCost">$0</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="bi-label">Primer Cost</div>
+        <div class="bi-val" id="primerCost">$0</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="bi-label">Supplies Est.</div>
+        <div class="bi-val" id="suppliesCost">$0</div>
+      </div>
+      <div class="breakdown-item full print-markup" id="markupRow" style="display:none">
+        <div class="bi-label">Markup + Tax (Client Quote)</div>
+        <div class="bi-val accent" id="markupBreakdown">$0</div>
+      </div>
+    </div>
+    <div class="tips">
+      <h3>💡 Smart Tips for This Project</h3>
+      <div class="tip-item" id="tip1"></div>
+      <div class="tip-item" id="tip2"></div>
+      <div class="tip-item" id="tip3"></div>
+    </div>
+    <div class="disclaimer">
+      <strong>📝 Disclaimer:</strong> This is an estimate only. Actual costs may vary based on local labor rates, specific paint brands, and project complexity. Get 2–3 quotes from licensed painters for accuracy.
+    </div>
+    <!-- Action buttons -->
+    <div class="result-actions">
+      <button class="action-btn save" onclick="saveEstimate()">💾 Save Estimate</button>
+      <button class="action-btn pdf" onclick="exportPDF()">📄 Export PDF</button>
+    </div>
+    <button class="reset-btn" onclick="resetCalc()">← Start Over</button>
+  </div>
+
+  <!-- SAVED ESTIMATES -->
+  <div class="card" id="savedCard" style="display:none">
+    <div class="saved-section">
+      <div class="saved-header">
+        <h3>📁 Saved Estimates</h3>
+        <button class="clear-all-btn" onclick="clearAllSaved()">Clear All</button>
+      </div>
+      <div id="savedList"></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- FOOTER -->
+<footer>
+  © <span id="footerYear"></span> <span>Manik Roy</span>. All Rights Reserved.
+</footer>
+
+<script>
+  // ── Currency config ───────────────────────────────────────────────────────
+  const CURRENCIES = {
+    USD: {
+      sym: '$',
+      locale: 'en-US',
+      paintPrices:  { economy: 18,  standard: 32,  premium: 52,  luxury: 80  },
+      paintLabels:  { economy: '~$18/gal', standard: '~$32/gal', premium: '~$52/gal', luxury: '~$80/gal' },
+      laborDefault: 2.50,
+      laborUnit: '$/sqft',
+      primerPerGal: 20,
+      suppliesBase: 30,
+      suppliesRate: 0.05,
+    },
+    INR: {
+      sym: '₹',
+      locale: 'en-IN',
+      paintPrices:  { economy: 1500, standard: 2700, premium: 4300, luxury: 6700 },
+      paintLabels:  { economy: '~₹1500/L', standard: '~₹2700/L', premium: '~₹4300/L', luxury: '~₹6700/L' },
+      laborDefault: 15,
+      laborUnit: '₹/sqft',
+      primerPerGal: 1650,
+      suppliesBase: 2500,
+      suppliesRate: 4.2,
+    }
+  };
+
+  let currency = 'USD';
+
+  function setCurrency(c) {
+    currency = c;
+    document.getElementById('curr-usd').classList.toggle('active', c === 'USD');
+    document.getElementById('curr-inr').classList.toggle('active', c === 'INR');
+    localStorage.setItem('paintCurrency', c);
+    applyPaintPrices();
+    updateLaborPlaceholder();
+    const lu = document.querySelector('#laborWrap .input-unit');
+    if (lu) lu.textContent = CURRENCIES[c].laborUnit;
+    document.getElementById('results').classList.remove('visible');
+  }
+
+  function applyPaintPrices() {
+    const cfg = CURRENCIES[currency];
+    const sym = currency === 'INR' ? '~₹' : '~$';
+    const unit = currency === 'INR' ? '/L' : '/gal';
+    ['economy','standard','premium','luxury'].forEach(type => {
+      const tile = document.querySelector(`.paint-option[data-type="${type}"]`);
+      if (!tile) return;
+      const priceInput = document.getElementById('price-' + type);
+      const symEl = document.getElementById('sym-' + type);
+      const origPrice = cfg.paintPrices[type];
+      tile.dataset.cost = origPrice;
+      if (priceInput) priceInput.value = origPrice;
+      if (symEl) symEl.textContent = sym;
+      const unitSpans = tile.querySelectorAll('.edit-price .sym');
+      if (unitSpans[1]) unitSpans[1].textContent = unit;
+    });
+    const sel = document.querySelector('.paint-option.selected');
+    if (sel) paintCostPerGal = parseFloat(sel.dataset.cost);
+  }
+
+  function updateLaborPlaceholder() {
+    const cfg = CURRENCIES[currency];
+    const inp = document.getElementById('laborRate');
+    if (inp) {
+      inp.value = cfg.laborDefault;
+      inp.step = currency === 'INR' ? 1 : 0.25;
+    }
+  }
+
+  // Select tile by clicking dot or tile background
+  function selectPaintTile(tile) {
+    document.querySelectorAll('.paint-option').forEach(e => e.classList.remove('selected'));
+    tile.classList.add('selected');
+    paintCostPerGal = parseFloat(tile.dataset.cost) || 0;
+  }
+
+  // Sync price input change → dataset + live cost if selected
+  function syncPaintCost(input, type) {
+    const val = parseFloat(input.value) || 0;
+    const tile = document.querySelector(`.paint-option[data-type="${type}"]`);
+    if (tile) {
+      tile.dataset.cost = val;
+      if (tile.classList.contains('selected')) paintCostPerGal = val;
+    }
+  }
+
+  function syncPaintLabel() { /* name is cosmetic only */ }
+  function selectPaint(el) { selectPaintTile(el); }
+
+  function fmt(n) {
+    const cfg = CURRENCIES[currency];
+    return cfg.sym + Math.round(n).toLocaleString(cfg.locale);
+  }
+
+  // ── Theme ─────────────────────────────────────────────────────────────────
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + t).classList.add('active');
+    localStorage.setItem('paintTheme', t);
+  }
+  (function() {
+    const savedTheme = localStorage.getItem('paintTheme') || 'dark';
+    setTheme(savedTheme);
+    const savedCurr = localStorage.getItem('paintCurrency') || 'USD';
+    currency = savedCurr;
+    document.getElementById('curr-usd').classList.toggle('active', savedCurr === 'USD');
+    document.getElementById('curr-inr').classList.toggle('active', savedCurr === 'INR');
+  })();
+
+  // Footer year
+  document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let rooms = [];
+  let roomCount = 0;
+  let paintCostPerGal = 18;
+  let coats = 1;
+  let includeCeiling = true;
+  let includeLabor = true;
+  let includePrimer = true;
+
+  function addRoom() {
+    roomCount++;
+    const id = roomCount;
+    rooms.push({ id, l: '', w: '' });
+    renderRooms();
+  }
+
+  function removeRoom(id) {
+    rooms = rooms.filter(r => r.id !== id);
+    renderRooms();
+  }
+
+  function updateRoom(id, field, val) {
+    const r = rooms.find(r => r.id === id);
+    if (r) r[field] = parseFloat(val) || 0;
+  }
+
+  function renderRooms() {
+    const list = document.getElementById('roomsList');
+    list.innerHTML = rooms.map(r => `
+      <div class="room-row">
+        <div class="field">
+          <label>Length (ft)</label>
+          <input type="number" value="${r.l || ''}" min="1" max="200" placeholder="e.g. 15"
+            oninput="updateRoom(${r.id}, 'l', this.value)">
+        </div>
+        <div class="field">
+          <label>Width (ft)</label>
+          <input type="number" value="${r.w || ''}" min="1" max="200" placeholder="e.g. 12"
+            oninput="updateRoom(${r.id}, 'w', this.value)">
+        </div>
+        <button class="remove-btn" onclick="removeRoom(${r.id})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function selectPaint(el) {
+    document.querySelectorAll('.paint-option').forEach(e => e.classList.remove('selected'));
+    el.classList.add('selected');
+    paintCostPerGal = parseFloat(el.dataset.cost);
+  }
+
+  function selectCoats(el, n) {
+    document.querySelectorAll('#coatsBtns .coat-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    coats = n;
+  }
+
+  function toggleCeiling(val) {
+    includeCeiling = val;
+    document.getElementById('ceil-yes').classList.toggle('selected', val);
+    document.getElementById('ceil-no').classList.toggle('selected', !val);
+  }
+
+  function toggleLabor(val) {
+    includeLabor = val;
+    document.getElementById('labor-yes').classList.toggle('selected', val);
+    document.getElementById('labor-no').classList.toggle('selected', !val);
+  }
+
+  function togglePrimer(val) {
+    includePrimer = val;
+    document.getElementById('primer-yes').classList.toggle('selected', val);
+    document.getElementById('primer-no').classList.toggle('selected', !val);
+  }
+
+  // ── Last calc snapshot (for saving) ───────────────────────────────────────
+  let lastCalc = null;
+
+  function calculate() {
+    if (rooms.length === 0) { alert('Please add at least one room.'); return; }
+
+    const cfg = CURRENCIES[currency];
+    const ceilH = parseFloat(document.getElementById('ceilHeight').value) || 9;
+    const openings = parseInt(document.getElementById('openings').value) || 0;
+    const laborRate = parseFloat(document.getElementById('laborRate').value) || cfg.laborDefault;
+    const surfaceMult = parseFloat(document.getElementById('surface').value) || 1;
+    const markupPct = parseFloat(document.getElementById('markupPct').value) || 0;
+    const taxPct = parseFloat(document.getElementById('taxPct').value) || 0;
+
+    let wallArea = 0, ceilArea = 0;
+    rooms.forEach(r => {
+      const l = r.l || 0, w = r.w || 0;
+      wallArea += 2 * (l + w) * ceilH;
+      ceilArea += l * w;
+    });
+
+    wallArea = Math.max(0, wallArea - openings * 21);
+    let totalArea = wallArea + (includeCeiling ? ceilArea : 0);
+    totalArea *= surfaceMult;
+
+    const gallonsNeeded = Math.ceil((totalArea * coats) / 350);
+    const paintTotal = gallonsNeeded * paintCostPerGal;
+
+    const primerGallons = includePrimer ? Math.ceil(totalArea / 400) : 0;
+    const primerTotal = primerGallons * cfg.primerPerGal;
+
+    const laborTotal = includeLabor ? totalArea * coats * laborRate * surfaceMult : 0;
+    const suppliesTotal = Math.round(totalArea * cfg.suppliesRate + cfg.suppliesBase);
+
+    const grand = paintTotal + primerTotal + laborTotal + suppliesTotal;
+    const low = Math.round(grand * 0.85);
+    const high = Math.round(grand * 1.2);
+
+    // Markup + tax
+    const withMarkup = grand * (1 + markupPct / 100);
+    const clientQuote = withMarkup * (1 + taxPct / 100);
+    const hasMarkup = markupPct > 0 || taxPct > 0;
+
+    document.getElementById('totalCost').textContent = fmt(grand);
+    document.getElementById('costRange').textContent = `Typical range: ${fmt(low)} – ${fmt(high)}`;
+    document.getElementById('totalArea').textContent = Math.round(totalArea) + ' sqft';
+    document.getElementById('gallons').textContent = gallonsNeeded + (currency === 'INR' ? ' L' : ' gal');
+    document.getElementById('paintCost').textContent = fmt(paintTotal);
+    document.getElementById('laborCost').textContent = fmt(laborTotal);
+    document.getElementById('primerCost').textContent = fmt(primerTotal);
+    document.getElementById('suppliesCost').textContent = fmt(suppliesTotal);
+
+    // Markup row in breakdown
+    const markupRow = document.getElementById('markupRow');
+    const markupBreakdown = document.getElementById('markupBreakdown');
+    if (hasMarkup) {
+      markupBreakdown.textContent = fmt(clientQuote) + (markupPct > 0 && taxPct > 0 ? ` (+${markupPct}% markup, +${taxPct}% tax)` : markupPct > 0 ? ` (+${markupPct}% markup)` : ` (+${taxPct}% tax)`);
+      markupRow.style.display = 'flex';
+    } else {
+      markupRow.style.display = 'none';
+    }
+
+    // Markup preview in card
+    const markupPreview = document.getElementById('markupPreview');
+    const markupVal = document.getElementById('markupVal');
+    if (hasMarkup) {
+      markupVal.textContent = fmt(clientQuote);
+      markupPreview.style.display = 'flex';
+    } else {
+      markupPreview.style.display = 'none';
+    }
+
+    // Print meta
+    const projName = document.getElementById('projectName').value.trim();
+    document.getElementById('printMeta').textContent =
+      (projName ? projName + ' · ' : '') + new Date().toLocaleDateString() + ' · ' + currency;
+
+    // Tips
+    const tips = [];
+    if (gallonsNeeded > 5) tips.push(currency === 'INR'
+      ? 'खरीदारी बड़ी मात्रा में करें — बड़े डिब्बों में 10–15% की बचत होती है।'
+      : 'Buy paint in 5-gallon buckets to save 10–15% vs. individual gallons.');
+    if (coats === 1) tips.push('Using 2 coats gives significantly better coverage and durability.');
+    if (!includePrimer && document.getElementById('surface').value > 1) tips.push('Consider priming—it seals the surface and can reduce the coats of topcoat needed.');
+    tips.push('Always buy 10% extra paint to account for touch-ups and waste.');
+    tips.push('Paint ceilings first, then walls—this is the pro sequence that avoids double work.');
+
+    ['tip1','tip2','tip3'].forEach((id, i) => {
+      document.getElementById(id).textContent = tips[i] || '';
+      document.getElementById(id).style.display = tips[i] ? 'flex' : 'none';
+    });
+
+    // Store snapshot for saving
+    lastCalc = {
+      id: Date.now(),
+      name: projName || 'Untitled Project',
+      currency,
+      grand,
+      clientQuote: hasMarkup ? clientQuote : null,
+      area: Math.round(totalArea),
+      rooms: rooms.length,
+      date: new Date().toLocaleDateString(),
+      markupPct,
+      taxPct,
+    };
+
+    const results = document.getElementById('results');
+    results.classList.add('visible');
+    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── Save Estimate ──────────────────────────────────────────────────────────
+  function saveEstimate() {
+    if (!lastCalc) { showToast('⚠️ Calculate first!', '#f59e0b'); return; }
+    const saved = getSaved();
+    // Avoid duplicate saves within 2s
+    if (saved.length && saved[0].id === lastCalc.id) { showToast('Already saved!', '#f59e0b'); return; }
+    saved.unshift(lastCalc);
+    if (saved.length > 10) saved.pop(); // keep max 10
+    localStorage.setItem('wallwiseSaved', JSON.stringify(saved));
+    renderSaved();
+    showToast('✅ Estimate saved!');
+  }
+
+  function getSaved() {
+    try { return JSON.parse(localStorage.getItem('wallwiseSaved') || '[]'); } catch { return []; }
+  }
+
+  function deleteSaved(id) {
+    const saved = getSaved().filter(s => s.id !== id);
+    localStorage.setItem('wallwiseSaved', JSON.stringify(saved));
+    renderSaved();
+  }
+
+  function clearAllSaved() {
+    if (!confirm('Delete all saved estimates?')) return;
+    localStorage.removeItem('wallwiseSaved');
+    renderSaved();
+  }
+
+  function renderSaved() {
+    const saved = getSaved();
+    const card = document.getElementById('savedCard');
+    const list = document.getElementById('savedList');
+    if (saved.length === 0) {
+      card.style.display = 'none';
+      return;
+    }
+    card.style.display = 'block';
+    const sym = (c) => c === 'INR' ? '₹' : '$';
+    list.innerHTML = saved.map(s => `
+      <div class="saved-item">
+        <div class="saved-info">
+          <div class="saved-name">${s.name}</div>
+          <div class="saved-meta">${s.date} · ${s.rooms} room${s.rooms > 1 ? 's' : ''} · ${s.area} sqft · ${s.currency}</div>
+        </div>
+        <div class="saved-cost">${sym(s.currency)}${Math.round(s.clientQuote || s.grand).toLocaleString(s.currency === 'INR' ? 'en-IN' : 'en-US')}</div>
+        <button class="saved-del" onclick="deleteSaved(${s.id})" title="Delete">✕</button>
+      </div>
+    `).join('');
+  }
+
+  // ── PDF Export ─────────────────────────────────────────────────────────────
+  function exportPDF() {
+    if (!lastCalc) { showToast('⚠️ Calculate first!', '#f59e0b'); return; }
+    window.print();
+  }
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  function showToast(msg, color = '#22c55e') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = color;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function resetCalc() {
+    document.getElementById('results').classList.remove('visible');
+    lastCalc = null;
+    document.getElementById('markupPreview').style.display = 'none';
+    rooms = [];
+    roomCount = 0;
+    renderRooms();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Init
+  addRoom();
+  applyPaintPrices();
+  updateLaborPlaceholder();
+  renderSaved();
+
+  // Allow clicking tile body (not inputs) to select it
+  document.querySelectorAll('.paint-option').forEach(tile => {
+    tile.addEventListener('click', function(e) {
+      if (e.target.tagName === 'INPUT') return;
+      selectPaintTile(this);
+    });
+  });
+
+  // Patch labor unit span id for JS access
+  document.addEventListener('DOMContentLoaded', () => {
+    const lu = document.querySelector('#laborWrap .input-unit');
+    if (lu) lu.textContent = CURRENCIES[currency].laborUnit;
+  });
+</script>
+</body>
+</html>
