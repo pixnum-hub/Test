@@ -3,834 +3,1252 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Vastu Compass</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VELOCITY">
+<meta name="application-name" content="VELOCITY">
+<meta name="theme-color" content="#0d0818">
+<meta name="description" content="High-accuracy GPS speedometer for cars, trains, aircraft & all vehicles. Up to 1200 km/h.">
+
+<!-- Real external manifest.json -->
+<link rel="manifest" href="./manifest.json">
+
+<!-- Icons -->
+<link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="./icon-512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.cdnfonts.com/css/dseg7-classic" rel="stylesheet">
+
+<title>VELOCITY — GPS Speedometer</title>
 <style>
-/* ══ THEMES ══ */
-:root {
-  --bg:     #0a0703;
-  --bg2:    #160f06;
-  --bg3:    #1e1509;
-  --card:   #191008;
-  --border: #5a3c14;
-  --gold:   #c8922a;
-  --gold2:  #f0c060;
-  --text:   #f5e8c8;
-  --text2:  #c8a878;
-  --text3:  #7a6040;
-  --red:    #cc4444;
-  --green:  #44aa66;
-  --shadow: rgba(200,146,42,0.18);
-  --glow:   rgba(200,146,42,0.35);
+/* ═══════════════════════════════════════════════════════════════════
+   VELOCITY v4 — High-Range GPS Speedometer
+   Covers: Car (0-300), Train (0-600), Aircraft (0-1200 km/h)
+══════════════════════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0d0818; --panel:#1a1030; --rim:#2a1f48;
+  --cyan:#00f5ff; --magenta:#ff00cc; --yellow:#ffe600;
+  --green:#00ff88; --orange:#ff6a00; --red:#ff2244; --purple:#bf00ff;
+  --text:#e0d8f8; --dim:#5a4a7a;
 }
-[data-theme="light"] {
-  --bg:     #fdf6e8;
-  --bg2:    #f5e8cc;
-  --bg3:    #ead9b8;
-  --card:   #fffaf0;
-  --border: #c8922a;
-  --gold:   #8b5e1a;
-  --gold2:  #5a3a08;
-  --text:   #2a1a05;
-  --text2:  #5a3a10;
-  --text3:  #8a6030;
-  --red:    #bb2222;
-  --green:  #227744;
-  --shadow: rgba(139,94,26,0.12);
-  --glow:   rgba(139,94,26,0.22);
-}
-[data-theme="oled"] {
-  --bg:     #000000;
-  --bg2:    #030201;
-  --bg3:    #080500;
-  --card:   #050300;
-  --border: #4a3010;
-  --gold:   #d4a030;
-  --gold2:  #f5c840;
-  --text:   #fff8e8;
-  --text2:  #d4a060;
-  --text3:  #6a5030;
-  --red:    #ff5555;
-  --green:  #55cc77;
-  --shadow: rgba(212,160,48,0.25);
-  --glow:   rgba(212,160,48,0.5);
-}
+html{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;overflow-x:hidden;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;}
 
-/* ══ BASE ══ */
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Crimson Pro', Georgia, serif;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: background .35s, color .35s;
-  overflow-x: hidden;
-}
-body::before {
-  content:'';
-  position:fixed; inset:0;
-  background: radial-gradient(ellipse at 50% 0%, var(--glow) 0%, transparent 55%);
-  pointer-events:none; z-index:0;
-}
-.app { width:100%; max-width:480px; position:relative; z-index:1; padding-bottom:64px; }
+/* Background atmosphere */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%,rgba(0,245,255,.12) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%,rgba(255,0,204,.12) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 60% at 50% 50%,rgba(191,0,255,.07) 0%,transparent 70%);
+  animation:bgPulse 6s ease-in-out infinite alternate;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,245,255,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,0,204,.03) 1px,transparent 1px);
+  background-size:36px 36px;}
+@keyframes bgPulse{0%{opacity:.7}100%{opacity:1}}
 
-/* ══ HEADER ══ */
-header {
-  text-align:center; padding:22px 16px 14px;
-  background: linear-gradient(180deg, var(--bg2) 0%, transparent 100%);
-  border-bottom:1px solid var(--border);
+/* ── PWA banners ── */
+#installBanner{display:none;position:fixed;bottom:0;left:0;right:0;z-index:1000;
+  background:var(--panel);border-top:1px solid var(--cyan);
+  padding:14px 20px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));
+  flex-direction:row;align-items:center;gap:12px;animation:slideUp .3s ease;
+  box-shadow:0 -4px 24px rgba(0,245,255,.2);}
+#installBanner.visible{display:flex;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.banner-icon{width:40px;height:40px;border-radius:10px;background:var(--rim);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px;}
+.banner-text{flex:1;min-width:0;}
+.banner-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:3px;color:var(--cyan);}
+.banner-sub{font-size:10px;letter-spacing:1px;color:var(--dim);margin-top:2px;}
+.banner-btn{background:linear-gradient(135deg,var(--cyan),var(--magenta));color:#000;border:none;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;
+  padding:8px 14px;border-radius:3px;cursor:pointer;text-transform:uppercase;
+  touch-action:manipulation;flex-shrink:0;}
+.banner-close{background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;
+  padding:4px;touch-action:manipulation;flex-shrink:0;}
+
+#offlineToast,#onlineToast{position:fixed;top:16px;left:50%;
+  transform:translateX(-50%) translateY(-80px);z-index:999;background:var(--panel);
+  border-radius:6px;padding:8px 18px;font-size:11px;letter-spacing:2px;
+  white-space:nowrap;transition:transform .3s ease;display:flex;align-items:center;gap:8px;}
+#offlineToast{border:1px solid var(--red);color:var(--red);}
+#onlineToast{border:1px solid var(--green);color:var(--green);}
+#offlineToast.show,#onlineToast.show{transform:translateX(-50%) translateY(0);}
+
+#updateBanner{display:none;position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:var(--panel);border-bottom:1px solid var(--yellow);
+  padding:10px 20px;align-items:center;justify-content:space-between;gap:12px;
+  animation:slideDown .3s ease;}
+#updateBanner.visible{display:flex;}
+@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+.update-text{font-size:11px;letter-spacing:2px;color:var(--yellow);}
+.update-btn{background:transparent;border:1px solid var(--yellow);color:var(--yellow);
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;
+  padding:6px 12px;cursor:pointer;border-radius:2px;text-transform:uppercase;
+  touch-action:manipulation;flex-shrink:0;}
+
+/* ── App layout ── */
+.app{display:flex;flex-direction:column;align-items:center;
+  gap:clamp(10px,2.5vw,20px);width:100%;max-width:480px;
+  padding:clamp(12px,3.5vw,22px) clamp(12px,4vw,18px) 12px;
+  position:relative;z-index:1;flex:1;}
+
+/* ── Brand ── */
+.brand{font-family:'Bebas Neue',sans-serif;font-size:clamp(11px,3.5vw,15px);
+  letter-spacing:clamp(5px,2.5vw,10px);text-transform:uppercase;text-align:center;
+  display:flex;align-items:center;gap:10px;
+  background:linear-gradient(90deg,var(--cyan),var(--magenta),var(--yellow),var(--green),var(--cyan));
+  background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;animation:fadeIn 1s ease both,rainbowShift 4s linear infinite;}
+@keyframes rainbowShift{to{background-position:200%}}
+.pwa-badge{font-size:8px;letter-spacing:2px;background:rgba(0,245,255,.12);
+  border:1px solid rgba(0,245,255,.4);border-radius:3px;padding:2px 6px;
+  -webkit-text-fill-color:var(--cyan);flex-shrink:0;}
+
+/* ── Vehicle mode selector ── */
+.mode-bar{display:flex;gap:6px;width:100%;animation:fadeIn .8s ease .1s both;}
+.mode-btn{flex:1;border:1px solid rgba(0,245,255,.2);background:rgba(0,245,255,.05);
+  color:var(--dim);font-family:'Rajdhani',sans-serif;font-size:clamp(9px,2.5vw,11px);
+  font-weight:700;letter-spacing:1.5px;padding:8px 4px;border-radius:6px;cursor:pointer;
+  text-transform:uppercase;transition:all .2s;touch-action:manipulation;text-align:center;}
+.mode-btn.active{border-color:var(--cyan);background:rgba(0,245,255,.15);color:var(--cyan);
+  box-shadow:0 0 12px rgba(0,245,255,.3);}
+.mode-btn .mode-icon{display:block;font-size:clamp(16px,4vw,22px);line-height:1;margin-bottom:3px;}
+.mode-btn .mode-label{display:block;font-size:clamp(7px,2vw,9px);}
+.mode-btn .mode-range{display:block;font-size:clamp(6px,1.6vw,8px);color:var(--dim);
+  margin-top:1px;letter-spacing:0;}
+
+/* ── Gauge ── */
+.speedo-wrap{position:relative;width:min(90vw,360px);height:min(90vw,360px);
+  flex-shrink:0;animation:fadeIn .8s ease .2s both;}
+.speedo-wrap::before{content:'';position:absolute;inset:-6px;border-radius:50%;
+  background:conic-gradient(var(--cyan) 0%,var(--purple) 20%,var(--magenta) 35%,
+    var(--orange) 55%,var(--yellow) 70%,var(--green) 85%,var(--cyan) 100%);
+  opacity:.5;animation:spin 5s linear infinite;filter:blur(3px);}
+.speedo-wrap::after{content:'';position:absolute;inset:0;border-radius:50%;
+  box-shadow:0 0 30px rgba(0,245,255,.25),0 0 60px rgba(255,0,204,.15),inset 0 0 30px rgba(0,0,0,.5);
+  z-index:3;pointer-events:none;}
+@keyframes spin{to{transform:rotate(360deg)}}
+canvas{position:relative;z-index:2;border-radius:50%;width:100%!important;height:100%!important;display:block;}
+/* exclude sparkline & compass from circle border */
+#sparkline,#compass{border-radius:4px!important;}
+
+/* ── LED display ── */
+.digital{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:20;text-align:center;pointer-events:none;white-space:nowrap;}
+.led-housing{background:rgba(0,0,0,.82);border:1px solid rgba(0,245,255,.22);border-radius:10px;
+  padding:clamp(4px,1.5vw,8px) clamp(10px,3vw,18px) clamp(2px,1vw,6px);position:relative;
+  box-shadow:inset 0 2px 12px rgba(0,0,0,.9),0 0 20px rgba(0,245,255,.12);}
+.led-ghost{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:clamp(4px,1.5vw,8px) clamp(10px,3vw,18px);
+  font-family:'DSEG7 Classic','Courier New',monospace;font-size:clamp(42px,13vw,70px);
+  line-height:1;color:rgba(0,245,255,.07);letter-spacing:2px;pointer-events:none;user-select:none;}
+.led-ghost.redline-ghost{color:rgba(255,34,68,.08);}
+.speed-value{font-family:'DSEG7 Classic','Courier New',monospace;font-size:clamp(42px,13vw,70px);
+  line-height:1;color:var(--cyan);letter-spacing:2px;position:relative;z-index:2;
+  text-shadow:0 0 4px var(--cyan),0 0 12px var(--cyan),0 0 28px rgba(0,245,255,.8),0 0 55px rgba(0,245,255,.4);
+  transition:color .2s,text-shadow .2s;}
+.speed-value.redline{color:var(--red);
+  text-shadow:0 0 4px var(--red),0 0 12px var(--red),0 0 28px rgba(255,34,68,.9),0 0 55px rgba(255,34,68,.5);}
+.speed-unit{font-family:'Rajdhani',sans-serif;font-size:clamp(8px,2vw,11px);letter-spacing:4px;
+  color:rgba(0,245,255,.5);margin-top:2px;text-transform:uppercase;position:relative;z-index:2;
+  cursor:pointer;transition:color .2s;user-select:none;}
+.speed-unit:hover{color:var(--yellow);}
+.speed-unit.redline-unit{color:rgba(255,34,68,.6);}
+
+/* ── Stats row ── */
+.stats{display:flex;gap:clamp(5px,1.5vw,9px);width:100%;animation:fadeIn .8s ease .5s both;}
+.stat{border-radius:8px;padding:clamp(7px,2vw,11px) clamp(5px,1.5vw,9px);text-align:center;
+  flex:1;min-width:0;position:relative;overflow:hidden;}
+.stat:nth-child(1){background:linear-gradient(135deg,rgba(0,245,255,.12),rgba(0,245,255,.03));
+  border:1px solid rgba(0,245,255,.35);box-shadow:0 0 12px rgba(0,245,255,.1);}
+.stat:nth-child(2){background:linear-gradient(135deg,rgba(255,0,204,.12),rgba(255,0,204,.03));
+  border:1px solid rgba(255,0,204,.35);box-shadow:0 0 12px rgba(255,0,204,.1);}
+.stat:nth-child(3){background:linear-gradient(135deg,rgba(255,230,0,.12),rgba(255,230,0,.03));
+  border:1px solid rgba(255,230,0,.35);box-shadow:0 0 12px rgba(255,230,0,.1);}
+.stat-label{font-size:clamp(7px,1.8vw,9px);letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stat:nth-child(1) .stat-label{color:rgba(0,245,255,.6);}
+.stat:nth-child(2) .stat-label{color:rgba(255,0,204,.6);}
+.stat:nth-child(3) .stat-label{color:rgba(255,230,0,.6);}
+.stat-value{font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,5.5vw,27px);line-height:1;}
+.stat:nth-child(1) .stat-value{color:var(--cyan);text-shadow:0 0 10px rgba(0,245,255,.6);}
+.stat:nth-child(2) .stat-value{color:var(--magenta);text-shadow:0 0 10px rgba(255,0,204,.6);}
+.stat:nth-child(3) .stat-value{color:var(--yellow);text-shadow:0 0 10px rgba(255,230,0,.6);}
+
+/* ── GPS Panel ── */
+.gps-panel{background:linear-gradient(135deg,rgba(0,245,255,.07),rgba(191,0,255,.07));
+  border:1px solid rgba(0,245,255,.2);border-radius:12px;
+  padding:clamp(11px,3vw,15px) clamp(11px,3vw,17px);width:100%;
+  position:relative;overflow:hidden;
+  box-shadow:0 0 24px rgba(0,245,255,.08),inset 0 1px 0 rgba(0,245,255,.12);
+  animation:fadeIn .8s ease .9s both;}
+.gps-panel::before{content:'';position:absolute;top:0;left:-100%;height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),var(--magenta),var(--purple),transparent);
+  animation:shimmer 3s linear infinite;width:200%;}
+@keyframes shimmer{to{left:100%}}
+
+.gps-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap;}
+.gps-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(11px,3vw,14px);letter-spacing:4px;
+  background:linear-gradient(90deg,var(--cyan),var(--magenta));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.gps-status-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.gps-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);transition:background .3s;flex-shrink:0;}
+.gps-dot.active{background:var(--green);box-shadow:0 0 8px var(--green),0 0 16px rgba(0,255,136,.5);animation:pulse 1.4s ease infinite;}
+.gps-dot.searching{background:var(--yellow);box-shadow:0 0 8px var(--yellow);animation:pulse .8s ease infinite;}
+.gps-dot.error{background:var(--red);box-shadow:0 0 8px var(--red);}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+#gpsStatusText{font-size:clamp(8px,2.2vw,10px);letter-spacing:2px;color:var(--dim);}
+
+.signal-bars{display:flex;align-items:flex-end;gap:2px;height:16px;}
+.signal-bar{width:4px;border-radius:1px;background:var(--rim);transition:background .4s;}
+.signal-bar:nth-child(1){height:4px;}
+.signal-bar:nth-child(2){height:7px;}
+.signal-bar:nth-child(3){height:10px;}
+.signal-bar:nth-child(4){height:13px;}
+.signal-bar:nth-child(5){height:16px;}
+
+.unit-toggle{display:flex;border:1px solid rgba(0,245,255,.3);border-radius:4px;overflow:hidden;}
+.unit-btn{background:transparent;border:none;color:var(--dim);font-family:'Rajdhani',sans-serif;
+  font-size:10px;font-weight:700;letter-spacing:2px;padding:4px 10px;cursor:pointer;
+  transition:all .2s;touch-action:manipulation;}
+.unit-btn.active{background:rgba(0,245,255,.2);color:var(--cyan);}
+
+.gps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(5px,1.5vw,8px);margin-bottom:10px;}
+@media(max-width:320px){.gps-grid{grid-template-columns:repeat(2,1fr);}}
+.gps-stat{text-align:center;background:rgba(0,0,0,.2);border-radius:6px;padding:6px 4px;}
+.gps-stat-label{font-size:clamp(7px,1.8vw,9px);letter-spacing:1px;color:rgba(0,245,255,.45);
+  text-transform:uppercase;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gps-stat-value{font-family:'Bebas Neue',sans-serif;font-size:clamp(16px,4.5vw,21px);
+  color:var(--cyan);line-height:1;text-shadow:0 0 8px rgba(0,245,255,.5);}
+.gps-stat-value.live{font-family:'DSEG7 Classic','Courier New',monospace;
+  font-size:clamp(16px,4.5vw,21px);color:var(--green);
+  text-shadow:0 0 6px var(--green),0 0 16px rgba(0,255,136,.6);}
+.gps-stat-unit{font-size:clamp(6px,1.6vw,8px);color:rgba(0,245,255,.3);letter-spacing:1px;margin-top:1px;}
+
+/* Bottom: sparkline + compass */
+.gps-bottom{display:flex;gap:10px;align-items:stretch;}
+.gps-left{flex:1;min-width:0;}
+.sparkline-wrap{margin-bottom:8px;}
+.sparkline-label{font-size:9px;letter-spacing:2px;color:rgba(0,245,255,.4);
+  text-transform:uppercase;margin-bottom:4px;}
+#sparkline{width:100%;height:36px;border-radius:4px!important;background:rgba(0,0,0,.3);}
+
+.gps-coords{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;
+  padding-top:8px;border-top:1px solid rgba(0,245,255,.1);flex-wrap:wrap;}
+.gps-coord-block{flex:1;min-width:0;}
+.gps-coord-text{font-size:clamp(9px,2vw,11px);color:rgba(0,245,255,.45);
+  font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.6;}
+.gps-coord-text span:first-child{color:var(--purple);margin-right:4px;font-size:clamp(7px,1.7vw,9px);
+  letter-spacing:2px;opacity:.8;}
+.gps-distance{text-align:right;flex-shrink:0;}
+.gps-distance-val{font-family:'Bebas Neue',sans-serif;font-size:clamp(17px,4.5vw,21px);
+  color:var(--orange);text-shadow:0 0 8px rgba(255,106,0,.5);line-height:1;}
+.gps-distance-label{font-size:8px;letter-spacing:2px;color:rgba(255,106,0,.5);text-transform:uppercase;}
+
+.compass-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;}
+.compass-label{font-size:9px;letter-spacing:2px;color:rgba(0,245,255,.4);text-transform:uppercase;}
+.compass-rose{width:clamp(54px,14vw,70px);height:clamp(54px,14vw,70px);}
+#compass{width:100%!important;height:100%!important;border-radius:4px!important;}
+
+.gps-actions{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+.btn-gps{background:linear-gradient(135deg,rgba(0,245,255,.15),rgba(191,0,255,.15));
+  border:1px solid rgba(0,245,255,.5);color:var(--cyan);font-family:'Rajdhani',sans-serif;
+  font-size:clamp(10px,2.5vw,12px);font-weight:700;letter-spacing:2px;
+  padding:clamp(7px,2vw,9px) clamp(10px,3vw,14px);cursor:pointer;border-radius:4px;
+  text-transform:uppercase;transition:all .2s;white-space:nowrap;touch-action:manipulation;
+  flex-shrink:0;min-height:40px;box-shadow:0 0 12px rgba(0,245,255,.2);}
+.btn-gps.tracking{border-color:var(--red);color:var(--red);
+  background:linear-gradient(135deg,rgba(255,34,68,.15),rgba(255,106,0,.1));
+  box-shadow:0 0 12px rgba(255,34,68,.3);}
+.btn-gps-reset{background:rgba(255,106,0,.1);border:1px solid rgba(255,106,0,.4);
+  color:var(--orange);font-family:'Rajdhani',sans-serif;font-size:clamp(9px,2.2vw,11px);
+  font-weight:700;letter-spacing:2px;padding:7px 10px;cursor:pointer;border-radius:4px;
+  text-transform:uppercase;touch-action:manipulation;min-height:40px;transition:all .2s;}
+.gps-msg{flex:1;font-size:clamp(8px,2vw,10px);letter-spacing:1px;color:rgba(0,245,255,.35);
+  min-height:14px;line-height:1.5;text-align:right;}
+.gps-msg.error-msg{color:rgba(255,34,68,.7);}
+
+/* ── Controls (demo mode) ── */
+.controls{display:flex;flex-direction:column;align-items:center;gap:10px;
+  width:100%;animation:fadeIn .8s ease .7s both;}
+.section-label{font-size:clamp(8px,2vw,10px);letter-spacing:4px;color:var(--dim);
+  text-transform:uppercase;align-self:flex-start;}
+.throttle-wrap{display:flex;align-items:center;gap:12px;width:100%;}
+input[type=range]{-webkit-appearance:none;flex:1;height:6px;
+  background:linear-gradient(90deg,var(--cyan),var(--magenta),var(--orange));
+  border-radius:3px;outline:none;cursor:pointer;touch-action:manipulation;
+  box-shadow:0 0 8px rgba(0,245,255,.3);}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;
+  border-radius:50%;background:radial-gradient(circle,#fff 20%,var(--cyan) 70%);
+  box-shadow:0 0 10px var(--cyan),0 0 20px rgba(0,245,255,.5);cursor:pointer;transition:transform .1s;}
+input[type=range]::-webkit-slider-thumb:active{transform:scale(1.25);}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;
+  background:radial-gradient(circle,#fff 20%,var(--cyan) 70%);border:none;box-shadow:0 0 10px var(--cyan);}
+.throttle-pct{font-family:'DSEG7 Classic','Courier New',monospace;font-size:clamp(15px,4vw,19px);
+  color:var(--yellow);width:clamp(48px,11vw,58px);text-align:right;flex-shrink:0;
+  text-shadow:0 0 8px rgba(255,230,0,.7);}
+.btn-row{display:flex;gap:clamp(5px,1.5vw,7px);width:100%;}
+.btn{border:1px solid transparent;font-family:'Rajdhani',sans-serif;
+  font-size:clamp(9px,2.2vw,11px);font-weight:700;letter-spacing:1px;
+  padding:clamp(10px,2.5vw,12px) 6px;cursor:pointer;border-radius:6px;
+  text-transform:uppercase;transition:all .2s;touch-action:manipulation;
+  flex:1;white-space:nowrap;min-height:42px;}
+#btnAccel{background:linear-gradient(135deg,rgba(0,255,136,.15),rgba(0,245,255,.1));
+  border-color:rgba(0,255,136,.5);color:var(--green);box-shadow:0 0 10px rgba(0,255,136,.2);}
+#btnAccel.active{background:linear-gradient(135deg,rgba(0,255,136,.35),rgba(0,245,255,.2));
+  box-shadow:0 0 22px rgba(0,255,136,.5);}
+#btnBrake{background:linear-gradient(135deg,rgba(255,34,68,.15),rgba(255,106,0,.1));
+  border-color:rgba(255,34,68,.5);color:var(--red);box-shadow:0 0 10px rgba(255,34,68,.2);}
+#btnReset{background:linear-gradient(135deg,rgba(191,0,255,.15),rgba(255,0,204,.1));
+  border-color:rgba(191,0,255,.5);color:var(--purple);box-shadow:0 0 10px rgba(191,0,255,.2);}
+
+/* ── Footer ── */
+footer{width:100%;text-align:center;padding:clamp(12px,3.5vw,18px) 16px;
+  padding-bottom:calc(clamp(12px,3.5vw,18px) + env(safe-area-inset-bottom,0px));
+  border-top:1px solid rgba(0,245,255,.1);position:relative;z-index:1;margin-top:auto;
+  animation:fadeIn 1s ease 1.2s both;}
+footer p{font-size:clamp(8px,2vw,10px);letter-spacing:clamp(1px,.5vw,2px);text-transform:uppercase;
+  line-height:1.6;background:linear-gradient(90deg,var(--cyan),var(--magenta),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+footer .dot{-webkit-text-fill-color:var(--yellow);margin:0 5px;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Landscape */
+@media(max-height:520px) and (orientation:landscape){
+  .app{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px;padding:8px 14px;max-width:800px;}
+  .brand,.mode-bar{width:100%;margin-bottom:-4px;}
+  .speedo-wrap{width:min(48vh,200px);height:min(48vh,200px);}
+  .stats,.gps-panel,.controls{max-width:47%;flex:1;min-width:200px;}
+  footer{padding:8px 14px;}
 }
-header h1 {
-  font-family:'Cinzel',serif; font-size:1.65rem; font-weight:700;
-  color:var(--gold2); letter-spacing:.14em; text-shadow:0 0 22px var(--glow);
-}
-header p { font-size:.78rem; color:var(--text3); letter-spacing:.22em; text-transform:uppercase; margin-top:3px; font-style:italic; }
-
-/* ══ THEME BAR ══ */
-.theme-bar { display:flex; gap:6px; padding:8px 12px; background:var(--bg2); border-bottom:1px solid var(--border); }
-.theme-btn {
-  flex:1; padding:6px 4px; border:1px solid var(--border); background:var(--card);
-  color:var(--text2); font-family:'Cinzel',serif; font-size:.62rem; letter-spacing:.08em;
-  cursor:pointer; border-radius:4px; transition:all .2s;
-}
-.theme-btn.active { background:var(--gold); color:var(--bg); border-color:var(--gold2); }
-.theme-btn:hover:not(.active) { border-color:var(--gold); color:var(--gold); }
-
-/* ══ STATUS BAR ══ */
-.status-bar {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:5px 14px; background:var(--bg2); border-bottom:1px solid var(--border);
-  font-size:.68rem; color:var(--text3);
-}
-.s-live { display:flex; align-items:center; gap:5px; }
-.dot-live {
-  width:6px; height:6px; border-radius:50%;
-  background:var(--green); box-shadow:0 0 4px var(--green);
-  animation:blink 2s infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-/* ══ SECTION ══ */
-.section { margin:10px 10px 0; background:var(--card); border:1px solid var(--border); border-radius:8px; overflow:hidden; box-shadow:0 3px 18px var(--shadow); }
-.sec-head {
-  display:flex; align-items:center; gap:8px; padding:10px 14px;
-  background: linear-gradient(90deg, var(--bg3), var(--card));
-  border-bottom:1px solid var(--border); cursor:pointer; user-select:none;
-}
-.sec-head .icon { font-size:1.05rem; }
-.sec-head .title { font-family:'Cinzel',serif; font-size:.75rem; color:var(--gold); letter-spacing:.1em; flex:1; }
-.sec-head .badge { font-size:.6rem; background:var(--gold); color:var(--bg); padding:2px 6px; border-radius:10px; font-family:'Cinzel',serif; }
-.chevron { color:var(--text3); font-size:.75rem; transition:transform .3s; }
-.section.collapsed .chevron { transform:rotate(-90deg); }
-.section.collapsed .sec-body { display:none; }
-.sec-body { padding:14px; }
-
-/* ══ 1 — COMPASS ══ */
-.compass-wrap { display:flex; flex-direction:column; align-items:center; gap:10px; }
-.compass-ring-wrap { position:relative; width:288px; height:288px; }
-#compassCanvas { display:block; border-radius:50%; box-shadow:0 0 36px var(--glow), 0 0 0 2px var(--border); }
-.compass-deg { font-family:'Cinzel',serif; font-size:2.4rem; color:var(--gold2); text-shadow:0 0 14px var(--glow); letter-spacing:.04em; line-height:1; }
-.compass-dir { font-size:.9rem; color:var(--text2); letter-spacing:.14em; }
-.compass-tag { font-size:.76rem; padding:4px 14px; border-radius:20px; border:1px solid var(--border); color:var(--gold); background:var(--bg3); font-style:italic; }
-.cal-btn {
-  width:100%; margin-top:6px; padding:10px 12px;
-  background:linear-gradient(90deg, var(--bg3), var(--card));
-  border:1px solid var(--border); color:var(--gold);
-  font-family:'Cinzel',serif; font-size:.7rem; letter-spacing:.08em;
-  cursor:pointer; border-radius:5px; transition:all .2s; text-align:center;
-}
-.cal-btn:hover { border-color:var(--gold); background:var(--bg2); }
-#manualWrap { display:none; margin-top:10px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; }
-#manualWrap label { display:block; font-family:'Cinzel',serif; font-size:.65rem; color:var(--text3); margin-bottom:6px; letter-spacing:.1em; }
-#manualSlider { width:100%; accent-color:var(--gold); cursor:pointer; }
-#manualVal { text-align:center; font-family:'Cinzel',serif; font-size:.85rem; color:var(--gold); margin-top:4px; }
-
-/* ══ 2 — ZONES ══ */
-.zones-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
-.zone-card { background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:8px 5px; text-align:center; cursor:pointer; transition:all .2s; }
-.zone-card:hover, .zone-card.active { border-color:var(--gold); background:var(--bg3); box-shadow:0 0 10px var(--shadow); }
-.zone-card.live { border-color:var(--gold2); background:var(--bg3); box-shadow:0 0 14px var(--glow); }
-.zc-dir { font-family:'Cinzel',serif; font-size:.82rem; color:var(--gold); font-weight:700; }
-.zc-elem { font-size:1.15rem; margin:2px 0; }
-.zc-name { font-size:.6rem; color:var(--text3); text-transform:uppercase; letter-spacing:.06em; }
-.zone-detail { display:none; margin-top:8px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; }
-.zone-detail.show { display:block; }
-.zone-detail h4 { font-family:'Cinzel',serif; font-size:.82rem; color:var(--gold2); margin-bottom:6px; }
-.zone-detail p { font-size:.8rem; color:var(--text2); line-height:1.55; }
-.zone-hint { font-size:.7rem; color:var(--text3); font-style:italic; text-align:center; margin-bottom:8px; }
-
-/* ══ 3 — MANDALA ══ */
-.mandala-wrap { display:flex; justify-content:center; padding:4px 0 8px; }
-#mandalaCanvas { border-radius:6px; border:1px solid var(--border); }
-.mandala-legend { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; margin-top:10px; }
-.ml-item { display:flex; align-items:center; gap:5px; font-size:.65rem; color:var(--text2); }
-.ml-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
-
-/* ══ 4 — ROOMS ══ */
-.room-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin-bottom:10px; }
-.room-btn {
-  display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 8px;
-  background:var(--bg2); border:1px solid var(--border); border-radius:6px;
-  color:var(--text2); font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.04em;
-  cursor:pointer; text-align:center; transition:all .2s;
-}
-.room-btn .ri { font-size:1.3rem; }
-.room-btn:hover, .room-btn.active { border-color:var(--gold); background:var(--bg3); color:var(--gold); }
-.room-info { display:none; background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:12px; }
-.room-info.show { display:block; }
-.room-info h4 { font-family:'Cinzel',serif; font-size:.82rem; color:var(--gold2); margin-bottom:8px; }
-.ri-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; gap:8px; }
-.ri-label { font-size:.72rem; color:var(--text3); flex-shrink:0; }
-.ri-val   { font-size:.75rem; color:var(--text); text-align:right; }
-.ri-val.good::before { content:'● '; color:var(--green); }
-.ri-val.bad::before  { content:'● '; color:var(--red); }
-.ri-tips { font-size:.76rem; color:var(--text2); line-height:1.5; margin-top:6px; padding-top:6px; border-top:1px solid var(--border); }
-
-/* ══ 5 — COLOURS ══ */
-.color-list { display:flex; flex-direction:column; gap:5px; }
-.color-row { display:flex; align-items:center; gap:10px; padding:8px 10px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; transition:border-color .2s,box-shadow .2s; }
-.color-row.live { border-color:var(--gold2); box-shadow:0 0 8px var(--shadow); }
-.color-swatch { width:34px; height:34px; border-radius:5px; border:1px solid var(--border); flex-shrink:0; }
-.color-dir { font-family:'Cinzel',serif; font-size:.72rem; color:var(--gold); width:28px; flex-shrink:0; }
-.color-name { font-size:.78rem; color:var(--text); }
-.color-effect { font-size:.63rem; color:var(--text3); font-style:italic; margin-top:1px; }
-
-/* ══ FOOTER ══ */
-.footer { text-align:center; margin:14px 10px 0; padding:14px; border-top:1px solid var(--border); font-size:.7rem; color:var(--text3); font-style:italic; line-height:1.7; }
-.om { font-size:1.4rem; color:var(--gold); display:block; margin-bottom:3px; }
-
-/* ══ SCROLL TOP ══ */
-#scrollTop {
-  position:fixed; bottom:14px; right:14px; width:38px; height:38px;
-  border-radius:50%; background:var(--gold); border:none; color:var(--bg);
-  font-size:1.1rem; cursor:pointer; box-shadow:0 3px 12px var(--shadow);
-  display:none; align-items:center; justify-content:center; z-index:100;
-}
-#scrollTop.show { display:flex; }
 </style>
 </head>
-<body data-theme="dark">
+<body>
+
+<!-- PWA Banners -->
+<div id="installBanner">
+  <div class="banner-icon">⚡</div>
+  <div class="banner-text">
+    <div class="banner-title">Install Velocity</div>
+    <div class="banner-sub">Works offline · Add to home screen</div>
+  </div>
+  <button class="banner-btn" id="installBtn">Install</button>
+  <button class="banner-close" id="dismissBanner">✕</button>
+</div>
+<div id="updateBanner">
+  <span class="update-text">🔄 &nbsp;New version available</span>
+  <button class="update-btn" id="updateBtn">Reload</button>
+</div>
+<div id="offlineToast">📡 &nbsp;Offline — app cached</div>
+<div id="onlineToast">✅ &nbsp;Back online</div>
+
 <div class="app">
+  <!-- Brand -->
+  <div class="brand">Velocity &mdash; GPS Speedometer <span class="pwa-badge">PWA</span></div>
 
-<!-- HEADER -->
-<header>
-  <h1>☸ VASTU COMPASS</h1>
-  <p>Sacred Direction · Ancient Wisdom</p>
-</header>
-
-<!-- THEME TOGGLE -->
-<div class="theme-bar">
-  <button class="theme-btn active" onclick="setTheme('dark',this)">🌑 Dark</button>
-  <button class="theme-btn"        onclick="setTheme('light',this)">☀️ Light</button>
-  <button class="theme-btn"        onclick="setTheme('oled',this)">⬛ OLED</button>
-</div>
-
-<!-- STATUS BAR -->
-<div class="status-bar">
-  <div class="s-live"><div class="dot-live"></div><span id="liveTime">--:--:--</span></div>
-  <span id="compassStatus">🧭 Tap Enable</span>
-</div>
-
-<!-- 1 — LIVE COMPASS -->
-<div class="section" id="sec-compass">
-  <div class="sec-head" onclick="toggleSec('sec-compass')">
-    <span class="icon">🧭</span><span class="title">LIVE VASTU COMPASS</span>
-    <span class="badge">LIVE</span><span class="chevron">▾</span>
+  <!-- Vehicle mode selector -->
+  <div class="mode-bar">
+    <button class="mode-btn" data-mode="car" data-max="300" data-redline="240">
+      <span class="mode-icon">🚗</span>
+      <span class="mode-label">Car</span>
+      <span class="mode-range">0–300</span>
+    </button>
+    <button class="mode-btn" data-mode="train" data-max="600" data-redline="400">
+      <span class="mode-icon">🚄</span>
+      <span class="mode-label">Train</span>
+      <span class="mode-range">0–600</span>
+    </button>
+    <button class="mode-btn active" data-mode="auto" data-max="1200" data-redline="900">
+      <span class="mode-icon">🛩️</span>
+      <span class="mode-label">Aircraft</span>
+      <span class="mode-range">0–1200</span>
+    </button>
+    <button class="mode-btn" data-mode="boat" data-max="120" data-redline="90">
+      <span class="mode-icon">🚢</span>
+      <span class="mode-label">Marine</span>
+      <span class="mode-range">0–120</span>
+    </button>
   </div>
-  <div class="sec-body">
-    <div class="compass-wrap">
-      <div class="compass-ring-wrap">
-        <canvas id="compassCanvas" width="288" height="288"></canvas>
+
+  <!-- Gauge -->
+  <div class="speedo-wrap">
+    <canvas id="gauge" width="380" height="380"></canvas>
+    <div class="digital">
+      <div class="led-housing">
+        <div class="led-ghost" id="ledGhost">8888</div>
+        <div class="speed-value" id="speedDisplay">0</div>
+        <div class="speed-unit" id="speedUnit" title="Tap to toggle km/h ↔ mph">KM / H</div>
       </div>
-      <div class="compass-deg" id="degDisplay">0°</div>
-      <div class="compass-dir" id="dirDisplay">NORTH — उत्तर</div>
-      <div class="compass-tag" id="tagDisplay">Zone of Kubera · Wealth &amp; Blessings</div>
-    </div>
-    <button class="cal-btn" id="calBtn" onclick="requestCompass()">🔄 Enable Live Compass Sensor</button>
-    <div id="manualWrap">
-      <label>MANUAL DIRECTION — drag to rotate compass</label>
-      <input type="range" id="manualSlider" min="0" max="359" value="0"
-             oninput="compassHeading=+this.value;document.getElementById('manualVal').textContent=this.value+'°'">
-      <div id="manualVal">0°</div>
     </div>
   </div>
-</div>
 
-<!-- 2 — VASTU DIRECTION ZONES -->
-<div class="section" id="sec-zones">
-  <div class="sec-head" onclick="toggleSec('sec-zones')">
-    <span class="icon">🏠</span><span class="title">VASTU DIRECTION ZONES</span><span class="chevron">▾</span>
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Top Speed</div>
+      <div class="stat-value" id="topSpeed">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Avg Speed</div>
+      <div class="stat-value" id="avgSpeed">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Trip Time</div>
+      <div class="stat-value" id="tripTime">0:00</div>
+    </div>
   </div>
-  <div class="sec-body">
-    <p class="zone-hint">Rotate phone — current facing direction highlights automatically</p>
-    <div class="zones-grid" id="zonesGrid"></div>
-    <div class="zone-detail" id="zoneDetail">
-      <h4 id="zdTitle">—</h4><p id="zdText"></p>
+
+  <!-- GPS Panel -->
+  <div class="gps-panel">
+    <div class="gps-header">
+      <div class="gps-title">GPS — Live Tracking</div>
+      <div class="gps-status-row">
+        <div class="signal-bars">
+          <div class="signal-bar" id="sb1"></div>
+          <div class="signal-bar" id="sb2"></div>
+          <div class="signal-bar" id="sb3"></div>
+          <div class="signal-bar" id="sb4"></div>
+          <div class="signal-bar" id="sb5"></div>
+        </div>
+        <div class="gps-dot" id="gpsDot"></div>
+        <span id="gpsStatusText">OFFLINE</span>
+        <div class="unit-toggle">
+          <button class="unit-btn active" id="unitKmh">KM/H</button>
+          <button class="unit-btn" id="unitMph">MPH</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="gps-grid">
+      <div class="gps-stat">
+        <div class="gps-stat-label">GPS Speed</div>
+        <div class="gps-stat-value live" id="gpsSpeed">—</div>
+        <div class="gps-stat-unit" id="gpsSpeedUnit">KM/H</div>
+      </div>
+      <div class="gps-stat">
+        <div class="gps-stat-label">Altitude</div>
+        <div class="gps-stat-value" id="gpsAlt">—</div>
+        <div class="gps-stat-unit">M</div>
+      </div>
+      <div class="gps-stat">
+        <div class="gps-stat-label">Accuracy</div>
+        <div class="gps-stat-value" id="gpsAcc">—</div>
+        <div class="gps-stat-unit">M</div>
+      </div>
+      <div class="gps-stat">
+        <div class="gps-stat-label">Heading</div>
+        <div class="gps-stat-value" id="gpsHeading">—</div>
+        <div class="gps-stat-unit">DEG</div>
+      </div>
+    </div>
+
+    <div class="gps-bottom">
+      <div class="gps-left">
+        <div class="sparkline-wrap">
+          <div class="sparkline-label">Speed History (60s)</div>
+          <canvas id="sparkline" width="240" height="36"></canvas>
+        </div>
+        <div class="gps-coords">
+          <div class="gps-coord-block">
+            <div class="gps-coord-text"><span>LAT</span><span id="gpsLat">—</span></div>
+            <div class="gps-coord-text"><span>LNG</span><span id="gpsLng">—</span></div>
+          </div>
+          <div class="gps-distance">
+            <div class="gps-distance-val" id="gpsDist">0.00</div>
+            <div class="gps-distance-label" id="gpsDistUnit">KM TRIP</div>
+          </div>
+        </div>
+      </div>
+      <div class="compass-wrap">
+        <div class="compass-label">Heading</div>
+        <div class="compass-rose">
+          <canvas id="compass" width="70" height="70"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="gps-actions">
+      <button class="btn-gps" id="btnGPS">📡 Enable GPS</button>
+      <button class="btn-gps-reset" id="btnGPSReset">Reset Trip</button>
+      <div class="gps-msg" id="gpsMsg">Tap Enable GPS to begin tracking</div>
+    </div>
+  </div>
+
+  <!-- Demo / Simulation Controls -->
+  <div class="controls">
+    <div class="section-label">Simulation Mode (no GPS)</div>
+    <div class="throttle-wrap">
+      <input type="range" id="throttle" min="0" max="100" value="0">
+      <div class="throttle-pct" id="throttlePct">0%</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="btnAccel">Auto Accel</button>
+      <button class="btn" id="btnBrake">🛑 Brake</button>
+      <button class="btn" id="btnReset">Reset</button>
     </div>
   </div>
 </div>
 
-<!-- 3 — VASTU PURUSHA MANDALA -->
-<div class="section" id="sec-mandala">
-  <div class="sec-head" onclick="toggleSec('sec-mandala')">
-    <span class="icon">🔯</span><span class="title">VASTU PURUSHA MANDALA</span><span class="chevron">▾</span>
-  </div>
-  <div class="sec-body">
-    <div class="mandala-wrap"><canvas id="mandalaCanvas" width="284" height="284"></canvas></div>
-    <div class="mandala-legend" id="mandalaLegend"></div>
-  </div>
-</div>
-
-<!-- 4 — ROOM VASTU CHECKER -->
-<div class="section" id="sec-rooms">
-  <div class="sec-head" onclick="toggleSec('sec-rooms')">
-    <span class="icon">🛏️</span><span class="title">ROOM VASTU CHECKER</span><span class="chevron">▾</span>
-  </div>
-  <div class="sec-body">
-    <div class="room-grid" id="roomGrid"></div>
-    <div class="room-info" id="roomInfo"></div>
-  </div>
-</div>
-
-<!-- 5 — VASTU COLOUR GUIDE -->
-<div class="section" id="sec-colors">
-  <div class="sec-head" onclick="toggleSec('sec-colors')">
-    <span class="icon">🎨</span><span class="title">VASTU COLOUR GUIDE</span><span class="chevron">▾</span>
-  </div>
-  <div class="sec-body">
-    <p style="font-size:.72rem;color:var(--text3);font-style:italic;margin-bottom:8px;">Current facing direction highlights the ideal colour for that zone</p>
-    <div class="color-list" id="colorList"></div>
-  </div>
-</div>
-
-<div class="footer">
-  <span class="om">ॐ</span>
-  Vastu Shastra — Science of Vedic Architecture<br>
-  "Yatha Brahmande, Tatha Pinde" — As in the cosmos, so in the body
-</div>
-</div>
-
-<button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<footer>
+  <p>&copy; <span id="footerYear"></span><span class="dot">·</span>Manik Roy<span class="dot">·</span>All Rights Reserved</p>
+</footer>
 
 <script>
 'use strict';
+// ═══════════════════════════════════════════════════════════════════
+// VELOCITY v4 — GPS Speedometer
+// Accurate for cars, trains, aircraft, marine — up to 1200 km/h
+// ═══════════════════════════════════════════════════════════════════
 
-/* ══ THEME ══ */
-function setTheme(t, btn) {
-  document.body.setAttribute('data-theme', t);
-  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  drawMandala();
-}
+document.getElementById('footerYear').textContent = new Date().getFullYear();
 
-/* ══ SECTION TOGGLE ══ */
-function toggleSec(id) { document.getElementById(id).classList.toggle('collapsed'); }
-
-/* ══ CLOCK ══ */
-function tick() {
-  document.getElementById('liveTime').textContent =
-    new Date().toLocaleTimeString('en-IN', { hour12:false });
-}
-tick(); setInterval(tick, 1000);
-
-/* ══ DIRECTION DATA ══ */
-const DIRS = [
-  { abbr:'N',  deg:0,   elem:'💧', lord:'Kubera',  element:'Water',  color:'#2266aa',
-    label:'NORTH — उत्तर',        vastu:'Zone of Kubera · Wealth & Blessings',
-    best:'Finance, water features, study, cash locker',
-    avoid:'Kitchen, fire, heavy furniture, toilets',
-    desc:'Governed by Kubera, Lord of Wealth. Keep this zone open, light and clutter-free. Water features, study rooms and finance areas invite prosperity. Never place fire, toilets or heavy structures here.' },
-  { abbr:'NE', deg:45,  elem:'🌿', lord:'Ishaan',  element:'Space',  color:'#22aa44',
-    label:'NORTHEAST — ईशान',     vastu:'Sacred Ishaan · Most Auspicious Zone',
-    best:'Puja room, meditation, study, open courtyard',
-    avoid:'Toilets, kitchen, heavy columns, staircase',
-    desc:'The most sacred corner in Vastu, ruled by Ishaan (Shiva). Prayer room here magnifies spiritual power. Must stay clean, bright and free of all heavy structures. Never place toilets or kitchen in Ishaan.' },
-  { abbr:'E',  deg:90,  elem:'🔆', lord:'Indra',   element:'Wood',   color:'#448833',
-    label:'EAST — पूर्व',         vastu:"Indra's Gateway · Health & Fame",
-    best:'Main entrance, living room, large windows, verandah',
-    avoid:'Toilets, dark walls, blocked windows, clutter',
-    desc:'Ruled by Indra, King of Gods. East brings sunrise energy and social success. Main entrance or living room facing East brings name, fame and health. Keep this side fully open with large windows.' },
-  { abbr:'SE', deg:135, elem:'🔥', lord:'Agni',    element:'Fire',   color:'#cc4422',
-    label:'SOUTHEAST — आग्नेय',   vastu:'Agni Zone · Fire & Energy',
-    best:'Kitchen, electrical panels, generators, inverters',
-    avoid:'Water features, bedroom, study, water storage',
-    desc:'Governed by Agni, God of Fire. Ideal placement for kitchen and electrical boards. Fire energy here provides transformation and vitality. Strictly avoid water features or water storage in this zone.' },
-  { abbr:'S',  deg:180, elem:'⛰️', lord:'Yama',    element:'Earth',  color:'#882222',
-    label:'SOUTH — दक्षिण',       vastu:"Yama's Zone · Stability & Karma",
-    best:'Master bedroom, heavy storage, solid walls',
-    avoid:'Main entrance, open areas, water features',
-    desc:'Governed by Yama, Lord of Karma. The South zone gives stability and protection. Master bedroom here ensures deep, restful sleep. Keep this side heavy with solid walls and minimal openings.' },
-  { abbr:'SW', deg:225, elem:'🌍', lord:'Nirrti',  element:'Earth',  color:'#885522',
-    label:'SOUTHWEST — नैऋत्य',   vastu:"Nirrti Zone · Strength & Security",
-    best:"Master bedroom, owner's suite, safe, heavy storage",
-    avoid:'Water features, open space, guest rooms',
-    desc:'The corner of ultimate stability, ruled by Nirrti. Head of family should live here. Keep this zone heavy, elevated. Avoid all water or open spaces. The zone for grounding and permanence.' },
-  { abbr:'W',  deg:270, elem:'💨', lord:'Varuna',  element:'Metal',  color:'#446688',
-    label:'WEST — पश्चिम',        vastu:"Varuna Zone · Gains & Profits",
-    best:"Dining room, children's room, study",
-    avoid:"Owner's bedroom, fire sources, heavy stove",
-    desc:"Ruled by Varuna, God of Water & Justice. Governs gains, profits and children. Dining rooms and children's bedrooms here lead to good discipline and academic success." },
-  { abbr:'NW', deg:315, elem:'🌬️', lord:'Vayu',   element:'Air',    color:'#667799',
-    label:'NORTHWEST — वायव्य',   vastu:'Vayu Zone · Movement & Air',
-    best:'Guest room, garage, storage, servant quarters',
-    avoid:"Owner's bedroom, puja room, permanent rooms",
-    desc:'Governed by Vayu, Wind God. Excellent for guest rooms, storage or garages. Energy here is transitional — guests come and go. Avoid making this the permanent bedroom of the home owner.' },
-];
-
-/* ══ COMPASS STATE ══ */
-let compassHeading = 0;
-let renderHeading  = 0;
-let sensorActive   = false;
-let listening      = false;
-let goodReads      = 0;
-
-/* ══ COMPASS CANVAS ══ */
-const cc  = document.getElementById('compassCanvas');
-const ctx = cc.getContext('2d');
-const CW=288, CH=288, CX=CW/2, CY=CH/2, CR=132;
-
-function css(v) { return getComputedStyle(document.body).getPropertyValue(v).trim(); }
-
-function drawDial(rot) {
-  ctx.clearRect(0,0,CW,CH);
-  const gold=css('--gold')||'#c8922a', gold2=css('--gold2')||'#f0c060',
-        bg2=css('--bg2')||'#160f06',   bg3=css('--bg3')||'#1e1509',
-        bdr=css('--border')||'#5a3c14',red=css('--red')||'#cc4444';
-
-  ctx.save();
-  ctx.translate(CX,CY);
-  ctx.rotate(-rot*Math.PI/180);
-
-  /* Background */
-  const g=ctx.createRadialGradient(0,0,8,0,0,CR);
-  g.addColorStop(0,bg3); g.addColorStop(1,bg2);
-  ctx.beginPath(); ctx.arc(0,0,CR,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
-
-  /* Outer ring */
-  ctx.beginPath(); ctx.arc(0,0,CR,0,Math.PI*2);
-  ctx.strokeStyle=gold; ctx.lineWidth=2.5; ctx.stroke();
-
-  /* ── Bright vivid zone fills (drawn as pie slices, opaque) ── */
-  const zf=[
-    {s:-22.5, e:22.5,  c:'#1a6bdd', glow:'#4499ff'}, // N  — vivid blue
-    {s:22.5,  e:67.5,  c:'#18bb44', glow:'#44ff88'}, // NE — vivid green
-    {s:67.5,  e:112.5, c:'#22992a', glow:'#55dd44'}, // E  — forest green
-    {s:112.5, e:157.5, c:'#dd3311', glow:'#ff6633'}, // SE — vivid red-orange
-    {s:157.5, e:202.5, c:'#bb1111', glow:'#ff4444'}, // S  — vivid red
-    {s:202.5, e:247.5, c:'#bb6611', glow:'#ffaa33'}, // SW — vivid amber
-    {s:247.5, e:292.5, c:'#1166aa', glow:'#3399dd'}, // W  — vivid steel blue
-    {s:292.5, e:337.5, c:'#2255aa', glow:'#5588dd'}, // NW — vivid indigo
-  ];
-
-  /* Outer ring with color — draw arc bands near rim */
-  zf.forEach((z,i)=>{
-    const sa=(z.s-90)*Math.PI/180, ea=(z.e-90)*Math.PI/180;
-
-    /* Inner fill pie slice */
-    ctx.beginPath();
-    ctx.moveTo(0,0);
-    ctx.arc(0,0,CR-3,sa,ea);
-    ctx.closePath();
-    ctx.fillStyle=z.c+'55'; // ~33% opacity fill
-    ctx.fill();
-
-    /* Bright colored arc band on the outer rim */
-    ctx.beginPath();
-    ctx.arc(0,0,CR-3,sa,ea);
-    ctx.strokeStyle=z.c;
-    ctx.lineWidth=8;
-    ctx.stroke();
-
-    /* Glow arc just inside */
-    ctx.beginPath();
-    ctx.arc(0,0,CR-11,sa,ea);
-    ctx.strokeStyle=z.glow+'88';
-    ctx.lineWidth=3;
-    ctx.stroke();
+// ── Register external sw.js ────────────────────────────────────────
+let swReg = null, newWorker = null;
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      swReg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      swReg.addEventListener('updatefound', () => {
+        newWorker = swReg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller)
+            document.getElementById('updateBanner').classList.add('visible');
+        });
+      });
+      navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
+    } catch(e) { console.info('SW registration failed:', e.message); }
   });
-
-  /* ── Tick marks ── */
-  for(let d=0;d<360;d+=5){
-    const r=d*Math.PI/180,maj=d%45===0,med=d%15===0;
-    const o=CR-12,i=maj?CR-26:med?CR-19:CR-16;
-    ctx.beginPath();
-    ctx.moveTo(Math.sin(r)*o,-Math.cos(r)*o);
-    ctx.lineTo(Math.sin(r)*i,-Math.cos(r)*i);
-    ctx.strokeStyle=maj?gold:'#ffffff66'; ctx.lineWidth=maj?2:0.8; ctx.stroke();
-  }
-
-  /* ── Direction labels (counter-rotated so always upright) ── */
-  const labs=[
-    {deg:0,  text:'N', sz:22,col:'#ff5555',w:'bold',  r:CR-38},
-    {deg:90, text:'E', sz:17,col:gold2,    w:'bold',  r:CR-38},
-    {deg:180,text:'S', sz:17,col:gold2,    w:'bold',  r:CR-38},
-    {deg:270,text:'W', sz:17,col:gold2,    w:'bold',  r:CR-38},
-    {deg:45, text:'NE',sz:10,col:'#aaffcc',w:'normal',r:CR-35},
-    {deg:135,text:'SE',sz:10,col:'#ffaa88',w:'normal',r:CR-35},
-    {deg:225,text:'SW',sz:10,col:'#ffcc88',w:'normal',r:CR-35},
-    {deg:315,text:'NW',sz:10,col:'#aaccff',w:'normal',r:CR-35},
-  ];
-  labs.forEach(l=>{
-    const rad=l.deg*Math.PI/180;
-    ctx.save();
-    ctx.translate(Math.sin(rad)*l.r,-Math.cos(rad)*l.r);
-    ctx.rotate(rot*Math.PI/180);
-    ctx.font=`${l.w} ${l.sz}px 'Cinzel',serif`;
-    ctx.shadowColor=l.col; ctx.shadowBlur=6;
-    ctx.fillStyle=l.col; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(l.text,0,0);
-    ctx.shadowBlur=0; ctx.restore();
-  });
-
-  /* ── Degree numbers every 30° ── */
-  for(let d=0;d<360;d+=30){
-    if(d%90===0) continue;
-    const rad=d*Math.PI/180,r2=CR-50;
-    ctx.save();
-    ctx.translate(Math.sin(rad)*r2,-Math.cos(rad)*r2);
-    ctx.rotate(rot*Math.PI/180);
-    ctx.font='7px monospace'; ctx.fillStyle='#ffffff55';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(d+'°',0,0); ctx.restore();
-  }
-
-  /* ── Inner guide ring ── */
-  ctx.beginPath(); ctx.arc(0,0,CR-32,0,Math.PI*2);
-  ctx.strokeStyle='#ffffff18'; ctx.lineWidth=0.8; ctx.stroke();
-
-  ctx.restore(); // ← end of rotating section
-
-  /* ══════════════════════════════════════
-     FIXED NEEDLE — drawn AFTER ctx.restore()
-     so it does NOT rotate with the dial.
-     Always points straight up = your facing dir.
-  ══════════════════════════════════════ */
-  const NL = 88;  // needle half-length from center
-  const NW = 7;   // needle half-width at base
-
-  // ── North tip (RED) — points UP ──
-  ctx.save();
-  ctx.translate(CX, CY);
-
-  // Shadow/glow
-  ctx.shadowColor='#ff3333'; ctx.shadowBlur=12;
-
-  // Red north half
-  ctx.beginPath();
-  ctx.moveTo(0, -NL);          // tip pointing up
-  ctx.lineTo(-NW, 0);          // left base
-  ctx.lineTo(NW, 0);           // right base
-  ctx.closePath();
-  const rg=ctx.createLinearGradient(0,-NL,0,0);
-  rg.addColorStop(0,'#ff2222');
-  rg.addColorStop(1,'#cc0000');
-  ctx.fillStyle=rg; ctx.fill();
-  ctx.strokeStyle='#ff666688'; ctx.lineWidth=1; ctx.stroke();
-
-  ctx.shadowBlur=0;
-
-  // White/silver south half
-  ctx.beginPath();
-  ctx.moveTo(0, NL);           // tip pointing down
-  ctx.lineTo(-NW, 0);
-  ctx.lineTo(NW, 0);
-  ctx.closePath();
-  const wg=ctx.createLinearGradient(0,0,0,NL);
-  wg.addColorStop(0,'#dddddd');
-  wg.addColorStop(1,'#888888');
-  ctx.fillStyle=wg; ctx.fill();
-  ctx.strokeStyle='#aaaaaa44'; ctx.lineWidth=1; ctx.stroke();
-
-  // Centre jewel
-  ctx.beginPath(); ctx.arc(0,0,10,0,Math.PI*2);
-  const jg=ctx.createRadialGradient(0,0,0,0,0,10);
-  jg.addColorStop(0,'#ffffff');
-  jg.addColorStop(0.4,gold2);
-  jg.addColorStop(1,gold);
-  ctx.fillStyle=jg; ctx.fill();
-  ctx.strokeStyle=gold; ctx.lineWidth=1.5; ctx.stroke();
-
-  // Inner dot
-  ctx.beginPath(); ctx.arc(0,0,4,0,Math.PI*2);
-  ctx.fillStyle='#111'; ctx.fill();
-
-  ctx.restore();
 }
-
-/* Animation loop */
-let liveAbbr = '';
-function loop(){
-  const diff=((compassHeading-renderHeading)%360+540)%360-180;
-  renderHeading += diff*0.12;
-  drawDial(renderHeading);
-
-  const deg=((Math.round(compassHeading)%360)+360)%360;
-  document.getElementById('degDisplay').textContent=deg+'°';
-
-  const dir=getDirForDeg(deg);
-  document.getElementById('dirDisplay').textContent=dir.label;
-  document.getElementById('tagDisplay').textContent=dir.vastu;
-
-  if(dir.abbr!==liveAbbr){ liveAbbr=dir.abbr; onDirChange(dir); }
-
-  requestAnimationFrame(loop);
-}
-loop();
-
-/* ══ SENSOR ══ */
-function getDirForDeg(deg){
-  const n=((deg%360)+360)%360;
-  for(const d of DIRS){
-    let lo=d.deg-22.5, hi=d.deg+22.5;
-    if(lo<0){ if(n>=(360+lo)||n<hi) return d; }
-    else if(hi>=360){ if(n>=lo||n<(hi-360)) return d; }
-    else { if(n>=lo&&n<hi) return d; }
-  }
-  return DIRS[0];
-}
-
-function onOrientation(e){
-  let h=null;
-  if(typeof e.webkitCompassHeading==='number'&&e.webkitCompassHeading>=0){
-    h=e.webkitCompassHeading;
-  } else if(e.alpha!==null&&typeof e.alpha==='number'){
-    h=(360-(e.alpha%360)+360)%360;
-  }
-  if(h===null||isNaN(h)) return;
-  goodReads++;
-  if(goodReads<3) return;
-  compassHeading=h;
-  if(!sensorActive){
-    sensorActive=true;
-    document.getElementById('compassStatus').textContent='🧭 Live';
-    const btn=document.getElementById('calBtn');
-    btn.textContent='✓ Sensor Active — move phone in figure-8 to calibrate';
-    btn.style.color='var(--green)';
-    document.getElementById('manualWrap').style.display='none';
-  }
-}
-
-function startSensor(){
-  if(listening) return;
-  listening=true; goodReads=0;
-  if('ondeviceorientationabsolute' in window)
-    window.addEventListener('deviceorientationabsolute',onOrientation,true);
-  window.addEventListener('deviceorientation',onOrientation,true);
-  setTimeout(()=>{
-    if(!sensorActive){
-      document.getElementById('compassStatus').textContent='🧭 Manual';
-      document.getElementById('calBtn').textContent='⚠ No sensor data — use slider below';
-      document.getElementById('calBtn').style.color='var(--gold)';
-      document.getElementById('manualWrap').style.display='block';
-    }
-  },5000);
-}
-
-function requestCompass(){
-  document.getElementById('calBtn').textContent='⏳ Requesting sensor...';
-  if(typeof DeviceOrientationEvent!=='undefined'&&
-     typeof DeviceOrientationEvent.requestPermission==='function'){
-    DeviceOrientationEvent.requestPermission()
-      .then(s=>{
-        if(s==='granted'){ startSensor(); }
-        else {
-          document.getElementById('compassStatus').textContent='⛔ Denied';
-          document.getElementById('calBtn').textContent='⛔ Settings → Safari → Motion & Orientation → Allow';
-          document.getElementById('calBtn').style.color='var(--red)';
-          document.getElementById('manualWrap').style.display='block';
-        }
-      }).catch(()=>startSensor());
-  } else { startSensor(); }
-}
-
-startSensor();
-
-/* ══ 2 — ZONE CARDS ══ */
-let curZoneAbbr='';
-(function buildZones(){
-  const g=document.getElementById('zonesGrid');
-  DIRS.forEach(d=>{
-    const c=document.createElement('div');
-    c.className='zone-card'; c.id='zc-'+d.abbr;
-    c.innerHTML=`<div class="zc-dir">${d.abbr}</div><div class="zc-elem">${d.elem}</div><div class="zc-name">${d.lord}</div>`;
-    c.onclick=()=>showZone(d);
-    g.appendChild(c);
-  });
-})();
-
-function showZone(d){
-  document.querySelectorAll('.zone-card').forEach(c=>c.classList.remove('active'));
-  document.getElementById('zc-'+d.abbr).classList.add('active');
-  document.getElementById('zdTitle').textContent=d.abbr+' · '+d.label.split('—')[0].trim();
-  document.getElementById('zdText').innerHTML=
-    `<strong style="color:var(--gold)">Lord:</strong> ${d.lord} &nbsp;|&nbsp; <strong style="color:var(--gold)">Element:</strong> ${d.element}<br>`+
-    `<strong style="color:var(--green)">Best for:</strong> ${d.best}<br>`+
-    `<strong style="color:var(--red)">Avoid:</strong> ${d.avoid}<br><br>${d.desc}`;
-  document.getElementById('zoneDetail').classList.add('show');
-}
-
-function onDirChange(dir){
-  /* highlight live zone */
-  document.querySelectorAll('.zone-card').forEach(c=>c.classList.remove('live'));
-  const card=document.getElementById('zc-'+dir.abbr);
-  if(card) card.classList.add('live');
-  /* highlight colour */
-  document.querySelectorAll('.color-row').forEach(r=>r.classList.remove('live'));
-  const crow=document.getElementById('clr-'+dir.abbr);
-  if(crow) crow.classList.add('live');
-  /* redraw mandala highlight */
-  drawMandala();
-}
-
-/* ══ 3 — MANDALA ══ */
-function drawMandala(){
-  const mc=document.getElementById('mandalaCanvas');
-  const m=mc.getContext('2d');
-  const W=284,H=284,cx=W/2,cy=H/2,cell=W/9;
-
-  m.clearRect(0,0,W,H);
-  const gold=css('--gold')||'#c8922a', gold2=css('--gold2')||'#f0c060',
-        bg2=css('--bg2')||'#160f06',   bdr=css('--border')||'#5a3c14';
-
-  m.fillStyle=bg2; m.fillRect(0,0,W,H);
-
-  const zones=[
-    {dir:'N', x:1,y:0,w:7,h:1,c:'#2266aa50',label:'Kubera'},
-    {dir:'NE',x:8,y:0,w:1,h:1,c:'#22aa4450',label:'Ishaan'},
-    {dir:'E', x:8,y:1,w:1,h:7,c:'#44883350',label:'Indra'},
-    {dir:'SE',x:8,y:8,w:1,h:1,c:'#cc442250',label:'Agni'},
-    {dir:'S', x:1,y:8,w:7,h:1,c:'#88222250',label:'Yama'},
-    {dir:'SW',x:0,y:8,w:1,h:1,c:'#88552250',label:'Nirrti'},
-    {dir:'W', x:0,y:1,w:1,h:7,c:'#44668850',label:'Varuna'},
-    {dir:'NW',x:0,y:0,w:1,h:1,c:'#66779950',label:'Vayu'},
-    {dir:'C', x:3,y:3,w:3,h:3,c:'#c8922a30',label:'Brahma'},
-  ];
-
-  /* Grid cells */
-  for(let r=0;r<9;r++) for(let c=0;c<9;c++){
-    m.fillStyle='#ffffff04'; m.strokeStyle=bdr; m.lineWidth=0.5;
-    m.beginPath(); m.rect(c*cell,r*cell,cell,cell); m.fill(); m.stroke();
-  }
-
-  /* Zone fills */
-  zones.forEach(z=>{
-    m.fillStyle=z.c; m.strokeStyle=gold+'44'; m.lineWidth=0.8;
-    m.beginPath(); m.rect(z.x*cell,z.y*cell,z.w*cell,z.h*cell); m.fill(); m.stroke();
-  });
-
-  /* Highlight current direction */
-  const curDir=getDirForDeg(((Math.round(compassHeading)%360)+360)%360);
-  const cur=zones.find(z=>z.dir===curDir.abbr);
-  if(cur){
-    m.fillStyle=gold+'50'; m.strokeStyle=gold2; m.lineWidth=2.5;
-    m.beginPath(); m.rect(cur.x*cell,cur.y*cell,cur.w*cell,cur.h*cell); m.fill(); m.stroke();
-  }
-
-  /* Labels */
-  m.textAlign='center'; m.textBaseline='middle';
-  zones.forEach(z=>{
-    const lx=(z.x+z.w/2)*cell, ly=(z.y+z.h/2)*cell;
-    const isLive=cur&&z.dir===cur.dir;
-    const sz=Math.max(7,Math.min(z.w,z.h)*cell*0.28);
-    m.font=`bold ${sz}px 'Cinzel',serif`;
-    m.fillStyle=isLive?gold2:gold;
-    m.fillText(z.dir,lx,ly-3);
-    if(Math.min(z.w,z.h)*cell>20){
-      m.font=`${Math.max(5,sz*0.55)}px serif`;
-      m.fillStyle=bdr;
-      m.fillText(z.label,lx,ly+sz*0.6);
-    }
-  });
-
-  /* OM at centre */
-  m.font='bold 24px serif'; m.fillStyle=gold2;
-  m.fillText('ॐ',cx,cy);
-
-  /* Cross lines */
-  m.strokeStyle=gold+'20'; m.lineWidth=0.7;
-  [[0,0,W,H],[W,0,0,H],[cx,0,cx,H],[0,cy,W,cy]].forEach(([x1,y1,x2,y2])=>{
-    m.beginPath(); m.moveTo(x1,y1); m.lineTo(x2,y2); m.stroke();
-  });
-
-  /* Legend (build once) */
-  const leg=document.getElementById('mandalaLegend');
-  if(!leg.children.length){
-    zones.forEach(z=>{
-      const i=document.createElement('div'); i.className='ml-item';
-      i.innerHTML=`<div class="ml-dot" style="background:${z.c.slice(0,7)}"></div>${z.dir}: ${z.label}`;
-      leg.appendChild(i);
-    });
-  }
-}
-drawMandala();
-
-/* ══ 4 — ROOMS ══ */
-const ROOMS=[
-  {icon:'🛏️',name:'Master Bedroom',ideal:'SW, S',avoid:'NE, SE',
-   tips:'Head pointing South while sleeping. Warm earthy colors. No mirrors on ceiling. Avoid sleeping directly under beams.'},
-  {icon:'🍳',name:'Kitchen',       ideal:'SE',  avoid:'NE, N, SW',
-   tips:'Cook facing East. Stove away from North wall. Use red or orange colors. Never share a wall with the puja room.'},
-  {icon:'🛁',name:'Bathroom / WC', ideal:'NW, W',avoid:'NE, SW, SE',
-   tips:'Toilet seat facing North or South only. Light-colored tiles. Keep well-ventilated. No east-facing toilet.'},
-  {icon:'📚',name:'Study Room',    ideal:'NE, N, E',avoid:'SW, S',
-   tips:'Face East or North while studying. Light green or yellow walls. Books on West wall. Good natural light is essential.'},
-  {icon:'🛋️',name:'Living Room',   ideal:'N, NE, E',avoid:'SW',
-   tips:'Sit facing East or North when entertaining. Keep the centre open. Main sofa against South or West wall. Use light colors.'},
-  {icon:'🏢',name:'Home Office',   ideal:'N, W', avoid:'SW, SE',
-   tips:'Sit facing North or East. Computer in SE corner of the room. Financial files in the North. Green plants promote growth.'},
-  {icon:'🙏',name:'Puja Room',     ideal:'NE',   avoid:'S, SW, SE',
-   tips:'Face East or North during prayer. Use white or pale yellow. Place idols on a wooden platform. Oil lamp in SE corner.'},
-  {icon:'🚪',name:'Main Entrance', ideal:'N, NE, E',avoid:'SW, S',
-   tips:'Keep well-lit and obstacle-free. Use auspicious threshold symbols. No shoe rack directly at the door. Face East on entry.'},
-];
-(function buildRooms(){
-  const g=document.getElementById('roomGrid');
-  ROOMS.forEach(r=>{
-    const b=document.createElement('div'); b.className='room-btn';
-    b.innerHTML=`<span class="ri">${r.icon}</span>${r.name}`;
-    b.onclick=()=>{
-      document.querySelectorAll('.room-btn').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-      const info=document.getElementById('roomInfo');
-      info.innerHTML=`<h4>${r.icon} ${r.name}</h4>
-        <div class="ri-row"><span class="ri-label">Ideal Direction</span><span class="ri-val good">${r.ideal}</span></div>
-        <div class="ri-row"><span class="ri-label">Avoid Direction</span><span class="ri-val bad">${r.avoid}</span></div>
-        <div class="ri-tips">${r.tips}</div>`;
-      info.classList.add('show');
-    };
-    g.appendChild(b);
-  });
-})();
-
-/* ══ 5 — COLOURS ══ */
-const COLORS=[
-  {abbr:'N', swatch:'#4488cc',name:'Sky Blue / White',       effect:"Invites Kubera's wealth flow and mental calmness"},
-  {abbr:'NE',swatch:'#f5f5e0',name:'Pure White / Cream',     effect:'Enhances Ishaan spirituality and divine clarity'},
-  {abbr:'E', swatch:'#55aa55',name:'Light Green / Wood tones',effect:"Promotes Indra's health energy and new beginnings"},
-  {abbr:'SE',swatch:'#dd4422',name:'Red / Orange / Coral',   effect:'Activates Agni fire energy, courage, transformation'},
-  {abbr:'S', swatch:'#cc3333',name:'Deep Red / Maroon',      effect:"Yama's grounding — stability and strong protection"},
-  {abbr:'SW',swatch:'#996633',name:'Brown / Earthy Yellow',  effect:"Nirrti's strength — permanence and security"},
-  {abbr:'W', swatch:'#446688',name:'Grey / Metallic Silver', effect:"Varuna's justice — profits, discipline, children's growth"},
-  {abbr:'NW',swatch:'#88aacc',name:'Light Blue / Off-White', effect:'Vayu movement energy — ideal for guests and air flow'},
-];
-(function buildColors(){
-  const l=document.getElementById('colorList');
-  COLORS.forEach(c=>{
-    const row=document.createElement('div'); row.className='color-row'; row.id='clr-'+c.abbr;
-    row.innerHTML=`<div class="color-swatch" style="background:${c.swatch}"></div>
-      <div class="color-dir">${c.abbr}</div>
-      <div><div class="color-name">${c.name}</div><div class="color-effect">${c.effect}</div></div>`;
-    l.appendChild(row);
-  });
-})();
-
-/* ══ SCROLL TOP ══ */
-window.addEventListener('scroll',()=>{
-  document.getElementById('scrollTop').classList.toggle('show',window.scrollY>180);
+document.getElementById('updateBtn').addEventListener('click', () => {
+  if (newWorker) newWorker.postMessage('skipWaiting'); else window.location.reload();
 });
+
+// ── PWA Install ────────────────────────────────────────────────────
+let deferredPrompt = null;
+const installBanner = document.getElementById('installBanner');
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  setTimeout(() => installBanner.classList.add('visible'), 2500);
+});
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null; installBanner.classList.remove('visible');
+});
+document.getElementById('dismissBanner').addEventListener('click', () => {
+  installBanner.classList.remove('visible'); deferredPrompt = null;
+});
+window.addEventListener('appinstalled', () => installBanner.classList.remove('visible'));
+
+// ── Offline toasts ─────────────────────────────────────────────────
+function showToast(id, ms) {
+  const el = document.getElementById(id);
+  el.classList.add('show'); setTimeout(() => el.classList.remove('show'), ms);
+}
+window.addEventListener('offline', () => showToast('offlineToast', 4000));
+window.addEventListener('online',  () => showToast('onlineToast', 3000));
+
+// ═══════════════════════════════════════════════════════════════════
+// VEHICLE MODES  — adaptive speed scale
+// ═══════════════════════════════════════════════════════════════════
+const MODES = {
+  car:   { max: 300,  redline: 240,  label: '🚗 Car',      unit: 'km/h' },
+  train: { max: 600,  redline: 400,  label: '🚄 Train',    unit: 'km/h' },
+  auto:  { max: 1200, redline: 900,  label: '🛩️ Aircraft', unit: 'km/h' },
+  boat:  { max: 120,  redline: 90,   label: '🚢 Marine',   unit: 'km/h' },
+};
+let currentMode = 'auto';
+let MAX_SPEED   = MODES[currentMode].max;
+let REDLINE     = MODES[currentMode].redline;
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    MAX_SPEED   = parseInt(btn.dataset.max);
+    REDLINE     = parseInt(btn.dataset.redline);
+    // Reset Kalman so it doesn't carry stale state across scale changes
+    kSpeed = Math.min(speed, MAX_SPEED);
+    kVar   = 1;
+    speed  = Math.min(speed, MAX_SPEED);
+    topSpeed = 0; topSpeedEl.textContent = '0';
+    sparkData = []; drawSparkline();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// GAUGE CANVAS
+// ═══════════════════════════════════════════════════════════════════
+const canvas = document.getElementById('gauge');
+const ctx    = canvas.getContext('2d');
+const SIZE   = 380; canvas.width = SIZE; canvas.height = SIZE;
+const cx = SIZE/2, cy = SIZE/2, R = 170;
+const START_ANG = Math.PI * 0.75, END_ANG = Math.PI * 2.25;
+const SWEEP = END_ANG - START_ANG;
+
+// Simulation state
+let speed = 0, targetSpeed = 0;
+let autoMode = false, autoInterval = null;
+
+// GPS speed input (km/h raw — null when GPS is off)
+let speed_gps = null;
+let useMph    = false;
+
+// DOM
+const throttleEl   = document.getElementById('throttle');
+const throttlePct  = document.getElementById('throttlePct');
+const speedDisplay = document.getElementById('speedDisplay');
+const topSpeedEl   = document.getElementById('topSpeed');
+const avgSpeedEl   = document.getElementById('avgSpeed');
+const tripTimeEl   = document.getElementById('tripTime');
+const speedUnitEl  = document.getElementById('speedUnit');
+const btnAccel     = document.getElementById('btnAccel');
+const btnBrake     = document.getElementById('btnBrake');
+
+function kmhToDisplay(v) { return useMph ? v * 0.621371 : v; }
+function lerp(a, b, t)   { return a + (b - a) * t; }
+
+// Trip time
+let tripStart = null, tripSeconds = 0;
+let speedSamples = [], speedSampleTimer = null;
+
+function formatTime(s) {
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+// ── Gauge draw ────────────────────────────────────────────────────
+function drawGauge(spd, headingDeg) {
+  ctx.clearRect(0, 0, SIZE, SIZE);
+
+  // Background
+  const bgG = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+  bgG.addColorStop(0, '#1a0f2e'); bgG.addColorStop(.6, '#0d0818'); bgG.addColorStop(1, '#060410');
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fillStyle = bgG; ctx.fill();
+
+  // Border rings
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.strokeStyle = 'rgba(0,245,255,.3)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, R-8, 0, Math.PI*2); ctx.strokeStyle = 'rgba(191,0,255,.15)'; ctx.lineWidth = 1; ctx.stroke();
+
+  // Track
+  ctx.beginPath(); ctx.arc(cx, cy, R-28, START_ANG, END_ANG);
+  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.stroke();
+
+  // Rainbow arc
+  const frac = spd / MAX_SPEED;
+  const redF = REDLINE / MAX_SPEED;
+  if (frac > 0) {
+    const mid = Math.min(frac, redF);
+    const segs = [
+      {f:0,t:.25,c1:'#00ff88',c2:'#00f5ff'},
+      {f:.25,t:.5,c1:'#00f5ff',c2:'#bf00ff'},
+      {f:.5,t:.75,c1:'#bf00ff',c2:'#ff00cc'},
+      {f:.75,t:1,c1:'#ff00cc',c2:'#ff6a00'}
+    ];
+    segs.forEach(s => {
+      const se = Math.min(mid, s.t); if (se <= s.f) return;
+      const a1 = START_ANG + SWEEP * s.f, a2 = START_ANG + SWEEP * se;
+      const g = ctx.createLinearGradient(
+        cx+Math.cos(a1)*(R-28), cy+Math.sin(a1)*(R-28),
+        cx+Math.cos(a2)*(R-28), cy+Math.sin(a2)*(R-28));
+      g.addColorStop(0, s.c1); g.addColorStop(1, s.c2);
+      ctx.beginPath(); ctx.arc(cx, cy, R-28, a1, a2);
+      ctx.strokeStyle = g; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.stroke();
+    });
+    if (mid > 0) {
+      ctx.beginPath(); ctx.arc(cx, cy, R-28, START_ANG, START_ANG+SWEEP*mid);
+      ctx.strokeStyle = 'rgba(255,255,255,.09)'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.stroke();
+    }
+    if (frac > redF) {
+      ctx.beginPath(); ctx.arc(cx, cy, R-28, START_ANG+SWEEP*redF, START_ANG+SWEEP*frac);
+      const rg = ctx.createLinearGradient(
+        cx+Math.cos(START_ANG+SWEEP*redF)*(R-28), cy+Math.sin(START_ANG+SWEEP*redF)*(R-28),
+        cx+Math.cos(START_ANG+SWEEP*frac)*(R-28), cy+Math.sin(START_ANG+SWEEP*frac)*(R-28));
+      rg.addColorStop(0, '#ff6a00'); rg.addColorStop(1, '#ff2244');
+      ctx.strokeStyle = rg; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, R-28, START_ANG+SWEEP*redF, START_ANG+SWEEP*frac);
+      ctx.strokeStyle = 'rgba(255,34,68,.25)'; ctx.lineWidth = 30; ctx.lineCap = 'round'; ctx.stroke();
+    }
+  }
+
+  // Adaptive tick labels — choose step based on MAX_SPEED
+  const STEPS = MAX_SPEED <= 120 ? 10 : MAX_SPEED <= 300 ? 30 : MAX_SPEED <= 600 ? 60 : 120;
+  const numTicks = MAX_SPEED / STEPS;
+  for (let i = 0; i <= numTicks; i++) {
+    const ang = START_ANG + SWEEP * (i / numTicks);
+    const val = i * STEPS;
+    const tf  = i / numTicks;
+    const maj = true;
+    const tc  = tf < .25 ? 'rgba(0,255,136,.85)' : tf < .5 ? 'rgba(0,245,255,.85)' :
+                tf < .75 ? 'rgba(191,0,255,.85)' : 'rgba(255,34,68,.85)';
+
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(ang)*(R-50), cy+Math.sin(ang)*(R-50));
+    ctx.lineTo(cx+Math.cos(ang)*(R-63), cy+Math.sin(ang)*(R-63));
+    ctx.strokeStyle = tc; ctx.lineWidth = 2; ctx.stroke();
+
+    ctx.fillStyle = val >= REDLINE ? '#ff4466' : val >= REDLINE*.67 ? '#bf00ff' : val >= REDLINE*.33 ? '#00f5ff' : '#00ff88';
+    ctx.font = `700 ${val >= 1000 ? '8' : val >= 100 ? '9' : '10'}px Rajdhani,sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const displayVal = useMph ? Math.round(val * 0.621371) : val;
+    ctx.fillText(displayVal, cx+Math.cos(ang)*(R-78), cy+Math.sin(ang)*(R-78));
+  }
+
+  // Minor ticks between majors
+  for (let i = 0; i <= numTicks * 4; i++) {
+    if (i % 4 === 0) continue;
+    const ang = START_ANG + SWEEP * (i / (numTicks * 4));
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(ang)*(R-55), cy+Math.sin(ang)*(R-55));
+    ctx.lineTo(cx+Math.cos(ang)*(R-63), cy+Math.sin(ang)*(R-63));
+    ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  // Heading ring
+  if (headingDeg != null) {
+    const hRad = (headingDeg - 90) * Math.PI / 180;
+    ctx.save();
+    ctx.shadowBlur = 8; ctx.shadowColor = '#00f5ff';
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(hRad)*(R-5), cy+Math.sin(hRad)*(R-5));
+    ctx.lineTo(cx+Math.cos(hRad)*(R-18), cy+Math.sin(hRad)*(R-18));
+    ctx.strokeStyle = '#00f5ff'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.restore();
+    // Cardinal N indicator
+    const nRad = -Math.PI/2;
+    ctx.beginPath(); ctx.arc(cx+Math.cos(nRad)*(R-5), cy+Math.sin(nRad)*(R-5), 3, 0, Math.PI*2);
+    ctx.fillStyle = '#ff2244'; ctx.fill();
+  }
+
+  // Needle
+  const nA = START_ANG + SWEEP * Math.min(spd / MAX_SPEED, 1);
+  const isRed = spd >= REDLINE;
+  const nc = isRed ? '#ff2244' : '#00f5ff';
+  const gc = isRed ? 'rgba(255,34,68,.8)' : 'rgba(0,245,255,.8)';
+  ctx.save(); ctx.shadowBlur = 22; ctx.shadowColor = gc;
+  ctx.beginPath();
+  ctx.moveTo(cx-Math.cos(nA)*22, cy-Math.sin(nA)*22);
+  ctx.lineTo(cx+Math.cos(nA)*(R-52), cy+Math.sin(nA)*(R-52));
+  ctx.strokeStyle = nc; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(cx-Math.cos(nA)*20, cy-Math.sin(nA)*20);
+  ctx.lineTo(cx+Math.cos(nA)*(R-54), cy+Math.sin(nA)*(R-54));
+  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1; ctx.lineCap = 'round'; ctx.stroke();
+  ctx.restore();
+
+  // Hub
+  ctx.save(); ctx.shadowBlur = 16; ctx.shadowColor = nc;
+  const hg = ctx.createRadialGradient(cx,cy,0,cx,cy,16);
+  hg.addColorStop(0,'#fff'); hg.addColorStop(.3,nc); hg.addColorStop(1,'rgba(0,0,0,.5)');
+  ctx.beginPath(); ctx.arc(cx,cy,16,0,Math.PI*2); ctx.fillStyle=hg; ctx.fill(); ctx.restore();
+  ctx.beginPath(); ctx.arc(cx,cy,16,0,Math.PI*2); ctx.strokeStyle=nc; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+
+  // Vignette
+  const vg = ctx.createRadialGradient(cx,cy,R*.5,cx,cy,R);
+  vg.addColorStop(0,'transparent'); vg.addColorStop(1,'rgba(0,0,0,.6)');
+  ctx.beginPath(); ctx.arc(cx,cy,R-2,0,Math.PI*2); ctx.fillStyle=vg; ctx.fill();
+}
+
+// ── Compass canvas ────────────────────────────────────────────────
+const ccanvas = document.getElementById('compass');
+const cctx    = ccanvas.getContext('2d');
+const CS = 70; ccanvas.width = CS; ccanvas.height = CS;
+
+function drawCompass(deg) {
+  cctx.clearRect(0,0,CS,CS);
+  const ccx = CS/2, ccy = CS/2, cr = CS/2-2;
+  const cbg = cctx.createRadialGradient(ccx,ccy,0,ccx,ccy,cr);
+  cbg.addColorStop(0,'#1a0f2e'); cbg.addColorStop(1,'#060410');
+  cctx.beginPath(); cctx.arc(ccx,ccy,cr,0,Math.PI*2); cctx.fillStyle=cbg; cctx.fill();
+  cctx.strokeStyle='rgba(0,245,255,.3)'; cctx.lineWidth=1; cctx.stroke();
+  ['N','E','S','W'].forEach((c,i)=>{
+    const a = -Math.PI/2 + i*Math.PI/2;
+    cctx.fillStyle = i===0?'#ff2244':'rgba(0,245,255,.6)';
+    cctx.font = `700 ${i===0?'9':'8'}px Rajdhani,sans-serif`;
+    cctx.textAlign='center'; cctx.textBaseline='middle';
+    cctx.fillText(c, ccx+Math.cos(a)*(cr-9), ccy+Math.sin(a)*(cr-9));
+  });
+  if (deg == null) {
+    cctx.fillStyle='rgba(0,245,255,.2)'; cctx.font='8px Rajdhani,sans-serif';
+    cctx.textAlign='center'; cctx.textBaseline='middle'; cctx.fillText('—',ccx,ccy); return;
+  }
+  const rad = (deg-90)*Math.PI/180;
+  cctx.save(); cctx.shadowBlur=10; cctx.shadowColor='#00f5ff';
+  cctx.beginPath();
+  cctx.moveTo(ccx+Math.cos(rad)*(cr-16), ccy+Math.sin(rad)*(cr-16));
+  cctx.lineTo(ccx+Math.cos(rad+Math.PI/2)*4, ccy+Math.sin(rad+Math.PI/2)*4);
+  cctx.lineTo(ccx+Math.cos(rad-Math.PI/2)*4, ccy+Math.sin(rad-Math.PI/2)*4);
+  cctx.closePath(); cctx.fillStyle='#00f5ff'; cctx.fill();
+  cctx.beginPath();
+  cctx.moveTo(ccx, ccy);
+  cctx.lineTo(ccx+Math.cos(rad)*(cr-18), ccy+Math.sin(rad)*(cr-18));
+  cctx.strokeStyle='rgba(0,245,255,.7)'; cctx.lineWidth=1.5; cctx.stroke();
+  cctx.restore();
+  cctx.beginPath(); cctx.arc(ccx,ccy,3,0,Math.PI*2); cctx.fillStyle='#00f5ff'; cctx.fill();
+  cctx.fillStyle='rgba(0,245,255,.55)'; cctx.font='bold 8px Rajdhani,sans-serif';
+  cctx.textAlign='center'; cctx.textBaseline='middle';
+  cctx.fillText(Math.round(deg)+'°', ccx, ccy+16);
+}
+drawCompass(null);
+
+// ── Sparkline ─────────────────────────────────────────────────────
+const sCanvas = document.getElementById('sparkline');
+const sctx    = sCanvas.getContext('2d');
+const SPARK_MAX = 60;
+let sparkData = [];
+
+function drawSparkline() {
+  const W = sCanvas.offsetWidth || 240, H = 36;
+  sCanvas.width = W; sCanvas.height = H;
+  sctx.clearRect(0,0,W,H);
+  if (sparkData.length < 2) return;
+  const maxV = Math.max(...sparkData, 1);
+  const pts  = sparkData.map((v,i)=>({x:(i/(sparkData.length-1))*W,y:H-(v/maxV)*(H-4)-2}));
+  const fg = sctx.createLinearGradient(0,0,0,H);
+  fg.addColorStop(0,'rgba(0,245,255,.3)'); fg.addColorStop(1,'rgba(0,245,255,0)');
+  sctx.beginPath(); sctx.moveTo(pts[0].x,H);
+  pts.forEach(p=>sctx.lineTo(p.x,p.y));
+  sctx.lineTo(pts[pts.length-1].x,H); sctx.closePath(); sctx.fillStyle=fg; sctx.fill();
+  sctx.beginPath(); pts.forEach((p,i)=>i?sctx.lineTo(p.x,p.y):sctx.moveTo(p.x,p.y));
+  sctx.strokeStyle='var(--cyan)'; sctx.lineWidth=1.5; sctx.stroke();
+  const last = pts[pts.length-1];
+  sctx.beginPath(); sctx.arc(last.x,last.y,3,0,Math.PI*2);
+  sctx.fillStyle='#00f5ff'; sctx.fill();
+}
+
+// ── Unit toggle ───────────────────────────────────────────────────
+document.getElementById('unitKmh').addEventListener('click', () => setUnit(false));
+document.getElementById('unitMph').addEventListener('click',  () => setUnit(true));
+document.getElementById('speedUnit').addEventListener('click', () => setUnit(!useMph));
+
+function setUnit(mph) {
+  useMph = mph;
+  document.getElementById('unitKmh').classList.toggle('active', !mph);
+  document.getElementById('unitMph').classList.toggle('active',  mph);
+  document.getElementById('gpsSpeedUnit').textContent = mph ? 'MPH' : 'KM/H';
+  topSpeed = 0; topSpeedEl.textContent = '0';
+  avgSpeedEl.textContent = '0';
+}
+
+// ── updateUI ──────────────────────────────────────────────────────
+let topSpeed = 0, currentHeading = null;
+let _lastSparkTime = 0, _lastSparkSpeed = 0;
+let speedAccum = 0, speedCount = 0;
+
+function updateUI() {
+  const disp = kmhToDisplay(speed);
+  const rounded = Math.round(disp);
+  const isRed = speed >= REDLINE;
+
+  speedDisplay.textContent = rounded;
+  speedDisplay.className = 'speed-value' + (isRed ? ' redline' : '');
+  speedUnitEl.textContent = useMph ? 'MPH' : 'KM / H';
+  speedUnitEl.className = 'speed-unit' + (isRed ? ' redline-unit' : '');
+
+  const ghost = document.getElementById('ledGhost');
+  const unit  = document.getElementById('speedUnit');
+  if (ghost) ghost.className = 'led-ghost' + (isRed ? ' redline-ghost' : '');
+
+  if (disp > topSpeed) { topSpeed = disp; topSpeedEl.textContent = Math.round(topSpeed); }
+
+  // Average speed
+  if (speed > 0.5) { speedAccum += disp; speedCount++; }
+  if (speedCount > 0) avgSpeedEl.textContent = Math.round(speedAccum / speedCount);
+
+  // Trip time (start when moving)
+  if (speed > 2 && !tripStart) tripStart = Date.now();
+  if (tripStart) {
+    tripSeconds = (Date.now() - tripStart) / 1000;
+    tripTimeEl.textContent = formatTime(tripSeconds);
+  }
+
+  throttlePct.textContent = throttleEl.value + '%';
+
+  // Sparkline every 0.5s
+  const now = Date.now();
+  if (now - _lastSparkTime > 500) {
+    sparkData.push(Math.round(disp));
+    if (sparkData.length > SPARK_MAX) sparkData.shift();
+    drawSparkline(); _lastSparkTime = now;
+  }
+
+  drawGauge(speed, currentHeading);
+  drawCompass(currentHeading);
+}
+
+// ── Animation loop ────────────────────────────────────────────────
+let lastTime = 0;
+function animate(ts) {
+  const dt = Math.min((ts - lastTime) / 1000, 0.05); lastTime = ts;
+  if (speed_gps != null) {
+    // GPS mode: smooth transition toward GPS speed
+    // Use gentle lerp so the needle flows — the Kalman already filtered the raw signal
+    speed += (speed_gps - speed) * Math.min(0.35, dt * 8);
+  } else {
+    // Simulation mode
+    targetSpeed = (parseInt(throttleEl.value) / 100) * MAX_SPEED;
+    const diff = targetSpeed - speed;
+    speed += diff * Math.min((diff > 0 ? lerp(60,25,speed/MAX_SPEED) : 120) * dt / 80, 0.12);
+  }
+  speed = Math.max(0, Math.min(MAX_SPEED, speed));
+  updateUI();
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
+// ── Simulation controls ───────────────────────────────────────────
+throttleEl.addEventListener('input', () => {
+  if (autoMode) { clearInterval(autoInterval); autoMode = false; btnAccel.classList.remove('active'); }
+  throttlePct.textContent = throttleEl.value + '%';
+});
+btnAccel.addEventListener('click', () => {
+  if (speed_gps != null) return; // ignore in GPS mode
+  autoMode = !autoMode; btnAccel.classList.toggle('active', autoMode);
+  if (autoMode) {
+    let tgt = 70;
+    autoInterval = setInterval(() => {
+      const c = parseInt(throttleEl.value);
+      if (Math.abs(c - tgt) < 3) tgt = Math.random() * 85 + 10;
+      throttleEl.value = Math.max(0, Math.min(100, c + (c < tgt ? 2 : -2)));
+    }, 80);
+  } else clearInterval(autoInterval);
+});
+btnBrake.addEventListener('click', () => {
+  if (autoMode) { clearInterval(autoInterval); autoMode = false; btnAccel.classList.remove('active'); }
+  throttleEl.value = 0;
+  if (speed_gps != null) { speed_gps = 0; return; }
+  const b = setInterval(() => { speed = Math.max(0, speed - 15); if (speed <= 0) clearInterval(b); }, 30);
+});
+document.getElementById('btnReset').addEventListener('click', () => {
+  if (autoMode) { clearInterval(autoInterval); autoMode = false; btnAccel.classList.remove('active'); }
+  throttleEl.value = 0; speed = 0; topSpeed = 0; tripStart = null; tripSeconds = 0;
+  speedAccum = 0; speedCount = 0;
+  topSpeedEl.textContent = '0'; avgSpeedEl.textContent = '0'; tripTimeEl.textContent = '0:00';
+  sparkData = []; drawSparkline();
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// GPS ENGINE — High-accuracy, vehicle-agnostic
+// Covers cars, trains (350+ km/h), aircraft (900+ km/h), marine
+// ═══════════════════════════════════════════════════════════════════
+
+// DOM
+const btnGPS        = document.getElementById('btnGPS');
+const btnGPSReset   = document.getElementById('btnGPSReset');
+const gpsDot        = document.getElementById('gpsDot');
+const gpsStatusEl   = document.getElementById('gpsStatusText');
+const gpsMsg        = document.getElementById('gpsMsg');
+const gpsSpeedEl    = document.getElementById('gpsSpeed');
+const gpsAltEl      = document.getElementById('gpsAlt');
+const gpsAccEl      = document.getElementById('gpsAcc');
+const gpsHeadEl     = document.getElementById('gpsHeading');
+const gpsLatEl      = document.getElementById('gpsLat');
+const gpsLngEl      = document.getElementById('gpsLng');
+const gpsDistEl     = document.getElementById('gpsDist');
+const gpsDistUnitEl = document.getElementById('gpsDistUnit');
+
+// State
+let gpsWatchId    = null, gpsActive = false;
+let gpsRetryTimer = null, gpsRetryCount = 0;
+const GPS_MAX_RETRY = 5;
+
+let lastLat = null, lastLng = null, lastTimestamp = null;
+let tripDistKm = 0;
+
+// ── Kalman filter — tuned for HIGH velocity (aircraft/train)
+// Higher K_PROCESS = faster to track rapid speed changes
+// Lower K_MEASURE  = trust GPS speed more (high-end GPS is very accurate at speed)
+let kSpeed = 0, kVar = 1;
+const K_PROCESS = 1.5;   // allow fast speed changes (aircraft can do 100 km/h/s in takeoff)
+const K_MEASURE = 1.0;   // trust GPS speed sensor (modern chips are excellent at speed)
+
+// Noise gate — only relevant for slow vehicles; at aircraft speeds GPS error is <1%
+const NOISE_GATE_KMH = 1.5;
+
+// Heading smoothing
+let smoothHeading = null;
+const HEADING_ALPHA = 0.2;  // lighter smoothing = more responsive compass
+
+// Wake lock
+let wakeLock = null;
+
+// ── Status ────────────────────────────────────────────────────────
+function setGPSStatus(state, msg, isError = false) {
+  const cls = { active:'active', searching:'searching', error:'error' }[state] || '';
+  gpsDot.className = 'gps-dot' + (cls ? ' '+cls : '');
+  gpsStatusEl.textContent = { active:'LIVE', searching:'SCAN', error:'ERROR' }[state] || 'OFFLINE';
+  gpsMsg.textContent = msg || '';
+  gpsMsg.className = 'gps-msg' + (isError ? ' error-msg' : '');
+}
+
+// ── Signal bars ───────────────────────────────────────────────────
+function setSignal(accuracy) {
+  let bars = 0;
+  if (accuracy != null) {
+    if      (accuracy <= 4)  bars = 5;
+    else if (accuracy <= 8)  bars = 4;
+    else if (accuracy <= 20) bars = 3;
+    else if (accuracy <= 50) bars = 2;
+    else                     bars = 1;
+  }
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('sb'+i);
+    el.classList.toggle('lit', i <= bars);
+    el.style.background = (i <= bars)
+      ? (bars >= 4 ? 'var(--green)' : bars >= 2 ? 'var(--yellow)' : 'var(--orange)')
+      : '';
+  }
+}
+
+// ── Maths ─────────────────────────────────────────────────────────
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function bearingTo(lat1, lng1, lat2, lng2) {
+  const dLng = (lng2-lng1)*Math.PI/180;
+  const y = Math.sin(dLng)*Math.cos(lat2*Math.PI/180);
+  const x = Math.cos(lat1*Math.PI/180)*Math.sin(lat2*Math.PI/180) - Math.sin(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.cos(dLng);
+  return ((Math.atan2(y,x)*180/Math.PI)+360)%360;
+}
+function lerpAngle(a, b, t) {
+  const diff = ((b-a+540)%360)-180; return (a+diff*t+360)%360;
+}
+function kalmanUpdate(measured) {
+  kVar   += K_PROCESS;
+  const gain = kVar / (kVar + K_MEASURE);
+  kSpeed += gain * (measured - kSpeed);
+  kVar   *= (1 - gain);
+  return Math.max(0, kSpeed);
+}
+
+// ── Distance display ──────────────────────────────────────────────
+function updateDistDisplay() {
+  const d = useMph ? tripDistKm * 0.621371 : tripDistKm;
+  gpsDistEl.textContent = d.toFixed(2);
+  gpsDistUnitEl.textContent = useMph ? 'MI TRIP' : 'KM TRIP';
+}
+
+// ── Wake lock ─────────────────────────────────────────────────────
+async function acquireWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+}
+function releaseWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && gpsActive) acquireWakeLock();
+});
+
+// ── GPS Success — the core accuracy engine ────────────────────────
+function onGPSSuccess(pos) {
+  gpsRetryCount = 0;
+  const { speed: rawSpd, altitude, accuracy, heading, latitude, longitude } = pos.coords;
+  const ts = pos.timestamp;
+
+  // ── Accuracy gate: skip only truly terrible fixes (>200m)
+  // We're lenient because at aircraft speeds even 100m accuracy is fine
+  if (accuracy != null && accuracy > 200) {
+    setSignal(accuracy);
+    setGPSStatus('searching', `Weak signal ±${Math.round(accuracy)}m — waiting…`);
+    return;
+  }
+
+  // ── Speed source priority:
+  // 1. Device speed sensor (most accurate — GPS chipset does Doppler shift)
+  // 2. Derived from position delta (fallback for browsers that don't expose speed)
+  let rawKmh = null;
+
+  if (rawSpd != null && rawSpd >= 0) {
+    // Native GPS speed — Doppler-based, very accurate even at 900+ km/h
+    rawKmh = rawSpd * 3.6;  // m/s → km/h
+  } else if (lastLat != null && lastTimestamp != null) {
+    // Position-derived fallback — less accurate but works on all browsers
+    const dt = (ts - lastTimestamp) / 1000;
+    if (dt > 0 && dt < 30) {  // allow up to 30s gaps for aircraft GPS updates
+      const distM = haversine(lastLat, lastLng, latitude, longitude) * 1000;
+      rawKmh = (distM / dt) * 3.6;
+      // Sanity cap — if derived speed exceeds physics, it's a GPS teleport
+      if (rawKmh > 2000) rawKmh = null;  // nothing legal goes >2000 km/h
+    }
+  }
+
+  // ── Noise gate (only relevant for stationary/slow-moving vehicles)
+  if (rawKmh != null && rawKmh < NOISE_GATE_KMH) rawKmh = 0;
+
+  // ── Kalman filter — smooth jitter while tracking rapid changes
+  let smoothedKmh = null;
+  if (rawKmh != null) {
+    // Scale Kalman dynamically: at high speeds we trust the sensor more
+    const dynGain = rawKmh > 100 ? 0.5 : K_MEASURE;  // tighter at speed
+    kVar += K_PROCESS;
+    const gain = kVar / (kVar + dynGain);
+    kSpeed += gain * (rawKmh - kSpeed);
+    kVar   *= (1 - gain);
+    smoothedKmh = Math.max(0, kSpeed);
+  }
+
+  // ── Feed to gauge
+  if (smoothedKmh != null) {
+    speed_gps = Math.min(smoothedKmh, MAX_SPEED);
+    const disp = kmhToDisplay(smoothedKmh);
+    if (disp > topSpeed) { topSpeed = disp; topSpeedEl.textContent = Math.round(topSpeed); }
+    gpsSpeedEl.textContent = Math.round(kmhToDisplay(smoothedKmh));
+  } else {
+    gpsSpeedEl.textContent = '—';
+  }
+
+  // ── Altitude
+  gpsAltEl.textContent = altitude != null ? Math.round(altitude) : '—';
+
+  // ── Accuracy + signal
+  gpsAccEl.textContent = accuracy != null ? Math.round(accuracy) : '—';
+  setSignal(accuracy);
+
+  // ── Heading
+  let hdg = null;
+  if (heading != null && heading >= 0 && rawKmh > 1) {
+    hdg = heading;
+  } else if (lastLat != null) {
+    const moved = haversine(lastLat, lastLng, latitude, longitude);
+    hdg = moved > 0.005 ? bearingTo(lastLat, lastLng, latitude, longitude) : smoothHeading;
+  }
+  if (hdg != null) {
+    smoothHeading = smoothHeading == null ? hdg : lerpAngle(smoothHeading, hdg, HEADING_ALPHA);
+  }
+  currentHeading = smoothHeading;
+  gpsHeadEl.textContent = smoothHeading != null ? Math.round(smoothHeading)+'°' : '—';
+
+  // ── Trip distance — reject teleports >5km (aircraft mode allows large jumps per fix)
+  if (lastLat != null) {
+    const d = haversine(lastLat, lastLng, latitude, longitude);
+    const maxJump = currentMode === 'auto' ? 5 : 0.3;  // 5km ok for aircraft, 300m for cars
+    if (d < maxJump) { tripDistKm += d; updateDistDisplay(); }
+  }
+  lastLat = latitude; lastLng = longitude; lastTimestamp = ts;
+
+  // ── Coords
+  gpsLatEl.textContent = latitude.toFixed(6);
+  gpsLngEl.textContent = longitude.toFixed(6);
+
+  // ── Status line
+  const parts = [];
+  if (smoothedKmh != null) parts.push(`${Math.round(kmhToDisplay(smoothedKmh))} ${useMph?'mph':'km/h'}`);
+  if (accuracy != null)    parts.push(`±${Math.round(accuracy)}m`);
+  setGPSStatus('active', parts.join(' · '));
+}
+
+// ── GPS Error — exponential backoff retry ─────────────────────────
+function onGPSError(err) {
+  const msgs = {
+    1: 'Permission denied — allow location in browser settings.',
+    2: 'Position unavailable — try outdoors with clear sky.',
+    3: 'GPS timeout — retrying with backoff…'
+  };
+  gpsSpeedEl.textContent = '—'; speed_gps = null; setSignal(null);
+
+  if (err.code === 1) { setGPSStatus('error', msgs[1], true); stopGPS(false); return; }
+
+  if (gpsRetryCount < GPS_MAX_RETRY) {
+    gpsRetryCount++;
+    const wait = Math.min(1000 * gpsRetryCount, 10000);
+    setGPSStatus('searching', `${msgs[err.code]||'Error'} (${gpsRetryCount}/${GPS_MAX_RETRY})`);
+    gpsRetryTimer = setTimeout(() => startGPS(), wait);
+  } else {
+    setGPSStatus('error', 'GPS unavailable — check signal & permissions.', true);
+    stopGPS(false);
+  }
+}
+
+// ── Start GPS ─────────────────────────────────────────────────────
+function startGPS() {
+  if (gpsWatchId != null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+  setGPSStatus('searching', 'Acquiring signal… best outdoors with clear sky');
+  gpsWatchId = navigator.geolocation.watchPosition(onGPSSuccess, onGPSError, {
+    enableHighAccuracy: true,  // force hardware GPS chip (not WiFi/cell)
+    maximumAge:         0,     // always fetch fresh position, never cached
+    timeout:            15000  // 15s timeout — aircraft GPS can be slower at altitude
+  });
+  acquireWakeLock();
+}
+
+// ── Stop GPS ──────────────────────────────────────────────────────
+function stopGPS(userTriggered = true) {
+  if (gpsWatchId != null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+  if (gpsRetryTimer) { clearTimeout(gpsRetryTimer); gpsRetryTimer = null; }
+  gpsActive = false; speed_gps = null; currentHeading = null; smoothHeading = null;
+  kSpeed = 0; kVar = 1;
+  btnGPS.textContent = '📡 Enable GPS'; btnGPS.classList.remove('tracking');
+  setSignal(null); releaseWakeLock();
+  if (userTriggered) {
+    ['gpsSpeed','gpsAlt','gpsAcc','gpsHeading','gpsLat','gpsLng']
+      .forEach(id => document.getElementById(id).textContent = '—');
+    setGPSStatus('', 'GPS stopped.'); drawCompass(null);
+  }
+}
+
+// ── Toggle button ─────────────────────────────────────────────────
+btnGPS.addEventListener('click', () => {
+  if (!('geolocation' in navigator)) {
+    setGPSStatus('error', 'Geolocation not supported by this browser.', true); return;
+  }
+  if (!gpsActive) {
+    gpsActive = true; gpsRetryCount = 0;
+    btnGPS.textContent = '⏹ Stop GPS'; btnGPS.classList.add('tracking');
+    startGPS();
+  } else stopGPS(true);
+});
+
+// ── Reset trip ────────────────────────────────────────────────────
+btnGPSReset.addEventListener('click', () => {
+  tripDistKm = 0; lastLat = null; lastLng = null; lastTimestamp = null;
+  topSpeed = 0; topSpeedEl.textContent = '0';
+  speedAccum = 0; speedCount = 0; avgSpeedEl.textContent = '0';
+  tripStart = null; tripSeconds = 0; tripTimeEl.textContent = '0:00';
+  kSpeed = 0; kVar = 1;
+  sparkData = []; drawSparkline();
+  gpsDistEl.textContent = '0.00';
+});
+
+// ── Auto-start if previously granted ─────────────────────────────
+if ('geolocation' in navigator && 'permissions' in navigator) {
+  navigator.permissions.query({ name: 'geolocation' })
+    .then(r => {
+      if (r.state === 'granted') {
+        gpsActive = true; btnGPS.textContent = '⏹ Stop GPS'; btnGPS.classList.add('tracking');
+        startGPS();
+      }
+      r.addEventListener('change', () => {
+        if (r.state === 'denied' && gpsActive) { setGPSStatus('error','Permission revoked.',true); stopGPS(false); }
+      });
+    }).catch(() => {});
+}
+
+// ── Auto-start from URL param (?gps=auto) ─────────────────────────
+if (new URLSearchParams(location.search).get('gps') === 'auto' && !gpsActive) {
+  gpsActive = true; btnGPS.textContent = '⏹ Stop GPS'; btnGPS.classList.add('tracking');
+  startGPS();
+}
+
+// Initial draw
+drawGauge(0, null);
+drawSparkline();
 </script>
 </body>
 </html>
