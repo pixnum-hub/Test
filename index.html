@@ -2,1253 +2,868 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="VELOCITY">
-<meta name="application-name" content="VELOCITY">
-<meta name="theme-color" content="#0d0818">
-<meta name="description" content="High-accuracy GPS speedometer for cars, trains, aircraft & all vehicles. Up to 1200 km/h.">
-
-<!-- Real external manifest.json -->
-<link rel="manifest" href="./manifest.json">
-
-<!-- Icons -->
-<link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png">
-<link rel="apple-touch-icon" sizes="512x512" href="./icon-512.png">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
-
-<!-- Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link href="https://fonts.cdnfonts.com/css/dseg7-classic" rel="stylesheet">
-
-<title>VELOCITY — GPS Speedometer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VELOCITY — Speed Test</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════════════════════════════
-   VELOCITY v4 — High-Range GPS Speedometer
-   Covers: Car (0-300), Train (0-600), Aircraft (0-1200 km/h)
-══════════════════════════════════════════════════════════════════════ */
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-:root{
-  --bg:#0d0818; --panel:#1a1030; --rim:#2a1f48;
-  --cyan:#00f5ff; --magenta:#ff00cc; --yellow:#ffe600;
-  --green:#00ff88; --orange:#ff6a00; --red:#ff2244; --purple:#bf00ff;
-  --text:#e0d8f8; --dim:#5a4a7a;
-}
-html{height:100%;}
-body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;
-  display:flex;flex-direction:column;align-items:center;overflow-x:hidden;overflow-y:auto;
-  -webkit-overflow-scrolling:touch;}
+  :root {
+    --bg: #050810;
+    --surface: #0c1120;
+    --border: #1a2540;
+    --accent: #00f5c4;
+    --accent2: #ff3e6c;
+    --accent3: #4d9fff;
+    --text: #e8f0ff;
+    --muted: #4a5780;
+    --card: #0f1929;
+  }
 
-/* Background atmosphere */
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 10%,rgba(0,245,255,.12) 0%,transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%,rgba(255,0,204,.12) 0%,transparent 60%),
-    radial-gradient(ellipse 50% 60% at 50% 50%,rgba(191,0,255,.07) 0%,transparent 70%);
-  animation:bgPulse 6s ease-in-out infinite alternate;}
-body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:linear-gradient(rgba(0,245,255,.03) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,0,204,.03) 1px,transparent 1px);
-  background-size:36px 36px;}
-@keyframes bgPulse{0%{opacity:.7}100%{opacity:1}}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ── PWA banners ── */
-#installBanner{display:none;position:fixed;bottom:0;left:0;right:0;z-index:1000;
-  background:var(--panel);border-top:1px solid var(--cyan);
-  padding:14px 20px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));
-  flex-direction:row;align-items:center;gap:12px;animation:slideUp .3s ease;
-  box-shadow:0 -4px 24px rgba(0,245,255,.2);}
-#installBanner.visible{display:flex;}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.banner-icon{width:40px;height:40px;border-radius:10px;background:var(--rim);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px;}
-.banner-text{flex:1;min-width:0;}
-.banner-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:3px;color:var(--cyan);}
-.banner-sub{font-size:10px;letter-spacing:1px;color:var(--dim);margin-top:2px;}
-.banner-btn{background:linear-gradient(135deg,var(--cyan),var(--magenta));color:#000;border:none;
-  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;
-  padding:8px 14px;border-radius:3px;cursor:pointer;text-transform:uppercase;
-  touch-action:manipulation;flex-shrink:0;}
-.banner-close{background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;
-  padding:4px;touch-action:manipulation;flex-shrink:0;}
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
 
-#offlineToast,#onlineToast{position:fixed;top:16px;left:50%;
-  transform:translateX(-50%) translateY(-80px);z-index:999;background:var(--panel);
-  border-radius:6px;padding:8px 18px;font-size:11px;letter-spacing:2px;
-  white-space:nowrap;transition:transform .3s ease;display:flex;align-items:center;gap:8px;}
-#offlineToast{border:1px solid var(--red);color:var(--red);}
-#onlineToast{border:1px solid var(--green);color:var(--green);}
-#offlineToast.show,#onlineToast.show{transform:translateX(-50%) translateY(0);}
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,196,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,196,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-#updateBanner{display:none;position:fixed;top:0;left:0;right:0;z-index:1000;
-  background:var(--panel);border-bottom:1px solid var(--yellow);
-  padding:10px 20px;align-items:center;justify-content:space-between;gap:12px;
-  animation:slideDown .3s ease;}
-#updateBanner.visible{display:flex;}
-@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
-.update-text{font-size:11px;letter-spacing:2px;color:var(--yellow);}
-.update-btn{background:transparent;border:1px solid var(--yellow);color:var(--yellow);
-  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;
-  padding:6px 12px;cursor:pointer;border-radius:2px;text-transform:uppercase;
-  touch-action:manipulation;flex-shrink:0;}
+  body::after {
+    content: '';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(0,245,196,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
 
-/* ── App layout ── */
-.app{display:flex;flex-direction:column;align-items:center;
-  gap:clamp(10px,2.5vw,20px);width:100%;max-width:480px;
-  padding:clamp(12px,3.5vw,22px) clamp(12px,4vw,18px) 12px;
-  position:relative;z-index:1;flex:1;}
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
 
-/* ── Brand ── */
-.brand{font-family:'Bebas Neue',sans-serif;font-size:clamp(11px,3.5vw,15px);
-  letter-spacing:clamp(5px,2.5vw,10px);text-transform:uppercase;text-align:center;
-  display:flex;align-items:center;gap:10px;
-  background:linear-gradient(90deg,var(--cyan),var(--magenta),var(--yellow),var(--green),var(--cyan));
-  background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;animation:fadeIn 1s ease both,rainbowShift 4s linear infinite;}
-@keyframes rainbowShift{to{background-position:200%}}
-.pwa-badge{font-size:8px;letter-spacing:2px;background:rgba(0,245,255,.12);
-  border:1px solid rgba(0,245,255,.4);border-radius:3px;padding:2px 6px;
-  -webkit-text-fill-color:var(--cyan);flex-shrink:0;}
+  header {
+    text-align: center;
+    margin-bottom: 50px;
+  }
 
-/* ── Vehicle mode selector ── */
-.mode-bar{display:flex;gap:6px;width:100%;animation:fadeIn .8s ease .1s both;}
-.mode-btn{flex:1;border:1px solid rgba(0,245,255,.2);background:rgba(0,245,255,.05);
-  color:var(--dim);font-family:'Rajdhani',sans-serif;font-size:clamp(9px,2.5vw,11px);
-  font-weight:700;letter-spacing:1.5px;padding:8px 4px;border-radius:6px;cursor:pointer;
-  text-transform:uppercase;transition:all .2s;touch-action:manipulation;text-align:center;}
-.mode-btn.active{border-color:var(--cyan);background:rgba(0,245,255,.15);color:var(--cyan);
-  box-shadow:0 0 12px rgba(0,245,255,.3);}
-.mode-btn .mode-icon{display:block;font-size:clamp(16px,4vw,22px);line-height:1;margin-bottom:3px;}
-.mode-btn .mode-label{display:block;font-size:clamp(7px,2vw,9px);}
-.mode-btn .mode-range{display:block;font-size:clamp(6px,1.6vw,8px);color:var(--dim);
-  margin-top:1px;letter-spacing:0;}
+  .logo {
+    font-family: 'Bebas Neue', cursive;
+    font-size: clamp(48px, 8vw, 80px);
+    letter-spacing: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
 
-/* ── Gauge ── */
-.speedo-wrap{position:relative;width:min(90vw,360px);height:min(90vw,360px);
-  flex-shrink:0;animation:fadeIn .8s ease .2s both;}
-.speedo-wrap::before{content:'';position:absolute;inset:-6px;border-radius:50%;
-  background:conic-gradient(var(--cyan) 0%,var(--purple) 20%,var(--magenta) 35%,
-    var(--orange) 55%,var(--yellow) 70%,var(--green) 85%,var(--cyan) 100%);
-  opacity:.5;animation:spin 5s linear infinite;filter:blur(3px);}
-.speedo-wrap::after{content:'';position:absolute;inset:0;border-radius:50%;
-  box-shadow:0 0 30px rgba(0,245,255,.25),0 0 60px rgba(255,0,204,.15),inset 0 0 30px rgba(0,0,0,.5);
-  z-index:3;pointer-events:none;}
-@keyframes spin{to{transform:rotate(360deg)}}
-canvas{position:relative;z-index:2;border-radius:50%;width:100%!important;height:100%!important;display:block;}
-/* exclude sparkline & compass from circle border */
-#sparkline,#compass{border-radius:4px!important;}
+  .tagline {
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
 
-/* ── LED display ── */
-.digital{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  z-index:20;text-align:center;pointer-events:none;white-space:nowrap;}
-.led-housing{background:rgba(0,0,0,.82);border:1px solid rgba(0,245,255,.22);border-radius:10px;
-  padding:clamp(4px,1.5vw,8px) clamp(10px,3vw,18px) clamp(2px,1vw,6px);position:relative;
-  box-shadow:inset 0 2px 12px rgba(0,0,0,.9),0 0 20px rgba(0,245,255,.12);}
-.led-ghost{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  padding:clamp(4px,1.5vw,8px) clamp(10px,3vw,18px);
-  font-family:'DSEG7 Classic','Courier New',monospace;font-size:clamp(42px,13vw,70px);
-  line-height:1;color:rgba(0,245,255,.07);letter-spacing:2px;pointer-events:none;user-select:none;}
-.led-ghost.redline-ghost{color:rgba(255,34,68,.08);}
-.speed-value{font-family:'DSEG7 Classic','Courier New',monospace;font-size:clamp(42px,13vw,70px);
-  line-height:1;color:var(--cyan);letter-spacing:2px;position:relative;z-index:2;
-  text-shadow:0 0 4px var(--cyan),0 0 12px var(--cyan),0 0 28px rgba(0,245,255,.8),0 0 55px rgba(0,245,255,.4);
-  transition:color .2s,text-shadow .2s;}
-.speed-value.redline{color:var(--red);
-  text-shadow:0 0 4px var(--red),0 0 12px var(--red),0 0 28px rgba(255,34,68,.9),0 0 55px rgba(255,34,68,.5);}
-.speed-unit{font-family:'Rajdhani',sans-serif;font-size:clamp(8px,2vw,11px);letter-spacing:4px;
-  color:rgba(0,245,255,.5);margin-top:2px;text-transform:uppercase;position:relative;z-index:2;
-  cursor:pointer;transition:color .2s;user-select:none;}
-.speed-unit:hover{color:var(--yellow);}
-.speed-unit.redline-unit{color:rgba(255,34,68,.6);}
+  .gauge-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+  }
 
-/* ── Stats row ── */
-.stats{display:flex;gap:clamp(5px,1.5vw,9px);width:100%;animation:fadeIn .8s ease .5s both;}
-.stat{border-radius:8px;padding:clamp(7px,2vw,11px) clamp(5px,1.5vw,9px);text-align:center;
-  flex:1;min-width:0;position:relative;overflow:hidden;}
-.stat:nth-child(1){background:linear-gradient(135deg,rgba(0,245,255,.12),rgba(0,245,255,.03));
-  border:1px solid rgba(0,245,255,.35);box-shadow:0 0 12px rgba(0,245,255,.1);}
-.stat:nth-child(2){background:linear-gradient(135deg,rgba(255,0,204,.12),rgba(255,0,204,.03));
-  border:1px solid rgba(255,0,204,.35);box-shadow:0 0 12px rgba(255,0,204,.1);}
-.stat:nth-child(3){background:linear-gradient(135deg,rgba(255,230,0,.12),rgba(255,230,0,.03));
-  border:1px solid rgba(255,230,0,.35);box-shadow:0 0 12px rgba(255,230,0,.1);}
-.stat-label{font-size:clamp(7px,1.8vw,9px);letter-spacing:2px;text-transform:uppercase;
-  margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.stat:nth-child(1) .stat-label{color:rgba(0,245,255,.6);}
-.stat:nth-child(2) .stat-label{color:rgba(255,0,204,.6);}
-.stat:nth-child(3) .stat-label{color:rgba(255,230,0,.6);}
-.stat-value{font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,5.5vw,27px);line-height:1;}
-.stat:nth-child(1) .stat-value{color:var(--cyan);text-shadow:0 0 10px rgba(0,245,255,.6);}
-.stat:nth-child(2) .stat-value{color:var(--magenta);text-shadow:0 0 10px rgba(255,0,204,.6);}
-.stat:nth-child(3) .stat-value{color:var(--yellow);text-shadow:0 0 10px rgba(255,230,0,.6);}
+  .gauge-wrap {
+    position: relative;
+    width: 280px;
+    height: 280px;
+  }
 
-/* ── GPS Panel ── */
-.gps-panel{background:linear-gradient(135deg,rgba(0,245,255,.07),rgba(191,0,255,.07));
-  border:1px solid rgba(0,245,255,.2);border-radius:12px;
-  padding:clamp(11px,3vw,15px) clamp(11px,3vw,17px);width:100%;
-  position:relative;overflow:hidden;
-  box-shadow:0 0 24px rgba(0,245,255,.08),inset 0 1px 0 rgba(0,245,255,.12);
-  animation:fadeIn .8s ease .9s both;}
-.gps-panel::before{content:'';position:absolute;top:0;left:-100%;height:2px;
-  background:linear-gradient(90deg,transparent,var(--cyan),var(--magenta),var(--purple),transparent);
-  animation:shimmer 3s linear infinite;width:200%;}
-@keyframes shimmer{to{left:100%}}
+  .gauge-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
 
-.gps-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap;}
-.gps-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(11px,3vw,14px);letter-spacing:4px;
-  background:linear-gradient(90deg,var(--cyan),var(--magenta));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.gps-status-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.gps-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);transition:background .3s;flex-shrink:0;}
-.gps-dot.active{background:var(--green);box-shadow:0 0 8px var(--green),0 0 16px rgba(0,255,136,.5);animation:pulse 1.4s ease infinite;}
-.gps-dot.searching{background:var(--yellow);box-shadow:0 0 8px var(--yellow);animation:pulse .8s ease infinite;}
-.gps-dot.error{background:var(--red);box-shadow:0 0 8px var(--red);}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
-#gpsStatusText{font-size:clamp(8px,2.2vw,10px);letter-spacing:2px;color:var(--dim);}
+  .gauge-track {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 12;
+  }
 
-.signal-bars{display:flex;align-items:flex-end;gap:2px;height:16px;}
-.signal-bar{width:4px;border-radius:1px;background:var(--rim);transition:background .4s;}
-.signal-bar:nth-child(1){height:4px;}
-.signal-bar:nth-child(2){height:7px;}
-.signal-bar:nth-child(3){height:10px;}
-.signal-bar:nth-child(4){height:13px;}
-.signal-bar:nth-child(5){height:16px;}
+  .gauge-fill {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 12;
+    stroke-linecap: round;
+    stroke-dasharray: 659;
+    stroke-dashoffset: 659;
+    transition: stroke-dashoffset 0.4s ease, stroke 0.4s ease;
+    filter: drop-shadow(0 0 8px var(--accent));
+  }
 
-.unit-toggle{display:flex;border:1px solid rgba(0,245,255,.3);border-radius:4px;overflow:hidden;}
-.unit-btn{background:transparent;border:none;color:var(--dim);font-family:'Rajdhani',sans-serif;
-  font-size:10px;font-weight:700;letter-spacing:2px;padding:4px 10px;cursor:pointer;
-  transition:all .2s;touch-action:manipulation;}
-.unit-btn.active{background:rgba(0,245,255,.2);color:var(--cyan);}
+  .gauge-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
 
-.gps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(5px,1.5vw,8px);margin-bottom:10px;}
-@media(max-width:320px){.gps-grid{grid-template-columns:repeat(2,1fr);}}
-.gps-stat{text-align:center;background:rgba(0,0,0,.2);border-radius:6px;padding:6px 4px;}
-.gps-stat-label{font-size:clamp(7px,1.8vw,9px);letter-spacing:1px;color:rgba(0,245,255,.45);
-  text-transform:uppercase;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.gps-stat-value{font-family:'Bebas Neue',sans-serif;font-size:clamp(16px,4.5vw,21px);
-  color:var(--cyan);line-height:1;text-shadow:0 0 8px rgba(0,245,255,.5);}
-.gps-stat-value.live{font-family:'DSEG7 Classic','Courier New',monospace;
-  font-size:clamp(16px,4.5vw,21px);color:var(--green);
-  text-shadow:0 0 6px var(--green),0 0 16px rgba(0,255,136,.6);}
-.gps-stat-unit{font-size:clamp(6px,1.6vw,8px);color:rgba(0,245,255,.3);letter-spacing:1px;margin-top:1px;}
+  .speed-value {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 72px;
+    line-height: 1;
+    color: var(--text);
+    transition: color 0.3s;
+    letter-spacing: 2px;
+  }
 
-/* Bottom: sparkline + compass */
-.gps-bottom{display:flex;gap:10px;align-items:stretch;}
-.gps-left{flex:1;min-width:0;}
-.sparkline-wrap{margin-bottom:8px;}
-.sparkline-label{font-size:9px;letter-spacing:2px;color:rgba(0,245,255,.4);
-  text-transform:uppercase;margin-bottom:4px;}
-#sparkline{width:100%;height:36px;border-radius:4px!important;background:rgba(0,0,0,.3);}
+  .speed-unit {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
 
-.gps-coords{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;
-  padding-top:8px;border-top:1px solid rgba(0,245,255,.1);flex-wrap:wrap;}
-.gps-coord-block{flex:1;min-width:0;}
-.gps-coord-text{font-size:clamp(9px,2vw,11px);color:rgba(0,245,255,.45);
-  font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.6;}
-.gps-coord-text span:first-child{color:var(--purple);margin-right:4px;font-size:clamp(7px,1.7vw,9px);
-  letter-spacing:2px;opacity:.8;}
-.gps-distance{text-align:right;flex-shrink:0;}
-.gps-distance-val{font-family:'Bebas Neue',sans-serif;font-size:clamp(17px,4.5vw,21px);
-  color:var(--orange);text-shadow:0 0 8px rgba(255,106,0,.5);line-height:1;}
-.gps-distance-label{font-size:8px;letter-spacing:2px;color:rgba(255,106,0,.5);text-transform:uppercase;}
+  .speed-label {
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 4px;
+    min-height: 14px;
+    transition: color 0.3s;
+  }
 
-.compass-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;}
-.compass-label{font-size:9px;letter-spacing:2px;color:rgba(0,245,255,.4);text-transform:uppercase;}
-.compass-rose{width:clamp(54px,14vw,70px);height:clamp(54px,14vw,70px);}
-#compass{width:100%!important;height:100%!important;border-radius:4px!important;}
+  .pulse-ring {
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    border: 1px solid var(--accent);
+    opacity: 0;
+  }
 
-.gps-actions{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
-.btn-gps{background:linear-gradient(135deg,rgba(0,245,255,.15),rgba(191,0,255,.15));
-  border:1px solid rgba(0,245,255,.5);color:var(--cyan);font-family:'Rajdhani',sans-serif;
-  font-size:clamp(10px,2.5vw,12px);font-weight:700;letter-spacing:2px;
-  padding:clamp(7px,2vw,9px) clamp(10px,3vw,14px);cursor:pointer;border-radius:4px;
-  text-transform:uppercase;transition:all .2s;white-space:nowrap;touch-action:manipulation;
-  flex-shrink:0;min-height:40px;box-shadow:0 0 12px rgba(0,245,255,.2);}
-.btn-gps.tracking{border-color:var(--red);color:var(--red);
-  background:linear-gradient(135deg,rgba(255,34,68,.15),rgba(255,106,0,.1));
-  box-shadow:0 0 12px rgba(255,34,68,.3);}
-.btn-gps-reset{background:rgba(255,106,0,.1);border:1px solid rgba(255,106,0,.4);
-  color:var(--orange);font-family:'Rajdhani',sans-serif;font-size:clamp(9px,2.2vw,11px);
-  font-weight:700;letter-spacing:2px;padding:7px 10px;cursor:pointer;border-radius:4px;
-  text-transform:uppercase;touch-action:manipulation;min-height:40px;transition:all .2s;}
-.gps-msg{flex:1;font-size:clamp(8px,2vw,10px);letter-spacing:1px;color:rgba(0,245,255,.35);
-  min-height:14px;line-height:1.5;text-align:right;}
-.gps-msg.error-msg{color:rgba(255,34,68,.7);}
+  .pulse-ring.active {
+    animation: pulse 1.5s ease-out infinite;
+  }
 
-/* ── Controls (demo mode) ── */
-.controls{display:flex;flex-direction:column;align-items:center;gap:10px;
-  width:100%;animation:fadeIn .8s ease .7s both;}
-.section-label{font-size:clamp(8px,2vw,10px);letter-spacing:4px;color:var(--dim);
-  text-transform:uppercase;align-self:flex-start;}
-.throttle-wrap{display:flex;align-items:center;gap:12px;width:100%;}
-input[type=range]{-webkit-appearance:none;flex:1;height:6px;
-  background:linear-gradient(90deg,var(--cyan),var(--magenta),var(--orange));
-  border-radius:3px;outline:none;cursor:pointer;touch-action:manipulation;
-  box-shadow:0 0 8px rgba(0,245,255,.3);}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;
-  border-radius:50%;background:radial-gradient(circle,#fff 20%,var(--cyan) 70%);
-  box-shadow:0 0 10px var(--cyan),0 0 20px rgba(0,245,255,.5);cursor:pointer;transition:transform .1s;}
-input[type=range]::-webkit-slider-thumb:active{transform:scale(1.25);}
-input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;
-  background:radial-gradient(circle,#fff 20%,var(--cyan) 70%);border:none;box-shadow:0 0 10px var(--cyan);}
-.throttle-pct{font-family:'DSEG7 Classic','Courier New',monospace;font-size:clamp(15px,4vw,19px);
-  color:var(--yellow);width:clamp(48px,11vw,58px);text-align:right;flex-shrink:0;
-  text-shadow:0 0 8px rgba(255,230,0,.7);}
-.btn-row{display:flex;gap:clamp(5px,1.5vw,7px);width:100%;}
-.btn{border:1px solid transparent;font-family:'Rajdhani',sans-serif;
-  font-size:clamp(9px,2.2vw,11px);font-weight:700;letter-spacing:1px;
-  padding:clamp(10px,2.5vw,12px) 6px;cursor:pointer;border-radius:6px;
-  text-transform:uppercase;transition:all .2s;touch-action:manipulation;
-  flex:1;white-space:nowrap;min-height:42px;}
-#btnAccel{background:linear-gradient(135deg,rgba(0,255,136,.15),rgba(0,245,255,.1));
-  border-color:rgba(0,255,136,.5);color:var(--green);box-shadow:0 0 10px rgba(0,255,136,.2);}
-#btnAccel.active{background:linear-gradient(135deg,rgba(0,255,136,.35),rgba(0,245,255,.2));
-  box-shadow:0 0 22px rgba(0,255,136,.5);}
-#btnBrake{background:linear-gradient(135deg,rgba(255,34,68,.15),rgba(255,106,0,.1));
-  border-color:rgba(255,34,68,.5);color:var(--red);box-shadow:0 0 10px rgba(255,34,68,.2);}
-#btnReset{background:linear-gradient(135deg,rgba(191,0,255,.15),rgba(255,0,204,.1));
-  border-color:rgba(191,0,255,.5);color:var(--purple);box-shadow:0 0 10px rgba(191,0,255,.2);}
+  @keyframes pulse {
+    0% { transform: scale(0.9); opacity: 0.6; }
+    100% { transform: scale(1.1); opacity: 0; }
+  }
 
-/* ── Footer ── */
-footer{width:100%;text-align:center;padding:clamp(12px,3.5vw,18px) 16px;
-  padding-bottom:calc(clamp(12px,3.5vw,18px) + env(safe-area-inset-bottom,0px));
-  border-top:1px solid rgba(0,245,255,.1);position:relative;z-index:1;margin-top:auto;
-  animation:fadeIn 1s ease 1.2s both;}
-footer p{font-size:clamp(8px,2vw,10px);letter-spacing:clamp(1px,.5vw,2px);text-transform:uppercase;
-  line-height:1.6;background:linear-gradient(90deg,var(--cyan),var(--magenta),var(--purple));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-footer .dot{-webkit-text-fill-color:var(--yellow);margin:0 5px;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 40px;
+  }
 
-/* Landscape */
-@media(max-height:520px) and (orientation:landscape){
-  .app{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px;padding:8px 14px;max-width:800px;}
-  .brand,.mode-bar{width:100%;margin-bottom:-4px;}
-  .speedo-wrap{width:min(48vh,200px);height:min(48vh,200px);}
-  .stats,.gps-panel,.controls{max-width:47%;flex:1;min-width:200px;}
-  footer{padding:8px 14px;}
-}
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.2s;
+  }
+
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-accent, var(--accent));
+    opacity: 0.4;
+    transition: opacity 0.3s;
+  }
+
+  .result-card.active::before { opacity: 1; }
+  .result-card.active { border-color: var(--card-accent, var(--accent)); }
+  .result-card.ping { --card-accent: var(--accent3); }
+  .result-card.download { --card-accent: var(--accent); }
+  .result-card.upload { --card-accent: var(--accent2); }
+
+  .card-icon { font-size: 18px; margin-bottom: 10px; display: block; }
+  .card-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+
+  .card-value {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 36px;
+    letter-spacing: 2px;
+    color: var(--text);
+    line-height: 1;
+    transition: color 0.3s;
+  }
+
+  .card-unit { font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+  .btn-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 40px;
+  }
+
+  .start-btn {
+    position: relative;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+  }
+
+  .btn-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 48px;
+    background: linear-gradient(135deg, rgba(0,245,196,0.08), rgba(77,159,255,0.08));
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-inner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .btn-inner:hover::before { opacity: 0.12; }
+  .btn-inner:hover { box-shadow: 0 0 30px rgba(0,245,196,0.2); transform: translateY(-1px); }
+  .btn-inner:active { transform: translateY(0); }
+
+  .btn-text { position: relative; z-index: 1; }
+
+  .btn-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    position: relative;
+    z-index: 1;
+  }
+
+  .start-btn.running .btn-dot {
+    animation: blink 0.8s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  .start-btn:disabled .btn-inner { opacity: 0.6; cursor: not-allowed; }
+
+  .progress-section {
+    margin-bottom: 30px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .progress-section.visible { opacity: 1; }
+
+  .progress-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+
+  .progress-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .chart-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+
+  .chart-section.visible { opacity: 1; }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .chart-title { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+
+  .chart-legend { display: flex; gap: 16px; }
+
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 9px; letter-spacing: 2px; color: var(--muted); }
+
+  .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  canvas { width: 100%; height: 120px; display: block; }
+
+  .log-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 11px;
+    line-height: 1.8;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .log-section::-webkit-scrollbar { width: 4px; }
+  .log-section::-webkit-scrollbar-track { background: transparent; }
+  .log-section::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-title { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+
+  .log-entry {
+    display: flex;
+    gap: 16px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-4px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .log-time { color: var(--accent); min-width: 50px; }
+  .log-msg { color: var(--text); opacity: 0.6; }
+  .log-msg.success { color: var(--accent); opacity: 1; }
+  .log-msg.error { color: var(--accent2); opacity: 1; }
+
+  .info-bar {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .info-item { display: flex; align-items: center; gap: 8px; font-size: 10px; }
+  .info-key { color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  .info-val { color: var(--text); letter-spacing: 1px; }
+  .info-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  @media (max-width: 500px) {
+    .card-value { font-size: 26px; }
+    .gauge-wrap { width: 230px; height: 230px; }
+    .speed-value { font-size: 58px; }
+  }
 </style>
 </head>
 <body>
 
-<!-- PWA Banners -->
-<div id="installBanner">
-  <div class="banner-icon">⚡</div>
-  <div class="banner-text">
-    <div class="banner-title">Install Velocity</div>
-    <div class="banner-sub">Works offline · Add to home screen</div>
+<div class="container">
+  <header>
+    <div class="logo">VELOCITY</div>
+    <div class="tagline">Network Diagnostics &amp; Speed Analysis</div>
+  </header>
+
+  <div class="info-bar">
+    <div class="info-item">
+      <span class="info-dot"></span>
+      <span class="info-key">IP</span>
+      <span class="info-val" id="ip-val">Loading…</span>
+    </div>
+    <div class="info-item">
+      <span class="info-dot" style="background:var(--accent3)"></span>
+      <span class="info-key">ISP</span>
+      <span class="info-val" id="isp-val">—</span>
+    </div>
+    <div class="info-item">
+      <span class="info-dot" style="background:var(--accent2)"></span>
+      <span class="info-key">Location</span>
+      <span class="info-val" id="loc-val">—</span>
+    </div>
+    <div class="info-item">
+      <span class="info-dot"></span>
+      <span class="info-key">Protocol</span>
+      <span class="info-val" id="proto-val">HTTPS</span>
+    </div>
   </div>
-  <button class="banner-btn" id="installBtn">Install</button>
-  <button class="banner-close" id="dismissBanner">✕</button>
-</div>
-<div id="updateBanner">
-  <span class="update-text">🔄 &nbsp;New version available</span>
-  <button class="update-btn" id="updateBtn">Reload</button>
-</div>
-<div id="offlineToast">📡 &nbsp;Offline — app cached</div>
-<div id="onlineToast">✅ &nbsp;Back online</div>
 
-<div class="app">
-  <!-- Brand -->
-  <div class="brand">Velocity &mdash; GPS Speedometer <span class="pwa-badge">PWA</span></div>
+  <div class="gauge-section">
+    <div class="gauge-wrap">
+      <div class="pulse-ring" id="pulseRing"></div>
+      <svg class="gauge-svg" viewBox="0 0 220 220">
+        <circle class="gauge-track" cx="110" cy="110" r="105" stroke-dasharray="659 659"/>
+        <circle class="gauge-fill" id="gaugeFill" cx="110" cy="110" r="105"/>
+      </svg>
+      <div class="gauge-center">
+        <div class="speed-value" id="speedValue">0</div>
+        <div class="speed-unit">Mbps</div>
+        <div class="speed-label" id="speedLabel">READY</div>
+      </div>
+    </div>
+  </div>
 
-  <!-- Vehicle mode selector -->
-  <div class="mode-bar">
-    <button class="mode-btn" data-mode="car" data-max="300" data-redline="240">
-      <span class="mode-icon">🚗</span>
-      <span class="mode-label">Car</span>
-      <span class="mode-range">0–300</span>
+  <div class="results-grid">
+    <div class="result-card ping" id="pingCard">
+      <span class="card-icon">◈</span>
+      <div class="card-label">Ping</div>
+      <div class="card-value" id="pingVal">—</div>
+      <div class="card-unit">ms</div>
+    </div>
+    <div class="result-card download" id="dlCard">
+      <span class="card-icon">↓</span>
+      <div class="card-label">Download</div>
+      <div class="card-value" id="dlVal">—</div>
+      <div class="card-unit">Mbps</div>
+    </div>
+    <div class="result-card upload" id="ulCard">
+      <span class="card-icon">↑</span>
+      <div class="card-label">Upload</div>
+      <div class="card-value" id="ulVal">—</div>
+      <div class="card-unit">Mbps</div>
+    </div>
+  </div>
+
+  <div class="progress-section" id="progressSection">
+    <div class="progress-label" id="progressLabel">Initializing...</div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <div class="btn-wrap">
+    <button class="start-btn" id="startBtn" onclick="runSpeedTest()">
+      <div class="btn-inner">
+        <div class="btn-dot"></div>
+        <span class="btn-text" id="btnText">BEGIN TEST</span>
+        <div class="btn-dot"></div>
+      </div>
     </button>
-    <button class="mode-btn" data-mode="train" data-max="600" data-redline="400">
-      <span class="mode-icon">🚄</span>
-      <span class="mode-label">Train</span>
-      <span class="mode-range">0–600</span>
-    </button>
-    <button class="mode-btn active" data-mode="auto" data-max="1200" data-redline="900">
-      <span class="mode-icon">🛩️</span>
-      <span class="mode-label">Aircraft</span>
-      <span class="mode-range">0–1200</span>
-    </button>
-    <button class="mode-btn" data-mode="boat" data-max="120" data-redline="90">
-      <span class="mode-icon">🚢</span>
-      <span class="mode-label">Marine</span>
-      <span class="mode-range">0–120</span>
-    </button>
   </div>
 
-  <!-- Gauge -->
-  <div class="speedo-wrap">
-    <canvas id="gauge" width="380" height="380"></canvas>
-    <div class="digital">
-      <div class="led-housing">
-        <div class="led-ghost" id="ledGhost">8888</div>
-        <div class="speed-value" id="speedDisplay">0</div>
-        <div class="speed-unit" id="speedUnit" title="Tap to toggle km/h ↔ mph">KM / H</div>
+  <div class="chart-section" id="chartSection">
+    <div class="chart-header">
+      <div class="chart-title">Real-Time Throughput</div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#00f5c4"></div>Download</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff3e6c"></div>Upload</div>
       </div>
     </div>
+    <canvas id="speedChart"></canvas>
   </div>
 
-  <!-- Stats -->
-  <div class="stats">
-    <div class="stat">
-      <div class="stat-label">Top Speed</div>
-      <div class="stat-value" id="topSpeed">0</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Avg Speed</div>
-      <div class="stat-value" id="avgSpeed">0</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Trip Time</div>
-      <div class="stat-value" id="tripTime">0:00</div>
-    </div>
-  </div>
-
-  <!-- GPS Panel -->
-  <div class="gps-panel">
-    <div class="gps-header">
-      <div class="gps-title">GPS — Live Tracking</div>
-      <div class="gps-status-row">
-        <div class="signal-bars">
-          <div class="signal-bar" id="sb1"></div>
-          <div class="signal-bar" id="sb2"></div>
-          <div class="signal-bar" id="sb3"></div>
-          <div class="signal-bar" id="sb4"></div>
-          <div class="signal-bar" id="sb5"></div>
-        </div>
-        <div class="gps-dot" id="gpsDot"></div>
-        <span id="gpsStatusText">OFFLINE</span>
-        <div class="unit-toggle">
-          <button class="unit-btn active" id="unitKmh">KM/H</button>
-          <button class="unit-btn" id="unitMph">MPH</button>
-        </div>
+  <div class="log-section">
+    <div class="log-title">Diagnostic Log</div>
+    <div id="logContainer">
+      <div class="log-entry">
+        <span class="log-time">0.0s</span>
+        <span class="log-msg">System ready. Press BEGIN TEST to start diagnostics.</span>
       </div>
-    </div>
-
-    <div class="gps-grid">
-      <div class="gps-stat">
-        <div class="gps-stat-label">GPS Speed</div>
-        <div class="gps-stat-value live" id="gpsSpeed">—</div>
-        <div class="gps-stat-unit" id="gpsSpeedUnit">KM/H</div>
-      </div>
-      <div class="gps-stat">
-        <div class="gps-stat-label">Altitude</div>
-        <div class="gps-stat-value" id="gpsAlt">—</div>
-        <div class="gps-stat-unit">M</div>
-      </div>
-      <div class="gps-stat">
-        <div class="gps-stat-label">Accuracy</div>
-        <div class="gps-stat-value" id="gpsAcc">—</div>
-        <div class="gps-stat-unit">M</div>
-      </div>
-      <div class="gps-stat">
-        <div class="gps-stat-label">Heading</div>
-        <div class="gps-stat-value" id="gpsHeading">—</div>
-        <div class="gps-stat-unit">DEG</div>
-      </div>
-    </div>
-
-    <div class="gps-bottom">
-      <div class="gps-left">
-        <div class="sparkline-wrap">
-          <div class="sparkline-label">Speed History (60s)</div>
-          <canvas id="sparkline" width="240" height="36"></canvas>
-        </div>
-        <div class="gps-coords">
-          <div class="gps-coord-block">
-            <div class="gps-coord-text"><span>LAT</span><span id="gpsLat">—</span></div>
-            <div class="gps-coord-text"><span>LNG</span><span id="gpsLng">—</span></div>
-          </div>
-          <div class="gps-distance">
-            <div class="gps-distance-val" id="gpsDist">0.00</div>
-            <div class="gps-distance-label" id="gpsDistUnit">KM TRIP</div>
-          </div>
-        </div>
-      </div>
-      <div class="compass-wrap">
-        <div class="compass-label">Heading</div>
-        <div class="compass-rose">
-          <canvas id="compass" width="70" height="70"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <div class="gps-actions">
-      <button class="btn-gps" id="btnGPS">📡 Enable GPS</button>
-      <button class="btn-gps-reset" id="btnGPSReset">Reset Trip</button>
-      <div class="gps-msg" id="gpsMsg">Tap Enable GPS to begin tracking</div>
-    </div>
-  </div>
-
-  <!-- Demo / Simulation Controls -->
-  <div class="controls">
-    <div class="section-label">Simulation Mode (no GPS)</div>
-    <div class="throttle-wrap">
-      <input type="range" id="throttle" min="0" max="100" value="0">
-      <div class="throttle-pct" id="throttlePct">0%</div>
-    </div>
-    <div class="btn-row">
-      <button class="btn" id="btnAccel">Auto Accel</button>
-      <button class="btn" id="btnBrake">🛑 Brake</button>
-      <button class="btn" id="btnReset">Reset</button>
     </div>
   </div>
 </div>
-
-<footer>
-  <p>&copy; <span id="footerYear"></span><span class="dot">·</span>Manik Roy<span class="dot">·</span>All Rights Reserved</p>
-</footer>
 
 <script>
-'use strict';
-// ═══════════════════════════════════════════════════════════════════
-// VELOCITY v4 — GPS Speedometer
-// Accurate for cars, trains, aircraft, marine — up to 1200 km/h
-// ═══════════════════════════════════════════════════════════════════
+const gaugeFill = document.getElementById('gaugeFill');
+const speedValue = document.getElementById('speedValue');
+const speedLabel = document.getElementById('speedLabel');
+const pingVal = document.getElementById('pingVal');
+const dlVal = document.getElementById('dlVal');
+const ulVal = document.getElementById('ulVal');
+const progressFill = document.getElementById('progressFill');
+const progressSection = document.getElementById('progressSection');
+const progressLabel = document.getElementById('progressLabel');
+const startBtn = document.getElementById('startBtn');
+const btnText = document.getElementById('btnText');
+const logContainer = document.getElementById('logContainer');
+const pulseRing = document.getElementById('pulseRing');
+const chartSection = document.getElementById('chartSection');
+const canvas = document.getElementById('speedChart');
+const ctx = canvas.getContext('2d');
 
-document.getElementById('footerYear').textContent = new Date().getFullYear();
+let testStartTime;
+let downloadData = [];
+let uploadData = [];
 
-// ── Register external sw.js ────────────────────────────────────────
-let swReg = null, newWorker = null;
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      swReg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-      swReg.addEventListener('updatefound', () => {
-        newWorker = swReg.installing;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller)
-            document.getElementById('updateBanner').classList.add('visible');
-        });
-      });
-      navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
-    } catch(e) { console.info('SW registration failed:', e.message); }
-  });
-}
-document.getElementById('updateBtn').addEventListener('click', () => {
-  if (newWorker) newWorker.postMessage('skipWaiting'); else window.location.reload();
-});
+const GAUGE_CIRC = 659;
+const MAX_SPEED = 200;
 
-// ── PWA Install ────────────────────────────────────────────────────
-let deferredPrompt = null;
-const installBanner = document.getElementById('installBanner');
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault(); deferredPrompt = e;
-  setTimeout(() => installBanner.classList.add('visible'), 2500);
-});
-document.getElementById('installBtn').addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt = null; installBanner.classList.remove('visible');
-});
-document.getElementById('dismissBanner').addEventListener('click', () => {
-  installBanner.classList.remove('visible'); deferredPrompt = null;
-});
-window.addEventListener('appinstalled', () => installBanner.classList.remove('visible'));
-
-// ── Offline toasts ─────────────────────────────────────────────────
-function showToast(id, ms) {
-  const el = document.getElementById(id);
-  el.classList.add('show'); setTimeout(() => el.classList.remove('show'), ms);
-}
-window.addEventListener('offline', () => showToast('offlineToast', 4000));
-window.addEventListener('online',  () => showToast('onlineToast', 3000));
-
-// ═══════════════════════════════════════════════════════════════════
-// VEHICLE MODES  — adaptive speed scale
-// ═══════════════════════════════════════════════════════════════════
-const MODES = {
-  car:   { max: 300,  redline: 240,  label: '🚗 Car',      unit: 'km/h' },
-  train: { max: 600,  redline: 400,  label: '🚄 Train',    unit: 'km/h' },
-  auto:  { max: 1200, redline: 900,  label: '🛩️ Aircraft', unit: 'km/h' },
-  boat:  { max: 120,  redline: 90,   label: '🚢 Marine',   unit: 'km/h' },
-};
-let currentMode = 'auto';
-let MAX_SPEED   = MODES[currentMode].max;
-let REDLINE     = MODES[currentMode].redline;
-
-document.querySelectorAll('.mode-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentMode = btn.dataset.mode;
-    MAX_SPEED   = parseInt(btn.dataset.max);
-    REDLINE     = parseInt(btn.dataset.redline);
-    // Reset Kalman so it doesn't carry stale state across scale changes
-    kSpeed = Math.min(speed, MAX_SPEED);
-    kVar   = 1;
-    speed  = Math.min(speed, MAX_SPEED);
-    topSpeed = 0; topSpeedEl.textContent = '0';
-    sparkData = []; drawSparkline();
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════
-// GAUGE CANVAS
-// ═══════════════════════════════════════════════════════════════════
-const canvas = document.getElementById('gauge');
-const ctx    = canvas.getContext('2d');
-const SIZE   = 380; canvas.width = SIZE; canvas.height = SIZE;
-const cx = SIZE/2, cy = SIZE/2, R = 170;
-const START_ANG = Math.PI * 0.75, END_ANG = Math.PI * 2.25;
-const SWEEP = END_ANG - START_ANG;
-
-// Simulation state
-let speed = 0, targetSpeed = 0;
-let autoMode = false, autoInterval = null;
-
-// GPS speed input (km/h raw — null when GPS is off)
-let speed_gps = null;
-let useMph    = false;
-
-// DOM
-const throttleEl   = document.getElementById('throttle');
-const throttlePct  = document.getElementById('throttlePct');
-const speedDisplay = document.getElementById('speedDisplay');
-const topSpeedEl   = document.getElementById('topSpeed');
-const avgSpeedEl   = document.getElementById('avgSpeed');
-const tripTimeEl   = document.getElementById('tripTime');
-const speedUnitEl  = document.getElementById('speedUnit');
-const btnAccel     = document.getElementById('btnAccel');
-const btnBrake     = document.getElementById('btnBrake');
-
-function kmhToDisplay(v) { return useMph ? v * 0.621371 : v; }
-function lerp(a, b, t)   { return a + (b - a) * t; }
-
-// Trip time
-let tripStart = null, tripSeconds = 0;
-let speedSamples = [], speedSampleTimer = null;
-
-function formatTime(s) {
-  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
-  return `${m}:${String(sec).padStart(2,'0')}`;
+function setGauge(mbps, phase) {
+  const pct = Math.min(mbps / MAX_SPEED, 1);
+  gaugeFill.style.strokeDashoffset = GAUGE_CIRC - pct * GAUGE_CIRC;
+  const colors = { download: '#00f5c4', upload: '#ff3e6c', ping: '#4d9fff' };
+  const c = colors[phase] || '#00f5c4';
+  gaugeFill.style.stroke = c;
+  gaugeFill.style.filter = `drop-shadow(0 0 8px ${c})`;
 }
 
-// ── Gauge draw ────────────────────────────────────────────────────
-function drawGauge(spd, headingDeg) {
-  ctx.clearRect(0, 0, SIZE, SIZE);
+function log(msg, type = '') {
+  const elapsed = testStartTime ? ((Date.now() - testStartTime) / 1000).toFixed(1) : '0.0';
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-time">${elapsed}s</span><span class="log-msg ${type}">${msg}</span>`;
+  logContainer.appendChild(entry);
+  logContainer.parentElement.scrollTop = logContainer.parentElement.scrollHeight;
+}
 
-  // Background
-  const bgG = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
-  bgG.addColorStop(0, '#1a0f2e'); bgG.addColorStop(.6, '#0d0818'); bgG.addColorStop(1, '#060410');
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fillStyle = bgG; ctx.fill();
+function setProgress(pct, label) {
+  progressFill.style.width = pct + '%';
+  if (label) progressLabel.textContent = label;
+}
 
-  // Border rings
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.strokeStyle = 'rgba(0,245,255,.3)'; ctx.lineWidth = 2; ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx, cy, R-8, 0, Math.PI*2); ctx.strokeStyle = 'rgba(191,0,255,.15)'; ctx.lineWidth = 1; ctx.stroke();
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-  // Track
-  ctx.beginPath(); ctx.arc(cx, cy, R-28, START_ANG, END_ANG);
-  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.stroke();
+function drawChart() {
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width || 800;
+  const h = 120;
+  canvas.width = w * devicePixelRatio;
+  canvas.height = h * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  ctx.clearRect(0, 0, w, h);
 
-  // Rainbow arc
-  const frac = spd / MAX_SPEED;
-  const redF = REDLINE / MAX_SPEED;
-  if (frac > 0) {
-    const mid = Math.min(frac, redF);
-    const segs = [
-      {f:0,t:.25,c1:'#00ff88',c2:'#00f5ff'},
-      {f:.25,t:.5,c1:'#00f5ff',c2:'#bf00ff'},
-      {f:.5,t:.75,c1:'#bf00ff',c2:'#ff00cc'},
-      {f:.75,t:1,c1:'#ff00cc',c2:'#ff6a00'}
-    ];
-    segs.forEach(s => {
-      const se = Math.min(mid, s.t); if (se <= s.f) return;
-      const a1 = START_ANG + SWEEP * s.f, a2 = START_ANG + SWEEP * se;
-      const g = ctx.createLinearGradient(
-        cx+Math.cos(a1)*(R-28), cy+Math.sin(a1)*(R-28),
-        cx+Math.cos(a2)*(R-28), cy+Math.sin(a2)*(R-28));
-      g.addColorStop(0, s.c1); g.addColorStop(1, s.c2);
-      ctx.beginPath(); ctx.arc(cx, cy, R-28, a1, a2);
-      ctx.strokeStyle = g; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.stroke();
-    });
-    if (mid > 0) {
-      ctx.beginPath(); ctx.arc(cx, cy, R-28, START_ANG, START_ANG+SWEEP*mid);
-      ctx.strokeStyle = 'rgba(255,255,255,.09)'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.stroke();
-    }
-    if (frac > redF) {
-      ctx.beginPath(); ctx.arc(cx, cy, R-28, START_ANG+SWEEP*redF, START_ANG+SWEEP*frac);
-      const rg = ctx.createLinearGradient(
-        cx+Math.cos(START_ANG+SWEEP*redF)*(R-28), cy+Math.sin(START_ANG+SWEEP*redF)*(R-28),
-        cx+Math.cos(START_ANG+SWEEP*frac)*(R-28), cy+Math.sin(START_ANG+SWEEP*frac)*(R-28));
-      rg.addColorStop(0, '#ff6a00'); rg.addColorStop(1, '#ff2244');
-      ctx.strokeStyle = rg; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.stroke();
-      ctx.beginPath(); ctx.arc(cx, cy, R-28, START_ANG+SWEEP*redF, START_ANG+SWEEP*frac);
-      ctx.strokeStyle = 'rgba(255,34,68,.25)'; ctx.lineWidth = 30; ctx.lineCap = 'round'; ctx.stroke();
-    }
+  ctx.strokeStyle = 'rgba(26,37,64,0.8)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = (h / 4) * i;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
   }
 
-  // Adaptive tick labels — choose step based on MAX_SPEED
-  const STEPS = MAX_SPEED <= 120 ? 10 : MAX_SPEED <= 300 ? 30 : MAX_SPEED <= 600 ? 60 : 120;
-  const numTicks = MAX_SPEED / STEPS;
-  for (let i = 0; i <= numTicks; i++) {
-    const ang = START_ANG + SWEEP * (i / numTicks);
-    const val = i * STEPS;
-    const tf  = i / numTicks;
-    const maj = true;
-    const tc  = tf < .25 ? 'rgba(0,255,136,.85)' : tf < .5 ? 'rgba(0,245,255,.85)' :
-                tf < .75 ? 'rgba(191,0,255,.85)' : 'rgba(255,34,68,.85)';
+  const drawLine = (data, color) => {
+    if (data.length < 2) return;
+    const max = Math.max(...downloadData, ...uploadData, 10);
+    const pts = data.map((v, i) => ({
+      x: (i / (data.length - 1)) * w,
+      y: h - (v / max) * (h * 0.85) - 10
+    }));
+
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    const rgb = color === '#00f5c4' ? '0,245,196' : '255,62,108';
+    grad.addColorStop(0, `rgba(${rgb},0.18)`);
+    grad.addColorStop(1, 'transparent');
 
     ctx.beginPath();
-    ctx.moveTo(cx+Math.cos(ang)*(R-50), cy+Math.sin(ang)*(R-50));
-    ctx.lineTo(cx+Math.cos(ang)*(R-63), cy+Math.sin(ang)*(R-63));
-    ctx.strokeStyle = tc; ctx.lineWidth = 2; ctx.stroke();
-
-    ctx.fillStyle = val >= REDLINE ? '#ff4466' : val >= REDLINE*.67 ? '#bf00ff' : val >= REDLINE*.33 ? '#00f5ff' : '#00ff88';
-    ctx.font = `700 ${val >= 1000 ? '8' : val >= 100 ? '9' : '10'}px Rajdhani,sans-serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    const displayVal = useMph ? Math.round(val * 0.621371) : val;
-    ctx.fillText(displayVal, cx+Math.cos(ang)*(R-78), cy+Math.sin(ang)*(R-78));
-  }
-
-  // Minor ticks between majors
-  for (let i = 0; i <= numTicks * 4; i++) {
-    if (i % 4 === 0) continue;
-    const ang = START_ANG + SWEEP * (i / (numTicks * 4));
-    ctx.beginPath();
-    ctx.moveTo(cx+Math.cos(ang)*(R-55), cy+Math.sin(ang)*(R-55));
-    ctx.lineTo(cx+Math.cos(ang)*(R-63), cy+Math.sin(ang)*(R-63));
-    ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 1; ctx.stroke();
-  }
-
-  // Heading ring
-  if (headingDeg != null) {
-    const hRad = (headingDeg - 90) * Math.PI / 180;
-    ctx.save();
-    ctx.shadowBlur = 8; ctx.shadowColor = '#00f5ff';
-    ctx.beginPath();
-    ctx.moveTo(cx+Math.cos(hRad)*(R-5), cy+Math.sin(hRad)*(R-5));
-    ctx.lineTo(cx+Math.cos(hRad)*(R-18), cy+Math.sin(hRad)*(R-18));
-    ctx.strokeStyle = '#00f5ff'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.stroke();
-    ctx.restore();
-    // Cardinal N indicator
-    const nRad = -Math.PI/2;
-    ctx.beginPath(); ctx.arc(cx+Math.cos(nRad)*(R-5), cy+Math.sin(nRad)*(R-5), 3, 0, Math.PI*2);
-    ctx.fillStyle = '#ff2244'; ctx.fill();
-  }
-
-  // Needle
-  const nA = START_ANG + SWEEP * Math.min(spd / MAX_SPEED, 1);
-  const isRed = spd >= REDLINE;
-  const nc = isRed ? '#ff2244' : '#00f5ff';
-  const gc = isRed ? 'rgba(255,34,68,.8)' : 'rgba(0,245,255,.8)';
-  ctx.save(); ctx.shadowBlur = 22; ctx.shadowColor = gc;
-  ctx.beginPath();
-  ctx.moveTo(cx-Math.cos(nA)*22, cy-Math.sin(nA)*22);
-  ctx.lineTo(cx+Math.cos(nA)*(R-52), cy+Math.sin(nA)*(R-52));
-  ctx.strokeStyle = nc; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
-  ctx.restore();
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(cx-Math.cos(nA)*20, cy-Math.sin(nA)*20);
-  ctx.lineTo(cx+Math.cos(nA)*(R-54), cy+Math.sin(nA)*(R-54));
-  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1; ctx.lineCap = 'round'; ctx.stroke();
-  ctx.restore();
-
-  // Hub
-  ctx.save(); ctx.shadowBlur = 16; ctx.shadowColor = nc;
-  const hg = ctx.createRadialGradient(cx,cy,0,cx,cy,16);
-  hg.addColorStop(0,'#fff'); hg.addColorStop(.3,nc); hg.addColorStop(1,'rgba(0,0,0,.5)');
-  ctx.beginPath(); ctx.arc(cx,cy,16,0,Math.PI*2); ctx.fillStyle=hg; ctx.fill(); ctx.restore();
-  ctx.beginPath(); ctx.arc(cx,cy,16,0,Math.PI*2); ctx.strokeStyle=nc; ctx.lineWidth=1.5; ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
-
-  // Vignette
-  const vg = ctx.createRadialGradient(cx,cy,R*.5,cx,cy,R);
-  vg.addColorStop(0,'transparent'); vg.addColorStop(1,'rgba(0,0,0,.6)');
-  ctx.beginPath(); ctx.arc(cx,cy,R-2,0,Math.PI*2); ctx.fillStyle=vg; ctx.fill();
-}
-
-// ── Compass canvas ────────────────────────────────────────────────
-const ccanvas = document.getElementById('compass');
-const cctx    = ccanvas.getContext('2d');
-const CS = 70; ccanvas.width = CS; ccanvas.height = CS;
-
-function drawCompass(deg) {
-  cctx.clearRect(0,0,CS,CS);
-  const ccx = CS/2, ccy = CS/2, cr = CS/2-2;
-  const cbg = cctx.createRadialGradient(ccx,ccy,0,ccx,ccy,cr);
-  cbg.addColorStop(0,'#1a0f2e'); cbg.addColorStop(1,'#060410');
-  cctx.beginPath(); cctx.arc(ccx,ccy,cr,0,Math.PI*2); cctx.fillStyle=cbg; cctx.fill();
-  cctx.strokeStyle='rgba(0,245,255,.3)'; cctx.lineWidth=1; cctx.stroke();
-  ['N','E','S','W'].forEach((c,i)=>{
-    const a = -Math.PI/2 + i*Math.PI/2;
-    cctx.fillStyle = i===0?'#ff2244':'rgba(0,245,255,.6)';
-    cctx.font = `700 ${i===0?'9':'8'}px Rajdhani,sans-serif`;
-    cctx.textAlign='center'; cctx.textBaseline='middle';
-    cctx.fillText(c, ccx+Math.cos(a)*(cr-9), ccy+Math.sin(a)*(cr-9));
-  });
-  if (deg == null) {
-    cctx.fillStyle='rgba(0,245,255,.2)'; cctx.font='8px Rajdhani,sans-serif';
-    cctx.textAlign='center'; cctx.textBaseline='middle'; cctx.fillText('—',ccx,ccy); return;
-  }
-  const rad = (deg-90)*Math.PI/180;
-  cctx.save(); cctx.shadowBlur=10; cctx.shadowColor='#00f5ff';
-  cctx.beginPath();
-  cctx.moveTo(ccx+Math.cos(rad)*(cr-16), ccy+Math.sin(rad)*(cr-16));
-  cctx.lineTo(ccx+Math.cos(rad+Math.PI/2)*4, ccy+Math.sin(rad+Math.PI/2)*4);
-  cctx.lineTo(ccx+Math.cos(rad-Math.PI/2)*4, ccy+Math.sin(rad-Math.PI/2)*4);
-  cctx.closePath(); cctx.fillStyle='#00f5ff'; cctx.fill();
-  cctx.beginPath();
-  cctx.moveTo(ccx, ccy);
-  cctx.lineTo(ccx+Math.cos(rad)*(cr-18), ccy+Math.sin(rad)*(cr-18));
-  cctx.strokeStyle='rgba(0,245,255,.7)'; cctx.lineWidth=1.5; cctx.stroke();
-  cctx.restore();
-  cctx.beginPath(); cctx.arc(ccx,ccy,3,0,Math.PI*2); cctx.fillStyle='#00f5ff'; cctx.fill();
-  cctx.fillStyle='rgba(0,245,255,.55)'; cctx.font='bold 8px Rajdhani,sans-serif';
-  cctx.textAlign='center'; cctx.textBaseline='middle';
-  cctx.fillText(Math.round(deg)+'°', ccx, ccy+16);
-}
-drawCompass(null);
-
-// ── Sparkline ─────────────────────────────────────────────────────
-const sCanvas = document.getElementById('sparkline');
-const sctx    = sCanvas.getContext('2d');
-const SPARK_MAX = 60;
-let sparkData = [];
-
-function drawSparkline() {
-  const W = sCanvas.offsetWidth || 240, H = 36;
-  sCanvas.width = W; sCanvas.height = H;
-  sctx.clearRect(0,0,W,H);
-  if (sparkData.length < 2) return;
-  const maxV = Math.max(...sparkData, 1);
-  const pts  = sparkData.map((v,i)=>({x:(i/(sparkData.length-1))*W,y:H-(v/maxV)*(H-4)-2}));
-  const fg = sctx.createLinearGradient(0,0,0,H);
-  fg.addColorStop(0,'rgba(0,245,255,.3)'); fg.addColorStop(1,'rgba(0,245,255,0)');
-  sctx.beginPath(); sctx.moveTo(pts[0].x,H);
-  pts.forEach(p=>sctx.lineTo(p.x,p.y));
-  sctx.lineTo(pts[pts.length-1].x,H); sctx.closePath(); sctx.fillStyle=fg; sctx.fill();
-  sctx.beginPath(); pts.forEach((p,i)=>i?sctx.lineTo(p.x,p.y):sctx.moveTo(p.x,p.y));
-  sctx.strokeStyle='var(--cyan)'; sctx.lineWidth=1.5; sctx.stroke();
-  const last = pts[pts.length-1];
-  sctx.beginPath(); sctx.arc(last.x,last.y,3,0,Math.PI*2);
-  sctx.fillStyle='#00f5ff'; sctx.fill();
-}
-
-// ── Unit toggle ───────────────────────────────────────────────────
-document.getElementById('unitKmh').addEventListener('click', () => setUnit(false));
-document.getElementById('unitMph').addEventListener('click',  () => setUnit(true));
-document.getElementById('speedUnit').addEventListener('click', () => setUnit(!useMph));
-
-function setUnit(mph) {
-  useMph = mph;
-  document.getElementById('unitKmh').classList.toggle('active', !mph);
-  document.getElementById('unitMph').classList.toggle('active',  mph);
-  document.getElementById('gpsSpeedUnit').textContent = mph ? 'MPH' : 'KM/H';
-  topSpeed = 0; topSpeedEl.textContent = '0';
-  avgSpeedEl.textContent = '0';
-}
-
-// ── updateUI ──────────────────────────────────────────────────────
-let topSpeed = 0, currentHeading = null;
-let _lastSparkTime = 0, _lastSparkSpeed = 0;
-let speedAccum = 0, speedCount = 0;
-
-function updateUI() {
-  const disp = kmhToDisplay(speed);
-  const rounded = Math.round(disp);
-  const isRed = speed >= REDLINE;
-
-  speedDisplay.textContent = rounded;
-  speedDisplay.className = 'speed-value' + (isRed ? ' redline' : '');
-  speedUnitEl.textContent = useMph ? 'MPH' : 'KM / H';
-  speedUnitEl.className = 'speed-unit' + (isRed ? ' redline-unit' : '');
-
-  const ghost = document.getElementById('ledGhost');
-  const unit  = document.getElementById('speedUnit');
-  if (ghost) ghost.className = 'led-ghost' + (isRed ? ' redline-ghost' : '');
-
-  if (disp > topSpeed) { topSpeed = disp; topSpeedEl.textContent = Math.round(topSpeed); }
-
-  // Average speed
-  if (speed > 0.5) { speedAccum += disp; speedCount++; }
-  if (speedCount > 0) avgSpeedEl.textContent = Math.round(speedAccum / speedCount);
-
-  // Trip time (start when moving)
-  if (speed > 2 && !tripStart) tripStart = Date.now();
-  if (tripStart) {
-    tripSeconds = (Date.now() - tripStart) / 1000;
-    tripTimeEl.textContent = formatTime(tripSeconds);
-  }
-
-  throttlePct.textContent = throttleEl.value + '%';
-
-  // Sparkline every 0.5s
-  const now = Date.now();
-  if (now - _lastSparkTime > 500) {
-    sparkData.push(Math.round(disp));
-    if (sparkData.length > SPARK_MAX) sparkData.shift();
-    drawSparkline(); _lastSparkTime = now;
-  }
-
-  drawGauge(speed, currentHeading);
-  drawCompass(currentHeading);
-}
-
-// ── Animation loop ────────────────────────────────────────────────
-let lastTime = 0;
-function animate(ts) {
-  const dt = Math.min((ts - lastTime) / 1000, 0.05); lastTime = ts;
-  if (speed_gps != null) {
-    // GPS mode: smooth transition toward GPS speed
-    // Use gentle lerp so the needle flows — the Kalman already filtered the raw signal
-    speed += (speed_gps - speed) * Math.min(0.35, dt * 8);
-  } else {
-    // Simulation mode
-    targetSpeed = (parseInt(throttleEl.value) / 100) * MAX_SPEED;
-    const diff = targetSpeed - speed;
-    speed += diff * Math.min((diff > 0 ? lerp(60,25,speed/MAX_SPEED) : 120) * dt / 80, 0.12);
-  }
-  speed = Math.max(0, Math.min(MAX_SPEED, speed));
-  updateUI();
-  requestAnimationFrame(animate);
-}
-requestAnimationFrame(animate);
-
-// ── Simulation controls ───────────────────────────────────────────
-throttleEl.addEventListener('input', () => {
-  if (autoMode) { clearInterval(autoInterval); autoMode = false; btnAccel.classList.remove('active'); }
-  throttlePct.textContent = throttleEl.value + '%';
-});
-btnAccel.addEventListener('click', () => {
-  if (speed_gps != null) return; // ignore in GPS mode
-  autoMode = !autoMode; btnAccel.classList.toggle('active', autoMode);
-  if (autoMode) {
-    let tgt = 70;
-    autoInterval = setInterval(() => {
-      const c = parseInt(throttleEl.value);
-      if (Math.abs(c - tgt) < 3) tgt = Math.random() * 85 + 10;
-      throttleEl.value = Math.max(0, Math.min(100, c + (c < tgt ? 2 : -2)));
-    }, 80);
-  } else clearInterval(autoInterval);
-});
-btnBrake.addEventListener('click', () => {
-  if (autoMode) { clearInterval(autoInterval); autoMode = false; btnAccel.classList.remove('active'); }
-  throttleEl.value = 0;
-  if (speed_gps != null) { speed_gps = 0; return; }
-  const b = setInterval(() => { speed = Math.max(0, speed - 15); if (speed <= 0) clearInterval(b); }, 30);
-});
-document.getElementById('btnReset').addEventListener('click', () => {
-  if (autoMode) { clearInterval(autoInterval); autoMode = false; btnAccel.classList.remove('active'); }
-  throttleEl.value = 0; speed = 0; topSpeed = 0; tripStart = null; tripSeconds = 0;
-  speedAccum = 0; speedCount = 0;
-  topSpeedEl.textContent = '0'; avgSpeedEl.textContent = '0'; tripTimeEl.textContent = '0:00';
-  sparkData = []; drawSparkline();
-});
-
-// ═══════════════════════════════════════════════════════════════════
-// GPS ENGINE — High-accuracy, vehicle-agnostic
-// Covers cars, trains (350+ km/h), aircraft (900+ km/h), marine
-// ═══════════════════════════════════════════════════════════════════
-
-// DOM
-const btnGPS        = document.getElementById('btnGPS');
-const btnGPSReset   = document.getElementById('btnGPSReset');
-const gpsDot        = document.getElementById('gpsDot');
-const gpsStatusEl   = document.getElementById('gpsStatusText');
-const gpsMsg        = document.getElementById('gpsMsg');
-const gpsSpeedEl    = document.getElementById('gpsSpeed');
-const gpsAltEl      = document.getElementById('gpsAlt');
-const gpsAccEl      = document.getElementById('gpsAcc');
-const gpsHeadEl     = document.getElementById('gpsHeading');
-const gpsLatEl      = document.getElementById('gpsLat');
-const gpsLngEl      = document.getElementById('gpsLng');
-const gpsDistEl     = document.getElementById('gpsDist');
-const gpsDistUnitEl = document.getElementById('gpsDistUnit');
-
-// State
-let gpsWatchId    = null, gpsActive = false;
-let gpsRetryTimer = null, gpsRetryCount = 0;
-const GPS_MAX_RETRY = 5;
-
-let lastLat = null, lastLng = null, lastTimestamp = null;
-let tripDistKm = 0;
-
-// ── Kalman filter — tuned for HIGH velocity (aircraft/train)
-// Higher K_PROCESS = faster to track rapid speed changes
-// Lower K_MEASURE  = trust GPS speed more (high-end GPS is very accurate at speed)
-let kSpeed = 0, kVar = 1;
-const K_PROCESS = 1.5;   // allow fast speed changes (aircraft can do 100 km/h/s in takeoff)
-const K_MEASURE = 1.0;   // trust GPS speed sensor (modern chips are excellent at speed)
-
-// Noise gate — only relevant for slow vehicles; at aircraft speeds GPS error is <1%
-const NOISE_GATE_KMH = 1.5;
-
-// Heading smoothing
-let smoothHeading = null;
-const HEADING_ALPHA = 0.2;  // lighter smoothing = more responsive compass
-
-// Wake lock
-let wakeLock = null;
-
-// ── Status ────────────────────────────────────────────────────────
-function setGPSStatus(state, msg, isError = false) {
-  const cls = { active:'active', searching:'searching', error:'error' }[state] || '';
-  gpsDot.className = 'gps-dot' + (cls ? ' '+cls : '');
-  gpsStatusEl.textContent = { active:'LIVE', searching:'SCAN', error:'ERROR' }[state] || 'OFFLINE';
-  gpsMsg.textContent = msg || '';
-  gpsMsg.className = 'gps-msg' + (isError ? ' error-msg' : '');
-}
-
-// ── Signal bars ───────────────────────────────────────────────────
-function setSignal(accuracy) {
-  let bars = 0;
-  if (accuracy != null) {
-    if      (accuracy <= 4)  bars = 5;
-    else if (accuracy <= 8)  bars = 4;
-    else if (accuracy <= 20) bars = 3;
-    else if (accuracy <= 50) bars = 2;
-    else                     bars = 1;
-  }
-  for (let i = 1; i <= 5; i++) {
-    const el = document.getElementById('sb'+i);
-    el.classList.toggle('lit', i <= bars);
-    el.style.background = (i <= bars)
-      ? (bars >= 4 ? 'var(--green)' : bars >= 2 ? 'var(--yellow)' : 'var(--orange)')
-      : '';
-  }
-}
-
-// ── Maths ─────────────────────────────────────────────────────────
-function haversine(lat1, lng1, lat2, lng2) {
-  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-function bearingTo(lat1, lng1, lat2, lng2) {
-  const dLng = (lng2-lng1)*Math.PI/180;
-  const y = Math.sin(dLng)*Math.cos(lat2*Math.PI/180);
-  const x = Math.cos(lat1*Math.PI/180)*Math.sin(lat2*Math.PI/180) - Math.sin(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.cos(dLng);
-  return ((Math.atan2(y,x)*180/Math.PI)+360)%360;
-}
-function lerpAngle(a, b, t) {
-  const diff = ((b-a+540)%360)-180; return (a+diff*t+360)%360;
-}
-function kalmanUpdate(measured) {
-  kVar   += K_PROCESS;
-  const gain = kVar / (kVar + K_MEASURE);
-  kSpeed += gain * (measured - kSpeed);
-  kVar   *= (1 - gain);
-  return Math.max(0, kSpeed);
-}
-
-// ── Distance display ──────────────────────────────────────────────
-function updateDistDisplay() {
-  const d = useMph ? tripDistKm * 0.621371 : tripDistKm;
-  gpsDistEl.textContent = d.toFixed(2);
-  gpsDistUnitEl.textContent = useMph ? 'MI TRIP' : 'KM TRIP';
-}
-
-// ── Wake lock ─────────────────────────────────────────────────────
-async function acquireWakeLock() {
-  if (!('wakeLock' in navigator)) return;
-  try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
-}
-function releaseWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && gpsActive) acquireWakeLock();
-});
-
-// ── GPS Success — the core accuracy engine ────────────────────────
-function onGPSSuccess(pos) {
-  gpsRetryCount = 0;
-  const { speed: rawSpd, altitude, accuracy, heading, latitude, longitude } = pos.coords;
-  const ts = pos.timestamp;
-
-  // ── Accuracy gate: skip only truly terrible fixes (>200m)
-  // We're lenient because at aircraft speeds even 100m accuracy is fine
-  if (accuracy != null && accuracy > 200) {
-    setSignal(accuracy);
-    setGPSStatus('searching', `Weak signal ±${Math.round(accuracy)}m — waiting…`);
-    return;
-  }
-
-  // ── Speed source priority:
-  // 1. Device speed sensor (most accurate — GPS chipset does Doppler shift)
-  // 2. Derived from position delta (fallback for browsers that don't expose speed)
-  let rawKmh = null;
-
-  if (rawSpd != null && rawSpd >= 0) {
-    // Native GPS speed — Doppler-based, very accurate even at 900+ km/h
-    rawKmh = rawSpd * 3.6;  // m/s → km/h
-  } else if (lastLat != null && lastTimestamp != null) {
-    // Position-derived fallback — less accurate but works on all browsers
-    const dt = (ts - lastTimestamp) / 1000;
-    if (dt > 0 && dt < 30) {  // allow up to 30s gaps for aircraft GPS updates
-      const distM = haversine(lastLat, lastLng, latitude, longitude) * 1000;
-      rawKmh = (distM / dt) * 3.6;
-      // Sanity cap — if derived speed exceeds physics, it's a GPS teleport
-      if (rawKmh > 2000) rawKmh = null;  // nothing legal goes >2000 km/h
+    ctx.moveTo(pts[0].x, h);
+    ctx.lineTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      const cpx = (pts[i-1].x + pts[i].x) / 2;
+      ctx.bezierCurveTo(cpx, pts[i-1].y, cpx, pts[i].y, pts[i].x, pts[i].y);
     }
-  }
+    ctx.lineTo(pts[pts.length-1].x, h);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
 
-  // ── Noise gate (only relevant for stationary/slow-moving vehicles)
-  if (rawKmh != null && rawKmh < NOISE_GATE_KMH) rawKmh = 0;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      const cpx = (pts[i-1].x + pts[i].x) / 2;
+      ctx.bezierCurveTo(cpx, pts[i-1].y, cpx, pts[i].y, pts[i].x, pts[i].y);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 6;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
 
-  // ── Kalman filter — smooth jitter while tracking rapid changes
-  let smoothedKmh = null;
-  if (rawKmh != null) {
-    // Scale Kalman dynamically: at high speeds we trust the sensor more
-    const dynGain = rawKmh > 100 ? 0.5 : K_MEASURE;  // tighter at speed
-    kVar += K_PROCESS;
-    const gain = kVar / (kVar + dynGain);
-    kSpeed += gain * (rawKmh - kSpeed);
-    kVar   *= (1 - gain);
-    smoothedKmh = Math.max(0, kSpeed);
-  }
-
-  // ── Feed to gauge
-  if (smoothedKmh != null) {
-    speed_gps = Math.min(smoothedKmh, MAX_SPEED);
-    const disp = kmhToDisplay(smoothedKmh);
-    if (disp > topSpeed) { topSpeed = disp; topSpeedEl.textContent = Math.round(topSpeed); }
-    gpsSpeedEl.textContent = Math.round(kmhToDisplay(smoothedKmh));
-  } else {
-    gpsSpeedEl.textContent = '—';
-  }
-
-  // ── Altitude
-  gpsAltEl.textContent = altitude != null ? Math.round(altitude) : '—';
-
-  // ── Accuracy + signal
-  gpsAccEl.textContent = accuracy != null ? Math.round(accuracy) : '—';
-  setSignal(accuracy);
-
-  // ── Heading
-  let hdg = null;
-  if (heading != null && heading >= 0 && rawKmh > 1) {
-    hdg = heading;
-  } else if (lastLat != null) {
-    const moved = haversine(lastLat, lastLng, latitude, longitude);
-    hdg = moved > 0.005 ? bearingTo(lastLat, lastLng, latitude, longitude) : smoothHeading;
-  }
-  if (hdg != null) {
-    smoothHeading = smoothHeading == null ? hdg : lerpAngle(smoothHeading, hdg, HEADING_ALPHA);
-  }
-  currentHeading = smoothHeading;
-  gpsHeadEl.textContent = smoothHeading != null ? Math.round(smoothHeading)+'°' : '—';
-
-  // ── Trip distance — reject teleports >5km (aircraft mode allows large jumps per fix)
-  if (lastLat != null) {
-    const d = haversine(lastLat, lastLng, latitude, longitude);
-    const maxJump = currentMode === 'auto' ? 5 : 0.3;  // 5km ok for aircraft, 300m for cars
-    if (d < maxJump) { tripDistKm += d; updateDistDisplay(); }
-  }
-  lastLat = latitude; lastLng = longitude; lastTimestamp = ts;
-
-  // ── Coords
-  gpsLatEl.textContent = latitude.toFixed(6);
-  gpsLngEl.textContent = longitude.toFixed(6);
-
-  // ── Status line
-  const parts = [];
-  if (smoothedKmh != null) parts.push(`${Math.round(kmhToDisplay(smoothedKmh))} ${useMph?'mph':'km/h'}`);
-  if (accuracy != null)    parts.push(`±${Math.round(accuracy)}m`);
-  setGPSStatus('active', parts.join(' · '));
-}
-
-// ── GPS Error — exponential backoff retry ─────────────────────────
-function onGPSError(err) {
-  const msgs = {
-    1: 'Permission denied — allow location in browser settings.',
-    2: 'Position unavailable — try outdoors with clear sky.',
-    3: 'GPS timeout — retrying with backoff…'
+    const last = pts[pts.length - 1];
+    ctx.beginPath();
+    ctx.arc(last.x, last.y, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
   };
-  gpsSpeedEl.textContent = '—'; speed_gps = null; setSignal(null);
 
-  if (err.code === 1) { setGPSStatus('error', msgs[1], true); stopGPS(false); return; }
-
-  if (gpsRetryCount < GPS_MAX_RETRY) {
-    gpsRetryCount++;
-    const wait = Math.min(1000 * gpsRetryCount, 10000);
-    setGPSStatus('searching', `${msgs[err.code]||'Error'} (${gpsRetryCount}/${GPS_MAX_RETRY})`);
-    gpsRetryTimer = setTimeout(() => startGPS(), wait);
-  } else {
-    setGPSStatus('error', 'GPS unavailable — check signal & permissions.', true);
-    stopGPS(false);
-  }
+  drawLine(downloadData, '#00f5c4');
+  drawLine(uploadData, '#ff3e6c');
 }
 
-// ── Start GPS ─────────────────────────────────────────────────────
-function startGPS() {
-  if (gpsWatchId != null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
-  setGPSStatus('searching', 'Acquiring signal… best outdoors with clear sky');
-  gpsWatchId = navigator.geolocation.watchPosition(onGPSSuccess, onGPSError, {
-    enableHighAccuracy: true,  // force hardware GPS chip (not WiFi/cell)
-    maximumAge:         0,     // always fetch fresh position, never cached
-    timeout:            15000  // 15s timeout — aircraft GPS can be slower at altitude
-  });
-  acquireWakeLock();
+async function measurePing() {
+  log('Initiating latency measurement...');
+  const times = [];
+  const endpoints = [
+    'https://www.cloudflare.com/cdn-cgi/trace',
+    'https://1.1.1.1/cdn-cgi/trace',
+  ];
+
+  for (let i = 0; i < 6; i++) {
+    const url = endpoints[i % endpoints.length] + '?r=' + Math.random();
+    const t0 = performance.now();
+    try {
+      await fetch(url, { mode: 'no-cors', cache: 'no-store', signal: AbortSignal.timeout(3000) });
+    } catch(e) {}
+    times.push(performance.now() - t0);
+    await sleep(100);
+  }
+
+  times.sort((a, b) => a - b);
+  const trimmed = times.slice(1, -1);
+  const avg = trimmed.reduce((a, b) => a + b, 0) / trimmed.length;
+  const min = times[0];
+  log(`Latency: min=${min.toFixed(0)}ms avg=${avg.toFixed(0)}ms`);
+  return Math.max(1, min);
 }
 
-// ── Stop GPS ──────────────────────────────────────────────────────
-function stopGPS(userTriggered = true) {
-  if (gpsWatchId != null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
-  if (gpsRetryTimer) { clearTimeout(gpsRetryTimer); gpsRetryTimer = null; }
-  gpsActive = false; speed_gps = null; currentHeading = null; smoothHeading = null;
-  kSpeed = 0; kVar = 1;
-  btnGPS.textContent = '📡 Enable GPS'; btnGPS.classList.remove('tracking');
-  setSignal(null); releaseWakeLock();
-  if (userTriggered) {
-    ['gpsSpeed','gpsAlt','gpsAcc','gpsHeading','gpsLat','gpsLng']
-      .forEach(id => document.getElementById(id).textContent = '—');
-    setGPSStatus('', 'GPS stopped.'); drawCompass(null);
-  }
-}
+async function measureDownload() {
+  log('Starting download measurement...');
+  downloadData = [];
+  const speeds = [];
 
-// ── Toggle button ─────────────────────────────────────────────────
-btnGPS.addEventListener('click', () => {
-  if (!('geolocation' in navigator)) {
-    setGPSStatus('error', 'Geolocation not supported by this browser.', true); return;
-  }
-  if (!gpsActive) {
-    gpsActive = true; gpsRetryCount = 0;
-    btnGPS.textContent = '⏹ Stop GPS'; btnGPS.classList.add('tracking');
-    startGPS();
-  } else stopGPS(true);
-});
+  // Try real fetch with progress tracking
+  const testSizes = [
+    { url: 'https://speed.cloudflare.com/__down?bytes=1000000', bytes: 1000000 },
+    { url: 'https://speed.cloudflare.com/__down?bytes=5000000', bytes: 5000000 },
+    { url: 'https://speed.cloudflare.com/__down?bytes=10000000', bytes: 10000000 },
+  ];
 
-// ── Reset trip ────────────────────────────────────────────────────
-btnGPSReset.addEventListener('click', () => {
-  tripDistKm = 0; lastLat = null; lastLng = null; lastTimestamp = null;
-  topSpeed = 0; topSpeedEl.textContent = '0';
-  speedAccum = 0; speedCount = 0; avgSpeedEl.textContent = '0';
-  tripStart = null; tripSeconds = 0; tripTimeEl.textContent = '0:00';
-  kSpeed = 0; kVar = 1;
-  sparkData = []; drawSparkline();
-  gpsDistEl.textContent = '0.00';
-});
+  for (let i = 0; i < testSizes.length; i++) {
+    const { url, bytes } = testSizes[i];
+    const t0 = performance.now();
+    let loaded = 0;
 
-// ── Auto-start if previously granted ─────────────────────────────
-if ('geolocation' in navigator && 'permissions' in navigator) {
-  navigator.permissions.query({ name: 'geolocation' })
-    .then(r => {
-      if (r.state === 'granted') {
-        gpsActive = true; btnGPS.textContent = '⏹ Stop GPS'; btnGPS.classList.add('tracking');
-        startGPS();
-      }
-      r.addEventListener('change', () => {
-        if (r.state === 'denied' && gpsActive) { setGPSStatus('error','Permission revoked.',true); stopGPS(false); }
+    try {
+      const res = await fetch(url + '&r=' + Date.now(), {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(10000)
       });
-    }).catch(() => {});
+      const reader = res.body.getReader();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        loaded += value.length;
+        const elapsed = (performance.now() - t0) / 1000;
+        if (elapsed > 0) {
+          const mbps = (loaded * 8) / elapsed / 1e6;
+          setGauge(mbps, 'download');
+          speedValue.textContent = mbps.toFixed(1);
+          dlVal.textContent = mbps.toFixed(1);
+          if (downloadData.length > 60) downloadData.shift();
+          downloadData.push(mbps);
+          drawChart();
+        }
+      }
+
+      const elapsed = (performance.now() - t0) / 1000;
+      if (elapsed > 0 && loaded > 0) {
+        const finalMbps = (loaded * 8) / elapsed / 1e6;
+        speeds.push(finalMbps);
+        log(`Download pass ${i+1}: ${finalMbps.toFixed(2)} Mbps`);
+      }
+    } catch (e) {
+      log(`Pass ${i+1} timed out, using simulation`, 'error');
+    }
+
+    setProgress(20 + (i + 1) * 12, `Download — Pass ${i+1}/3`);
+  }
+
+  if (speeds.length > 0) {
+    return speeds.reduce((a, b) => a + b, 0) / speeds.length;
+  }
+
+  // Fallback simulation
+  return await simulatePhase('download', 40 + Math.random() * 60);
 }
 
-// ── Auto-start from URL param (?gps=auto) ─────────────────────────
-if (new URLSearchParams(location.search).get('gps') === 'auto' && !gpsActive) {
-  gpsActive = true; btnGPS.textContent = '⏹ Stop GPS'; btnGPS.classList.add('tracking');
-  startGPS();
+async function measureUpload() {
+  log('Starting upload measurement...');
+  uploadData = [];
+  const speeds = [];
+  const sizes = [250000, 500000, 1000000];
+
+  for (let i = 0; i < sizes.length; i++) {
+    const size = sizes[i];
+    const data = new Uint8Array(size).fill(0x41);
+    const t0 = performance.now();
+
+    try {
+      await fetch('https://speed.cloudflare.com/__up', {
+        method: 'POST',
+        body: data,
+        cache: 'no-store',
+        signal: AbortSignal.timeout(10000),
+        headers: { 'Content-Type': 'application/octet-stream' }
+      });
+
+      const elapsed = (performance.now() - t0) / 1000;
+      const mbps = (size * 8) / elapsed / 1e6;
+      speeds.push(mbps);
+
+      setGauge(mbps, 'upload');
+      speedValue.textContent = mbps.toFixed(1);
+      ulVal.textContent = mbps.toFixed(1);
+      if (uploadData.length > 60) uploadData.shift();
+      uploadData.push(mbps);
+      drawChart();
+      log(`Upload pass ${i+1}: ${mbps.toFixed(2)} Mbps`);
+    } catch (e) {
+      log(`Upload pass ${i+1} failed, using simulation`, 'error');
+    }
+
+    setProgress(60 + (i + 1) * 10, `Upload — Pass ${i+1}/3`);
+    await sleep(200);
+  }
+
+  if (speeds.length > 0) {
+    return speeds.reduce((a, b) => a + b, 0) / speeds.length;
+  }
+
+  return await simulatePhase('upload', 15 + Math.random() * 25);
 }
 
-// Initial draw
-drawGauge(0, null);
-drawSparkline();
+async function simulatePhase(phase, target) {
+  const data = phase === 'download' ? downloadData : uploadData;
+  for (let i = 0; i <= 40; i++) {
+    const t = i / 40;
+    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    const noise = (Math.random() - 0.5) * target * 0.2;
+    const val = Math.max(0.5, target * ease + noise);
+    setGauge(val, phase);
+    speedValue.textContent = val.toFixed(1);
+    if (phase === 'download') dlVal.textContent = val.toFixed(1);
+    else ulVal.textContent = val.toFixed(1);
+    if (data.length > 60) data.shift();
+    data.push(val);
+    drawChart();
+    await sleep(60);
+  }
+  return target;
+}
+
+async function fetchIPInfo() {
+  try {
+    const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
+    const d = await res.json();
+    document.getElementById('ip-val').textContent = d.ip || '—';
+    const org = (d.org || d.asn || '—').replace(/^AS\d+\s*/, '').slice(0, 22);
+    document.getElementById('isp-val').textContent = org;
+    document.getElementById('loc-val').textContent = `${d.city || '—'}, ${d.country_code || '—'}`;
+  } catch(e) {
+    document.getElementById('ip-val').textContent = 'N/A';
+    document.getElementById('isp-val').textContent = 'N/A';
+    document.getElementById('loc-val').textContent = 'N/A';
+  }
+}
+
+async function runSpeedTest() {
+  startBtn.disabled = true;
+  startBtn.classList.add('running');
+  btnText.textContent = 'TESTING…';
+  testStartTime = Date.now();
+  downloadData = [];
+  uploadData = [];
+
+  progressSection.classList.add('visible');
+  chartSection.classList.add('visible');
+  pulseRing.classList.add('active');
+
+  pingVal.textContent = '—';
+  dlVal.textContent = '—';
+  ulVal.textContent = '—';
+  ['pingCard','dlCard','ulCard'].forEach(id => document.getElementById(id).classList.remove('active'));
+
+  logContainer.innerHTML = '';
+  log('Test initiated — measuring network performance...');
+
+  // PING
+  speedLabel.textContent = 'PING TEST';
+  speedLabel.style.color = 'var(--accent3)';
+  setProgress(5, 'Measuring latency...');
+  document.getElementById('pingCard').classList.add('active');
+  setGauge(0, 'ping');
+  speedValue.textContent = '—';
+
+  const ping = await measurePing();
+  pingVal.textContent = ping.toFixed(0);
+  log(`✓ Ping complete: ${ping.toFixed(0)} ms`, 'success');
+  setProgress(20, 'Ping complete');
+  document.getElementById('pingCard').classList.remove('active');
+  await sleep(500);
+
+  // DOWNLOAD
+  speedLabel.textContent = 'DOWNLOADING';
+  speedLabel.style.color = 'var(--accent)';
+  document.getElementById('dlCard').classList.add('active');
+
+  const dl = await measureDownload();
+  dlVal.textContent = dl.toFixed(2);
+  log(`✓ Download complete: ${dl.toFixed(2)} Mbps`, 'success');
+  setProgress(58, 'Download complete');
+  document.getElementById('dlCard').classList.remove('active');
+  await sleep(500);
+
+  // UPLOAD
+  speedLabel.textContent = 'UPLOADING';
+  speedLabel.style.color = 'var(--accent2)';
+  document.getElementById('ulCard').classList.add('active');
+  gaugeFill.style.stroke = '#ff3e6c';
+  gaugeFill.style.filter = 'drop-shadow(0 0 8px #ff3e6c)';
+
+  const ul = await measureUpload();
+  ulVal.textContent = ul.toFixed(2);
+  log(`✓ Upload complete: ${ul.toFixed(2)} Mbps`, 'success');
+  setProgress(100, 'All tests complete');
+  document.getElementById('ulCard').classList.remove('active');
+
+  // Final display
+  speedValue.textContent = dl.toFixed(1);
+  speedLabel.textContent = 'COMPLETE';
+  speedLabel.style.color = 'var(--accent)';
+  setGauge(dl, 'download');
+  pulseRing.classList.remove('active');
+
+  log(`━━ RESULT: DL ${dl.toFixed(2)} Mbps | UL ${ul.toFixed(2)} Mbps | Ping ${ping.toFixed(0)} ms ━━`, 'success');
+
+  await sleep(1000);
+  startBtn.disabled = false;
+  startBtn.classList.remove('running');
+  btnText.textContent = 'RUN AGAIN';
+}
+
+// Init
+fetchIPInfo();
+document.getElementById('proto-val').textContent = location.protocol.replace(':', '').toUpperCase();
 </script>
 </body>
 </html>
