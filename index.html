@@ -1,1170 +1,2481 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SpeakIt — Text to Speech</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-
+<title>PhotoCalc Pro — © Manik Roy 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  /* ── THEME TOKENS ── */
   :root {
-    --accent: #00e5a0;
-    --accent-dim: rgba(0,229,160,0.12);
-    --accent-glow: rgba(0,229,160,0.35);
-    --radius: 18px;
-    --radius-sm: 10px;
-    --transition: 0.28s cubic-bezier(.4,0,.2,1);
-    --font-display: 'Syne', sans-serif;
-    --font-mono: 'DM Mono', monospace;
-  }
-
-  [data-theme="dark"] {
-    --bg: #0e1117;
-    --surface: #161b26;
-    --surface2: #1e2636;
-    --border: rgba(255,255,255,0.07);
-    --text: #eef2ff;
-    --text-muted: #6c7a99;
-    --text-dim: #3a4460;
-    --shadow: 0 8px 40px rgba(0,0,0,0.5);
-    --glow-bg: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0,229,160,0.08) 0%, transparent 70%);
-  }
-
-  [data-theme="light"] {
-    --bg: #f4f6fb;
+    --bg: #f0ede8;
+    --bg2: #e8e4dd;
+    --bg3: #ddd9d0;
     --surface: #ffffff;
-    --surface2: #eef1f8;
-    --border: rgba(0,0,0,0.08);
-    --text: #0f1623;
-    --text-muted: #6b7699;
-    --text-dim: #bcc5de;
-    --shadow: 0 8px 40px rgba(30,50,100,0.1);
-    --glow-bg: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0,180,120,0.06) 0%, transparent 70%);
+    --surface2: #f5f2ed;
+    --border: #d0cac0;
+    --text: #1a1612;
+    --text2: #5a524a;
+    --text3: #8a7f74;
+    --accent: #c8521a;
+    --accent2: #e8761a;
+    --accent3: #f59c3a;
+    --green: #2e7d52;
+    --blue: #1a5c8a;
+    --purple: #6b2e8a;
+    --card-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+    --card-shadow-hover: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
+    --radius: 16px;
+    --radius-sm: 8px;
+    --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
   }
-
+  [data-theme="dark"] {
+    --bg: #111010;
+    --bg2: #1a1918;
+    --bg3: #222120;
+    --surface: #1e1d1c;
+    --surface2: #272524;
+    --border: #333130;
+    --text: #f0ede8;
+    --text2: #b0a89e;
+    --text3: #6a625a;
+    --accent: #e86c2a;
+    --accent2: #f08030;
+    --accent3: #f5a84a;
+    --card-shadow: 0 2px 12px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3);
+    --card-shadow-hover: 0 8px 32px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4);
+  }
   [data-theme="oled"] {
     --bg: #000000;
-    --surface: #0a0a0a;
-    --surface2: #111111;
-    --border: rgba(255,255,255,0.05);
+    --bg2: #000000;
+    --bg3: #0a0909;
+    --surface: #050504;
+    --surface2: #0d0c0b;
+    --border: #1a1918;
     --text: #ffffff;
-    --text-muted: #555e77;
-    --text-dim: #222;
-    --shadow: 0 8px 40px rgba(0,0,0,0.9);
-    --glow-bg: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0,229,160,0.06) 0%, transparent 70%);
-    --accent: #00ffb3;
-    --accent-dim: rgba(0,255,179,0.08);
-    --accent-glow: rgba(0,255,179,0.3);
+    --text2: #a09890;
+    --text3: #504840;
+    --accent: #ff7030;
+    --accent2: #ff9040;
+    --accent3: #ffb050;
+    --card-shadow: 0 2px 12px rgba(255,112,48,0.08), 0 1px 3px rgba(0,0,0,0.8);
+    --card-shadow-hover: 0 8px 32px rgba(255,112,48,0.15), 0 2px 8px rgba(0,0,0,0.9);
   }
 
-  /* ── RESET ── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html { font-size: 16px; scroll-behavior: smooth; }
-
+  
+  html { scroll-behavior: smooth; }
+  
   body {
-    font-family: var(--font-display);
+    font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     color: var(--text);
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transition: background var(--transition), color var(--transition);
+    min-height: 100vh;
+    transition: var(--transition);
     overflow-x: hidden;
   }
 
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: var(--glow-bg);
-    pointer-events: none;
-    z-index: 0;
-    transition: background var(--transition);
-  }
-
-  /* ── LAYOUT ── */
-  .app-wrapper {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 680px;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    padding: 0 16px;
-  }
-
-  /* ── HEADER ── */
+  /* HEADER */
   header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 22px 0 16px;
-    flex-shrink: 0;
+    height: 60px;
+    backdrop-filter: blur(20px);
+    box-shadow: var(--card-shadow);
   }
-
   .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .logo-icon {
-    width: 38px;
-    height: 38px;
-    background: var(--accent-dim);
-    border: 1.5px solid var(--accent);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    box-shadow: 0 0 16px var(--accent-glow);
-    flex-shrink: 0;
-  }
-
-  .logo-text {
-    font-size: 1.35rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.05em;
+    color: var(--accent);
     line-height: 1;
   }
-
-  .logo-text span {
-    color: var(--accent);
-  }
-
-  /* ── THEME TOGGLE ── */
-  .theme-group {
+  .logo span { color: var(--text); }
+  
+  .theme-controls {
     display: flex;
-    gap: 5px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 30px;
-    padding: 4px;
+    gap: 6px;
+    align-items: center;
   }
-
   .theme-btn {
-    border: none;
-    border-radius: 22px;
-    padding: 6px 12px;
-    font-size: 0.7rem;
-    font-family: var(--font-mono);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition);
+    background: var(--surface2);
+    color: var(--text);
+  }
+  .theme-btn:hover { border-color: var(--accent); transform: scale(1.1); }
+  .theme-btn.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 4px;
+    padding: 12px 16px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: 100px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text2);
+    font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    background: transparent;
-    color: var(--text-muted);
-    transition: all var(--transition);
+    transition: var(--transition);
     white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
+    display: flex; align-items: center; gap: 5px;
   }
-
-  .theme-btn.active {
+  .nav-tab:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-tab.active {
     background: var(--accent);
-    color: #000;
-    box-shadow: 0 0 12px var(--accent-glow);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(200,82,26,0.3);
   }
 
-  .theme-btn:not(.active):hover {
+  /* MAIN */
+  main { padding: 16px; max-width: 900px; margin: 0 auto; }
+
+  .section { display: none; }
+  .section.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
     color: var(--text);
-    background: var(--surface2);
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-sub { color: var(--text3); font-size: 0.85rem; margin-bottom: 20px; }
+
+  /* GRID */
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  @media (min-width: 600px) {
+    .calc-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (min-width: 800px) {
+    .calc-grid { grid-template-columns: 1fr 1fr 1fr; }
   }
 
-  /* ── MAIN CONTENT ── */
-  main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding-bottom: 16px;
-  }
-
-  /* ── CARD ── */
+  /* CARD */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 20px;
-    box-shadow: var(--shadow);
-    transition: background var(--transition), border-color var(--transition);
+    padding: 16px;
+    box-shadow: var(--card-shadow);
+    transition: var(--transition);
   }
-
-  .card-label {
-    font-size: 0.68rem;
-    font-family: var(--font-mono);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
+  .card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-1px); }
+  .card-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text);
     margin-bottom: 12px;
+    display: flex; align-items: center; gap: 6px;
   }
-
-  /* ── TEXTAREA ── */
-  .textarea-wrap {
-    position: relative;
+  .card-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
   }
+  .ci-orange { background: rgba(200,82,26,0.12); }
+  .ci-green { background: rgba(46,125,82,0.12); }
+  .ci-blue { background: rgba(26,92,138,0.12); }
+  .ci-purple { background: rgba(107,46,138,0.12); }
+  .ci-gold { background: rgba(200,150,26,0.12); }
 
-  textarea {
-    width: 100%;
-    min-height: 180px;
-    resize: vertical;
-    background: var(--surface2);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 0.95rem;
-    line-height: 1.7;
-    padding: 14px 16px;
-    outline: none;
-    transition: border-color var(--transition), box-shadow var(--transition);
-    -webkit-appearance: none;
-  }
-
-  textarea::placeholder { color: var(--text-dim); }
-
-  textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-dim);
-  }
-
-  .char-count {
-    position: absolute;
-    bottom: 10px;
-    right: 12px;
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    color: var(--text-dim);
-    pointer-events: none;
-    transition: color var(--transition);
-  }
-
-  .char-count.warn { color: #f97316; }
-
-  /* ── VISUALIZER ── */
-  .visualizer-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    height: 52px;
-    border-radius: var(--radius-sm);
-    background: var(--surface2);
-    padding: 0 16px;
-    overflow: hidden;
-  }
-
-  .bar {
-    width: 3px;
-    border-radius: 2px;
-    background: var(--accent);
-    height: 6px;
-    transition: height 0.12s ease;
-    opacity: 0.7;
-  }
-
-  @keyframes wave {
-    0%, 100% { height: 6px; }
-    50% { height: var(--peak, 24px); }
-  }
-
-  .bar.speaking {
-    animation: wave 0.6s ease-in-out infinite;
-    opacity: 1;
-  }
-
-  /* ── CONTROLS GRID ── */
-  .controls-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .control-item {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .control-item label {
-    font-size: 0.68rem;
-    font-family: var(--font-mono);
-    letter-spacing: 0.1em;
+  /* INPUTS */
+  .form-group { margin-bottom: 10px; }
+  label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text3);
+    margin-bottom: 4px;
+    font-weight: 500;
     text-transform: uppercase;
-    color: var(--text-muted);
-    display: flex;
-    justify-content: space-between;
+    letter-spacing: 0.05em;
   }
-
-  .control-item label span {
-    color: var(--accent);
-    font-weight: 500;
-  }
-
-  input[type="range"] {
-    -webkit-appearance: none;
+  input[type="number"], input[type="text"], select {
     width: 100%;
-    height: 4px;
-    border-radius: 4px;
-    background: var(--surface2);
-    outline: none;
-    cursor: pointer;
-  }
-
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent-glow);
-    cursor: pointer;
-    transition: transform 0.15s;
-  }
-
-  input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.3); }
-  input[type="range"]::-moz-range-thumb {
-    width: 18px; height: 18px; border-radius: 50%;
-    background: var(--accent); border: none;
-    box-shadow: 0 0 8px var(--accent-glow); cursor: pointer;
-  }
-
-  /* ── VOICE SELECT ── */
-  .voice-select-wrap {
-    position: relative;
-  }
-
-  select {
-    width: 100%;
-    background: var(--surface2);
+    padding: 9px 12px;
     border: 1.5px solid var(--border);
     border-radius: var(--radius-sm);
+    background: var(--bg2);
     color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    padding: 10px 36px 10px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    transition: var(--transition);
     outline: none;
-    cursor: pointer;
-    -webkit-appearance: none;
     appearance: none;
-    transition: border-color var(--transition);
   }
+  input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,82,26,0.12); }
+  
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
-  select:focus { border-color: var(--accent); }
-
-  .select-arrow {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-    color: var(--text-muted);
-    font-size: 0.8rem;
-  }
-
-  /* ── ACTION BUTTONS ── */
-  .action-row {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
+  /* BUTTON */
   .btn {
-    flex: 1;
-    min-width: 0;
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
     border: none;
-    border-radius: var(--radius-sm);
-    padding: 14px 16px;
-    font-family: var(--font-display);
-    font-size: 0.88rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    transition: all var(--transition);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .btn-primary {
     background: var(--accent);
-    color: #000;
-    box-shadow: 0 4px 20px var(--accent-glow);
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 28px var(--accent-glow);
-  }
-
-  .btn-primary:active:not(:disabled) { transform: scale(0.97); }
-
-  .btn-secondary {
-    background: var(--surface2);
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
-
-  .btn-secondary:hover:not(:disabled) {
-    background: var(--border);
-    border-color: var(--text-dim);
-  }
-
-  .btn-secondary:active:not(:disabled) { transform: scale(0.97); }
-
-  .btn:disabled {
-    opacity: 0.38;
-    cursor: not-allowed;
-  }
-
-  .btn-icon { font-size: 1.1em; line-height: 1; }
-
-  /* ── STATUS BAR ── */
-  .status-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    background: var(--surface2);
-    border-radius: var(--radius-sm);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    min-height: 40px;
-    transition: all var(--transition);
-  }
-
-  .status-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--text-dim);
-    flex-shrink: 0;
-    transition: background var(--transition);
-  }
-
-  .status-dot.speaking {
-    background: var(--accent);
-    animation: pulse 1s ease infinite;
-  }
-
-  .status-dot.paused { background: #f97316; }
-  .status-dot.error { background: #ef4444; }
-
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
-    50% { box-shadow: 0 0 0 5px transparent; }
-  }
-
-  /* ── NO SUPPORT ── */
-  .no-support {
-    background: rgba(239,68,68,0.1);
-    border: 1px solid rgba(239,68,68,0.3);
-    border-radius: var(--radius-sm);
-    padding: 14px;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
     font-size: 0.85rem;
-    color: #ef4444;
-    text-align: center;
-    display: none;
-  }
-
-  /* ── PROGRESS BAR ── */
-  .progress-wrap {
-    height: 3px;
-    background: var(--surface2);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    width: 0%;
-    background: var(--accent);
-    border-radius: 3px;
-    transition: width 0.3s ease;
-    box-shadow: 0 0 8px var(--accent-glow);
-  }
-
-  /* ── FOOTER ── */
-  footer {
-    flex-shrink: 0;
-    text-align: center;
-    padding: 20px 0 24px;
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    letter-spacing: 0.05em;
-    line-height: 1.8;
-  }
-
-  footer strong {
-    color: var(--text-muted);
-    font-weight: 500;
-  }
-
-  .footer-accent {
-    display: inline-block;
-    color: var(--accent);
-    margin: 0 1px;
-  }
-
-  /* ── SAVE AUDIO ── */
-  .btn-save {
-    background: linear-gradient(135deg, var(--accent-dim), transparent);
-    color: var(--accent);
-    border: 1.5px solid var(--accent);
-  }
-
-  .btn-save:hover:not(:disabled) {
-    background: var(--accent);
-    color: #000;
-    box-shadow: 0 4px 20px var(--accent-glow);
-    transform: translateY(-1px);
-  }
-
-  .btn-save:active:not(:disabled) { transform: scale(0.97); }
-
-  .btn-save.recording {
-    background: rgba(239,68,68,0.12);
-    border-color: #ef4444;
-    color: #ef4444;
-    animation: rec-pulse 1.2s ease infinite;
-  }
-
-  @keyframes rec-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
-    50% { box-shadow: 0 0 0 6px transparent; }
-  }
-
-  /* ── DOWNLOAD HISTORY ── */
-  .recordings-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 220px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-
-  .recording-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 10px 12px;
-    transition: border-color var(--transition);
-  }
-
-  .recording-item:hover { border-color: var(--accent); }
-
-  .rec-icon {
-    font-size: 1.2rem;
-    flex-shrink: 0;
-  }
-
-  .rec-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .rec-name {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .rec-meta {
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-
-  .rec-actions {
-    display: flex;
-    gap: 6px;
-    flex-shrink: 0;
-  }
-
-  .rec-btn {
-    border: none;
-    border-radius: 6px;
-    padding: 5px 10px;
-    font-size: 0.7rem;
-    font-family: var(--font-mono);
     cursor: pointer;
-    transition: all var(--transition);
-    background: var(--surface);
-    color: var(--text-muted);
-    border: 1px solid var(--border);
+    transition: var(--transition);
+    margin-top: 8px;
+    letter-spacing: 0.02em;
   }
-
-  .rec-btn:hover { color: var(--text); background: var(--border); }
-  .rec-btn.dl { color: var(--accent); border-color: var(--accent); }
-  .rec-btn.dl:hover { background: var(--accent); color: #000; }
-  .rec-btn.del:hover { color: #ef4444; border-color: #ef4444; }
-
-  .empty-recordings {
-    text-align: center;
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    padding: 20px;
+  .btn:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(200,82,26,0.3); }
+  .btn:active { transform: translateY(0); }
+  .btn-sm { padding: 7px 12px; font-size: 0.8rem; margin-top: 6px; }
+  .btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
   }
+  .btn-outline:hover { background: var(--accent); color: #fff; }
 
-  /* ── AUDIO NOTICE ── */
-  .audio-notice {
-    background: rgba(249,115,22,0.08);
-    border: 1px solid rgba(249,115,22,0.25);
+  /* RESULT */
+  .result {
+    margin-top: 10px;
+    padding: 10px 12px;
     border-radius: var(--radius-sm);
-    padding: 10px 14px;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    color: #f97316;
-    line-height: 1.5;
-    display: none;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text);
+    min-height: 36px;
+    transition: var(--transition);
+    word-break: break-word;
   }
-
-  /* ── WORD HIGHLIGHT ── */
-  .highlight-word {
+  .result.highlight {
+    background: rgba(200,82,26,0.08);
+    border-color: var(--accent);
     color: var(--accent);
     font-weight: 600;
   }
-
-  /* ── RESPONSIVE ── */
-  @media (min-width: 480px) {
-    header { padding-top: 32px; }
-    .card { padding: 24px; }
-    .logo-text { font-size: 1.5rem; }
-    textarea { min-height: 200px; }
+  .result-big {
+    font-size: 1.4rem;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    text-align: center;
+    padding: 16px;
   }
 
-  @media (max-width: 360px) {
-    .theme-btn { padding: 5px 8px; font-size: 0.62rem; }
-    .logo-text { font-size: 1.15rem; }
+  /* TAG */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: auto;
   }
+  .tag-orange { background: rgba(200,82,26,0.12); color: var(--accent); }
+  .tag-green { background: rgba(46,125,82,0.12); color: var(--green); }
+  .tag-blue { background: rgba(26,92,138,0.12); color: var(--blue); }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* CHEAT SHEET */
+  .cheat-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .cheat-table th {
+    background: var(--bg3);
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .cheat-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    color: var(--text);
+  }
+  .cheat-table tr:last-child td { border-bottom: none; }
+  .cheat-table tr:hover td { background: var(--surface2); }
+
+  /* RANGE */
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    height: 4px;
+    cursor: pointer;
+    padding: 0;
+    border: none;
+    background: transparent;
+  }
+  .range-val {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 24px 16px;
+    color: var(--text3);
+    font-size: 0.78rem;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  footer strong { color: var(--accent); }
+  
+  /* HERO CARD */
+  .hero-card {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent3) 100%);
+    border-radius: var(--radius);
+    padding: 24px;
+    color: #fff;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::before {
+    content: '';
+    position: absolute;
+    right: -20px; top: -20px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+  }
+  .hero-card::after {
+    content: '';
+    position: absolute;
+    right: 30px; bottom: -30px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .hero-card h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.04em;
+  }
+  .hero-card p { font-size: 0.85rem; opacity: 0.9; margin-top: 4px; }
+  .hero-stats {
+    display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap;
+  }
+  .hero-stat {
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 8px 14px;
+    text-align: center;
+    backdrop-filter: blur(4px);
+  }
+  .hero-stat .num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; line-height: 1; }
+  .hero-stat .lbl { font-size: 0.7rem; opacity: 0.85; margin-top: 2px; }
+
+  /* EV DISPLAY */
+  .ev-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .ev-cell {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 4px;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text2);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .ev-cell:hover { border-color: var(--accent); color: var(--accent); background: rgba(200,82,26,0.06); }
+  .ev-cell.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* HISTOGRAM BAR */
+  .histo-bar {
+    display: flex; align-items: flex-end; gap: 2px; height: 60px;
+    background: var(--bg3); border-radius: 8px; padding: 6px;
+    border: 1px solid var(--border);
+    margin-top: 8px;
+  }
+  .h-bar {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    min-height: 2px;
+    transition: height 0.4s ease;
+  }
+
+  /* SCROLL to top */
+  .scroll-hint { text-align: center; color: var(--text3); font-size: 0.78rem; padding: 8px; }
+
+  /* BADGE */
+  .badge-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .badge {
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border: 1px solid;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .info-box {
+    background: var(--bg3);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    color: var(--text2);
+    margin-top: 8px;
+  }
+  .info-box strong { color: var(--text); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 500px) { .two-col { grid-template-columns: 1fr; } }
+
+  select option { background: var(--surface); color: var(--text); }
+
+  .full-span { grid-column: 1 / -1; }
 </style>
 </head>
-<body>
+<body data-theme="light">
 
-<div class="app-wrapper">
+<header>
+  <div class="logo">Photo<span>Calc</span> Pro</div>
+  <div class="theme-controls">
+    <button class="theme-btn active" id="btn-light" onclick="setTheme('light')" title="Light Mode">☀️</button>
+    <button class="theme-btn" id="btn-dark" onclick="setTheme('dark')" title="Dark Mode">🌙</button>
+    <button class="theme-btn" id="btn-oled" onclick="setTheme('oled')" title="OLED True Black">⬛</button>
+  </div>
+</header>
 
-  <!-- HEADER -->
-  <header>
-    <div class="logo">
-      <div class="logo-icon">🔊</div>
-      <div class="logo-text">Speak<span>It</span></div>
+<nav class="nav-tabs" id="navTabs">
+  <button class="nav-tab active" onclick="showSection('home',this)">🏠 Home</button>
+  <button class="nav-tab" onclick="showSection('product',this)">📦 Product</button>
+  <button class="nav-tab" onclick="showSection('portrait',this)">🧑 Portrait</button>
+  <button class="nav-tab" onclick="showSection('landscape',this)">🏔 Landscape</button>
+  <button class="nav-tab" onclick="showSection('exposure',this)">📸 Exposure</button>
+  <button class="nav-tab" onclick="showSection('lens',this)">🔭 Lens</button>
+  <button class="nav-tab" onclick="showSection('lighting',this)">💡 Lighting</button>
+  <button class="nav-tab" onclick="showSection('print',this)">🖨 Print</button>
+  <button class="nav-tab" onclick="showSection('other',this)">⚙️ Tools</button>
+</nav>
+
+<main>
+
+<!-- ===== HOME ===== -->
+<section class="section active" id="home">
+  <div class="hero-card">
+    <h2>📷 Photography Calculator Pro</h2>
+    <p>60 professional tools for every photography discipline</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num">60</div><div class="lbl">Features</div></div>
+      <div class="hero-stat"><div class="num">8</div><div class="lbl">Categories</div></div>
+      <div class="hero-stat"><div class="num">∞</div><div class="lbl">Shots</div></div>
     </div>
-    <div class="theme-group" role="group" aria-label="Theme selector">
-      <button class="theme-btn" data-theme="light" onclick="setTheme('light')" aria-label="Light theme">☀ Light</button>
-      <button class="theme-btn active" data-theme="dark" onclick="setTheme('dark')" aria-label="Dark theme">🌙 Dark</button>
-      <button class="theme-btn" data-theme="oled" onclick="setTheme('oled')" aria-label="OLED True Black">⬛ OLED</button>
-    </div>
-  </header>
+  </div>
 
-  <!-- MAIN -->
-  <main>
-
-    <!-- NO SUPPORT WARNING -->
-    <div class="no-support" id="noSupport">
-      ⚠️ Your browser does not support the Web Speech API. Please try Chrome, Edge, or Safari.
-    </div>
-
-    <!-- TEXT INPUT CARD -->
+  <div class="calc-grid">
     <div class="card">
-      <div class="card-label">// Input Text</div>
-      <div class="textarea-wrap">
-        <textarea
-          id="textInput"
-          placeholder="Type or paste your text here…"
-          aria-label="Text to speak"
-          maxlength="5000"
-        ></textarea>
-        <div class="char-count" id="charCount">0 / 5000</div>
+      <div class="card-title"><span class="card-icon ci-orange">⚡</span>Quick EV Calculator</div>
+      <div class="form-group">
+        <label>Aperture (f/)</label>
+        <select id="qAperture">
+          <option>1.4</option><option>1.8</option><option>2</option><option>2.8</option>
+          <option selected>4</option><option>5.6</option><option>8</option><option>11</option><option>16</option>
+        </select>
       </div>
+      <div class="form-group">
+        <label>Shutter (s)</label>
+        <select id="qShutter">
+          <option value="0.001">1/1000</option><option value="0.002">1/500</option>
+          <option value="0.004">1/250</option><option value="0.008">1/125</option>
+          <option value="0.016">1/60</option><option selected value="0.033">1/30</option>
+          <option value="0.066">1/15</option><option value="0.125">1/8</option>
+          <option value="0.25">1/4</option><option value="0.5">1/2</option><option value="1">1s</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ISO</label>
+        <select id="qISO">
+          <option>100</option><option>200</option><option selected>400</option>
+          <option>800</option><option>1600</option><option>3200</option><option>6400</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcEV()">Calculate EV</button>
+      <div class="result" id="evResult">Press Calculate</div>
     </div>
 
-    <!-- VISUALIZER CARD -->
-    <div class="card" style="padding: 16px 20px;">
-      <div class="card-label" style="margin-bottom: 10px;">// Waveform</div>
-      <div class="visualizer-wrap" id="visualizer" aria-hidden="true"></div>
-      <div class="progress-wrap" style="margin-top: 10px;">
-        <div class="progress-fill" id="progressFill"></div>
-      </div>
-    </div>
-
-    <!-- VOICE & CONTROLS CARD -->
     <div class="card">
-      <div class="card-label">// Voice Settings</div>
-
-      <div style="margin-bottom: 16px;">
-        <div class="card-label" style="margin-bottom: 8px;">Voice</div>
-        <div class="voice-select-wrap">
-          <select id="voiceSelect" aria-label="Select voice">
-            <option value="">Loading voices…</option>
-          </select>
-          <div class="select-arrow">▾</div>
-        </div>
+      <div class="card-title"><span class="card-icon ci-blue">🌅</span>Golden Hour Finder</div>
+      <div class="form-group">
+        <label>Sunrise (HH:MM)</label>
+        <input type="text" id="sunrise" value="06:15" placeholder="06:15">
       </div>
-
-      <div class="controls-grid">
-        <div class="control-item">
-          <label>Rate <span id="rateVal">1.0×</span></label>
-          <input type="range" id="rateRange" min="0.5" max="2" step="0.1" value="1" aria-label="Speech rate">
-        </div>
-        <div class="control-item">
-          <label>Pitch <span id="pitchVal">1.0</span></label>
-          <input type="range" id="pitchRange" min="0" max="2" step="0.1" value="1" aria-label="Speech pitch">
-        </div>
-        <div class="control-item" style="grid-column: span 2;">
-          <label>Volume <span id="volVal">100%</span></label>
-          <input type="range" id="volRange" min="0" max="1" step="0.05" value="1" aria-label="Speech volume">
-        </div>
+      <div class="form-group">
+        <label>Sunset (HH:MM)</label>
+        <input type="text" id="sunset" value="18:45" placeholder="18:45">
       </div>
+      <button class="btn" onclick="calcGoldenHour()">Find Golden Hours</button>
+      <div class="result" id="goldenResult">Enter times above</div>
     </div>
 
-    <!-- ACTION BUTTONS CARD -->
     <div class="card">
-      <div class="action-row">
-        <button class="btn btn-primary" id="speakBtn" onclick="speakText()" aria-label="Start speaking">
-          <span class="btn-icon">▶</span> Speak
-        </button>
-        <button class="btn btn-secondary" id="pauseBtn" onclick="togglePause()" disabled aria-label="Pause or resume">
-          <span class="btn-icon">⏸</span> Pause
-        </button>
-        <button class="btn btn-secondary" id="stopBtn" onclick="stopSpeech()" disabled aria-label="Stop speaking">
-          <span class="btn-icon">■</span> Stop
-        </button>
+      <div class="card-title"><span class="card-icon ci-green">🔢</span>Histogram Simulator</div>
+      <div class="form-group">
+        <label>Exposure Bias: <span id="biasVal" class="range-val">0 EV</span></label>
+        <input type="range" min="-3" max="3" step="0.5" value="0" id="biasSl" oninput="updateHisto(this.value)">
       </div>
-      <div style="margin-top: 10px; display: flex; gap: 10px;">
-        <button class="btn btn-save" id="saveBtn" onclick="saveAsAudio()" aria-label="Render and save speech as WAV file" style="flex: 1;">
-          <span class="btn-icon">⏺</span> <span id="saveBtnText">Save as MP3</span>
-        </button>
-        <button class="btn btn-secondary" onclick="clearText()" aria-label="Clear text" style="flex: 1;">
-          <span class="btn-icon">🗑</span> Clear Text
-        </button>
+      <div class="histo-bar" id="histoBar"></div>
+      <div class="result" id="histoResult">Balanced exposure</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-purple">📐</span>Crop Factor Calculator</div>
+      <div class="form-group">
+        <label>Sensor Type</label>
+        <select id="sensorType" onchange="updateCrop()">
+          <option value="1">Full Frame (1×)</option>
+          <option value="1.5">APS-C Nikon (1.5×)</option>
+          <option value="1.6" selected>APS-C Canon (1.6×)</option>
+          <option value="2">Micro 4/3 (2×)</option>
+          <option value="2.7">1-inch (2.7×)</option>
+          <option value="5.64">1/2.3" (5.64×)</option>
+        </select>
       </div>
-      <div class="audio-notice" id="audioNotice"></div>
-    </div>
-
-    <!-- RECORDINGS CARD -->
-    <div class="card" id="recordingsCard" style="display:none;">
-      <div class="card-label" style="margin-bottom: 12px;">// Saved Recordings</div>
-      <div class="recordings-list" id="recordingsList">
-        <div class="empty-recordings">No recordings yet — record a speech to save it.</div>
+      <div class="form-group">
+        <label>Native Focal Length (mm)</label>
+        <input type="number" id="nativeFocal" value="50" oninput="updateCrop()">
       </div>
+      <div class="result" id="cropResult">80mm full-frame equivalent</div>
     </div>
 
-    <!-- STATUS -->
-    <div class="status-bar" id="statusBar" role="status" aria-live="polite">
-      <div class="status-dot" id="statusDot"></div>
-      <span id="statusText">Ready — enter text and press Speak</span>
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">📊</span>Storage Estimator</div>
+      <div class="form-group">
+        <label>Format</label>
+        <select id="fileFormat">
+          <option value="25">RAW (25 MB avg)</option>
+          <option value="50">RAW Large (50 MB)</option>
+          <option value="8">JPEG Fine (8 MB)</option>
+          <option value="3">JPEG Medium (3 MB)</option>
+          <option value="35">RAW+JPEG (35 MB)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Number of Photos</label>
+        <input type="number" id="numPhotos" value="500">
+      </div>
+      <button class="btn" onclick="calcStorage()">Calculate</button>
+      <div class="result" id="storageResult">—</div>
     </div>
 
-  </main>
-
-  <!-- FOOTER -->
-  <footer>
-    <div>
-      <span class="footer-accent">©</span>
-      <strong> Manik Roy </strong>
-      <span id="footerYear"></span>
-      <span class="footer-accent">·</span>
-      All Rights Reserved
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">🔋</span>Battery Life Estimator</div>
+      <div class="form-group">
+        <label>Shots per charge (CIPA)</label>
+        <input type="number" id="cipaBattery" value="500">
+      </div>
+      <div class="form-group">
+        <label>Planned shots</label>
+        <input type="number" id="plannedShots" value="800">
+      </div>
+      <button class="btn" onclick="calcBattery()">Estimate</button>
+      <div class="result" id="batteryResult">—</div>
     </div>
-    <div style="margin-top: 4px; opacity: 0.5; font-size: 0.62rem;">
-      Powered by Web Speech API
-    </div>
-  </footer>
+  </div>
+</section>
 
-</div>
+<!-- ===== PRODUCT PHOTOGRAPHY ===== -->
+<section class="section" id="product">
+  <div class="section-title">📦 Product Photography</div>
+  <div class="section-sub">12 professional tools for commercial & e-commerce shoots</div>
+
+  <div class="calc-grid">
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">📏</span>Subject-to-Background Distance</div>
+      <div class="form-group">
+        <label>Subject size (cm)</label>
+        <input type="number" id="subjectSize" value="20">
+      </div>
+      <div class="form-group">
+        <label>Desired BG blur (Bokeh level)</label>
+        <select id="bokeLevel">
+          <option value="3">Subtle</option><option value="5" selected>Medium</option><option value="8">Strong</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcBGDist()">Calculate</button>
+      <div class="result" id="bgDistResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">💡</span>Light Ratio Calculator</div>
+      <div class="form-group">
+        <label>Key Light (f-stop)</label>
+        <input type="number" id="keyLight" value="8" step="0.5">
+      </div>
+      <div class="form-group">
+        <label>Fill Light (f-stop)</label>
+        <input type="number" id="fillLight" value="5.6" step="0.5">
+      </div>
+      <button class="btn" onclick="calcLightRatio()">Get Ratio</button>
+      <div class="result" id="lightRatioResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-green">🎯</span>Macro Magnification</div>
+      <div class="form-group">
+        <label>Focal Length (mm)</label>
+        <input type="number" id="macroFL" value="100">
+      </div>
+      <div class="form-group">
+        <label>Subject Distance (cm)</label>
+        <input type="number" id="macroDist" value="25">
+      </div>
+      <button class="btn" onclick="calcMacro()">Calculate</button>
+      <div class="result" id="macroResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-purple">🖼</span>Image Size / Resolution</div>
+      <div class="form-group">
+        <label>Megapixels</label>
+        <input type="number" id="megapixels" value="24">
+      </div>
+      <div class="form-group">
+        <label>Aspect Ratio</label>
+        <select id="aspectRatio">
+          <option value="1.5">3:2</option><option value="1.333">4:3</option>
+          <option value="1">1:1</option><option value="1.778">16:9</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcResolution()">Calculate</button>
+      <div class="result" id="resolutionResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">📦</span>Product Shoot Checklist Score</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:0.82rem;" id="checklistItems">
+        <label style="text-transform:none;letter-spacing:0;color:var(--text);display:flex;gap:6px;align-items:center;cursor:pointer;">
+          <input type="checkbox" onchange="updateChecklist()"> White background
+        </label>
+        <label style="text-transform:none;letter-spacing:0;color:var(--text);display:flex;gap:6px;align-items:center;cursor:pointer;">
+          <input type="checkbox" onchange="updateChecklist()"> Color checker card
+        </label>
+        <label style="text-transform:none;letter-spacing:0;color:var(--text);display:flex;gap:6px;align-items:center;cursor:pointer;">
+          <input type="checkbox" onchange="updateChecklist()"> Tripod used
+        </label>
+        <label style="text-transform:none;letter-spacing:0;color:var(--text);display:flex;gap:6px;align-items:center;cursor:pointer;">
+          <input type="checkbox" onchange="updateChecklist()"> Diffused lighting
+        </label>
+        <label style="text-transform:none;letter-spacing:0;color:var(--text);display:flex;gap:6px;align-items:center;cursor:pointer;">
+          <input type="checkbox" onchange="updateChecklist()"> Product cleaned
+        </label>
+        <label style="text-transform:none;letter-spacing:0;color:var(--text);display:flex;gap:6px;align-items:center;cursor:pointer;">
+          <input type="checkbox" onchange="updateChecklist()"> Multiple angles planned
+        </label>
+      </div>
+      <div class="result" id="checklistResult">0/6 — Setup incomplete</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">🔢</span>White Balance Kelvin Guide</div>
+      <div class="form-group">
+        <label>Light Source</label>
+        <select id="wbSource" onchange="calcWB()">
+          <option value="1800">Candle (1800K)</option>
+          <option value="2700">Tungsten (2700K)</option>
+          <option value="3200">Studio Tungsten (3200K)</option>
+          <option value="4000">Fluorescent (4000K)</option>
+          <option value="5200" selected>Daylight (5200K)</option>
+          <option value="5600">Flash (5600K)</option>
+          <option value="6500">Cloudy (6500K)</option>
+          <option value="8000">Shade (8000K)</option>
+        </select>
+      </div>
+      <div class="result" id="wbResult">5200K — Daylight balance</div>
+      <div class="info-box">Manual WB setting recommended for product consistency.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">📐</span>Tilt-Shift Focus Plane</div>
+      <div class="form-group">
+        <label>Tilt Angle (°)</label>
+        <input type="number" id="tiltAngle" value="5" min="0" max="8" step="0.5">
+      </div>
+      <div class="form-group">
+        <label>Focal Length (mm)</label>
+        <input type="number" id="tiltFL" value="90">
+      </div>
+      <button class="btn" onclick="calcTilt()">Calculate</button>
+      <div class="result" id="tiltResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-green">💰</span>Product Shoot Cost Estimator</div>
+      <div class="form-group">
+        <label>Hourly Rate (₹/$)</label>
+        <input type="number" id="hourRate" value="5000">
+      </div>
+      <div class="form-group">
+        <label>Shoot Duration (hours)</label>
+        <input type="number" id="shootHours" value="4">
+      </div>
+      <div class="form-group">
+        <label>Number of Products</label>
+        <input type="number" id="numProducts" value="20">
+      </div>
+      <button class="btn" onclick="calcShootCost()">Calculate</button>
+      <div class="result" id="shootCostResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-purple">🎨</span>Color Temperature Shift</div>
+      <div class="form-group">
+        <label>Source Kelvin</label>
+        <input type="number" id="srcK" value="5600">
+      </div>
+      <div class="form-group">
+        <label>Target Kelvin</label>
+        <input type="number" id="tgtK" value="5200">
+      </div>
+      <button class="btn" onclick="calcColorShift()">Calculate</button>
+      <div class="result" id="colorShiftResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">📸</span>Reflection Control Guide</div>
+      <div class="form-group">
+        <label>Surface Type</label>
+        <select id="surfaceType" onchange="reflectionGuide()">
+          <option value="glass">Glass / Crystal</option>
+          <option value="metal">Polished Metal</option>
+          <option value="matte" selected>Matte Product</option>
+          <option value="liquid">Liquid / Beverage</option>
+        </select>
+      </div>
+      <div class="result" id="reflectionResult">Select surface type</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">🔄</span>360° Product Rotation</div>
+      <div class="form-group">
+        <label>Total Frames for 360°</label>
+        <input type="number" id="frames360" value="36">
+      </div>
+      <div class="result" id="rot360Result">Every 10° — 36 frames</div>
+      <button class="btn" onclick="calc360()">Calculate Interval</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">🧮</span>Focus Stack Calculator</div>
+      <div class="form-group">
+        <label>Depth of Field (mm)</label>
+        <input type="number" id="focusDOF" value="2" step="0.5">
+      </div>
+      <div class="form-group">
+        <label>Total Subject Depth (mm)</label>
+        <input type="number" id="subjectDepth" value="30">
+      </div>
+      <button class="btn" onclick="calcFocusStack()">Calculate</button>
+      <div class="result" id="focusStackResult">—</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PORTRAIT PHOTOGRAPHY ===== -->
+<section class="section" id="portrait">
+  <div class="section-title">🧑 Portrait Photography</div>
+  <div class="section-sub">12 tools for professional portrait sessions</div>
+
+  <div class="calc-grid">
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">👁</span>Portrait Focal Length Guide</div>
+      <div class="form-group">
+        <label>Sensor Format</label>
+        <select id="pfSensor" onchange="portraitFL()">
+          <option value="1">Full Frame</option>
+          <option value="1.5">APS-C</option>
+          <option value="2">Micro 4/3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Portrait Type</label>
+        <select id="pfType" onchange="portraitFL()">
+          <option value="85">Head & Shoulders (85mm)</option>
+          <option value="100">3/4 Body (100mm)</option>
+          <option value="135">Environmental (135mm)</option>
+          <option value="50">Group (50mm)</option>
+        </select>
+      </div>
+      <div class="result" id="portraitFLResult">85mm equivalent on FF</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-green">✨</span>Catchlight Position</div>
+      <div class="form-group">
+        <label>Light Position</label>
+        <select id="catchPos" onchange="calcCatchlight()">
+          <option value="1o">1 O'Clock (Rembrandt)</option>
+          <option value="12o">12 O'Clock (Butterfly)</option>
+          <option value="10o" selected>10 O'Clock (Clamshell)</option>
+          <option value="side">Side (Split)</option>
+        </select>
+      </div>
+      <div class="result" id="catchResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">📏</span>Working Distance Calculator</div>
+      <div class="form-group">
+        <label>Focal Length (mm)</label>
+        <input type="number" id="workFL" value="85">
+      </div>
+      <div class="form-group">
+        <label>Subject Frame Width (cm)</label>
+        <input type="number" id="frameWidth" value="60">
+      </div>
+      <div class="form-group">
+        <label>Sensor Width (mm)</label>
+        <select id="sensorW">
+          <option value="36" selected>FF 36mm</option>
+          <option value="24">APS-C 24mm</option>
+          <option value="17.3">MFT 17.3mm</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcWorkDist()">Calculate</button>
+      <div class="result" id="workDistResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-purple">🎭</span>Rembrandt Lighting Angle</div>
+      <div class="form-group">
+        <label>Face angle (°) to camera</label>
+        <input type="number" id="faceAngle" value="45" min="0" max="90">
+      </div>
+      <button class="btn" onclick="calcRembrandt()">Analyze</button>
+      <div class="result" id="rembrandtResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">💡</span>3-Point Lighting Setup</div>
+      <div class="form-group">
+        <label>Key Light Power (Ws)</label>
+        <input type="number" id="keyWs" value="500">
+      </div>
+      <button class="btn" onclick="calc3Point()">Calculate Setup</button>
+      <div class="result" id="threePointResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">🎨</span>Skin Tone Exposure Guide</div>
+      <div class="form-group">
+        <label>Skin Tone</label>
+        <select id="skinTone" onchange="skinToneGuide()">
+          <option value="fair">Fair / Pale</option>
+          <option value="medium" selected>Medium</option>
+          <option value="olive">Olive</option>
+          <option value="dark">Dark</option>
+          <option value="deep">Deep / Very Dark</option>
+        </select>
+      </div>
+      <div class="result" id="skinToneResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">👥</span>Group Portrait Calculator</div>
+      <div class="form-group">
+        <label>Number of People</label>
+        <input type="number" id="groupPeople" value="10">
+      </div>
+      <div class="form-group">
+        <label>Rows</label>
+        <input type="number" id="groupRows" value="2">
+      </div>
+      <button class="btn" onclick="calcGroupPortrait()">Recommend Setup</button>
+      <div class="result" id="groupPortraitResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-green">🌸</span>Bokeh Size Estimator</div>
+      <div class="form-group">
+        <label>Aperture (f/)</label>
+        <input type="number" id="bokehAp" value="1.8" step="0.1">
+      </div>
+      <div class="form-group">
+        <label>Background Distance (m)</label>
+        <input type="number" id="bokehBGDist" value="5">
+      </div>
+      <div class="form-group">
+        <label>Focal Length (mm)</label>
+        <input type="number" id="bokehFL" value="85">
+      </div>
+      <button class="btn" onclick="calcBokeh()">Estimate Bokeh</button>
+      <div class="result" id="bokehResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-purple">⚡</span>Flash Sync Speed Guide</div>
+      <div class="form-group">
+        <label>Camera Max Sync Speed</label>
+        <select id="syncSpeed">
+          <option value="200">1/200s</option>
+          <option value="250" selected>1/250s</option>
+          <option value="500">1/500s (HSS)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Outdoor Ambient EV</label>
+        <input type="number" id="ambientEV" value="14">
+      </div>
+      <button class="btn" onclick="calcFlashSync()">Analyze</button>
+      <div class="result" id="flashSyncResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">📊</span>Facial Coverage Analysis</div>
+      <div class="form-group">
+        <label>Frame Height (px)</label>
+        <input type="number" id="frameH" value="4000">
+      </div>
+      <div class="form-group">
+        <label>Face Height in Frame (px)</label>
+        <input type="number" id="faceH" value="1200">
+      </div>
+      <button class="btn" onclick="calcFaceCoverage()">Analyze</button>
+      <div class="result" id="faceCoverageResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">🎯</span>Eye AF Confidence Score</div>
+      <div class="form-group">
+        <label>Aperture (f/)</label>
+        <input type="number" id="eyeAF_ap" value="1.4" step="0.1">
+      </div>
+      <div class="form-group">
+        <label>Distance to Subject (m)</label>
+        <input type="number" id="eyeAF_dist" value="2">
+      </div>
+      <button class="btn" onclick="calcEyeAF()">Score</button>
+      <div class="result" id="eyeAFResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">🌟</span>Flattering Angle Calculator</div>
+      <div class="form-group">
+        <label>Camera Height vs Subject</label>
+        <select id="camHeight" onchange="flatterAngle()">
+          <option value="below">Below Eye Level (looking up)</option>
+          <option value="eye" selected>Eye Level</option>
+          <option value="slight">Slightly Above (–10°)</option>
+          <option value="above">Above (–20° to –30°)</option>
+          <option value="high">High Angle (–45°+)</option>
+        </select>
+      </div>
+      <div class="result" id="flatterResult">—</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== LANDSCAPE PHOTOGRAPHY ===== -->
+<section class="section" id="landscape">
+  <div class="section-title">🏔 Landscape Photography</div>
+  <div class="section-sub">12 tools for outdoor and nature shoots</div>
+
+  <div class="calc-grid">
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">🌄</span>Hyperfocal Distance</div>
+      <div class="form-group">
+        <label>Focal Length (mm)</label>
+        <input type="number" id="hfFL" value="24">
+      </div>
+      <div class="form-group">
+        <label>Aperture (f/)</label>
+        <input type="number" id="hfAp" value="11">
+      </div>
+      <div class="form-group">
+        <label>Sensor</label>
+        <select id="hfSensor">
+          <option value="0.029" selected>Full Frame (CoC 0.029)</option>
+          <option value="0.019">APS-C (CoC 0.019)</option>
+          <option value="0.015">MFT (CoC 0.015)</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcHyperfocal()">Calculate</button>
+      <div class="result" id="hyperfocalResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-green">🌙</span>Milky Way / Night Sky Exposure</div>
+      <div class="form-group">
+        <label>Focal Length (mm)</label>
+        <input type="number" id="mwFL" value="14">
+      </div>
+      <div class="form-group">
+        <label>Sensor Crop Factor</label>
+        <input type="number" id="mwCrop" value="1" step="0.5">
+      </div>
+      <button class="btn" onclick="calcNPF()">NPF Rule</button>
+      <div class="result" id="mwResult">—</div>
+      <div class="info-box">NPF Rule gives maximum shutter speed to avoid star trails.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">🌊</span>Long Exposure Calculator</div>
+      <div class="form-group">
+        <label>Base Shutter Speed</label>
+        <select id="baseShutter">
+          <option value="0.016">1/60s</option>
+          <option value="0.033">1/30s</option>
+          <option value="0.125">1/8s</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ND Filter</label>
+        <select id="ndFilter">
+          <option value="1">None</option>
+          <option value="2">ND2 (1 stop)</option>
+          <option value="4">ND4 (2 stops)</option>
+          <option value="8">ND8 (3 stops)</option>
+          <option value="64">ND64 (6 stops)</option>
+          <option value="1000">ND1000 (10 stops)</option>
+          <option value="100000">ND100000 (17 stops)</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcLongExp()">Calculate</button>
+      <div class="result" id="longExpResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-purple">📐</span>Rule of Thirds Grid</div>
+      <div class="form-group">
+        <label>Image Width (px)</label>
+        <input type="number" id="rotW" value="6000">
+      </div>
+      <div class="form-group">
+        <label>Image Height (px)</label>
+        <input type="number" id="rotH" value="4000">
+      </div>
+      <button class="btn" onclick="calcROT()">Show Grid Points</button>
+      <div class="result" id="rotResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">🌤</span>Magic Hour Calculator</div>
+      <div class="form-group">
+        <label>Sunrise Time</label>
+        <input type="text" id="mhSunrise" value="06:20">
+      </div>
+      <div class="form-group">
+        <label>Sunset Time</label>
+        <input type="text" id="mhSunset" value="18:50">
+      </div>
+      <button class="btn" onclick="calcMagicHour()">Calculate All Windows</button>
+      <div class="result" id="magicHourResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">🌫</span>Fog / Haze Effect Calculator</div>
+      <div class="form-group">
+        <label>Distance to Subject (km)</label>
+        <input type="number" id="fogDist" value="2" step="0.5">
+      </div>
+      <div class="form-group">
+        <label>Visibility (km)</label>
+        <input type="number" id="visibility" value="10">
+      </div>
+      <button class="btn" onclick="calcFog()">Estimate Haze</button>
+      <div class="result" id="fogResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">🏔</span>Landscape Depth Estimator</div>
+      <div class="form-group">
+        <label>Near Subject Distance (m)</label>
+        <input type="number" id="nearDist" value="3">
+      </div>
+      <div class="form-group">
+        <label>Far Subject Distance (m)</label>
+        <input type="number" id="farDist" value="500">
+      </div>
+      <div class="form-group">
+        <label>Aperture (f/)</label>
+        <input type="number" id="lsAp" value="11">
+      </div>
+      <div class="form-group">
+        <label>Focal Length (mm)</label>
+        <input type="number" id="lsFL" value="24">
+      </div>
+      <button class="btn" onclick="calcLandscapeDepth()">Analyze</button>
+      <div class="result" id="lsDepthResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-green">🎞</span>Panorama Stitch Calculator</div>
+      <div class="form-group">
+        <label>Focal Length (mm) on FF</label>
+        <input type="number" id="panoFL" value="35">
+      </div>
+      <div class="form-group">
+        <label>Overlap %</label>
+        <input type="number" id="panoOverlap" value="30" min="20" max="50">
+      </div>
+      <div class="form-group">
+        <label>Panorama Width (°)</label>
+        <input type="number" id="panoAngle" value="180">
+      </div>
+      <button class="btn" onclick="calcPano()">Calculate</button>
+      <div class="result" id="panoResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-purple">💧</span>Waterfall / Motion Blur Guide</div>
+      <div class="form-group">
+        <label>Desired Blur Level</label>
+        <select id="blurLevel" onchange="waterfallGuide()">
+          <option value="freeze">Freeze Motion (fast)</option>
+          <option value="slight">Slight Silk</option>
+          <option value="silk" selected>Silky Smooth</option>
+          <option value="ghost">Ghost / Abstract</option>
+        </select>
+      </div>
+      <div class="result" id="waterfallResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">🌈</span>Rainbow Photography Guide</div>
+      <div class="form-group">
+        <label>Sun Elevation (°)</label>
+        <input type="number" id="sunElev" value="30" min="0" max="42">
+      </div>
+      <button class="btn" onclick="calcRainbow()">Check Rainbow</button>
+      <div class="result" id="rainbowResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">🗺</span>Focal Length & Field of View</div>
+      <div class="form-group">
+        <label>Focal Length (mm)</label>
+        <input type="number" id="fovFL" value="24">
+      </div>
+      <div class="form-group">
+        <label>Sensor</label>
+        <select id="fovSensor">
+          <option value="36">Full Frame (36mm)</option>
+          <option value="24">APS-C (24mm)</option>
+          <option value="17.3">MFT (17.3mm)</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcFOV()">Calculate FOV</button>
+      <div class="result" id="fovResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">⭐</span>Star Trail Exposure</div>
+      <div class="form-group">
+        <label>Desired Trail Arc (°)</label>
+        <input type="number" id="trailArc" value="30" min="1" max="360">
+      </div>
+      <button class="btn" onclick="calcStarTrail()">Calculate</button>
+      <div class="result" id="starTrailResult">—</div>
+      <div class="info-box">Stars rotate ~0.25°/min. Moon moves ~0.5°/min.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== EXPOSURE ===== -->
+<section class="section" id="exposure">
+  <div class="section-title">📸 Exposure</div>
+  <div class="section-sub">Core exposure & metering tools</div>
+
+  <div class="calc-grid">
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">☀️</span>Sunny 16 Rule</div>
+      <div class="form-group">
+        <label>ISO</label>
+        <select id="sunnyISO">
+          <option value="100" selected>100</option><option value="200">200</option>
+          <option value="400">400</option><option value="800">800</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Condition</label>
+        <select id="sunnyCondition">
+          <option value="16">Bright Sun (f/16)</option>
+          <option value="11">Slight Overcast (f/11)</option>
+          <option value="8">Overcast (f/8)</option>
+          <option value="5.6">Heavy Overcast (f/5.6)</option>
+          <option value="4">Open Shade (f/4)</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcSunny16()">Calculate</button>
+      <div class="result" id="sunny16Result">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">⬆️</span>Exposure Triangle Solver</div>
+      <div class="form-group">
+        <label>Current Aperture (f/)</label>
+        <input type="number" id="triAp" value="5.6" step="0.5">
+      </div>
+      <div class="form-group">
+        <label>Current Shutter (1/x)</label>
+        <input type="number" id="triShutter" value="250">
+      </div>
+      <div class="form-group">
+        <label>Current ISO</label>
+        <input type="number" id="triISO" value="400">
+      </div>
+      <div class="form-group">
+        <label>Change</label>
+        <select id="triChange">
+          <option value="halveAp">Halve Aperture (double f-stop)</option>
+          <option value="doubleAp">Double Aperture (halve f-stop)</option>
+          <option value="halveShutter">Halve Shutter Speed</option>
+          <option value="doubleShutter">Double Shutter Speed</option>
+        </select>
+      </div>
+      <button class="btn" onclick="solveTriangle()">Compensate ISO</button>
+      <div class="result" id="triangleResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-green">📊</span>Zone System Mapper</div>
+      <div class="form-group">
+        <label>Metered EV</label>
+        <input type="number" id="zoneEV" value="12">
+      </div>
+      <div class="form-group">
+        <label>Desired Zone (I–X)</label>
+        <select id="targetZone">
+          <option value="0">Zone 0 — Pure Black</option>
+          <option value="1">Zone I — Near Black</option>
+          <option value="2">Zone II — Very Dark</option>
+          <option value="3">Zone III — Dark</option>
+          <option value="4">Zone IV — Shadows</option>
+          <option value="5" selected>Zone V — Mid Gray (18%)</option>
+          <option value="6">Zone VI — Light Gray</option>
+          <option value="7">Zone VII — Bright</option>
+          <option value="8">Zone VIII — Near White</option>
+          <option value="9">Zone IX — Specular</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcZone()">Map Zone</button>
+      <div class="result" id="zoneResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-purple">⚡</span>Flash Guide Number</div>
+      <div class="form-group">
+        <label>Guide Number</label>
+        <input type="number" id="gnGN" value="58">
+      </div>
+      <div class="form-group">
+        <label>ISO</label>
+        <input type="number" id="gnISO" value="100">
+      </div>
+      <div class="form-group">
+        <label>Distance to Subject (m)</label>
+        <input type="number" id="gnDist" value="3">
+      </div>
+      <button class="btn" onclick="calcGN()">Calculate Aperture</button>
+      <div class="result" id="gnResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">🎚</span>ISO Noise Estimator</div>
+      <div class="form-group">
+        <label>ISO</label>
+        <input type="number" id="noiseISO" value="3200">
+      </div>
+      <div class="form-group">
+        <label>Camera Generation</label>
+        <select id="camGen">
+          <option value="old">Older (pre-2015)</option>
+          <option value="mid" selected>Mid-range (2015–2020)</option>
+          <option value="new">Modern (2020+)</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcNoise()">Estimate</button>
+      <div class="result" id="noiseResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">🌓</span>Dynamic Range Calculator</div>
+      <div class="form-group">
+        <label>Highlights EV</label>
+        <input type="number" id="hlEV" value="14">
+      </div>
+      <div class="form-group">
+        <label>Shadows EV</label>
+        <input type="number" id="shEV" value="3">
+      </div>
+      <button class="btn" onclick="calcDR()">Calculate DR</button>
+      <div class="result" id="drResult">—</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== LENS ===== -->
+<section class="section" id="lens">
+  <div class="section-title">🔭 Lens & Optics</div>
+  <div class="section-sub">Depth of field, optics, and lens calculations</div>
+
+  <div class="calc-grid">
+    <div class="card full-span">
+      <div class="card-title"><span class="card-icon ci-blue">🔬</span>Full Depth of Field Calculator</div>
+      <div class="row3">
+        <div class="form-group">
+          <label>Focal Length (mm)</label>
+          <input type="number" id="dofFL" value="85">
+        </div>
+        <div class="form-group">
+          <label>Aperture (f/)</label>
+          <input type="number" id="dofAp" value="1.8" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Distance (m)</label>
+          <input type="number" id="dofDist" value="2">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Sensor / CoC</label>
+        <select id="dofSensor">
+          <option value="0.029" selected>Full Frame</option>
+          <option value="0.019">APS-C</option>
+          <option value="0.015">Micro 4/3</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcDOF()">Calculate Full DOF</button>
+      <div class="result" id="dofResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-green">🔄</span>Extension Tube Calculator</div>
+      <div class="form-group">
+        <label>Focal Length (mm)</label>
+        <input type="number" id="etFL" value="50">
+      </div>
+      <div class="form-group">
+        <label>Extension Tube Length (mm)</label>
+        <input type="number" id="etLen" value="25">
+      </div>
+      <button class="btn" onclick="calcExtensionTube()">Calculate</button>
+      <div class="result" id="etResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-purple">📷</span>Teleconverter EV Loss</div>
+      <div class="form-group">
+        <label>Teleconverter</label>
+        <select id="tcType">
+          <option value="1.4">1.4× TC (1 stop)</option>
+          <option value="2">2× TC (2 stops)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Lens Aperture (f/)</label>
+        <input type="number" id="tcAp" value="4">
+      </div>
+      <button class="btn" onclick="calcTC()">Calculate</button>
+      <div class="result" id="tcResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">🔃</span>Image Stabilization Benefit</div>
+      <div class="form-group">
+        <label>Focal Length (mm)</label>
+        <input type="number" id="isFL" value="200">
+      </div>
+      <div class="form-group">
+        <label>IS Stops</label>
+        <input type="number" id="isStops" value="4" min="0" max="8">
+      </div>
+      <button class="btn" onclick="calcIS()">Calculate</button>
+      <div class="result" id="isResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">📐</span>Minimum Focus Distance Guide</div>
+      <div class="form-group">
+        <label>Focal Length (mm)</label>
+        <input type="number" id="mfdFL" value="100">
+      </div>
+      <div class="form-group">
+        <label>Magnification Ratio (e.g. 1:1)</label>
+        <input type="number" id="mfdMag" value="1" step="0.1">
+      </div>
+      <button class="btn" onclick="calcMFD()">Calculate</button>
+      <div class="result" id="mfdResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">↔️</span>Lens Compression Comparator</div>
+      <div class="form-group">
+        <label>Focal Length A (mm)</label>
+        <input type="number" id="compA" value="35">
+      </div>
+      <div class="form-group">
+        <label>Focal Length B (mm)</label>
+        <input type="number" id="compB" value="135">
+      </div>
+      <button class="btn" onclick="calcCompression()">Compare</button>
+      <div class="result" id="compressionResult">—</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== LIGHTING ===== -->
+<section class="section" id="lighting">
+  <div class="section-title">💡 Lighting</div>
+  <div class="section-sub">Flash, strobe, ambient, and modifier calculations</div>
+
+  <div class="calc-grid">
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">💡</span>Inverse Square Law</div>
+      <div class="form-group">
+        <label>Source Distance (m)</label>
+        <input type="number" id="isl1" value="1">
+      </div>
+      <div class="form-group">
+        <label>New Distance (m)</label>
+        <input type="number" id="isl2" value="2">
+      </div>
+      <button class="btn" onclick="calcISL()">Calculate</button>
+      <div class="result" id="islResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">🔆</span>Softbox Size vs. Distance</div>
+      <div class="form-group">
+        <label>Softbox Width (cm)</label>
+        <input type="number" id="sbSize" value="90">
+      </div>
+      <div class="form-group">
+        <label>Distance to Subject (m)</label>
+        <input type="number" id="sbDist" value="1.2">
+      </div>
+      <button class="btn" onclick="calcSoftboxEffect()">Analyze Softness</button>
+      <div class="result" id="sbResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-green">🔋</span>Flash Power / f-stop</div>
+      <div class="form-group">
+        <label>Guide Number at ISO 100</label>
+        <input type="number" id="fpGN" value="45">
+      </div>
+      <div class="form-group">
+        <label>Flash Power</label>
+        <select id="fpPower">
+          <option value="1">Full (1/1)</option>
+          <option value="0.5">1/2</option>
+          <option value="0.25" selected>1/4</option>
+          <option value="0.125">1/8</option>
+          <option value="0.0625">1/16</option>
+          <option value="0.03125">1/32</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Distance (m)</label>
+        <input type="number" id="fpDist" value="2">
+      </div>
+      <button class="btn" onclick="calcFlashPower()">Calculate f-stop</button>
+      <div class="result" id="fpResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">🌗</span>Background Light Separation</div>
+      <div class="form-group">
+        <label>Subject f-stop</label>
+        <input type="number" id="bgSepSubj" value="8" step="0.5">
+      </div>
+      <div class="form-group">
+        <label>BG Brightness Goal</label>
+        <select id="bgGoal">
+          <option value="-2">Darker (−2 stops)</option>
+          <option value="-1" selected>Slightly Darker (−1 stop)</option>
+          <option value="0">Same as Subject</option>
+          <option value="1">Brighter (+1 stop)</option>
+          <option value="2">Much Brighter (+2 stops)</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcBGSep()">Calculate</button>
+      <div class="result" id="bgSepResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-purple">🔦</span>LED Panel Lux Estimator</div>
+      <div class="form-group">
+        <label>Panel Power (W)</label>
+        <input type="number" id="ledW" value="100">
+      </div>
+      <div class="form-group">
+        <label>Distance (m)</label>
+        <input type="number" id="ledDist" value="1.5">
+      </div>
+      <button class="btn" onclick="calcLED()">Estimate Lux</button>
+      <div class="result" id="ledResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">☀️</span>Ambient vs. Strobe Balance</div>
+      <div class="form-group">
+        <label>Ambient EV</label>
+        <input type="number" id="avsAmbient" value="13">
+      </div>
+      <div class="form-group">
+        <label>Flash Output EV</label>
+        <input type="number" id="avsFlash" value="12">
+      </div>
+      <button class="btn" onclick="calcAVS()">Analyze Balance</button>
+      <div class="result" id="avsResult">—</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PRINT ===== -->
+<section class="section" id="print">
+  <div class="section-title">🖨 Print & Output</div>
+  <div class="section-sub">DPI, print sizing, and output quality tools</div>
+
+  <div class="calc-grid">
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">📏</span>Print Size Calculator</div>
+      <div class="form-group">
+        <label>Image Width (px)</label>
+        <input type="number" id="printPxW" value="6000">
+      </div>
+      <div class="form-group">
+        <label>Image Height (px)</label>
+        <input type="number" id="printPxH" value="4000">
+      </div>
+      <div class="form-group">
+        <label>Print DPI</label>
+        <select id="printDPI">
+          <option value="72">72 DPI (Web)</option>
+          <option value="150">150 DPI (Draft)</option>
+          <option value="240">240 DPI (Good)</option>
+          <option value="300" selected>300 DPI (Photo)</option>
+          <option value="360">360 DPI (Fine Art)</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcPrintSize()">Calculate</button>
+      <div class="result" id="printSizeResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-green">🔍</span>Minimum Resolution for Print</div>
+      <div class="form-group">
+        <label>Print Width (inches)</label>
+        <input type="number" id="mpWidth" value="16">
+      </div>
+      <div class="form-group">
+        <label>Print Height (inches)</label>
+        <input type="number" id="mpHeight" value="20">
+      </div>
+      <div class="form-group">
+        <label>Required DPI</label>
+        <select id="mpDPI">
+          <option value="150">150 DPI</option>
+          <option value="240">240 DPI</option>
+          <option value="300" selected>300 DPI</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcMinRes()">Calculate</button>
+      <div class="result" id="minResResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">🖼</span>Canvas Enlargement Guide</div>
+      <div class="form-group">
+        <label>Megapixels</label>
+        <input type="number" id="enlargeMP" value="24">
+      </div>
+      <button class="btn" onclick="calcEnlargement()">Show Max Print Sizes</button>
+      <div class="result" id="enlargeResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-purple">🎨</span>Color Space Converter</div>
+      <div class="form-group">
+        <label>From Space</label>
+        <select id="csFrom">
+          <option value="sRGB">sRGB</option><option value="AdobeRGB">Adobe RGB</option>
+          <option value="P3">Display P3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>To Space</label>
+        <select id="csTo">
+          <option value="sRGB">sRGB</option><option value="AdobeRGB" selected>Adobe RGB</option>
+          <option value="Print">CMYK Print</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcColorSpace()">Get Guidance</button>
+      <div class="result" id="csResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">📦</span>File Size Estimator</div>
+      <div class="form-group">
+        <label>Width × Height (px)</label>
+        <div class="row2">
+          <input type="number" id="fsW" value="6000" placeholder="Width">
+          <input type="number" id="fsH" value="4000" placeholder="Height">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Bit Depth</label>
+        <select id="fsBit">
+          <option value="8">8-bit</option><option value="16" selected>16-bit</option><option value="32">32-bit</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Channels</label>
+        <select id="fsCh">
+          <option value="3" selected>RGB (3)</option><option value="4">CMYK (4)</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcFileSize()">Estimate</button>
+      <div class="result" id="fsResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">📐</span>Web Resize Optimizer</div>
+      <div class="form-group">
+        <label>Original Width (px)</label>
+        <input type="number" id="webW" value="6000">
+      </div>
+      <div class="form-group">
+        <label>Target Platform</label>
+        <select id="webPlatform">
+          <option value="1920">Desktop Web (1920px)</option>
+          <option value="1080">Instagram (1080px)</option>
+          <option value="1500">Twitter/X (1500px)</option>
+          <option value="2048">Flickr/500px (2048px)</option>
+          <option value="2000">Facebook (2000px)</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcWebResize()">Optimize</button>
+      <div class="result" id="webResizeResult">—</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== OTHER / TOOLS ===== -->
+<section class="section" id="other">
+  <div class="section-title">⚙️ Extra Tools</div>
+  <div class="section-sub">6 bonus calculators for advanced shooting</div>
+
+  <div class="calc-grid">
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">🎥</span>Video Frame Rate / Shutter</div>
+      <div class="form-group">
+        <label>Frame Rate</label>
+        <select id="fps">
+          <option value="24">24fps (Cinematic)</option>
+          <option value="25">25fps (PAL)</option>
+          <option value="30" selected>30fps (NTSC)</option>
+          <option value="60">60fps (Slow-Mo)</option>
+          <option value="120">120fps</option>
+          <option value="240">240fps</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Shutter Angle Rule</label>
+        <select id="shutterAngle">
+          <option value="180" selected>180° (Standard)</option>
+          <option value="90">90° (Crisper)</option>
+          <option value="360">360° (Dreamy)</option>
+        </select>
+      </div>
+      <button class="btn" onclick="calcVideoShutter()">Calculate</button>
+      <div class="result" id="videoResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-blue">🛸</span>Drone Photography Calculator</div>
+      <div class="form-group">
+        <label>Flying Height (m)</label>
+        <input type="number" id="droneH" value="100">
+      </div>
+      <div class="form-group">
+        <label>Sensor (AoV horizontal °)</label>
+        <input type="number" id="droneAoV" value="84">
+      </div>
+      <button class="btn" onclick="calcDrone()">Calculate Footprint</button>
+      <div class="result" id="droneResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-green">🏃</span>Action / Sports Freeze Calculator</div>
+      <div class="form-group">
+        <label>Subject Speed (km/h)</label>
+        <input type="number" id="actionSpeed" value="40">
+      </div>
+      <div class="form-group">
+        <label>Subject Size in Frame (%)</label>
+        <input type="number" id="actionSize" value="20">
+      </div>
+      <button class="btn" onclick="calcAction()">Min. Shutter Speed</button>
+      <div class="result" id="actionResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-purple">🌐</span>Moon Phase Exposure Guide</div>
+      <div class="form-group">
+        <label>Moon Phase</label>
+        <select id="moonPhase" onchange="moonExposure()">
+          <option value="full">Full Moon</option>
+          <option value="gibbous" selected>Gibbous (75%)</option>
+          <option value="quarter">Quarter (50%)</option>
+          <option value="crescent">Crescent (25%)</option>
+          <option value="new">New Moon</option>
+        </select>
+      </div>
+      <div class="result" id="moonResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-gold">📱</span>Smartphone vs. DSLR DOF</div>
+      <div class="form-group">
+        <label>Smartphone sensor (1/2.55")</label>
+        <div class="info-box" style="margin-top:0">Effective 6.17×4.55mm sensor vs 36×24mm FF</div>
+      </div>
+      <div class="form-group">
+        <label>Equivalent Focal Length (mm)</label>
+        <input type="number" id="phoneFocal" value="26">
+      </div>
+      <div class="form-group">
+        <label>Aperture (f/)</label>
+        <input type="number" id="phoneAp" value="1.8">
+      </div>
+      <div class="form-group">
+        <label>Distance (m)</label>
+        <input type="number" id="phoneDist" value="2">
+      </div>
+      <button class="btn" onclick="calcPhoneDOF()">Compare</button>
+      <div class="result" id="phoneDOFResult">—</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-icon ci-orange">📷</span>Shoot Schedule Planner</div>
+      <div class="form-group">
+        <label>Total Locations</label>
+        <input type="number" id="schedLoc" value="5">
+      </div>
+      <div class="form-group">
+        <label>Minutes per Location</label>
+        <input type="number" id="schedMPL" value="30">
+      </div>
+      <div class="form-group">
+        <label>Travel Between (min)</label>
+        <input type="number" id="schedTravel" value="15">
+      </div>
+      <div class="form-group">
+        <label>Start Time</label>
+        <input type="text" id="schedStart" value="08:00">
+      </div>
+      <button class="btn" onclick="calcSchedule()">Build Schedule</button>
+      <div class="result" id="schedResult">—</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <strong>PhotoCalc Pro</strong>
+  <span>© <span id="footerYear"></span> Manik Roy · All Rights Reserved</span>
+  <span style="color:var(--text3);font-size:0.72rem">60 Professional Photography Tools</span>
+</footer>
 
 <script>
-  /* ─── THEME ─── */
-  function setTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    document.querySelectorAll('.theme-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.theme === theme);
-    });
-    localStorage.setItem('tts-theme', theme);
+// ===================== THEME =====================
+function setTheme(t) {
+  document.body.setAttribute('data-theme', t);
+  ['light','dark','oled'].forEach(x => document.getElementById('btn-'+x).classList.remove('active'));
+  document.getElementById('btn-'+t).classList.add('active');
+}
+
+// ===================== NAV =====================
+function showSection(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ===================== FOOTER YEAR =====================
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+// ===================== HELPERS =====================
+function fstop(f) { return `f/${parseFloat(f).toFixed(1)}`; }
+function fmt(n, d=2) { return parseFloat(n.toFixed(d)); }
+function setResult(id, html, highlight=false) {
+  const el = document.getElementById(id);
+  el.innerHTML = html;
+  el.classList.toggle('highlight', highlight);
+}
+
+// ===================== HOME CALCS =====================
+function calcEV() {
+  const ap = +document.getElementById('qAperture').value;
+  const sh = +document.getElementById('qShutter').value;
+  const iso = +document.getElementById('qISO').value;
+  const ev = Math.log2((ap*ap)/sh) - Math.log2(iso/100);
+  let meaning = ev < 5 ? 'Night / Interior' : ev < 8 ? 'Low Light' : ev < 11 ? 'Shade/Overcast' : ev < 13 ? 'Cloudy' : ev < 15 ? 'Bright Sun' : 'Bright Sun + Snow';
+  setResult('evResult', `EV ${fmt(ev,1)} — ${meaning}`, true);
+}
+
+function calcGoldenHour() {
+  const [sh, sm] = document.getElementById('sunrise').value.split(':').map(Number);
+  const [eh, em] = document.getElementById('sunset').value.split(':').map(Number);
+  const fmt12 = (h,m) => { const ap = h>=12?'PM':'AM'; const hh = h%12||12; return `${hh}:${String(m).padStart(2,'0')} ${ap}`; };
+  const morningEnd = [sh + Math.floor((sm+60)/60), (sm+60)%60];
+  const eveningStart = [eh - 1 + Math.floor(em/60), em % 60];
+  setResult('goldenResult',
+    `🌅 Morning: ${fmt12(sh,sm)} – ${fmt12(morningEnd[0], morningEnd[1])}<br>🌄 Evening: ${fmt12(eveningStart[0], eveningStart[1])} – ${fmt12(eh,em)}`);
+}
+
+function updateHisto(v) {
+  document.getElementById('biasVal').textContent = `${v > 0 ? '+' : ''}${v} EV`;
+  const bars = document.getElementById('histoBar');
+  bars.innerHTML = '';
+  const bias = parseFloat(v);
+  const colors = ['#555','#888','#aaa','#ccc','#fff'];
+  for(let i=0;i<24;i++) {
+    const pos = i/23;
+    const peak = 0.3 + bias*0.12;
+    const h = Math.max(4, Math.round(50 * Math.exp(-Math.pow((pos - peak),2)*20)));
+    const ci = Math.floor(pos*4);
+    const b = document.createElement('div');
+    b.className = 'h-bar';
+    b.style.cssText = `height:${h}px;background:${colors[ci]};opacity:0.85`;
+    bars.appendChild(b);
   }
+  const msg = bias < -1 ? '⚠ Underexposed' : bias > 1 ? '⚠ Overexposed' : bias < 0 ? 'Slightly underexposed' : bias > 0 ? 'Slightly overexposed' : '✓ Balanced exposure';
+  setResult('histoResult', msg, Math.abs(bias) > 1);
+}
+updateHisto(0);
 
-  (function initTheme() {
-    const saved = localStorage.getItem('tts-theme') || 'dark';
-    setTheme(saved);
-  })();
+function updateCrop() {
+  const crop = +document.getElementById('sensorType').value;
+  const fl = +document.getElementById('nativeFocal').value;
+  setResult('cropResult', `${fstop('')}${Math.round(fl*crop)}mm full-frame equivalent`);
+}
+updateCrop();
 
-  /* ─── FOOTER YEAR ─── */
-  document.getElementById('footerYear').textContent = new Date().getFullYear();
+function calcStorage() {
+  const mb = +document.getElementById('fileFormat').value;
+  const n = +document.getElementById('numPhotos').value;
+  const total = mb * n;
+  const gb = (total/1024).toFixed(2);
+  setResult('storageResult', `${total.toLocaleString()} MB — ${gb} GB needed`, true);
+}
 
-  /* ─── VISUALIZER BARS ─── */
-  const visualizer = document.getElementById('visualizer');
-  const BAR_COUNT = 42;
-  const bars = [];
-  for (let i = 0; i < BAR_COUNT; i++) {
-    const bar = document.createElement('div');
-    bar.className = 'bar';
-    const peak = 10 + Math.random() * 28;
-    bar.style.setProperty('--peak', peak + 'px');
-    bar.style.animationDelay = (Math.random() * 0.5) + 's';
-    bar.style.animationDuration = (0.4 + Math.random() * 0.4) + 's';
-    visualizer.appendChild(bar);
-    bars.push(bar);
-  }
+function calcBattery() {
+  const cipa = +document.getElementById('cipaBattery').value;
+  const planned = +document.getElementById('plannedShots').value;
+  const batts = Math.ceil(planned/cipa);
+  const pct = ((planned/cipa)*100).toFixed(0);
+  setResult('batteryResult', `${pct}% battery use — Bring ${batts} batter${batts>1?'ies':'y'}`, batts > 1);
+}
 
-  function startBars() { bars.forEach(b => b.classList.add('speaking')); }
-  function stopBars() { bars.forEach(b => { b.classList.remove('speaking'); b.style.height = '6px'; }); }
-
-  /* ─── SPEECH API ─── */
-  const synth = window.speechSynthesis;
-  let utterance = null;
-  let isPaused = false;
-  let voices = [];
-  let progressTimer = null;
-  let startTime = 0;
-  let estimatedDuration = 0;
-
-  if (!synth) {
-    document.getElementById('noSupport').style.display = 'block';
-    document.getElementById('speakBtn').disabled = true;
-  }
-
-  function loadVoices() {
-    voices = synth.getVoices();
-    const select = document.getElementById('voiceSelect');
-    select.innerHTML = '';
-    if (!voices.length) {
-      select.innerHTML = '<option value="">No voices found</option>';
-      return;
-    }
-    const preferred = voices.filter(v => v.lang.startsWith('en'));
-    const others = voices.filter(v => !v.lang.startsWith('en'));
-    if (preferred.length) {
-      const grp = document.createElement('optgroup');
-      grp.label = 'English';
-      preferred.forEach((v, i) => {
-        const opt = document.createElement('option');
-        opt.value = v.name;
-        opt.textContent = `${v.name} (${v.lang})`;
-        if (v.default) opt.selected = true;
-        grp.appendChild(opt);
-      });
-      select.appendChild(grp);
-    }
-    if (others.length) {
-      const grp = document.createElement('optgroup');
-      grp.label = 'Other Languages';
-      others.forEach(v => {
-        const opt = document.createElement('option');
-        opt.value = v.name;
-        opt.textContent = `${v.name} (${v.lang})`;
-        grp.appendChild(opt);
-      });
-      select.appendChild(grp);
-    }
-  }
-
-  if (synth) {
-    loadVoices();
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = loadVoices;
-    }
-  }
-
-  /* ─── CONTROLS ─── */
-  const rateRange = document.getElementById('rateRange');
-  const pitchRange = document.getElementById('pitchRange');
-  const volRange = document.getElementById('volRange');
-
-  rateRange.addEventListener('input', () => {
-    document.getElementById('rateVal').textContent = parseFloat(rateRange.value).toFixed(1) + '×';
-  });
-  pitchRange.addEventListener('input', () => {
-    document.getElementById('pitchVal').textContent = parseFloat(pitchRange.value).toFixed(1);
-  });
-  volRange.addEventListener('input', () => {
-    document.getElementById('volVal').textContent = Math.round(volRange.value * 100) + '%';
-  });
-
-  const textInput = document.getElementById('textInput');
-  textInput.addEventListener('input', () => {
-    const len = textInput.value.length;
-    const el = document.getElementById('charCount');
-    el.textContent = len + ' / 5000';
-    el.classList.toggle('warn', len > 4000);
-  });
-
-  /* ─── STATUS ─── */
-  function setStatus(state, msg) {
-    const dot = document.getElementById('statusDot');
-    const txt = document.getElementById('statusText');
-    dot.className = 'status-dot ' + (state || '');
-    txt.textContent = msg;
-  }
-
-  /* ─── SPEAK ─── */
-  function speakText() {
-    if (!synth) return;
-    const text = textInput.value.trim();
-    if (!text) { setStatus('error', 'Please enter some text first.'); return; }
-
-    synth.cancel();
-    clearInterval(progressTimer);
-    document.getElementById('progressFill').style.width = '0%';
-
-    utterance = new SpeechSynthesisUtterance(text);
-    const selectedVoice = document.getElementById('voiceSelect').value;
-    const voice = voices.find(v => v.name === selectedVoice);
-    if (voice) utterance.voice = voice;
-
-    utterance.rate = parseFloat(rateRange.value);
-    utterance.pitch = parseFloat(pitchRange.value);
-    utterance.volume = parseFloat(volRange.value);
-
-    isPaused = false;
-    const wordCount = text.split(/\s+/).length;
-    estimatedDuration = (wordCount / (utterance.rate * 150)) * 60 * 1000;
-    startTime = Date.now();
-
-    utterance.onstart = () => {
-      setStatus('speaking', 'Speaking…');
-      startBars();
-      document.getElementById('speakBtn').disabled = true;
-      document.getElementById('pauseBtn').disabled = false;
-      document.getElementById('stopBtn').disabled = false;
-      document.getElementById('pauseBtn').innerHTML = '<span class="btn-icon">⏸</span> Pause';
-
-      progressTimer = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const pct = Math.min(100, (elapsed / estimatedDuration) * 100);
-        document.getElementById('progressFill').style.width = pct + '%';
-      }, 200);
-    };
-
-    utterance.onend = () => onSpeechEnd('Done! ✓');
-    utterance.onerror = (e) => {
-      if (e.error === 'interrupted' || e.error === 'canceled') return;
-      onSpeechEnd('Error: ' + e.error, 'error');
-    };
-
-    utterance.onboundary = (e) => {
-      if (e.name === 'word') {
-        const elapsed = Date.now() - startTime;
-        const pct = Math.min(98, (elapsed / estimatedDuration) * 100);
-        document.getElementById('progressFill').style.width = pct + '%';
-      }
-    };
-
-    synth.speak(utterance);
-  }
-
-  function onSpeechEnd(msg, state) {
-    clearInterval(progressTimer);
-    document.getElementById('progressFill').style.width = state === 'error' ? '0%' : '100%';
-    setStatus(state || '', msg);
-    stopBars();
-    document.getElementById('speakBtn').disabled = false;
-    document.getElementById('pauseBtn').disabled = true;
-    document.getElementById('stopBtn').disabled = true;
-    isPaused = false;
-    setTimeout(() => { document.getElementById('progressFill').style.width = '0%'; }, 2000);
-  }
-
-  function togglePause() {
-    if (!synth) return;
-    if (isPaused) {
-      synth.resume();
-      isPaused = false;
-      startTime = Date.now() - (estimatedDuration * parseFloat(document.getElementById('progressFill').style.width) / 100);
-      setStatus('speaking', 'Resuming…');
-      startBars();
-      document.getElementById('pauseBtn').innerHTML = '<span class="btn-icon">⏸</span> Pause';
-      progressTimer = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const pct = Math.min(100, (elapsed / estimatedDuration) * 100);
-        document.getElementById('progressFill').style.width = pct + '%';
-      }, 200);
-    } else {
-      synth.pause();
-      isPaused = true;
-      clearInterval(progressTimer);
-      setStatus('paused', 'Paused');
-      stopBars();
-      document.getElementById('pauseBtn').innerHTML = '<span class="btn-icon">▶</span> Resume';
-    }
-  }
-
-  function stopSpeech() {
-    if (!synth) return;
-    synth.cancel();
-    clearInterval(progressTimer);
-    onSpeechEnd('Stopped');
-    document.getElementById('progressFill').style.width = '0%';
-  }
-
-  function clearText() {
-    stopSpeech();
-    textInput.value = '';
-    document.getElementById('charCount').textContent = '0 / 5000';
-    document.getElementById('charCount').classList.remove('warn');
-    setStatus('', 'Ready — enter text and press Speak');
-  }
-
-  /* ─── KEYBOARD SHORTCUT ─── */
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); speakText(); }
-    if (e.key === 'Escape') stopSpeech();
-  });
-
-  /* ════════════════════════════════════════════════════════
-     SAVE AS MP3 — Uses StreamElements free TTS API.
-     Fetches real human-quality speech audio, no auth needed.
-     Saves as .mp3 directly — works in any sandbox.
-  ════════════════════════════════════════════════════════ */
-
-  let recordings  = [];
-  let isSynthBusy = false;
-
-  // Map browser voice names to StreamElements voices
-  const SE_VOICES = {
-    // Attempt to match the selected browser voice to a SE voice
-    default: 'Brian',
-    en: 'Brian',
-    'en-US': 'Joanna',
-    'en-GB': 'Brian',
-    'en-AU': 'Nicole',
+// ===================== PRODUCT CALCS =====================
+function calcBGDist() {
+  const s = +document.getElementById('subjectSize').value;
+  const b = +document.getElementById('bokeLevel').value;
+  setResult('bgDistResult', `Recommended BG distance: ${(s * b / 10).toFixed(1)}× subject size = ~${fmt(s*b/10 * s/100, 2)}m`);
+}
+function calcLightRatio() {
+  const k = +document.getElementById('keyLight').value;
+  const f = +document.getElementById('fillLight').value;
+  const stops = k - f;
+  const ratio = Math.pow(2, stops);
+  setResult('lightRatioResult', `${stops.toFixed(1)} stop difference — ${ratio.toFixed(1)}:1 ratio (${stops>2?'High contrast':stops>1?'Portrait':'Low contrast'})`, stops > 0);
+}
+function calcMacro() {
+  const fl = +document.getElementById('macroFL').value;
+  const d = +document.getElementById('macroDist').value * 10; // to mm
+  const mag = fl / (d - fl);
+  setResult('macroResult', `Magnification: ${mag.toFixed(2)}:1 (${mag>=1?'True macro':mag>=0.5?'Half macro':'Less than macro'})`, mag >= 1);
+}
+function calcResolution() {
+  const mp = +document.getElementById('megapixels').value;
+  const ar = +document.getElementById('aspectRatio').value;
+  const h = Math.round(Math.sqrt(mp*1e6/ar));
+  const w = Math.round(h*ar);
+  setResult('resolutionResult', `${w} × ${h}px — ${w*h/1e6|0}MP actual`, true);
+}
+function updateChecklist() {
+  const boxes = document.querySelectorAll('#checklistItems input[type=checkbox]');
+  const checked = Array.from(boxes).filter(b=>b.checked).length;
+  const pct = Math.round(checked/boxes.length*100);
+  const msgs = ['Setup incomplete','Basic setup','Getting there','Good setup','Near complete','Almost pro!','Studio ready! ✓'];
+  setResult('checklistResult', `${checked}/${boxes.length} — ${msgs[checked]}`, checked === boxes.length);
+}
+function calcWB() {
+  const k = +document.getElementById('wbSource').value;
+  const tone = k < 3000 ? 'Very warm amber' : k < 4000 ? 'Warm yellow' : k < 5000 ? 'Neutral warm' : k < 6000 ? 'Neutral / Daylight' : k < 7000 ? 'Slightly cool' : 'Cool blue';
+  setResult('wbResult', `${k}K — ${tone}`);
+}
+function calcTilt() {
+  const deg = +document.getElementById('tiltAngle').value;
+  const fl = +document.getElementById('tiltFL').value;
+  const d = fl / Math.sin(deg * Math.PI / 180);
+  setResult('tiltResult', `Scheimpflug distance: ~${(d/1000).toFixed(2)}m focus plane hinge`);
+}
+function calcShootCost() {
+  const rate = +document.getElementById('hourRate').value;
+  const h = +document.getElementById('shootHours').value;
+  const p = +document.getElementById('numProducts').value;
+  const total = rate * h;
+  const perProd = total / p;
+  setResult('shootCostResult', `Total: ${total.toLocaleString()} · Per product: ${perProd.toFixed(0)}`, true);
+}
+function calcColorShift() {
+  const src = +document.getElementById('srcK').value;
+  const tgt = +document.getElementById('tgtK').value;
+  const diff = tgt - src;
+  const dir = diff > 0 ? `+${diff}K warmer — add CTO gel` : `${diff}K cooler — add CTB gel`;
+  setResult('colorShiftResult', dir);
+}
+function reflectionGuide() {
+  const guides = {
+    glass: '🔲 Use black velvet bg · Polarizer · Side strip lights · Eliminate hotspots with flags',
+    metal: '🪙 Large diffused lights · Surround with white cards · Focus on edges · Low contrast ratio',
+    matte: '✔ Easy surface · Even softbox · No polarizer needed · Standard 3-point setup',
+    liquid: '💧 Backlight through surface · Angle at 30° · Freeze motion at 1/1000+ · Slow pour'
   };
+  const v = document.getElementById('surfaceType').value;
+  setResult('reflectionResult', guides[v]);
+}
+function calc360() {
+  const f = +document.getElementById('frames360').value;
+  const deg = 360/f;
+  setResult('rot360Result', `Every ${deg.toFixed(1)}° — ${f} frames total`);
+}
+function calcFocusStack() {
+  const dof = +document.getElementById('focusDOF').value;
+  const depth = +document.getElementById('subjectDepth').value;
+  const frames = Math.ceil(depth/dof) + 1;
+  setResult('focusStackResult', `Need ${frames} frames (step ${dof}mm each)`, true);
+}
 
-  function getSeVoice() {
-    const synth = window.speechSynthesis;
-    if (!synth) return 'Brian';
-    const voices = synth.getVoices();
-    const sel = document.getElementById('voiceSelect');
-    if (!sel || sel.selectedIndex < 0) return 'Brian';
-    const chosen = voices[sel.selectedIndex];
-    if (!chosen) return 'Brian';
-    const lang = chosen.lang || '';
-    return SE_VOICES[lang] || SE_VOICES[lang.split('-')[0]] || 'Brian';
+// ===================== PORTRAIT CALCS =====================
+function portraitFL() {
+  const crop = +document.getElementById('pfSensor').value;
+  const base = +document.getElementById('pfType').value;
+  const eff = Math.round(base/crop);
+  setResult('portraitFLResult', `Use ${eff}mm on this sensor (${base}mm FF equiv)`);
+}
+function calcCatchlight() {
+  const tips = {
+    '1o': '⬆ Rembrandt: 45° to side + 45° above eye level · Small triangle shadow on cheek',
+    '12o': '⬆ Butterfly/Clamshell: directly above · Creates shadow under nose · Glamour look',
+    '10o': '✓ 10 O\'Clock: slightly left+above · Most flattering · Studio default',
+    'side': '◀ Split: 90° to side · High drama · One side in shadow'
+  };
+  setResult('catchResult', tips[document.getElementById('catchPos').value]);
+}
+function calcWorkDist() {
+  const fl = +document.getElementById('workFL').value;
+  const fw = +document.getElementById('frameWidth').value * 10; // mm
+  const sw = +document.getElementById('sensorW').value;
+  const dist = (fl * fw) / sw;
+  setResult('workDistResult', `Working distance: ~${(dist/1000).toFixed(2)}m from subject`);
+}
+function calcRembrandt() {
+  const a = +document.getElementById('faceAngle').value;
+  if(a >= 30 && a <= 50) setResult('rembrandtResult', `✓ ${a}° — Perfect Rembrandt angle. Light triangle will form on shadow cheek.`, true);
+  else if(a < 30) setResult('rembrandtResult', `⚠ ${a}° — Too frontal. Increase angle to 30–45° for Rembrandt.`);
+  else setResult('rembrandtResult', `⚠ ${a}° — Too extreme. Split or rim light territory.`);
+}
+function calc3Point() {
+  const k = +document.getElementById('keyWs').value;
+  const fill = Math.round(k/4);
+  const rim = Math.round(k/2);
+  const ratio = (k/fill).toFixed(1);
+  setResult('threePointResult', `Key: ${k}Ws · Fill: ${fill}Ws (${ratio}:1 ratio) · Rim: ${rim}Ws`);
+}
+function skinToneGuide() {
+  const guides = {
+    fair: '📷 Expose at +2/3 to +1EV · Avoid harsh highlights · Shoot at f/4–8',
+    medium: '📷 Standard 18% gray metering · Slight +1/3 EV · Very versatile',
+    olive: '📷 Standard metering or +1/3 EV · Works well in golden hour',
+    dark: '📷 Add +1 to +2 EV to prevent underexposure · Watch for detail in shadows',
+    deep: '📷 +2 to +3 EV compensation · Open shadows in post · Low contrast ratio'
+  };
+  setResult('skinToneResult', guides[document.getElementById('skinTone').value]);
+}
+function calcGroupPortrait() {
+  const n = +document.getElementById('groupPeople').value;
+  const r = +document.getElementById('groupRows').value;
+  const pprow = Math.ceil(n/r);
+  const fl = n > 15 ? 35 : n > 8 ? 50 : 85;
+  setResult('groupPortraitResult', `${pprow} per row · Recommend f/8–f/11 · FL: ~${fl}mm · Use step risers for ${r} rows`);
+}
+function calcBokeh() {
+  const ap = +document.getElementById('bokehAp').value;
+  const bgd = +document.getElementById('bokehBGDist').value * 1000; // to mm
+  const fl = +document.getElementById('bokehFL').value;
+  const subj = 2000; // assume 2m
+  const bokeh = (fl * fl * bgd) / (ap * subj * subj);
+  setResult('bokehResult', `Approx. bokeh circle: ~${bokeh.toFixed(1)}mm diameter — ${bokeh > 5 ? 'Very pronounced' : bokeh > 2 ? 'Moderate' : 'Subtle'}`);
+}
+function calcFlashSync() {
+  const sync = +document.getElementById('syncSpeed').value;
+  const ev = +document.getElementById('ambientEV').value;
+  const needed = Math.round(Math.pow(2, ev - 14) * sync);
+  const hss = needed > sync;
+  setResult('flashSyncResult', `Needed shutter: 1/${needed}s — ${hss ? '⚠ Exceeds sync! Use HSS or ND filter.' : '✓ Within sync speed'}`, hss);
+}
+function calcFaceCoverage() {
+  const fh = +document.getElementById('frameH').value;
+  const face = +document.getElementById('faceH').value;
+  const pct = (face/fh*100).toFixed(1);
+  const type = pct > 50 ? 'Extreme Close-up' : pct > 30 ? 'Close-up / Head shot' : pct > 15 ? 'Head & Shoulders' : pct > 8 ? '3/4 Body' : 'Full body';
+  setResult('faceCoverageResult', `${pct}% frame — ${type}`);
+}
+function calcEyeAF() {
+  const ap = +document.getElementById('eyeAF_ap').value;
+  const d = +document.getElementById('eyeAF_dist').value;
+  const dof_mm = (2 * 0.029 * d * d * ap) / (85 * 85);
+  const score = Math.min(100, Math.round(100 - (ap < 2 ? 30 : ap < 2.8 ? 15 : 0) - (d < 1 ? 20 : 0)));
+  setResult('eyeAFResult', `DoF: ~${(dof_mm*1000).toFixed(0)}mm · EyeAF confidence: ${score}% ${score>80?'✓ Reliable':'⚠ Challenging'}`);
+}
+function flatterAngle() {
+  const tips = {
+    below: '⚠ Unflattering — shows nostrils, distorts jaw. Avoid for portraits.',
+    eye: '✓ Eye level — natural and honest, great for editorial.',
+    slight: '✓ Slightly above — slims face slightly, standard for headshots.',
+    above: '✓ Above — elongates neck, slims face, very popular for portraits.',
+    high: '⚠ Very high — makes subject small, use only for creative effect.'
+  };
+  setResult('flatterResult', tips[document.getElementById('camHeight').value]);
+}
+
+// ===================== LANDSCAPE CALCS =====================
+function calcHyperfocal() {
+  const fl = +document.getElementById('hfFL').value;
+  const ap = +document.getElementById('hfAp').value;
+  const coc = +document.getElementById('hfSensor').value;
+  const h = (fl*fl)/(ap*coc*1000) + fl/1000;
+  setResult('hyperfocalResult', `Hyperfocal: ${h.toFixed(2)}m · Focus from ${(h/2).toFixed(2)}m to ∞`, true);
+}
+function calcNPF() {
+  const fl = +document.getElementById('mwFL').value;
+  const crop = +document.getElementById('mwCrop').value;
+  const eff = fl * crop;
+  const max = Math.round(500 / eff);
+  const npf = Math.round((35/eff + 30/eff + 0.19) * 100)/10;
+  setResult('mwResult', `500-Rule: max ${max}s · NPF Rule: max ~${npf}s · ISO 3200–6400, f/2.8`);
+}
+function calcLongExp() {
+  const base = +document.getElementById('baseShutter').value;
+  const nd = +document.getElementById('ndFilter').value;
+  const result = base * nd;
+  let display;
+  if(result < 1) display = `1/${Math.round(1/result)}s`;
+  else if(result < 60) display = `${result.toFixed(1)}s`;
+  else if(result < 3600) display = `${(result/60).toFixed(1)} min`;
+  else display = `${(result/3600).toFixed(2)} hrs`;
+  setResult('longExpResult', `New shutter: ${display}`, true);
+}
+function calcROT() {
+  const w = +document.getElementById('rotW').value;
+  const h = +document.getElementById('rotH').value;
+  const pts = `H: ${Math.round(w/3)}px, ${Math.round(w*2/3)}px | V: ${Math.round(h/3)}px, ${Math.round(h*2/3)}px`;
+  setResult('rotResult', `Grid lines — ${pts}`);
+}
+function calcMagicHour() {
+  const [sh,sm] = document.getElementById('mhSunrise').value.split(':').map(Number);
+  const [eh,em] = document.getElementById('mhSunset').value.split(':').map(Number);
+  const fmt = (h,m) => `${h}:${String(m).padStart(2,'0')}`;
+  const addMin = (h,m,min) => { const t=h*60+m+min; return [Math.floor(t/60)%24, t%60]; };
+  const [bce_h, bce_m] = addMin(sh,sm,-30);
+  const [be_h, be_m] = addMin(sh,sm,20);
+  const [ge_h, ge_m] = addMin(eh,em,-60);
+  const [bl_h, bl_m] = addMin(eh,em,20);
+  setResult('magicHourResult', `🌌 Blue Hour AM: ${fmt(bce_h,bce_m)}<br>🌅 Golden AM: ${fmt(sh,sm)}–${fmt(be_h,be_m)}<br>🌄 Golden PM: ${fmt(ge_h,ge_m)}–${fmt(eh,em)}<br>🌃 Blue Hour PM: ${fmt(eh,em)}–${fmt(bl_h,bl_m)}`);
+}
+function calcFog() {
+  const dist = +document.getElementById('fogDist').value;
+  const vis = +document.getElementById('visibility').value;
+  const haze = Math.min(100, Math.round((dist/vis)*100));
+  setResult('fogResult', `~${haze}% atmospheric haze · ${haze>50?'Strong atmospheric effect':'Mild haze'} · ${haze>50?'ND not needed':'Use gradient filter for sky'}`);
+}
+function calcLandscapeDepth() {
+  const n = +document.getElementById('nearDist').value;
+  const f = +document.getElementById('farDist').value;
+  const ap = +document.getElementById('lsAp').value;
+  const fl = +document.getElementById('lsFL').value;
+  const coc = 0.029;
+  const h = (fl*fl)/(ap*coc*1000);
+  const near = (h*n)/(h+n);
+  const far = f > h/2 ? Infinity : (h*f)/(h-f);
+  setResult('lsDepthResult', `Near limit: ${near.toFixed(1)}m · Far limit: ${far===Infinity?'∞':far.toFixed(0)+'m'} · ${near.toFixed(1)}m–${far===Infinity?'∞':far.toFixed(0)+'m'} in focus`);
+}
+function calcPano() {
+  const fl = +document.getElementById('panoFL').value;
+  const overlap = +document.getElementById('panoOverlap').value/100;
+  const angle = +document.getElementById('panoAngle').value;
+  const frameFOV = 2 * Math.atan(18/fl) * 180/Math.PI;
+  const effective = frameFOV * (1-overlap);
+  const shots = Math.ceil(angle/effective) + 1;
+  setResult('panoResult', `${shots} shots needed · Every ${effective.toFixed(1)}° · FOV per frame: ${frameFOV.toFixed(1)}°`);
+}
+function waterfallGuide() {
+  const guides = {
+    freeze: '⚡ 1/1000s or faster · Stop water drops · Best in bright light',
+    slight: '💧 1/250s–1/500s · Shows motion without full blur',
+    silk: '🌊 1/15s–1/4s · Classic silky look · Use ND filter in bright light',
+    ghost: '👻 1s–30s+ · Abstract, misty effect · Tripod required · ND1000+'
+  };
+  setResult('waterfallResult', guides[document.getElementById('blurLevel').value]);
+}
+function calcRainbow() {
+  const elev = +document.getElementById('sunElev').value;
+  const rainbowAngle = 42 - elev;
+  if(elev > 42) setResult('rainbowResult', '⛔ Sun too high for rainbows (>42°). Wait for lower sun angle.');
+  else setResult('rainbowResult', `🌈 Rainbow appears at ~${rainbowAngle.toFixed(0)}° from sun's antisolar point · ${elev < 10 ? 'Full double rainbow possible!' : 'Good conditions'}`, elev < 20);
+}
+function calcFOV() {
+  const fl = +document.getElementById('fovFL').value;
+  const sw = +document.getElementById('fovSensor').value;
+  const fov_h = 2 * Math.atan(sw/(2*fl)) * 180/Math.PI;
+  const fov_v = 2 * Math.atan((sw*2/3)/(2*fl)) * 180/Math.PI;
+  setResult('fovResult', `Horizontal: ${fov_h.toFixed(1)}° · Vertical: ${fov_v.toFixed(1)}°`);
+}
+function calcStarTrail() {
+  const arc = +document.getElementById('trailArc').value;
+  const mins = arc / 0.25;
+  const h = Math.floor(mins/60);
+  const m = Math.round(mins%60);
+  setResult('starTrailResult', `~${h > 0 ? h+'h ' : ''}${m}min exposure needed · Plan around moon phase`);
+}
+
+// ===================== EXPOSURE CALCS =====================
+function calcSunny16() {
+  const iso = +document.getElementById('sunnyISO').value;
+  const ap = +document.getElementById('sunnyCondition').value;
+  const shut = Math.round(1/iso);
+  setResult('sunny16Result', `f/${ap} · 1/${iso}s · ISO ${iso}`);
+}
+function solveTriangle() {
+  const ap = +document.getElementById('triAp').value;
+  const sh = +document.getElementById('triShutter').value;
+  const iso = +document.getElementById('triISO').value;
+  const change = document.getElementById('triChange').value;
+  let newISO = iso;
+  if(change==='halveAp') newISO = iso/4;
+  else if(change==='doubleAp') newISO = iso*4;
+  else if(change==='halveShutter') newISO = iso*2;
+  else if(change==='doubleShutter') newISO = iso/2;
+  setResult('triangleResult', `Adjust ISO to: ${Math.round(newISO)} to maintain same exposure`, true);
+}
+function calcZone() {
+  const ev = +document.getElementById('zoneEV').value;
+  const zone = +document.getElementById('targetZone').value;
+  const comp = zone - 5;
+  const adj = comp > 0 ? `+${comp}EV (expose brighter)` : comp < 0 ? `${comp}EV (expose darker)` : 'No adjustment (Zone V = metered exposure)';
+  setResult('zoneResult', `Zone ${zone} — ${adj}`);
+}
+function calcGN() {
+  const gn = +document.getElementById('gnGN').value;
+  const iso = +document.getElementById('gnISO').value;
+  const dist = +document.getElementById('gnDist').value;
+  const ap = (gn * Math.sqrt(iso/100)) / dist;
+  setResult('gnResult', `Required aperture: ${fstop(ap.toFixed(1))}`, true);
+}
+function calcNoise() {
+  const iso = +document.getElementById('noiseISO').value;
+  const gen = document.getElementById('camGen').value;
+  const base = gen === 'new' ? 6400 : gen === 'mid' ? 3200 : 1600;
+  const stops = Math.log2(iso/100);
+  const usable = iso <= base ? '✓ Usable' : iso <= base*2 ? '⚠ Noticeable noise' : '⛔ Heavy noise';
+  setResult('noiseResult', `${stops.toFixed(1)} stops above base · ${usable} · Clean limit: ~ISO ${base}`);
+}
+function calcDR() {
+  const hl = +document.getElementById('hlEV').value;
+  const sh = +document.getElementById('shEV').value;
+  const dr = hl - sh;
+  setResult('drResult', `Scene DR: ${dr} stops · ${dr > 14 ? 'HDR needed' : dr > 10 ? 'Good modern sensor' : 'Easy scene'}`);
+}
+
+// ===================== LENS CALCS =====================
+function calcDOF() {
+  const fl = +document.getElementById('dofFL').value;
+  const ap = +document.getElementById('dofAp').value;
+  const d = +document.getElementById('dofDist').value * 1000; // mm
+  const coc = +document.getElementById('dofSensor').value;
+  const h = (fl*fl)/(ap*coc);
+  const near = (h*d)/(h+d);
+  const far = (h*d)/(h-d);
+  const dof = far > 1e7 ? '∞' : ((far-near)/1000).toFixed(2)+'m';
+  setResult('dofResult', `Near: ${(near/1000).toFixed(2)}m · Far: ${far>1e7?'∞':(far/1000).toFixed(2)+'m'} · Total DoF: ${dof}`, true);
+}
+function calcExtensionTube() {
+  const fl = +document.getElementById('etFL').value;
+  const ext = +document.getElementById('etLen').value;
+  const mag = ext/fl;
+  const expFactor = Math.pow(1 + mag, 2);
+  setResult('etResult', `Magnification: ${mag.toFixed(2)}:1 · Exposure factor: ${expFactor.toFixed(1)}× (+${(Math.log2(expFactor)).toFixed(1)} stops)`);
+}
+function calcTC() {
+  const tc = +document.getElementById('tcType').value;
+  const ap = +document.getElementById('tcAp').value;
+  const newAp = ap * tc;
+  const stops = tc === 1.4 ? 1 : 2;
+  setResult('tcResult', `New effective aperture: ${fstop(newAp.toFixed(1))} · Lost ${stops} stop${stops>1?'s':''} of light`);
+}
+function calcIS() {
+  const fl = +document.getElementById('isFL').value;
+  const stops = +document.getElementById('isStops').value;
+  const minNoIS = Math.round(1/fl * 1000) / 1000;
+  const minWithIS = (minNoIS * Math.pow(2, -stops));
+  const s = n => n < 1 ? `1/${Math.round(1/n)}s` : `${n.toFixed(1)}s`;
+  setResult('isResult', `Without IS: min ${s(minNoIS)} · With ${stops}-stop IS: can shoot ~${s(minWithIS)}`, true);
+}
+function calcMFD() {
+  const fl = +document.getElementById('mfdFL').value;
+  const mag = +document.getElementById('mfdMag').value;
+  const mfd = fl * (1/mag + 1);
+  setResult('mfdResult', `Minimum focus distance: ~${(mfd/10).toFixed(1)}cm for ${mag}:1 magnification`);
+}
+function calcCompression() {
+  const a = +document.getElementById('compA').value;
+  const b = +document.getElementById('compB').value;
+  const ratio = (b/a).toFixed(1);
+  setResult('compressionResult', `${b}mm compresses ${ratio}× more than ${a}mm. ${b >= 85 ? 'Good for flattering portraits.' : 'Use 85mm+ for portraits.'}`);
+}
+
+// ===================== LIGHTING CALCS =====================
+function calcISL() {
+  const d1 = +document.getElementById('isl1').value;
+  const d2 = +document.getElementById('isl2').value;
+  const factor = Math.pow(d1/d2, 2);
+  const stops = Math.log2(factor);
+  const dir = stops > 0 ? 'brighter' : 'darker';
+  setResult('islResult', `Light ${Math.abs(stops).toFixed(1)} stops ${dir} — ${(factor*100).toFixed(0)}% of original intensity`);
+}
+function calcSoftboxEffect() {
+  const sb = +document.getElementById('sbSize').value;
+  const d = +document.getElementById('sbDist').value * 100; // cm
+  const ratio = sb / d;
+  const softness = ratio > 1 ? 'Very Soft (wrapping)' : ratio > 0.5 ? 'Soft (diffused)' : ratio > 0.3 ? 'Medium' : 'Hard (specular)';
+  setResult('sbResult', `Source/distance ratio: ${ratio.toFixed(2)} — ${softness}`);
+}
+function calcFlashPower() {
+  const gn = +document.getElementById('fpGN').value;
+  const pwr = +document.getElementById('fpPower').value;
+  const dist = +document.getElementById('fpDist').value;
+  const ap = (gn * Math.sqrt(pwr)) / dist;
+  setResult('fpResult', `Required aperture: ${fstop(ap.toFixed(1))}`, true);
+}
+function calcBGSep() {
+  const subj = +document.getElementById('bgSepSubj').value;
+  const stops = +document.getElementById('bgGoal').value;
+  const bgAp = subj * Math.pow(Math.sqrt(2), -stops);
+  setResult('bgSepResult', `Set background light to: ${fstop(bgAp.toFixed(1))}`);
+}
+function calcLED() {
+  const w = +document.getElementById('ledW').value;
+  const d = +document.getElementById('ledDist').value;
+  const lum = w * 80; // ~80 lm/W for LED panels
+  const lux = lum / (Math.PI * d * d);
+  setResult('ledResult', `~${Math.round(lux).toLocaleString()} lux at ${d}m · ${lux > 2000 ? 'Bright studio light' : lux > 500 ? 'Good fill light' : 'Accent only'}`);
+}
+function calcAVS() {
+  const amb = +document.getElementById('avsAmbient').value;
+  const fls = +document.getElementById('avsFlash').value;
+  const diff = fls - amb;
+  const msg = diff > 1 ? 'Flash dominant — artificial look' : diff > -1 ? '✓ Balanced — natural fill' : diff > -2 ? 'Ambient dominant — natural look' : 'Flash barely visible';
+  setResult('avsResult', `${diff > 0 ? '+' : ''}${diff} stop difference — ${msg}`, Math.abs(diff) <= 1);
+}
+
+// ===================== PRINT CALCS =====================
+function calcPrintSize() {
+  const w = +document.getElementById('printPxW').value;
+  const h = +document.getElementById('printPxH').value;
+  const dpi = +document.getElementById('printDPI').value;
+  const winch = (w/dpi).toFixed(1);
+  const hinch = (h/dpi).toFixed(1);
+  const wcm = (winch*2.54).toFixed(1);
+  const hcm = (hinch*2.54).toFixed(1);
+  setResult('printSizeResult', `${winch}" × ${hinch}" (${wcm}cm × ${hcm}cm) at ${dpi} DPI`, true);
+}
+function calcMinRes() {
+  const w = +document.getElementById('mpWidth').value;
+  const h = +document.getElementById('mpHeight').value;
+  const dpi = +document.getElementById('mpDPI').value;
+  const px_w = w * dpi;
+  const px_h = h * dpi;
+  const mp = (px_w*px_h/1e6).toFixed(1);
+  setResult('minResResult', `Need ${px_w.toLocaleString()}×${px_h.toLocaleString()}px — ${mp} MP minimum`);
+}
+function calcEnlargement() {
+  const mp = +document.getElementById('enlargeMP').value;
+  const px = Math.sqrt(mp*1e6*1.5);
+  const at300 = ((px/300)*2.54).toFixed(0);
+  const at240 = ((px/240)*2.54).toFixed(0);
+  const at150 = ((px/150)*2.54).toFixed(0);
+  setResult('enlargeResult', `300DPI: ~${at300}cm wide · 240DPI: ~${at240}cm · 150DPI: ~${at150}cm`);
+}
+function calcColorSpace() {
+  const from = document.getElementById('csFrom').value;
+  const to = document.getElementById('csTo').value;
+  const guides = {
+    'sRGB-AdobeRGB': '✓ Widen gamut. Edit in AdobeRGB, save sRGB for web.',
+    'sRGB-Print': '⚠ CMYK gamut is smaller. Expect some color shifts — soft-proof first.',
+    'AdobeRGB-sRGB': '⚠ Convert before web export or colors will look desaturated.',
+    'AdobeRGB-Print': '✓ Good for print. Convert via ICC profile for best results.',
+    'P3-sRGB': '⚠ Clipping possible. Convert carefully.',
+    'P3-AdobeRGB': '✓ Similar gamuts. Minimal loss expected.',
+    'P3-Print': '⚠ Soft-proof with printer ICC before printing.'
+  };
+  const key = `${from}-${to}`;
+  setResult('csResult', guides[key] || 'No specific guidance — verify with ICC profiles');
+}
+function calcFileSize() {
+  const w = +document.getElementById('fsW').value;
+  const h = +document.getElementById('fsH').value;
+  const bits = +document.getElementById('fsBit').value;
+  const ch = +document.getElementById('fsCh').value;
+  const bytes = w * h * ch * (bits/8);
+  const mb = (bytes/1e6).toFixed(1);
+  const tiff_mb = (bytes/1e6 * 1.0).toFixed(1);
+  setResult('fsResult', `Uncompressed: ${mb} MB · TIFF ~${tiff_mb}MB · JPEG ~${(bytes/1e6/15).toFixed(1)}MB`);
+}
+function calcWebResize() {
+  const orig = +document.getElementById('webW').value;
+  const target = +document.getElementById('webPlatform').value;
+  const reduction = ((1 - target/orig)*100).toFixed(0);
+  setResult('webResizeResult', `Resize to ${target}px wide · ${reduction}% size reduction · Export sRGB JPEG 85–95%`);
+}
+
+// ===================== OTHER CALCS =====================
+function calcVideoShutter() {
+  const fps = +document.getElementById('fps').value;
+  const angle = +document.getElementById('shutterAngle').value;
+  const shutter = Math.round(fps * (360/angle));
+  setResult('videoResult', `Shutter: 1/${shutter}s (${angle}° at ${fps}fps)`, true);
+}
+function calcDrone() {
+  const h = +document.getElementById('droneH').value;
+  const aov = +document.getElementById('droneAoV').value;
+  const footprint = 2 * h * Math.tan((aov/2) * Math.PI/180);
+  setResult('droneResult', `Ground footprint: ~${footprint.toFixed(0)}m wide at ${h}m altitude`);
+}
+function calcAction() {
+  const spd = +document.getElementById('actionSpeed').value * (1000/3600); // m/s
+  const framePct = +document.getElementById('actionSize').value / 100;
+  const sensorW = 0.036; // FF
+  const fl = 0.2; // assumed 200mm
+  const subjectInFrame = sensorW / fl; // approximation
+  const blur = sensorW * 0.001; // 1px blur target
+  const maxT = blur / (spd * framePct);
+  setResult('actionResult', `Min shutter: ~1/${Math.round(1/maxT)}s to freeze motion`);
+}
+function moonExposure() {
+  const guides = {
+    full: '🌕 Looney 11: f/11 · 1/ISO · Full moon is EV ~14. Treat like daytime!',
+    gibbous: '🌔 f/8 · 1/ISO · Very bright. EV ~12–13.',
+    quarter: '🌓 f/5.6 · 1/ISO · EV ~10. Visible features still sharp.',
+    crescent: '🌒 f/4 · 1/ISO or longer · EV ~8. Telephoto helps.',
+    new: '🌑 No moon light. Best for Milky Way. ISO 3200, f/2.8, 15–25s.'
+  };
+  setResult('moonResult', guides[document.getElementById('moonPhase').value]);
+}
+function calcPhoneDOF() {
+  const eff_fl = +document.getElementById('phoneFocal').value;
+  const ap = +document.getElementById('phoneAp').value;
+  const dist = +document.getElementById('phoneDist').value;
+  // Phone sensor: 6.17mm wide, FF: 36mm
+  const phoneCrop = 36/6.17;
+  const phone_fl = eff_fl / phoneCrop;
+  const ff_dof = (2 * 0.029 * dist * dist * ap) / (eff_fl * eff_fl / 1000);
+  const phone_dof = (2 * 0.029/phoneCrop * dist * dist * ap) / (phone_fl * phone_fl / 1000);
+  setResult('phoneDOFResult', `Phone DoF: ~${(phone_dof).toFixed(1)}m · FF equivalent: ~${(ff_dof).toFixed(2)}m · Phone has ${(phone_dof/ff_dof).toFixed(0)}× more DoF`);
+}
+function calcSchedule() {
+  const locs = +document.getElementById('schedLoc').value;
+  const mpl = +document.getElementById('schedMPL').value;
+  const travel = +document.getElementById('schedTravel').value;
+  const [sh, sm] = document.getElementById('schedStart').value.split(':').map(Number);
+  let mins = sh * 60 + sm;
+  let schedule = '';
+  for(let i = 1; i <= locs; i++) {
+    const h = Math.floor(mins/60) % 24;
+    const m = mins % 60;
+    schedule += `📍 Loc ${i}: ${h}:${String(m).padStart(2,'0')} (${mpl}min)`;
+    if(i < locs) schedule += `<br>`;
+    mins += mpl + travel;
   }
+  const endH = Math.floor(mins/60)%24;
+  const endM = mins%60;
+  schedule += `<br>🏁 Wrap: ${endH}:${String(endM).padStart(2,'0')}`;
+  setResult('schedResult', schedule);
+}
 
-  async function saveAsAudio() {
-    if (isSynthBusy) return;
-    const text = document.getElementById('textInput').value.trim();
-    if (!text) { setStatus('error', 'Please enter some text first.'); return; }
-    if (text.length > 1000) {
-      setStatus('error', 'Text too long for save — please use 1000 characters or less.');
-      return;
-    }
-
-    isSynthBusy = true;
-    const btn = document.getElementById('saveBtn');
-    const lbl = document.getElementById('saveBtnText');
-    btn.classList.add('recording');
-    btn.querySelector('.btn-icon').textContent = '⏳';
-    lbl.textContent = 'Generating…';
-    btn.disabled = true;
-    setStatus('speaking', '⚙️ Fetching speech audio…');
-    startBars();
-
-    try {
-      const voice = getSeVoice();
-      const encoded = encodeURIComponent(text.slice(0, 1000));
-      const url = `https://api.streamelements.com/kappa/v2/speech?voice=${voice}&text=${encoded}`;
-
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`TTS API error ${resp.status}`);
-
-      const blob = await resp.blob();
-      const ts   = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
-      const name = `speakit_${ts}.mp3`;
-      const sizeKB = (blob.size / 1024).toFixed(1);
-
-      // Convert blob to data: URL (works in any sandbox)
-      const reader = new FileReader();
-      reader.onload = () => {
-        addRecording({ name, url: reader.result, size: sizeKB, duration: '~', mime: 'audio/mpeg' });
-        setStatus('', `✓ Saved: ${name} — ${sizeKB} KB`);
-        finishSave(btn, lbl);
-      };
-      reader.onerror = () => { throw new Error('FileReader failed'); };
-      reader.readAsDataURL(blob);
-
-    } catch (err) {
-      console.error(err);
-      setStatus('error', '⚠ Save failed: ' + err.message + '. Check your internet connection.');
-      finishSave(btn, lbl);
-    }
-  }
-
-  function finishSave(btn, lbl) {
-    isSynthBusy = false;
-    btn.classList.remove('recording');
-    btn.querySelector('.btn-icon').textContent = '⏺';
-    lbl.textContent = 'Save as MP3';
-    btn.disabled = false;
-    stopBars();
-  }
-
-  /* ─── RECORDINGS LIST ─── */
-  function addRecording(rec) {
-    recordings.unshift(rec);
-    renderRecordings();
-  }
-
-  function renderRecordings() {
-    const card = document.getElementById('recordingsCard');
-    const list = document.getElementById('recordingsList');
-    card.style.display = 'block';
-    if (!recordings.length) {
-      list.innerHTML = '<div class="empty-recordings">No recordings yet.</div>';
-      return;
-    }
-    list.innerHTML = recordings.map((r, i) => `
-      <div class="recording-item">
-        <div class="rec-icon">🎵</div>
-        <div class="rec-info">
-          <div class="rec-name" title="${r.name}">${r.name}</div>
-          <div class="rec-meta">${r.duration}s &middot; ${r.size} KB &middot; ${r.mime||'audio/mpeg'}</div>
-        </div>
-        <div class="rec-actions">
-          <button class="rec-btn dl" onclick="downloadRecording(${i})" title="Download">↓ Save</button>
-          <button class="rec-btn" onclick="deleteRecording(${i})" title="Delete">✕</button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function downloadRecording(i) {
-    const r = recordings[i];
-    const a = document.createElement('a');
-    a.href = r.url;
-    a.download = r.name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-
-  function deleteRecording(i) {
-
-    recordings.splice(i, 1);
-    renderRecordings();
-    if (!recordings.length) document.getElementById('recordingsCard').style.display = 'none';
-  }
+// ===================== INIT =====================
+reflectionGuide();
+calcWB();
+skinToneGuide();
+calcCatchlight();
+flatterAngle();
+waterfallGuide();
+moonExposure();
+portraitFL();
 </script>
-
 </body>
 </html>
