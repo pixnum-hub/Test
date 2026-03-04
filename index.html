@@ -321,7 +321,16 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .pf{width:100%;background:linear-gradient(to top,var(--a),var(--a2));border-radius:3px;transition:height .9s ease;}
 .phr{font-size:.52rem;color:var(--t3);font-family:system-ui,sans-serif;text-align:center;}
 
-/* COMPARE */
+/* 7-DAY AQI + RAIN FORECAST */
+.forecast7{background:var(--card);border:1px solid var(--gb);border-radius:var(--rsm);padding:14px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
+.f7row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--gb);}
+.f7row:last-child{border-bottom:none;}
+.f7day{font-weight:700;font-size:.82rem;width:72px;flex-shrink:0;}
+.f7bar-wrap{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;position:relative;}
+.f7bar{height:100%;border-radius:4px;transition:width .9s ease;}
+.f7val{font-size:.75rem;font-weight:600;width:42px;text-align:right;flex-shrink:0;}
+.f7badge{font-size:.62rem;padding:2px 6px;border-radius:50px;font-weight:700;flex-shrink:0;width:58px;text-align:center;}
+
 .cmpcard{background:var(--card);border:1px solid var(--gb);border-radius:var(--rsm);padding:14px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
 .cmptbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:.78rem;}
 .cmptbl th{font-family:system-ui,sans-serif;font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;padding:6px 8px;text-align:left;border-bottom:1px solid var(--gb);}
@@ -691,14 +700,14 @@ async function loadCoords(lat,lon,loc=null,fromGPS=false,acc=null,silent=false){
       +`uv_index,is_day,visibility,cloud_cover`
       +`&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m`
       +`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,`
-      +`precipitation_sum,uv_index_max,wind_speed_10m_max`
+      +`precipitation_sum,precipitation_probability_max,uv_index_max,wind_speed_10m_max`
       +`&timezone=auto&forecast_days=7`;
 
     // Real AQI from Open-Meteo Air Quality API (free, no key needed)
     const aqUrl=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}`
       +`&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone,european_aqi,us_aqi`
-      +`&hourly=pm2_5,european_aqi`
-      +`&timezone=auto`;
+      +`&hourly=pm2_5,european_aqi,us_aqi`
+      +`&forecast_days=7&timezone=auto`;
 
     // Fetch weather + AQI in parallel
     const [d, aqRaw] = await Promise.all([
@@ -1036,6 +1045,64 @@ ${alertH}
 </div>
 
 <div class="fwrap"><div class="stitle">📅 7-Day Forecast</div><div class="flist">${fcast}</div></div>
+
+${(()=>{
+  /* ── 7-DAY RAIN FORECAST ── */
+  const rainRows = d.daily.time.map((day,i)=>{
+    const dt   = new Date(day+'T12:00:00');
+    const nm   = i===0?'Today':i===1?'Tomorrow':['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dt.getDay()];
+    const prob = d.daily.precipitation_probability_max?.[i] ?? 0;
+    const mm   = d.daily.precipitation_sum[i] ?? 0;
+    const col  = prob<20?'#38bdf8':prob<50?'#818cf8':prob<75?'#fb923c':'#ef4444';
+    const lbl  = prob<20?'Dry':prob<50?'Low':prob<75?'Likely':'Heavy';
+    return `<div class="f7row">
+      <div class="f7day">${nm}</div>
+      <div class="f7bar-wrap"><div class="f7bar" style="width:${prob}%;background:${col}"></div></div>
+      <div class="f7val" style="color:${col}">${prob}%</div>
+      <div class="f7badge" style="background:${col}22;color:${col}">${lbl}</div>
+      <div style="font-size:.68rem;color:var(--t3);flex-shrink:0;width:38px;text-align:right">${mm.toFixed(1)}mm</div>
+    </div>`;
+  }).join('');
+
+  /* ── 7-DAY AQI FORECAST ── */
+  // Aggregate hourly AQI into daily max
+  let aqiRows = '';
+  if(d.aqi?.hourly?.us_aqi && d.aqi?.hourly?.time){
+    const aqHrTimes = d.aqi.hourly.time;
+    const aqHrVals  = d.aqi.hourly.us_aqi;
+    const dailyAQI  = d.daily.time.map(day=>{
+      const dayStr = day.slice(0,10);
+      const hrs = aqHrVals.filter((_,i)=>aqHrTimes[i]?.startsWith(dayStr)&&aqHrVals[i]!=null);
+      return hrs.length ? Math.round(Math.max(...hrs)) : null;
+    });
+    aqiRows = d.daily.time.map((day,i)=>{
+      const dt  = new Date(day+'T12:00:00');
+      const nm  = i===0?'Today':i===1?'Tomorrow':['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dt.getDay()];
+      const val = dailyAQI[i];
+      if(val===null) return `<div class="f7row"><div class="f7day">${nm}</div><div style="font-size:.7rem;color:var(--t3)">No data</div></div>`;
+      const info= aqiInfo(val);
+      const pct = Math.min(100, Math.round(val/300*100));
+      return `<div class="f7row">
+        <div class="f7day">${nm}</div>
+        <div class="f7bar-wrap"><div class="f7bar" style="width:${pct}%;background:${info.c}"></div></div>
+        <div class="f7val" style="color:${info.c}">${val}</div>
+        <div class="f7badge" style="background:${info.c}22;color:${info.c}">${info.l}</div>
+      </div>`;
+    }).join('');
+  }
+
+  return `
+<div class="forecast7" style="animation:fadeUp .5s .17s ease both">
+  <div class="stitle">🌧️ 7-Day Rain Forecast</div>
+  ${rainRows}
+</div>
+${aqiRows ? `
+<div class="forecast7" style="animation:fadeUp .5s .19s ease both">
+  <div class="stitle">🌬️ 7-Day AQI Forecast</div>
+  ${aqiRows}
+  <div style="font-size:.58rem;color:var(--t3);margin-top:8px;">Source: Open-Meteo · US AQI · Daily peak values</div>
+</div>` : ''}`;
+})()}
 
 <div class="pc" style="animation:fadeUp .5s .18s ease both">
   <div class="stitle">🧍 Comfort Index</div>
