@@ -305,12 +305,50 @@
     border-radius: 8px;
     padding: 16px 18px;
     display: grid;
-    grid-template-columns: auto 1fr auto auto;
+    grid-template-columns: 88px auto 1fr auto auto;
     align-items: center;
     gap: 14px;
     transition: border-color 0.2s;
     position: relative;
     overflow: hidden;
+  }
+
+  .card-pattern-wrap {
+    width: 80px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .status-pattern {
+    display: block;
+    width: 80px;
+    height: 48px;
+  }
+
+  /* Glitch flicker for down state pattern */
+  .pat-down {
+    animation: pat-glitch 0.4s steps(1) infinite;
+  }
+
+  @keyframes pat-glitch {
+    0%   { filter: none; }
+    15%  { filter: hue-rotate(90deg) saturate(2); }
+    30%  { filter: none; }
+    60%  { filter: brightness(1.4) hue-rotate(-30deg); }
+    80%  { filter: none; }
+    95%  { filter: saturate(0) brightness(0.6); }
+    100% { filter: none; }
+  }
+
+  .pat-checking {
+    opacity: 0.95;
   }
 
   .monitor-card:hover { border-color: #2e4558; }
@@ -530,6 +568,22 @@
     letter-spacing: 0.5px;
   }
 
+  .cat-tag {
+    display: inline-block;
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: rgba(0,229,255,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,255,0.2);
+    font-family: var(--font-mono);
+    font-weight: normal;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    vertical-align: middle;
+    margin-left: 6px;
+  }
+
   .badge-up { background: rgba(0,255,157,0.15); color: var(--accent3); }
   .badge-down { background: rgba(255,61,113,0.15); color: var(--accent2); }
   .badge-warn { background: rgba(255,170,0,0.15); color: var(--warn); }
@@ -538,6 +592,7 @@
     .stats-row { grid-template-columns: repeat(2, 1fr); }
     .monitor-card { grid-template-columns: auto 1fr auto; }
     .monitor-meta { display: none; }
+    .card-pattern-wrap { display: none; }
     header { flex-direction: column; align-items: flex-start; }
   }
 </style>
@@ -589,15 +644,12 @@
   <!-- Controls -->
   <div class="controls-row">
     <div class="control-group">
-      <span>CHECK INTERVAL:</span>
-      <select id="interval-select" onchange="updateInterval()">
-        <option value="10000">10 seconds</option>
-        <option value="30000" selected>30 seconds</option>
-        <option value="60000">60 seconds</option>
-        <option value="300000">5 minutes</option>
+      <span>CATEGORY:</span>
+      <select id="cat-filter" onchange="renderAll()">
+        <option value="All">All</option>
       </select>
     </div>
-    <button class="btn-sm" onclick="checkAll()">↻ CHECK ALL NOW</button>
+    <button class="btn-sm" onclick="checkAll()">↻ RE-CHECK ALL</button>
     <button class="btn-sm" onclick="clearAll()">✕ CLEAR ALL</button>
   </div>
 
@@ -633,15 +685,122 @@
 <script>
   // ── State ──
   const monitors = {};
-  let checkInterval = 30000;
-  let intervalTimer = null;
   let totalChecks = 0;
 
-  // Default monitors to seed the app
-  const defaults = [
-    'https://google.com',
-    'https://github.com',
-    'https://anthropic.com',
+  // 100 prime & essential websites, organised by category
+  const defaultSites = [
+    // Search & Navigation
+    { url: 'https://google.com',       cat: 'Search' },
+    { url: 'https://bing.com',         cat: 'Search' },
+    { url: 'https://duckduckgo.com',   cat: 'Search' },
+    { url: 'https://yahoo.com',        cat: 'Search' },
+    { url: 'https://baidu.com',        cat: 'Search' },
+    // Social Media
+    { url: 'https://facebook.com',     cat: 'Social' },
+    { url: 'https://instagram.com',    cat: 'Social' },
+    { url: 'https://twitter.com',      cat: 'Social' },
+    { url: 'https://linkedin.com',     cat: 'Social' },
+    { url: 'https://reddit.com',       cat: 'Social' },
+    { url: 'https://tiktok.com',       cat: 'Social' },
+    { url: 'https://pinterest.com',    cat: 'Social' },
+    { url: 'https://snapchat.com',     cat: 'Social' },
+    { url: 'https://tumblr.com',       cat: 'Social' },
+    { url: 'https://discord.com',      cat: 'Social' },
+    // Video & Streaming
+    { url: 'https://youtube.com',      cat: 'Streaming' },
+    { url: 'https://netflix.com',      cat: 'Streaming' },
+    { url: 'https://twitch.tv',        cat: 'Streaming' },
+    { url: 'https://disneyplus.com',   cat: 'Streaming' },
+    { url: 'https://hulu.com',         cat: 'Streaming' },
+    { url: 'https://primevideo.com',   cat: 'Streaming' },
+    { url: 'https://vimeo.com',        cat: 'Streaming' },
+    { url: 'https://dailymotion.com',  cat: 'Streaming' },
+    // E-Commerce & Shopping
+    { url: 'https://amazon.com',       cat: 'Shopping' },
+    { url: 'https://ebay.com',         cat: 'Shopping' },
+    { url: 'https://walmart.com',      cat: 'Shopping' },
+    { url: 'https://etsy.com',         cat: 'Shopping' },
+    { url: 'https://shopify.com',      cat: 'Shopping' },
+    { url: 'https://aliexpress.com',   cat: 'Shopping' },
+    { url: 'https://flipkart.com',     cat: 'Shopping' },
+    // Tech & Developer
+    { url: 'https://github.com',       cat: 'Tech' },
+    { url: 'https://stackoverflow.com',cat: 'Tech' },
+    { url: 'https://anthropic.com',    cat: 'Tech' },
+    { url: 'https://openai.com',       cat: 'Tech' },
+    { url: 'https://cloudflare.com',   cat: 'Tech' },
+    { url: 'https://aws.amazon.com',   cat: 'Tech' },
+    { url: 'https://azure.microsoft.com', cat: 'Tech' },
+    { url: 'https://cloud.google.com', cat: 'Tech' },
+    { url: 'https://vercel.com',       cat: 'Tech' },
+    { url: 'https://netlify.com',      cat: 'Tech' },
+    { url: 'https://digitalocean.com', cat: 'Tech' },
+    { url: 'https://heroku.com',       cat: 'Tech' },
+    { url: 'https://npmjs.com',        cat: 'Tech' },
+    { url: 'https://pypi.org',         cat: 'Tech' },
+    // News & Media
+    { url: 'https://bbc.com',          cat: 'News' },
+    { url: 'https://cnn.com',          cat: 'News' },
+    { url: 'https://nytimes.com',      cat: 'News' },
+    { url: 'https://theguardian.com',  cat: 'News' },
+    { url: 'https://reuters.com',      cat: 'News' },
+    { url: 'https://apnews.com',       cat: 'News' },
+    { url: 'https://techcrunch.com',   cat: 'News' },
+    { url: 'https://theverge.com',     cat: 'News' },
+    { url: 'https://wired.com',        cat: 'News' },
+    { url: 'https://forbes.com',       cat: 'News' },
+    // Finance & Banking
+    { url: 'https://paypal.com',       cat: 'Finance' },
+    { url: 'https://stripe.com',       cat: 'Finance' },
+    { url: 'https://coinbase.com',     cat: 'Finance' },
+    { url: 'https://binance.com',      cat: 'Finance' },
+    { url: 'https://robinhood.com',    cat: 'Finance' },
+    { url: 'https://wise.com',         cat: 'Finance' },
+    // Productivity & Tools
+    { url: 'https://google.com/drive', cat: 'Productivity' },
+    { url: 'https://notion.so',        cat: 'Productivity' },
+    { url: 'https://slack.com',        cat: 'Productivity' },
+    { url: 'https://zoom.us',          cat: 'Productivity' },
+    { url: 'https://trello.com',       cat: 'Productivity' },
+    { url: 'https://atlassian.com',    cat: 'Productivity' },
+    { url: 'https://dropbox.com',      cat: 'Productivity' },
+    { url: 'https://office.com',       cat: 'Productivity' },
+    { url: 'https://figma.com',        cat: 'Productivity' },
+    { url: 'https://canva.com',        cat: 'Productivity' },
+    { url: 'https://airtable.com',     cat: 'Productivity' },
+    { url: 'https://asana.com',        cat: 'Productivity' },
+    // Cloud & Infrastructure
+    { url: 'https://fastly.com',       cat: 'Infrastructure' },
+    { url: 'https://akamai.com',       cat: 'Infrastructure' },
+    { url: 'https://status.github.com',cat: 'Infrastructure' },
+    { url: 'https://status.aws.amazon.com', cat: 'Infrastructure' },
+    // Email & Communication
+    { url: 'https://gmail.com',        cat: 'Communication' },
+    { url: 'https://outlook.com',      cat: 'Communication' },
+    { url: 'https://proton.me',        cat: 'Communication' },
+    { url: 'https://whatsapp.com',     cat: 'Communication' },
+    { url: 'https://telegram.org',     cat: 'Communication' },
+    { url: 'https://signal.org',       cat: 'Communication' },
+    // Education & Reference
+    { url: 'https://wikipedia.org',    cat: 'Education' },
+    { url: 'https://khanacademy.org',  cat: 'Education' },
+    { url: 'https://coursera.org',     cat: 'Education' },
+    { url: 'https://udemy.com',        cat: 'Education' },
+    { url: 'https://medium.com',       cat: 'Education' },
+    { url: 'https://quora.com',        cat: 'Education' },
+    { url: 'https://archive.org',      cat: 'Education' },
+    // Gaming
+    { url: 'https://steampowered.com', cat: 'Gaming' },
+    { url: 'https://epicgames.com',    cat: 'Gaming' },
+    { url: 'https://roblox.com',       cat: 'Gaming' },
+    // Entertainment & Misc
+    { url: 'https://spotify.com',      cat: 'Entertainment' },
+    { url: 'https://soundcloud.com',   cat: 'Entertainment' },
+    { url: 'https://imdb.com',         cat: 'Entertainment' },
+    { url: 'https://airbnb.com',       cat: 'Entertainment' },
+    { url: 'https://booking.com',      cat: 'Entertainment' },
+    { url: 'https://tripadvisor.com',  cat: 'Entertainment' },
+    { url: 'https://yelp.com',         cat: 'Entertainment' },
   ];
 
   // ── Clock ──
@@ -748,13 +907,14 @@
   }
 
   // ── Add Monitor ──
-  function addMonitor(url) {
+  function addMonitor(url, cat) {
     url = url || document.getElementById('url-input').value;
     if (!url.trim()) return;
     url = normalizeUrl(url);
     const id = 'mon_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
     monitors[id] = {
       id, url,
+      cat: cat || 'Custom',
       status: 'unknown',
       ping: null,
       httpCode: null,
@@ -763,7 +923,7 @@
       upCount: 0,
       downCount: 0,
     };
-    document.getElementById('url-input').value = '';
+    if (!cat) document.getElementById('url-input').value = '';
     log(`+ Added monitor: ${domainOf(url)}`, 'info');
     renderAll();
     updateStats();
@@ -802,6 +962,144 @@
     return Math.round((m.upCount / total) * 1000) / 10;
   }
 
+  // ── Deterministic hash from string → 0..1 float ──
+  function hashStr(s) {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; }
+    return (h >>> 0) / 4294967295;
+  }
+
+  // ── Generate a unique animated SVG pattern canvas for a monitor ──
+  function statusPattern(m) {
+    const seed = hashStr(domainOf(m.url));
+    const id = 'pat_' + m.id;
+    const W = 80, H = 48;
+
+    // Derive unique visual params from domain hash
+    const hue1 = Math.floor(seed * 360);
+    const hue2 = (hue1 + 60 + Math.floor(hashStr(m.url+'x') * 120)) % 360;
+    const freq = 0.8 + seed * 2.4;           // wave frequency
+    const amp  = 8 + hashStr(m.url+'a') * 12; // wave amplitude
+    const phase= hashStr(m.url+'p') * 6.28;
+    const cols = 4 + Math.floor(hashStr(m.url+'c') * 5); // grid cols
+    const rows = 3 + Math.floor(hashStr(m.url+'r') * 3);
+
+    if (m.status === 'up') {
+      // ── ONLINE: flowing sine waves with glowing orb ──
+      const dur1 = (1.8 + seed * 1.4).toFixed(2);
+      const dur2 = (2.2 + hashStr(m.url+'d') * 1.2).toFixed(2);
+      const pts1 = Array.from({length:20},(_,i)=>{
+        const x = i*(W/19);
+        const y = H/2 + Math.sin(i*freq*0.4 + phase)*amp;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      const pts2 = Array.from({length:20},(_,i)=>{
+        const x = i*(W/19);
+        const y = H/2 + Math.sin(i*freq*0.4 + phase + 1.2)*amp*0.6;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="status-pattern pat-up">
+        <defs>
+          <linearGradient id="wg1_${id}" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="hsl(${hue1},100%,60%)" stop-opacity="0"/>
+            <stop offset="50%" stop-color="hsl(${hue1},100%,60%)" stop-opacity="0.9"/>
+            <stop offset="100%" stop-color="hsl(${hue2},100%,60%)" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="wg2_${id}" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="hsl(${hue2},100%,70%)" stop-opacity="0"/>
+            <stop offset="50%" stop-color="hsl(${hue2},100%,70%)" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="hsl(${hue1},100%,70%)" stop-opacity="0"/>
+          </linearGradient>
+          <filter id="glow_${id}"><feGaussianBlur stdDeviation="1.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <rect width="${W}" height="${H}" fill="rgba(0,0,0,0.0)"/>
+        <polyline points="${pts2}" fill="none" stroke="url(#wg2_${id})" stroke-width="1.5" filter="url(#glow_${id})">
+          <animateTransform attributeName="transform" type="translate" from="${-W} 0" to="0 0" dur="${dur2}s" repeatCount="indefinite"/>
+        </polyline>
+        <polyline points="${pts1}" fill="none" stroke="url(#wg1_${id})" stroke-width="2.5" filter="url(#glow_${id})">
+          <animateTransform attributeName="transform" type="translate" from="${-W} 0" to="0 0" dur="${dur1}s" repeatCount="indefinite"/>
+        </polyline>
+        <circle cx="${W/2}" cy="${H/2}" r="4" fill="hsl(${hue1},100%,70%)" opacity="0.9" filter="url(#glow_${id})">
+          <animate attributeName="r" values="3;5;3" dur="${dur1}s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.7;1;0.7" dur="${dur1}s" repeatCount="indefinite"/>
+        </circle>
+      </svg>`;
+    }
+
+    if (m.status === 'down') {
+      // ── OFFLINE: glitchy static noise bars + broken signal ──
+      const noiseLines = Array.from({length:12},(_,i)=>{
+        const y = 4 + i*(H/12);
+        const w = 10 + hashStr(m.url+i)*50;
+        const x = hashStr(m.url+i+'x')*( W - w);
+        const op = (0.3 + hashStr(m.url+i+'o')*0.6).toFixed(2);
+        const dur = (0.15 + hashStr(m.url+i+'d')*0.3).toFixed(2);
+        return `<rect x="${x.toFixed(1)}" y="${(y-1).toFixed(1)}" width="${w.toFixed(1)}" height="2.5" 
+          fill="hsl(${hue1},90%,55%)" opacity="${op}">
+          <animate attributeName="opacity" values="${op};0;${op}" dur="${dur}s" repeatCount="indefinite" begin="${(i*0.07).toFixed(2)}s"/>
+          <animate attributeName="x" values="${x.toFixed(1)};${(x+hashStr(m.url+i+'v')*8-4).toFixed(1)};${x.toFixed(1)}" dur="${(dur*2).toFixed(2)}s" repeatCount="indefinite"/>
+        </rect>`;
+      }).join('');
+      const dur = (0.8 + seed*0.4).toFixed(2);
+      return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="status-pattern pat-down">
+        <defs>
+          <filter id="gd_${id}"><feGaussianBlur stdDeviation="0.8"/></filter>
+        </defs>
+        ${noiseLines}
+        <line x1="0" y1="${H/2}" x2="${W*0.3}" y2="${H/2}" stroke="hsl(${hue1},100%,60%)" stroke-width="1.5" opacity="0.8"/>
+        <line x1="${W*0.4}" y1="${H/2-3}" x2="${W*0.55}" y2="${H/2+5}" stroke="hsl(${hue1},100%,60%)" stroke-width="1.5" opacity="0.8"/>
+        <line x1="${W*0.65}" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="hsl(${hue1},100%,60%)" stroke-width="1.5" opacity="0.8"/>
+        <line x1="0" y1="0" x2="${W}" y2="${H}" stroke="hsl(${hue1},90%,50%)" stroke-width="1" opacity="0.3">
+          <animate attributeName="opacity" values="0.3;0;0.3" dur="${dur}s" repeatCount="indefinite"/>
+        </line>
+      </svg>`;
+    }
+
+    if (m.status === 'checking') {
+      // ── CHECKING: radar sweep with pinging rings ──
+      const cx = W/2, cy = H/2;
+      const maxR = Math.min(W,H)/2 - 2;
+      const dur = (1.5 + seed*1).toFixed(2);
+      const rings = [0.35,0.6,0.85].map((f,i) => {
+        const r = maxR*f;
+        return `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="none" 
+          stroke="hsl(${hue1},80%,55%)" stroke-width="0.7" opacity="${(0.15+i*0.1).toFixed(2)}"/>`;
+      }).join('');
+      return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="status-pattern pat-checking">
+        <defs>
+          <filter id="gc_${id}"><feGaussianBlur stdDeviation="1.2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <clipPath id="cc_${id}"><circle cx="${cx}" cy="${cy}" r="${maxR}"/></clipPath>
+        </defs>
+        ${rings}
+        <line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy - maxR}" stroke="hsl(${hue1},100%,65%)" stroke-width="1.5" opacity="0.9" filter="url(#gc_${id})">
+          <animateTransform attributeName="transform" type="rotate" from="0 ${cx} ${cy}" to="360 ${cx} ${cy}" dur="${dur}s" repeatCount="indefinite"/>
+        </line>
+        <path d="M${cx},${cy} L${cx},${cy-maxR} A${maxR},${maxR} 0 0,1 ${(cx+maxR*Math.sin(0.8)).toFixed(2)},${(cy-maxR*Math.cos(0.8)).toFixed(2)} Z"
+          fill="hsl(${hue1},100%,55%)" opacity="0.12" clip-path="url(#cc_${id})">
+          <animateTransform attributeName="transform" type="rotate" from="0 ${cx} ${cy}" to="360 ${cx} ${cy}" dur="${dur}s" repeatCount="indefinite"/>
+        </path>
+        <circle cx="${cx}" cy="${cy}" r="2.5" fill="hsl(${hue1},100%,70%)" filter="url(#gc_${id})">
+          <animate attributeName="r" values="2;3.5;2" dur="${(parseFloat(dur)*0.5).toFixed(2)}s" repeatCount="indefinite"/>
+        </circle>
+      </svg>`;
+    }
+
+    // ── UNKNOWN/PENDING: dormant dot grid ──
+    const dotGrid = Array.from({length:rows},(_,r)=>
+      Array.from({length:cols},(_,c)=>{
+        const x = (c+0.5)*(W/cols);
+        const y = (r+0.5)*(H/rows);
+        const h2 = hashStr(m.url+r+c);
+        const op = (0.1 + h2*0.25).toFixed(2);
+        const r2 = (1+h2*1.5).toFixed(1);
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r2}" fill="hsl(${hue1},30%,50%)" opacity="${op}"/>`;
+      }).join('')
+    ).join('');
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="status-pattern pat-unknown">
+      ${dotGrid}
+    </svg>`;
+  }
+
   function cardHTML(m) {
     const statusClass = {
       up: 'status-up', down: 'status-down',
@@ -827,9 +1125,10 @@
       : 'Never';
 
     return `
+      <div class="card-pattern-wrap">${statusPattern(m)}</div>
       <div class="status-indicator ${statusClass}"></div>
       <div class="monitor-info">
-        <div class="monitor-name">${domainOf(m.url)}</div>
+        <div class="monitor-name">${domainOf(m.url)} <span class="cat-tag">${m.cat || ''}</span></div>
         <div class="monitor-url">${m.url}</div>
         ${historyBar(m.history)}
       </div>
@@ -850,10 +1149,14 @@
   // ── Render all ──
   function renderAll() {
     const container = document.getElementById('monitors-list');
-    const ids = Object.keys(monitors);
-    document.getElementById('monitor-count').textContent = `${ids.length} endpoint${ids.length !== 1 ? 's' : ''}`;
+    const allIds = Object.keys(monitors);
+    document.getElementById('monitor-count').textContent = `${allIds.length} endpoint${allIds.length !== 1 ? 's' : ''}`;
+    rebuildCategoryFilter();
 
-    if (!ids.length) {
+    const activeCat = document.getElementById('cat-filter') ? document.getElementById('cat-filter').value : 'All';
+    const ids = activeCat === 'All' ? allIds : allIds.filter(id => monitors[id].cat === activeCat);
+
+    if (!allIds.length) {
       container.innerHTML = `<div class="empty-state">
         <div class="empty-icon">◉</div>
         <p>No monitors yet.<br>Add a URL above to start tracking uptime.</p>
@@ -861,10 +1164,23 @@
       return;
     }
 
+    if (!ids.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">◉</div><p>No monitors in this category.</p></div>`;
+      return;
+    }
+
     container.innerHTML = ids.map(id => {
       const m = monitors[id];
       return `<div class="monitor-card ${m.status === 'down' ? 'status-down' : ''}" id="card-${id}">${cardHTML(m)}</div>`;
     }).join('');
+  }
+
+  function rebuildCategoryFilter() {
+    const sel = document.getElementById('cat-filter');
+    if (!sel) return;
+    const current = sel.value;
+    const cats = ['All', ...new Set(Object.values(monitors).map(m => m.cat).filter(Boolean))].sort((a,b) => a === 'All' ? -1 : a.localeCompare(b));
+    sel.innerHTML = cats.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c}</option>`).join('');
   }
 
   // ── Stats ──
@@ -876,9 +1192,16 @@
     document.getElementById('stat-checking').textContent = ms.filter(m => m.status === 'checking').length;
   }
 
-  // ── Check all ──
-  function checkAll() {
-    Object.keys(monitors).forEach(id => checkUrl(id));
+  // ── Re-check all (manual, one-shot, staggered) ──
+  async function checkAll() {
+    const ids = Object.keys(monitors);
+    if (!ids.length) return;
+    log(`↻ Manual re-check of ${ids.length} monitors…`, 'info');
+    const batchSize = 5;
+    for (let i = 0; i < ids.length; i += batchSize) {
+      ids.slice(i, i + batchSize).forEach(id => checkUrl(id));
+      if (i + batchSize < ids.length) await new Promise(r => setTimeout(r, 400));
+    }
   }
 
   // ── Clear all ──
@@ -898,22 +1221,44 @@
     log('Log cleared.', 'info');
   }
 
-  // ── Interval ──
-  function updateInterval() {
-    checkInterval = parseInt(document.getElementById('interval-select').value);
-    if (intervalTimer) clearInterval(intervalTimer);
-    intervalTimer = setInterval(checkAll, checkInterval);
-    log(`⏱ Check interval set to ${checkInterval / 1000}s`, 'info');
-  }
-
   // ── Enter key ──
   document.getElementById('url-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') addMonitor();
   });
 
-  // ── Init ──
-  defaults.forEach(url => addMonitor(url));
-  intervalTimer = setInterval(checkAll, checkInterval);
+  // ── Init — stagger 100 sites, check once, then stop ──
+  async function initDefaults() {
+    for (const site of defaultSites) {
+      const url = normalizeUrl(site.url);
+      const id = 'mon_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+      monitors[id] = {
+        id, url,
+        cat: site.cat || 'Other',
+        status: 'unknown',
+        ping: null,
+        httpCode: null,
+        lastChecked: null,
+        history: [],
+        upCount: 0,
+        downCount: 0,
+      };
+      await new Promise(r => setTimeout(r, 5));
+    }
+    log(`▶ Loaded ${defaultSites.length} sites across ${new Set(defaultSites.map(s=>s.cat)).size} categories. Running one-time check…`, 'info');
+    renderAll();
+    updateStats();
+
+    // Stagger checks: 5 at a time, 400ms apart — runs once, then stops
+    const ids = Object.keys(monitors);
+    const batchSize = 5;
+    for (let i = 0; i < ids.length; i += batchSize) {
+      const batch = ids.slice(i, i + batchSize);
+      batch.forEach(id => checkUrl(id));
+      if (i + batchSize < ids.length) await new Promise(r => setTimeout(r, 400));
+    }
+  }
+
+  initDefaults();
 </script>
 </body>
 </html>
