@@ -8,6 +8,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0f1a" id="metaThemeColor">
 <title>SkyPulse</title>
+<link rel="manifest" id="pwaManifest">
+<script>
+// Inline PWA manifest
+const manifest={name:'SkyPulse',short_name:'SkyPulse',start_url:'.',display:'standalone',background_color:'#0a0f1a',theme_color:'#0a0f1a',icons:[{src:'https://cdn.jsdelivr.net/npm/twemoji@14/assets/72x72/1f324.png',sizes:'72x72',type:'image/png'}]};
+const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+document.getElementById('pwaManifest').href=URL.createObjectURL(blob);
+</script>
 <style>
 /* ── TOKENS ── */
 :root{
@@ -331,7 +338,86 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .f7val{font-size:.75rem;font-weight:600;width:42px;text-align:right;flex-shrink:0;}
 .f7badge{font-size:.62rem;padding:2px 6px;border-radius:50px;font-weight:700;flex-shrink:0;width:58px;text-align:center;}
 
+/* ── NEW FEATURES CSS ── */
+/* F1: Live Radar Map */
+.radar-map-wrap{position:relative;border-radius:10px;overflow:hidden;background:var(--bg3);margin-top:8px;}
+.radar-map-wrap iframe{width:100%;height:220px;border:none;display:block;}
+/* F2: PWA banner */
+.pwa-banner{display:flex;align-items:center;gap:10px;background:linear-gradient(120deg,rgba(56,189,248,.1),rgba(129,140,248,.07));border:1px solid var(--a);border-radius:var(--rsm);padding:11px 13px;cursor:pointer;transition:all var(--ease);}
+.pwa-banner:active{transform:scale(.98);}
+.pwa-ico{font-size:1.4rem;flex-shrink:0;}
+.pwa-txt{flex:1;font-size:.78rem;color:var(--t2);}
+.pwa-txt strong{color:var(--a);display:block;margin-bottom:2px;}
+.pwa-x{margin-left:auto;color:var(--t3);background:none;border:none;cursor:pointer;font-size:.9rem;padding:2px 5px;}
+/* F3: Rain Countdown */
+.rcd{display:flex;align-items:center;gap:14px;margin-top:4px;}
+.rcd-ico{font-size:2rem;flex-shrink:0;}
+.rcd-big{font-weight:800;font-size:1.6rem;line-height:1;color:var(--a);}
+.rcd-sub{font-size:.72rem;color:var(--t2);margin-top:2px;}
+.rcd-bar-wrap{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:8px;}
+.rcd-bar{height:100%;background:linear-gradient(to right,var(--a),var(--a2));border-radius:3px;transition:width .8s ease;}
+/* F4: Custom alert thresholds */
+.at-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.at-lbl{font-size:.72rem;color:var(--t2);width:80px;flex-shrink:0;}
+.at-inp{flex:1;background:var(--glass);border:1px solid var(--gb);border-radius:7px;padding:6px 9px;color:var(--t);font-size:.8rem;outline:none;-webkit-appearance:none;width:100%;}
+.at-inp:focus{border-color:var(--a);}
+.at-unit{font-size:.65rem;color:var(--t3);flex-shrink:0;width:30px;}
+.at-save{width:100%;margin-top:4px;padding:10px;background:linear-gradient(135deg,var(--a),var(--a2));color:#fff;border:none;border-radius:var(--rsm);font-weight:700;font-size:.8rem;cursor:pointer;transition:all var(--ease);}
+.at-save:active{transform:scale(.97);}
+.at-status{font-size:.65rem;color:var(--g);text-align:center;min-height:16px;margin-top:5px;}
+/* F5: Pressure trend */
+.pt-main{display:flex;align-items:center;gap:12px;margin-top:4px;}
+.pt-arrow{font-size:2rem;flex-shrink:0;}
+.pt-val{font-weight:800;font-size:1.5rem;}
+.pt-lbl{font-size:.75rem;color:var(--t2);margin-top:2px;}
+.pt-tip{font-size:.62rem;color:var(--t3);margin-top:3px;}
+/* F6: Snowfall */
+.snow-now{display:flex;align-items:center;gap:10px;margin-top:4px;}
+.snow-ico{font-size:2rem;}
+.snow-val{font-weight:800;font-size:1.5rem;color:#93c5fd;}
+.snow-u{font-size:.7rem;color:var(--t3);}
+.snow-days{display:flex;flex-direction:column;gap:5px;margin-top:10px;}
+.snow-day{display:flex;align-items:center;gap:8px;}
+.snow-dnm{font-size:.72rem;color:var(--t2);width:68px;flex-shrink:0;}
+.snow-dbw{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.snow-dbar{height:100%;background:linear-gradient(to right,#93c5fd,#e0f2fe);border-radius:3px;}
+.snow-dv{font-size:.65rem;color:#93c5fd;width:34px;text-align:right;flex-shrink:0;}
+/* F7: Golden/Blue Hour */
+.golden-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.golden-item{background:var(--glass);border:1px solid var(--gb);border-radius:10px;padding:11px;text-align:center;}
+.golden-em{font-size:1.4rem;}
+.golden-lbl{font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;}
+.golden-time{font-weight:700;font-size:.88rem;margin-top:3px;}
+.golden-dur{font-size:.6rem;color:var(--t3);margin-top:2px;}
+/* F8: Historical comparison */
+.hist-row{display:flex;gap:10px;margin-top:8px;}
+.hist-col{flex:1;background:var(--glass);border:1px solid var(--gb);border-radius:10px;padding:11px;text-align:center;}
+.hist-lbl{font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;}
+.hist-val{font-weight:800;font-size:1.1rem;margin-top:4px;}
+.hist-diff{font-size:.7rem;margin-top:3px;}
+.hist-diff.up{color:var(--a3);}
+.hist-diff.dn{color:var(--a);}
+.hist-diff.eq{color:var(--t3);}
+/* F9: Dew point comfort */
+.dew-gauge{position:relative;margin:8px 0 4px;height:12px;background:linear-gradient(to right,#3b82f6,#22c55e,#eab308,#ef4444);border-radius:6px;}
+.dew-needle{position:absolute;top:-5px;width:3px;height:22px;background:var(--t);border-radius:2px;transform:translateX(-50%);transition:left .8s ease;box-shadow:0 0 5px rgba(0,0,0,.5);}
+.dew-labels{display:flex;justify-content:space-between;margin-top:4px;}
+.dew-lbl{font-size:.55rem;color:var(--t3);}
+.dew-comfort{text-align:center;margin-top:6px;font-weight:700;font-size:.88rem;}
+.dew-tip{text-align:center;font-size:.63rem;color:var(--t3);margin-top:2px;}
+/* F10: Best day planner */
+.bd-list{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
+.bd-row{display:flex;align-items:center;gap:9px;background:var(--glass);border:1px solid var(--gb);border-radius:10px;padding:9px 11px;transition:all var(--ease);}
+.bd-row.best{background:linear-gradient(120deg,rgba(34,197,94,.12),rgba(34,197,94,.04));border-color:var(--g);}
+.bd-rank{font-weight:800;font-size:.9rem;width:18px;flex-shrink:0;text-align:center;}
+.bd-day{flex:1;}
+.bd-dnm{font-weight:700;font-size:.82rem;}
+.bd-acts{font-size:.6rem;color:var(--t2);margin-top:1px;}
+.bd-score-wrap{text-align:right;flex-shrink:0;}
+.bd-score{font-weight:800;font-size:1rem;}
+.bd-crown{font-size:.9rem;}
 .cmpcard{background:var(--card);border:1px solid var(--gb);border-radius:var(--rsm);padding:14px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
+
 .cmptbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:.78rem;}
 .cmptbl th{font-family:system-ui,sans-serif;font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;padding:6px 8px;text-align:left;border-bottom:1px solid var(--gb);}
 .cmptbl td{padding:8px 8px;border-bottom:1px solid var(--gb);color:var(--t2);vertical-align:middle;}
@@ -408,6 +494,15 @@ footer .hi{color:var(--a);}
     <div class="utog">
       <button class="ubtn on" id="uk" onclick="setWind('kmh')">km/h</button>
       <button class="ubtn"    id="um" onclick="setWind('mph')">mph</button>
+    </div>
+  </div>
+
+  <!-- PWA INSTALL BANNER -->
+  <div id="pwaBanner" style="display:none;">
+    <div class="pwa-banner" onclick="installPWA()">
+      <div class="pwa-ico">📲</div>
+      <div class="pwa-txt"><strong>Install SkyPulse</strong>Add to homescreen for instant access & offline use</div>
+      <button class="pwa-x" onclick="dismissPWA(event)" title="Dismiss">✕</button>
     </div>
   </div>
 
@@ -697,11 +792,13 @@ async function loadCoords(lat,lon,loc=null,fromGPS=false,acc=null,silent=false){
     const wxUrl=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
       +`&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,`
       +`weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,`
-      +`uv_index,is_day,visibility,cloud_cover`
-      +`&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m`
+      +`uv_index,is_day,visibility,cloud_cover,dew_point_2m,snowfall`
+      +`&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m,`
+      +`surface_pressure,dew_point_2m,snowfall`
       +`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,`
-      +`precipitation_sum,precipitation_probability_max,uv_index_max,wind_speed_10m_max`
-      +`&timezone=auto&forecast_days=7`;
+      +`precipitation_sum,precipitation_probability_max,uv_index_max,wind_speed_10m_max,`
+      +`snowfall_sum`
+      +`&timezone=auto&forecast_days=7&past_days=1`;
 
     // Real AQI from Open-Meteo Air Quality API (free, no key needed)
     const aqUrl=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}`
@@ -896,6 +993,145 @@ function renderCompare(){
   </tr>`).join(''):`<tr><td colspan="4" style="text-align:center;color:var(--t3);font-size:.72rem;padding:12px">No cities added yet</td></tr>`;
 }
 
+/* ══════════════════════════════════════
+   FEATURE HELPERS
+══════════════════════════════════════ */
+
+/* F2: PWA install */
+let pwaPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); pwaPrompt=e; renderPWABanner(true); });
+function renderPWABanner(show){
+  const el=document.getElementById('pwaBanner');
+  if(!el) return;
+  el.style.display=show&&pwaPrompt?'block':'none';
+}
+async function installPWA(){
+  if(!pwaPrompt) return;
+  pwaPrompt.prompt();
+  const {outcome}=await pwaPrompt.userChoice;
+  if(outcome==='accepted'){ pwaPrompt=null; renderPWABanner(false); toast('✅ SkyPulse installed!'); }
+}
+function dismissPWA(e){ e.stopPropagation(); document.getElementById('pwaBanner').style.display='none'; }
+
+/* F3: Rain countdown from hourly data */
+function rainCountdown(hourly, hi){
+  // Already raining?
+  if(hourly.precipitation_probability[hi]>=60) return {state:'raining',mins:0};
+  // Find next hour with ≥60% rain probability
+  for(let i=hi+1;i<Math.min(hi+12,hourly.time.length);i++){
+    if(hourly.precipitation_probability[i]>=60){
+      return {state:'soon', mins:(i-hi)*60};
+    }
+  }
+  // Currently raining - find when it stops
+  const nextDry=[];
+  for(let i=hi;i<Math.min(hi+12,hourly.time.length);i++){
+    if(hourly.precipitation_probability[i]<30) { nextDry.push(i); break; }
+  }
+  return {state:'clear', mins:null};
+}
+
+/* F4: Custom alert thresholds */
+let alertThresh = JSON.parse(localStorage.getItem('wxAlerts')||'{"rain":60,"aqi":100,"wind":50,"uv":7}');
+function saveAlerts(){
+  alertThresh.rain = +document.getElementById('atRain').value||60;
+  alertThresh.aqi  = +document.getElementById('atAqi').value||100;
+  alertThresh.wind = +document.getElementById('atWind').value||50;
+  alertThresh.uv   = +document.getElementById('atUv').value||7;
+  localStorage.setItem('wxAlerts',JSON.stringify(alertThresh));
+  document.getElementById('atStatus').textContent='✅ Thresholds saved!';
+  setTimeout(()=>{ const el=document.getElementById('atStatus'); if(el) el.textContent=''; },2500);
+  toast('🔔 Alert thresholds updated');
+}
+function checkAlerts(current, aqiVal){
+  if(!notifyOn||Notification.permission!=='granted') return;
+  const msgs=[];
+  if((current.precipitation??0)>0 || Math.max(...(wxData?.hourly?.precipitation_probability?.slice(new Date().getHours(),new Date().getHours()+3)||[0]))>=alertThresh.rain)
+    msgs.push(`🌧️ Rain probability ≥${alertThresh.rain}%`);
+  if(aqiVal && aqiVal>=alertThresh.aqi) msgs.push(`🌬️ AQI ${aqiVal} ≥ threshold ${alertThresh.aqi}`);
+  if(current.wind_speed_10m>=alertThresh.wind) msgs.push(`💨 Wind ${Math.round(current.wind_speed_10m)} km/h ≥ ${alertThresh.wind}`);
+  if((current.uv_index||0)>=alertThresh.uv) msgs.push(`☀️ UV ${current.uv_index} ≥ ${alertThresh.uv}`);
+  if(msgs.length) new Notification('SkyPulse Alert — '+curCity,{body:msgs.join('\n')});
+}
+
+/* F5: Pressure trend from hourly data */
+function pressureTrend(hourly, hi){
+  const vals=[];
+  for(let i=Math.max(0,hi-5);i<=hi&&i<hourly.time.length;i++){
+    if(hourly.surface_pressure?.[i]!=null) vals.push(hourly.surface_pressure[i]);
+  }
+  if(vals.length<2) return {arrow:'→',label:'Steady',tip:'Stable conditions expected.',color:'var(--t2)',delta:0};
+  const delta=vals[vals.length-1]-vals[0];
+  if(delta>1.5)  return {arrow:'↑',label:'Rising',  tip:'Improving weather expected.',     color:'var(--g)',   delta};
+  if(delta<-1.5) return {arrow:'↓',label:'Falling', tip:'Deteriorating weather likely.',   color:'var(--a3)',  delta};
+  return              {arrow:'→',label:'Steady',  tip:'Stable conditions expected.',       color:'var(--t2)',  delta};
+}
+
+/* F7: Golden hour & Blue hour calculation */
+function goldenBlueHours(sunriseMs, sunsetMs){
+  const goldenDur=40*60000; // ~40 min
+  const blueDur  =20*60000; // ~20 min
+  const fmt=ms=>new Date(ms).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const dur=m=>`${Math.round(m/60000)} min`;
+  return {
+    morningBlue: { start:fmt(sunriseMs-blueDur),  end:fmt(sunriseMs),           dur:dur(blueDur),  label:'Morning Blue Hour',  em:'🌌' },
+    morningGold: { start:fmt(sunriseMs),           end:fmt(sunriseMs+goldenDur), dur:dur(goldenDur),label:'Morning Golden Hour', em:'🌅' },
+    eveningGold: { start:fmt(sunsetMs-goldenDur),  end:fmt(sunsetMs),            dur:dur(goldenDur),label:'Evening Golden Hour', em:'🌇' },
+    eveningBlue: { start:fmt(sunsetMs),            end:fmt(sunsetMs+blueDur),    dur:dur(blueDur),  label:'Evening Blue Hour',  em:'🌆' },
+  };
+}
+
+/* F8: Historical comparison (yesterday from past_days=1) */
+function historicalCompare(daily){
+  // With past_days=1, daily.time[0] = yesterday, [1] = today
+  if(!daily.time||daily.time.length<2) return null;
+  const yd={temp_max:daily.temperature_2m_max[0], temp_min:daily.temperature_2m_min[0], rain:daily.precipitation_sum[0]};
+  const td={temp_max:daily.temperature_2m_max[1], temp_min:daily.temperature_2m_min[1], rain:daily.precipitation_sum[1]};
+  const diffMax=+(td.temp_max-yd.temp_max).toFixed(1);
+  const diffMin=+(td.temp_min-yd.temp_min).toFixed(1);
+  const diffRain=+(td.rain-yd.rain).toFixed(1);
+  return {yd, td, diffMax, diffMin, diffRain};
+}
+
+/* F9: Dew point comfort */
+function dewComfort(dp){
+  if(dp<10)  return {label:'Very Dry',    tip:'Very low humidity — may feel dry.',     pct:10};
+  if(dp<13)  return {label:'Dry & Crisp', tip:'Comfortable, low humidity.',            pct:25};
+  if(dp<16)  return {label:'Comfortable', tip:'Pleasant humidity levels.',             pct:40};
+  if(dp<18)  return {label:'Comfortable', tip:'Ideal outdoor conditions.',             pct:55};
+  if(dp<21)  return {label:'Humid',       tip:'Starting to feel muggy.',               pct:68};
+  if(dp<24)  return {label:'Very Humid',  tip:'Uncomfortable, oppressive.',            pct:82};
+  return           {label:'Oppressive',  tip:'Extremely humid — limit activity.',     pct:95};
+}
+
+/* F10: Best day planner — ranks all 7 days by overall score */
+function bestDayPlanner(daily){
+  // Starts at index 1 (today) since past_days=1 shifts by 1
+  const start=1;
+  const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const scores=[];
+  for(let i=start;i<daily.time.length;i++){
+    const dt=new Date(daily.time[i]+'T12:00:00');
+    const nm=i===start?'Today':i===start+1?'Tomorrow':DAYS[dt.getDay()];
+    const tmax=daily.temperature_2m_max[i]||25;
+    const tmin=daily.temperature_2m_min[i]||15;
+    const rain=daily.precipitation_probability_max?.[i]||0;
+    const wind=daily.wind_speed_10m_max[i]||10;
+    const uv=daily.uv_index_max[i]||3;
+    const score=Math.max(0,Math.min(100,Math.round(
+      100 - (rain*0.4) - (tmax>35?20:tmax<10?15:0) - (wind>30?15:0) - (uv>9?10:0)
+    )));
+    // Best activities for that day
+    const acts=[];
+    if(rain<30&&tmax>15&&tmax<35) acts.push('🏃 Running');
+    if(rain<20&&wind<25) acts.push('🚴 Cycling');
+    if(rain<40&&tmax>10) acts.push('🥾 Hiking');
+    if(rain<20&&tmax>20) acts.push('🧺 Picnic');
+    scores.push({nm, score, acts:acts.slice(0,3), date:daily.time[i]});
+  }
+  return scores.sort((a,b)=>b.score-a.score);
+}
+
 /* ════ MAIN RENDER ════ */
 function render(d){
   const c=d.current, loc=d.loc, now=new Date();
@@ -917,22 +1153,25 @@ function render(d){
     </div>`);
   }
 
-  /* 7-day */
-  const fcast=d.daily.time.map((day,i)=>{
+  /* past_days=1 shifts arrays by 1 — today is index 1 */
+  const di=1; // daily index offset
+
+  /* 7-day forecast (skip yesterday at index 0) */
+  const fcast=d.daily.time.slice(di).map((day,i)=>{
     const dt=new Date(day+'T12:00:00');
     const nm=i===0?'Today':i===1?'Tomorrow':DAYS[dt.getDay()];
-    const hi2=d.daily.temperature_2m_max[i],lo2=d.daily.temperature_2m_min[i];
+    const hi2=d.daily.temperature_2m_max[di+i],lo2=d.daily.temperature_2m_min[di+i];
     const pct=Math.max(10,Math.min(100,Math.round(((hi2+10)/50)*100)));
     return `<div class="frow">
-      <div><div class="fd">${nm}</div><div class="fdesc">${WDS(d.daily.weather_code[i])}</div></div>
-      <div class="fe">${WEM(d.daily.weather_code[i])}</div>
+      <div><div class="fd">${nm}</div><div class="fdesc">${WDS(d.daily.weather_code[di+i])}</div></div>
+      <div class="fe">${WEM(d.daily.weather_code[di+i])}</div>
       <div class="fbw"><div class="fb" style="width:${pct}%"></div></div>
       <div class="frang"><span class="fhi">${dT(hi2)}</span><span class="flo">${dT(lo2)}</span></div>
     </div>`;
   }).join('');
 
   /* UV / AQI */
-  const uv=+(c.uv_index||d.daily.uv_index_max[0]||0);
+  const uv=+(c.uv_index||d.daily.uv_index_max[di]||0);
   const uvPct=Math.min(100,uv/12*100);
   const uvLbl=uv<=2?'Low':uv<=5?'Moderate':uv<=7?'High':uv<=10?'Very High':'Extreme';
   const uvTip=uv<=2?'No protection needed':uv<=5?'Seek shade midday':uv<=7?'Apply SPF 30+':'Stay indoors 10am–4pm';
@@ -943,7 +1182,7 @@ function render(d){
   const aqiD      = aqParsed ? Math.min(340, aqiV / 300 * 340) : 0;
 
   /* sun arc */
-  const sr0=d.daily.sunrise[0],ss0=d.daily.sunset[0];
+  const sr0=d.daily.sunrise[di],ss0=d.daily.sunset[di];
   const sr=sr0?new Date(sr0).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'--';
   const ss=ss0?new Date(ss0).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'--';
   const srMs=sr0?new Date(sr0).getTime():0, ssMs=ss0?new Date(ss0).getTime():0;
@@ -954,6 +1193,37 @@ function render(d){
   const ap=a=>{const r=(a-180)*Math.PI/180;return{x:Cx+Rx*Math.cos(r),y:Cy+Ry*Math.sin(r)};};
   const sp=ap(arcA);
   const dH=Math.round(dayLen/3600000),dM=Math.round((dayLen%3600000)/60000);
+
+  /* F3: Rain countdown */
+  const rcd=rainCountdown(d.hourly,hi);
+  const rcdPct=rcd.state==='soon'?Math.max(5,100-Math.round(rcd.mins/720*100)):rcd.state==='raining'?100:0;
+
+  /* F5: Pressure trend */
+  const ptData=pressureTrend(d.hourly,hi);
+
+  /* F6: Snowfall */
+  const snowNow=c.snowfall||0;
+  const snowDays=d.daily.time.slice(di).map((day,i)=>({
+    nm:i===0?'Today':i===1?'Tomorrow':['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(day+'T12:00:00').getDay()],
+    val:d.daily.snowfall_sum?.[di+i]||0
+  }));
+  const maxSnow=Math.max(...snowDays.map(x=>x.val),0.1);
+
+  /* F7: Golden/Blue hours */
+  const goldenHours=srMs&&ssMs?goldenBlueHours(srMs,ssMs):null;
+
+  /* F8: Historical comparison */
+  const hist=historicalCompare(d.daily);
+
+  /* F9: Dew point */
+  const dp=c.dew_point_2m??c.temperature_2m-((100-c.relative_humidity_2m)/5);
+  const dewC=dewComfort(dp);
+  const dewPct=Math.max(2,Math.min(98,Math.round((dp+5)/40*100)));
+
+  /* F10: Best day planner */
+  const bestDays=bestDayPlanner(d.daily);
+
+  /* Stats (today uses di offset) */
 
   /* precip bars */
   const pcols=[];
@@ -994,6 +1264,9 @@ function render(d){
     compareData=[{name:loc.name,temp:c.temperature_2m,hum:c.relative_humidity_2m,code:c.weather_code,wind:c.wind_speed_10m},...compareData.filter(x=>x.name!==loc.name)];
   }
 
+  /* check custom alerts */
+  checkAlerts(c, aqiV);
+
   const updAt=d.fetchedAt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 
   document.getElementById('wx').innerHTML=`
@@ -1017,19 +1290,20 @@ ${alertH}
   <div class="hpills">
     <div class="pill">💧 <strong>${c.relative_humidity_2m}%</strong>&nbsp;Humidity</div>
     <div class="pill">💨 <strong>${dW(c.wind_speed_10m)}</strong></div>
-    <div class="pill">🌡️ <strong>${Math.round(c.surface_pressure)} hPa</strong></div>
+    <div class="pill">🌡️ <strong>${Math.round(c.surface_pressure)} hPa ${ptData.arrow}</strong></div>
     <div class="pill">👁️ <strong>${c.visibility?(c.visibility/1000).toFixed(1)+'km':'N/A'}</strong></div>
+    ${snowNow>0?`<div class="pill">❄️ <strong>${snowNow.toFixed(1)}cm</strong>&nbsp;Snow</div>`:''}
   </div>
   <div class="lupd"><div class="ldot"></div>Updated ${updAt} · Auto-refreshes every 10 min</div>
 </div>
 
 <div class="sgrid">
-  <div class="sc"><div class="si">🌡️</div><div class="sl">High/Low</div><div class="sv">${dT(d.daily.temperature_2m_max[0])}</div><div class="ss">${dT(d.daily.temperature_2m_min[0])}</div></div>
-  <div class="sc"><div class="si">🌧️</div><div class="sl">Rain</div><div class="sv">${d.daily.precipitation_sum[0].toFixed(1)}</div><div class="ss">mm today</div></div>
-  <div class="sc"><div class="si">💨</div><div class="sl">Max Wind</div><div class="sv" style="font-size:.9rem">${dW(d.daily.wind_speed_10m_max[0])}</div><div class="ss">${wDir(c.wind_direction_10m)}</div></div>
+  <div class="sc"><div class="si">🌡️</div><div class="sl">High/Low</div><div class="sv">${dT(d.daily.temperature_2m_max[di])}</div><div class="ss">${dT(d.daily.temperature_2m_min[di])}</div></div>
+  <div class="sc"><div class="si">🌧️</div><div class="sl">Rain</div><div class="sv">${(d.daily.precipitation_sum[di]||0).toFixed(1)}</div><div class="ss">mm today</div></div>
+  <div class="sc"><div class="si">💨</div><div class="sl">Max Wind</div><div class="sv" style="font-size:.9rem">${dW(d.daily.wind_speed_10m_max[di])}</div><div class="ss">${wDir(c.wind_direction_10m)}</div></div>
   <div class="sc"><div class="si">☀️</div><div class="sl">UV Index</div><div class="sv">${uv.toFixed(1)}</div><div class="ss">${uvLbl}</div></div>
   <div class="sc"><div class="si">🌅</div><div class="sl">Sunrise</div><div class="sv" style="font-size:.85rem">${sr}</div><div class="ss">Set ${ss}</div></div>
-  <div class="sc"><div class="si">📈</div><div class="sl">Pressure</div><div class="sv">${Math.round(c.surface_pressure)}</div><div class="ss">hPa</div></div>
+  <div class="sc"><div class="si">📈</div><div class="sl">Pressure</div><div class="sv">${Math.round(c.surface_pressure)}</div><div class="ss">${ptData.label}</div></div>
 </div>
 
 <div class="hwrap"><div class="stitle">⏱ Hourly Forecast</div><div class="hscroll">${hrs.join('')}</div></div>
@@ -1230,7 +1504,148 @@ ${aqiRows ? `
     <tbody id="cmptbody"></tbody>
   </table>
   <button class="cmpadd" onclick="addCompareCity()">＋ Add city to compare</button>
-</div>`;
+</div>
+
+<!-- F1: LIVE RADAR MAP -->
+<div class="pc" style="animation:fadeUp .5s .36s ease both">
+  <div class="stitle">🗺️ Live Radar Map</div>
+  <div class="radar-map-wrap">
+    <iframe src="https://embed.windy.com/embed2.html?lat=${loc.lat}&lon=${loc.lon}&detailLat=${loc.lat}&detailLon=${loc.lon}&width=650&height=220&pane=off&overlay=rain&product=ecmwf&level=surface&lat=${loc.lat}&lon=${loc.lon}&pressure=true&message=true&meteorologist=false&type=map&location=coordinates&detail=false&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1" allowfullscreen loading="lazy"></iframe>
+    <div style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border-radius:6px;padding:4px 8px;font-size:.6rem;color:#fff;">Powered by Windy</div>
+  </div>
+</div>
+
+<!-- F3: RAIN COUNTDOWN -->
+<div class="pc" style="animation:fadeUp .5s .38s ease both">
+  <div class="stitle">⏱️ Rain Countdown</div>
+  <div class="rcd">
+    <div class="rcd-ico">${rcd.state==='raining'?'🌧️':rcd.state==='soon'?'🌂':'☀️'}</div>
+    <div>
+      <div class="rcd-big">${rcd.state==='raining'?'Raining now':rcd.state==='soon'?`in ~${rcd.mins} min`:'No rain soon'}</div>
+      <div class="rcd-sub">${rcd.state==='raining'?'Current precipitation detected':rcd.state==='soon'?`Rain likely within ${Math.round(rcd.mins/60*10)/10}h — grab an umbrella!`:'Clear skies for the next 12 hours'}</div>
+    </div>
+  </div>
+  <div class="rcd-bar-wrap"><div class="rcd-bar" style="width:${rcdPct}%"></div></div>
+</div>
+
+<!-- F4: CUSTOM ALERT THRESHOLDS -->
+<div class="pc" style="animation:fadeUp .5s .4s ease both">
+  <div class="stitle">🔔 Custom Alert Thresholds</div>
+  <div style="margin-top:6px;">
+    <div class="at-row"><span class="at-lbl">🌧️ Rain</span><input class="at-inp" id="atRain" type="number" min="0" max="100" value="${alertThresh.rain}"><span class="at-unit">%</span></div>
+    <div class="at-row"><span class="at-lbl">🌬️ AQI</span><input class="at-inp" id="atAqi"  type="number" min="0" max="500" value="${alertThresh.aqi}"><span class="at-unit">AQI</span></div>
+    <div class="at-row"><span class="at-lbl">💨 Wind</span><input class="at-inp" id="atWind" type="number" min="0" max="200" value="${alertThresh.wind}"><span class="at-unit">km/h</span></div>
+    <div class="at-row"><span class="at-lbl">☀️ UV</span><input class="at-inp" id="atUv"   type="number" min="0" max="12"  value="${alertThresh.uv}"><span class="at-unit">idx</span></div>
+    <button class="at-save" onclick="saveAlerts()">💾 Save Thresholds</button>
+    <div class="at-status" id="atStatus"></div>
+  </div>
+</div>
+
+<!-- F5: PRESSURE TREND -->
+<div class="pc" style="animation:fadeUp .5s .42s ease both">
+  <div class="stitle">📊 Pressure Trend</div>
+  <div class="pt-main">
+    <div class="pt-arrow" style="color:${ptData.color}">${ptData.arrow}</div>
+    <div>
+      <div class="pt-val" style="color:${ptData.color}">${Math.round(c.surface_pressure)} hPa</div>
+      <div class="pt-lbl">${ptData.label} · ${ptData.delta>0?'+':''}${ptData.delta.toFixed(1)} hPa/5h</div>
+      <div class="pt-tip">${ptData.tip}</div>
+    </div>
+  </div>
+</div>
+
+<!-- F6: SNOWFALL FORECAST -->
+${maxSnow>0||snowNow>0?`
+<div class="pc" style="animation:fadeUp .5s .44s ease both">
+  <div class="stitle">❄️ Snowfall Forecast</div>
+  <div class="snow-now">
+    <div class="snow-ico">🌨️</div>
+    <div>
+      <div class="snow-val">${snowNow.toFixed(1)}<span class="snow-u"> cm now</span></div>
+      <div style="font-size:.68rem;color:var(--t3);margin-top:2px;">7-day accumulation below</div>
+    </div>
+  </div>
+  <div class="snow-days">
+    ${snowDays.map(s=>`<div class="snow-day">
+      <div class="snow-dnm">${s.nm}</div>
+      <div class="snow-dbw"><div class="snow-dbar" style="width:${Math.round(s.val/maxSnow*100)}%"></div></div>
+      <div class="snow-dv">${s.val.toFixed(1)} cm</div>
+    </div>`).join('')}
+  </div>
+</div>`:''}
+
+<!-- F7: GOLDEN & BLUE HOUR -->
+${goldenHours?`
+<div class="pc" style="animation:fadeUp .5s .46s ease both">
+  <div class="stitle">📸 Golden & Blue Hour</div>
+  <div class="golden-grid">
+    ${Object.values(goldenHours).map(h=>`<div class="golden-item">
+      <div class="golden-em">${h.em}</div>
+      <div class="golden-lbl">${h.label}</div>
+      <div class="golden-time">${h.start} – ${h.end}</div>
+      <div class="golden-dur">${h.dur}</div>
+    </div>`).join('')}
+  </div>
+</div>`:''}
+
+<!-- F8: HISTORICAL COMPARISON -->
+${hist?`
+<div class="pc" style="animation:fadeUp .5s .48s ease both">
+  <div class="stitle">📅 Today vs Yesterday</div>
+  <div class="hist-row">
+    <div class="hist-col">
+      <div class="hist-lbl">Max Temp</div>
+      <div class="hist-val">${dT(hist.td.temp_max)}</div>
+      <div class="hist-diff ${hist.diffMax>0?'up':hist.diffMax<0?'dn':'eq'}">${hist.diffMax>0?'▲':'▼'} ${Math.abs(hist.diffMax)}° vs yesterday</div>
+    </div>
+    <div class="hist-col">
+      <div class="hist-lbl">Min Temp</div>
+      <div class="hist-val">${dT(hist.td.temp_min)}</div>
+      <div class="hist-diff ${hist.diffMin>0?'up':hist.diffMin<0?'dn':'eq'}">${hist.diffMin>0?'▲':'▼'} ${Math.abs(hist.diffMin)}° vs yesterday</div>
+    </div>
+    <div class="hist-col">
+      <div class="hist-lbl">Rainfall</div>
+      <div class="hist-val">${hist.td.rain.toFixed(1)}<span style="font-size:.7rem">mm</span></div>
+      <div class="hist-diff ${hist.diffRain>0?'up':hist.diffRain<0?'dn':'eq'}">${hist.diffRain>0?'▲':'▼'} ${Math.abs(hist.diffRain)}mm vs yesterday</div>
+    </div>
+  </div>
+</div>`:''}
+
+<!-- F9: DEW POINT & COMFORT SCALE -->
+<div class="pc" style="animation:fadeUp .5s .5s ease both">
+  <div class="stitle">💧 Dew Point & Comfort</div>
+  <div style="display:flex;align-items:center;gap:12px;margin-top:4px;margin-bottom:8px;">
+    <div style="font-size:2rem">🌡️</div>
+    <div>
+      <div style="font-weight:800;font-size:1.4rem">${dp.toFixed(1)}°C <span style="font-size:.8rem;font-weight:400;color:var(--t2)">dew point</span></div>
+      <div style="font-size:.68rem;color:var(--t3);margin-top:2px;">RH ${c.relative_humidity_2m}% · Temp ${dT(c.temperature_2m)}</div>
+    </div>
+  </div>
+  <div class="dew-gauge"><div class="dew-needle" style="left:${dewPct}%"></div></div>
+  <div class="dew-labels">
+    <span class="dew-lbl">Dry</span><span class="dew-lbl">Comfortable</span><span class="dew-lbl">Humid</span><span class="dew-lbl">Oppressive</span>
+  </div>
+  <div class="dew-comfort">${dewC.label}</div>
+  <div class="dew-tip">${dewC.tip}</div>
+</div>
+
+<!-- F10: BEST DAY PLANNER -->
+<div class="pc" style="animation:fadeUp .5s .52s ease both">
+  <div class="stitle">🧭 Best Day This Week</div>
+  <div class="bd-list">
+    ${bestDays.map((b,i)=>`<div class="bd-row${i===0?' best':''}">
+      <div class="bd-rank" style="color:${i===0?'var(--g)':i===1?'var(--y)':'var(--t3)'}">${i+1}</div>
+      <div class="bd-day">
+        <div class="bd-dnm">${b.nm}${i===0?' 🏆':''}</div>
+        <div class="bd-acts">${b.acts.join(' · ')||'Limited outdoor activities'}</div>
+      </div>
+      <div class="bd-score-wrap">
+        <div class="bd-score" style="color:${b.score>70?'var(--g)':b.score>40?'var(--y)':'var(--r)'}">${b.score}</div>
+        <div style="font-size:.55rem;color:var(--t3)">/ 100</div>
+      </div>
+    </div>`).join('')}
+  </div>
+</div>
 
   drawTrend(d);
   renderCompare();
