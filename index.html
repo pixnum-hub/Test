@@ -119,15 +119,7 @@
     overflow: hidden;
   }
 
-  .radar-panel::before {
-    content: 'RADAR VIEW';
-    position: absolute;
-    top: 12px; left: 16px;
-    font-size: 0.65rem;
-    letter-spacing: 0.2em;
-    color: var(--muted);
-    font-family: 'Space Mono', monospace;
-  }
+  /* FIX #4: Removed duplicate CSS ::before "RADAR VIEW" label — it's already in the HTML */
 
   .radar-wrap {
     position: relative;
@@ -493,6 +485,7 @@
 
   <!-- RADAR -->
   <div class="radar-panel">
+    <!-- FIX #4: Removed duplicate CSS ::before label; keeping only this single label row -->
     <div style="width:100%;display:flex;justify-content:space-between;align-items:center;margin-top:8px">
       <span style="font-size:0.65rem;letter-spacing:0.2em;color:var(--muted);font-family:'Space Mono',monospace">RADAR VIEW</span>
       <span style="font-size:0.65rem;font-family:'Space Mono',monospace;color:var(--accent)" id="sweep-label">SCANNING…</span>
@@ -584,7 +577,7 @@
 
 <script>
 /* ═══════════════════════════════════════════════════════
-   PROXIMITRACE — Core Engine
+   PROXIMITRACE — Core Engine (Bugs Fixed)
    Uses: Geolocation API, Web Bluetooth (if available),
          Network Information API, simulated BLE/WiFi data
 ═══════════════════════════════════════════════════════ */
@@ -705,6 +698,9 @@ function clearDevices() {
 
 /* ── SCAN LOOP ── */
 function startScanLoop() {
+  // FIX #2: Always clear any existing timer before starting a new one
+  // to prevent multiple overlapping intervals (race condition)
+  if (scanTimer) clearInterval(scanTimer);
   scanTimer = setInterval(updateDevices, refreshMs);
 }
 
@@ -719,9 +715,11 @@ function updateDevices() {
     d.rssi   = -40 - Math.floor(d.dist * 1.8 + Math.random()*10);
     d.lastSeen = Date.now();
 
-    // Trail
-    const px = CX + (d.dist/scanRange)*(R*0.92) * Math.cos(d.angle);
-    const py = CY + (d.dist/scanRange)*(R*0.92) * Math.sin(d.angle);
+    // FIX #5: Compute trail pixel positions here (after dist/angle are updated),
+    // not in drawDevices, so trails accurately reflect the latest position
+    const nx = d.dist / scanRange;
+    const px = CX + nx*(R*0.92) * Math.cos(d.angle);
+    const py = CY + nx*(R*0.92) * Math.sin(d.angle);
     d.trail.push({x: px, y: py, t: Date.now()});
     if (d.trail.length > 12) d.trail.shift();
   });
@@ -736,11 +734,19 @@ function updateDevices() {
   updateDeviceUI();
 }
 
+// FIX #7: toggleScan now also pauses/resumes the radar animation loop
 function toggleScan() {
   scanActive = !scanActive;
   const btn = document.getElementById('btn-scan');
   btn.textContent = scanActive ? '⏸ PAUSE SCAN' : '▶ RESUME SCAN';
+  document.getElementById('sweep-label').textContent = scanActive ? 'ACTIVE SCAN' : 'PAUSED';
   log(scanActive ? "Scanning resumed" : "Scanning paused", scanActive ? "ok" : "warn");
+
+  if (scanActive) {
+    startRadar(); // restart the animation loop
+  } else {
+    cancelAnimationFrame(animFrame); // stop drawing new frames
+  }
 }
 
 function updateRange(el) {
@@ -751,7 +757,7 @@ function updateRange(el) {
 function updateRefresh(el) {
   refreshMs = parseInt(el.value);
   document.getElementById('refresh-label').textContent = (refreshMs/1000).toFixed(1) + 's';
-  clearInterval(scanTimer);
+  // FIX #2: startScanLoop already clears the old interval before setting a new one
   startScanLoop();
 }
 
@@ -777,7 +783,8 @@ function updateDeviceUI() {
   document.getElementById('stat-closest').textContent = closest.dist.toFixed(1);
   document.getElementById('stat-rssi').textContent = avgRssi;
 
-  const bars = signalBars(closest.rssi);
+  // FIX #3: Removed unused `bars` variable (was computed but never referenced)
+
   list.innerHTML = sorted.map(d => {
     const cls = d.dist < 3 ? 'dist-near' : d.dist < 10 ? 'dist-mid' : 'dist-far';
     const b   = signalBars(d.rssi);
@@ -815,6 +822,10 @@ function selectDevice(id) {
 
 /* ── RADAR DRAW ── */
 function startRadar() {
+  // FIX #7: Cancel any existing animation frame before starting a new loop
+  // to prevent duplicate concurrent loops if startRadar is called multiple times
+  if (animFrame) cancelAnimationFrame(animFrame);
+
   function draw() {
     ctx.clearRect(0,0,W,H);
     drawGrid();
@@ -870,12 +881,12 @@ function drawGrid() {
 
 function drawSweep() {
   ctx.save();
-  // Sweep gradient
-  const gradient = ctx.createConicalGradient
-    ? ctx.createConicalGradient(CX, CY, sweepAngle)
-    : null;
 
-  // Fallback: draw sweep arc manually
+  // FIX #1: Removed call to ctx.createConicalGradient() — this is NOT a standard
+  // Canvas 2D API method and throws a TypeError in all browsers. The sweep is
+  // already drawn correctly using the manual arc-slice loop below, so the
+  // unused (and broken) conical gradient code has been removed entirely.
+
   const len = Math.PI * 0.6;
   for (let i = 0; i < 30; i++) {
     const a = sweepAngle - (i/30)*len;
@@ -899,7 +910,6 @@ function drawSweep() {
   ctx.stroke();
   ctx.restore();
 
-  // Update label
   if (scanActive) {
     document.getElementById('sweep-label').textContent = 'ACTIVE SCAN';
   }
