@@ -2,8 +2,48 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Downy</title>
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- Theme & Status Bar -->
+<meta name="theme-color" content="#00e5ff">
+<meta name="msapplication-navbutton-color" content="#080c10">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- PWA Install -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Downy">
+<meta name="application-name" content="Downy">
+
+<!-- Description & SEO -->
+<meta name="description" content="Downy — Real-time uptime monitor for 200 essential websites.">
+<meta name="keywords" content="uptime monitor, downtime detector, website status checker, ping tool">
+<meta name="author" content="Manik Roy">
+
+<!-- Open Graph -->
+<meta property="og:title" content="Downy — Uptime Monitor">
+<meta property="og:description" content="Real-time uptime monitoring for 200 essential websites.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="icons/icon-512.png">
+
+<!-- Apple Touch Icons -->
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144.png">
+<link rel="apple-touch-icon" sizes="128x128" href="icons/icon-128.png">
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="96x96" href="icons/icon-96.png">
+<link rel="icon" type="image/png" sizes="72x72" href="icons/icon-72.png">
+
+<!-- Microsoft Tiles -->
+<meta name="msapplication-TileImage" content="icons/icon-144.png">
+<meta name="msapplication-TileColor" content="#080c10">
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -588,7 +628,7 @@
   .controls-row {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     margin-bottom: 20px;
     flex-wrap: wrap;
   }
@@ -612,6 +652,76 @@
     padding: 5px 10px;
     outline: none;
     cursor: pointer;
+  }
+
+  /* ── Site search ── */
+  .search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 180px;
+    max-width: 340px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 11px;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    color: var(--text-dim);
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 32px 7px 32px;
+    color: var(--text-bright);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .search-input::placeholder { color: var(--text-dim); }
+
+  .search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+  }
+
+  .search-clear {
+    position: absolute;
+    right: 9px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 15px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    line-height: 1;
+    display: none;
+    transition: color 0.15s;
+  }
+
+  .search-clear:hover { color: var(--accent2); }
+
+  .search-match-count {
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .highlight {
+    background: rgba(0, 229, 255, 0.22);
+    color: var(--accent);
+    border-radius: 2px;
+    padding: 0 1px;
   }
 
   .uptime-badge {
@@ -649,6 +759,18 @@
     .monitor-meta { display: none; }
     .card-pattern-wrap { display: none; }
     header { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* ── Legal Footer ── */
+  .legal-footer {
+    margin-top: 40px;
+    padding: 16px 0 8px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    text-align: center;
+    font-family: 'DM Sans', sans-serif;
   }
 </style>
 </head>
@@ -710,6 +832,25 @@
         <option value="All">All</option>
       </select>
     </div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="9" r="6"/><line x1="13.5" y1="13.5" x2="18" y2="18"/>
+      </svg>
+      <input
+        type="text"
+        id="site-search"
+        class="search-input"
+        placeholder="Search websites…"
+        oninput="onSearch()"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="search-clear" id="search-clear" onclick="clearSearch()" title="Clear search">✕</button>
+    </div>
+    <span class="search-match-count" id="search-match-count"></span>
+
     <button class="btn-sm" onclick="checkAll()">↻ RE-CHECK ALL</button>
     <button class="btn-sm" onclick="clearAll()">✕ CLEAR ALL</button>
   </div>
@@ -741,9 +882,38 @@
     </div>
   </div>
 
+  <!-- Legal Footer -->
+  <div class="legal-footer">
+    Availability checks use HTTP HEAD requests only — no content downloaded or stored.
+    Domain names are publicly known facts. Listing does not imply affiliation with any service.
+    &nbsp;·&nbsp; © 2026 Manik Roy
+  </div>
+
 </div>
 
 <script>
+  /*
+   * ─────────────────────────────────────────────────────────────
+   *  DOWNY — Legal Notice
+   *  This app performs HTTP HEAD requests to publicly accessible
+   *  URLs solely to check their availability (uptime/downtime).
+   *
+   *  • No content is downloaded, stored, reproduced, or displayed.
+   *  • No user data from third-party sites is collected or processed.
+   *  • HEAD-based availability checks are industry-standard practice,
+   *    used by services such as UptimeRobot, Pingdom, Freshping, and
+   *    StatusCake. No successful legal action has been brought against
+   *    this type of monitoring.
+   *  • Domain names listed are publicly known facts, not copyrightable.
+   *    Listing them does not imply endorsement, affiliation, or
+   *    partnership with any listed company.
+   *  • Provided for personal/educational use only. Users are responsible
+   *    for ensuring their use complies with each site's Terms of Service.
+   *
+   *  © 2026 Manik Roy. All rights reserved.
+   * ─────────────────────────────────────────────────────────────
+   */
+
   // ── State ──
   const monitors = {};
   let totalChecks = 0;
@@ -818,7 +988,7 @@
     { url: 'https://robinhood.com',    cat: 'Finance' },
     { url: 'https://wise.com',         cat: 'Finance' },
     // Productivity & Tools
-    { url: 'https://google.com/drive', cat: 'Productivity' },
+    { url: 'https://drive.google.com', cat: 'Productivity' },
     { url: 'https://notion.so',        cat: 'Productivity' },
     { url: 'https://slack.com',        cat: 'Productivity' },
     { url: 'https://zoom.us',          cat: 'Productivity' },
@@ -875,7 +1045,7 @@
     // Social & Community
     { url: 'https://threads.net',      cat: 'Social' },
     { url: 'https://mastodon.social',  cat: 'Social' },
-    { url: 'https://quora.com',        cat: 'Social' },
+    { url: 'https://bluesky.app',      cat: 'Social' },
     { url: 'https://vk.com',           cat: 'Social' },
     { url: 'https://weibo.com',        cat: 'Social' },
     { url: 'https://meetup.com',       cat: 'Social' },
@@ -1145,8 +1315,9 @@
     const el = document.getElementById('card-' + id);
     if (!el) { renderAll(); return; }
     const m = monitors[id];
+    const query = getSearchQuery();
     el.className = `monitor-card ${m.status === 'down' ? 'status-down' : ''}`;
-    el.innerHTML = cardHTML(m);
+    el.innerHTML = cardHTML(m, query);
   }
 
   function historyBar(history) {
@@ -1301,7 +1472,7 @@
     </svg>`;
   }
 
-  function cardHTML(m) {
+  function cardHTML(m, query) {
     const statusClass = {
       up: 'status-up', down: 'status-down',
       checking: 'status-checking', unknown: 'status-unknown'
@@ -1325,11 +1496,22 @@
       ? m.lastChecked.toLocaleTimeString()
       : 'Never';
 
+    // Highlight matching query in domain name
+    const rawDomain = domainOf(m.url);
+    let displayDomain = rawDomain;
+    if (query && query.length > 0) {
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      displayDomain = rawDomain.replace(
+        new RegExp(`(${escaped})`, 'gi'),
+        '<mark class="highlight">$1</mark>'
+      );
+    }
+
     return `
       <div class="card-pattern-wrap">${statusPattern(m)}</div>
       <div class="status-indicator ${statusClass}"></div>
       <div class="monitor-info">
-        <div class="monitor-name">${domainOf(m.url)} <span class="cat-tag">${m.cat || ''}</span></div>
+        <div class="monitor-name">${displayDomain} <span class="cat-tag">${m.cat || ''}</span></div>
         <div class="monitor-url">${m.url}</div>
         ${historyBar(m.history)}
       </div>
@@ -1347,6 +1529,30 @@
     `;
   }
 
+  // ── Search handlers ──
+  function onSearch() {
+    const inp = document.getElementById('site-search');
+    const clearBtn = document.getElementById('search-clear');
+    if (clearBtn) clearBtn.style.display = inp.value.length > 0 ? 'block' : 'none';
+    renderAll();
+  }
+
+  function clearSearch() {
+    const inp = document.getElementById('site-search');
+    const clearBtn = document.getElementById('search-clear');
+    if (inp) inp.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+    const countEl = document.getElementById('search-match-count');
+    if (countEl) countEl.textContent = '';
+    renderAll();
+    inp && inp.focus();
+  }
+
+  function getSearchQuery() {
+    const el = document.getElementById('site-search');
+    return el ? el.value.trim().toLowerCase() : '';
+  }
+
   // ── Render all ──
   function renderAll() {
     const container = document.getElementById('monitors-list');
@@ -1355,7 +1561,30 @@
     rebuildCategoryFilter();
 
     const activeCat = document.getElementById('cat-filter') ? document.getElementById('cat-filter').value : 'All';
-    const ids = activeCat === 'All' ? allIds : allIds.filter(id => monitors[id].cat === activeCat);
+    const query = getSearchQuery();
+
+    // Filter: category first, then search query
+    let ids = activeCat === 'All' ? allIds : allIds.filter(id => monitors[id].cat === activeCat);
+    if (query) {
+      ids = ids.filter(id => {
+        const m = monitors[id];
+        return domainOf(m.url).toLowerCase().includes(query) ||
+               m.url.toLowerCase().includes(query) ||
+               (m.cat || '').toLowerCase().includes(query);
+      });
+    }
+
+    // Update match count display
+    const countEl = document.getElementById('search-match-count');
+    if (countEl) {
+      if (query) {
+        countEl.textContent = ids.length === 0
+          ? 'No matches'
+          : `${ids.length} match${ids.length !== 1 ? 'es' : ''}`;
+      } else {
+        countEl.textContent = '';
+      }
+    }
 
     if (!allIds.length) {
       container.innerHTML = `<div class="empty-state">
@@ -1366,13 +1595,16 @@
     }
 
     if (!ids.length) {
-      container.innerHTML = `<div class="empty-state"><div class="empty-icon">◉</div><p>No monitors in this category.</p></div>`;
+      const msg = query
+        ? `No websites match "<strong>${query}</strong>"`
+        : `No monitors in this category.`;
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">◉</div><p>${msg}</p></div>`;
       return;
     }
 
     container.innerHTML = ids.map(id => {
       const m = monitors[id];
-      return `<div class="monitor-card ${m.status === 'down' ? 'status-down' : ''}" id="card-${id}">${cardHTML(m)}</div>`;
+      return `<div class="monitor-card ${m.status === 'down' ? 'status-down' : ''}" id="card-${id}">${cardHTML(m, query)}</div>`;
     }).join('');
   }
 
@@ -1422,9 +1654,14 @@
     log('Log cleared.', 'info');
   }
 
-  // ── Enter key ──
+  // ── Enter key for add monitor ──
   document.getElementById('url-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') addMonitor();
+  });
+
+  // ── Escape key clears search ──
+  document.getElementById('site-search').addEventListener('keydown', e => {
+    if (e.key === 'Escape') clearSearch();
   });
 
   // ── Init — stagger 100 sites, check once, then stop ──
@@ -1460,6 +1697,55 @@
   }
 
   initDefaults();
+</script>
+<!-- ── PWA: Service Worker Registration ── -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => {
+          console.log('[Downy] SW registered, scope:', reg.scope);
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('[Downy] New version available — reload to update.');
+              }
+            });
+          });
+        })
+        .catch(err => console.warn('[Downy] SW registration failed:', err));
+    });
+  }
+
+  // ── PWA Install prompt ──
+  let deferredPrompt = null;
+  const installBtn = document.createElement('button');
+  installBtn.className = 'btn-sm';
+  installBtn.textContent = '⬇ Install App';
+  installBtn.style.display = 'none';
+  installBtn.onclick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log('[Downy] Install outcome:', outcome);
+    deferredPrompt = null;
+    installBtn.style.display = 'none';
+  };
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.style.display = 'inline-flex';
+    const controls = document.querySelector('.controls-row');
+    if (controls) controls.appendChild(installBtn);
+  });
+
+  window.addEventListener('appinstalled', () => {
+    console.log('[Downy] App installed successfully.');
+    installBtn.style.display = 'none';
+    deferredPrompt = null;
+  });
 </script>
 </body>
 </html>
