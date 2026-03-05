@@ -9,6 +9,8 @@
 <meta name="theme-color" content="#0a0f1a" id="metaThemeColor">
 <title>SkyPulse</title>
 <link rel="manifest" id="pwaManifest">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 // Inline PWA manifest
 const manifest={name:'SkyPulse',short_name:'SkyPulse',start_url:'.',display:'standalone',background_color:'#0a0f1a',theme_color:'#0a0f1a',icons:[{src:'https://cdn.jsdelivr.net/npm/twemoji@14/assets/72x72/1f324.png',sizes:'72x72',type:'image/png'}]};
@@ -337,9 +339,14 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .f7badge{font-size:.62rem;padding:2px 6px;border-radius:50px;font-weight:700;flex-shrink:0;width:58px;text-align:center;}
 
 /* ── FEATURE CSS ── */
-/* Live Radar Map */
+/* Live Radar Map — Leaflet */
 .radar-map-wrap{position:relative;border-radius:10px;overflow:hidden;background:var(--bg3);margin-top:8px;}
-.radar-map-wrap iframe{width:100%;height:220px;border:none;display:block;}
+#radarMap{width:100%;height:240px;border-radius:10px;display:block;background:var(--bg3);}
+.radar-layer-btns{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;}
+.rlbtn{border:1px solid var(--gb);border-radius:50px;padding:4px 11px;font-size:.65rem;font-weight:600;font-family:system-ui,sans-serif;background:var(--glass);color:var(--t3);cursor:pointer;transition:all var(--ease);}
+.rlbtn.on{background:var(--a);border-color:var(--a);color:#fff;}
+.rlbtn:active{transform:scale(.93);}
+.radar-credit{font-size:.56rem;color:var(--t3);margin-top:5px;}
 /* PWA banner */
 .pwa-banner{display:flex;align-items:center;gap:10px;background:linear-gradient(120deg,rgba(56,189,248,.1),rgba(129,140,248,.07));border:1px solid var(--a);border-radius:var(--rsm);padding:11px 13px;cursor:pointer;transition:all var(--ease);}
 .pwa-banner:active{transform:scale(.98);}
@@ -442,6 +449,11 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 /* FOOTER */
 footer{position:relative;z-index:1;text-align:center;padding:16px;font-family:system-ui,sans-serif;font-size:.68rem;color:var(--t3);letter-spacing:.04em;border-top:1px solid var(--gb);background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);margin-top:auto;}
 footer .hi{color:var(--a);}
+/* Leaflet overrides */
+.leaflet-container{font-family:system-ui,sans-serif;}
+.leaflet-control-zoom a{background:var(--bg2)!important;color:var(--t)!important;border-color:var(--gb)!important;}
+.leaflet-popup-content-wrapper{background:var(--bg2)!important;color:var(--t)!important;border:1px solid var(--gb)!important;box-shadow:var(--sh)!important;}
+.leaflet-popup-tip{background:var(--bg2)!important;}
 </style>
 </head>
 <body>
@@ -1568,10 +1580,15 @@ ${aqiRowsHTML?`<div class="forecast7" style="animation:fadeUp .5s .19s ease both
 
 <div class="pc" style="animation:fadeUp .5s .36s ease both">
   <div class="stitle">🗺️ Live Radar Map</div>
-  <div class="radar-map-wrap">
-    <iframe src="https://embed.windy.com/embed2.html?lat=${loc.lat}&lon=${loc.lon}&detailLat=${loc.lat}&detailLon=${loc.lon}&width=650&height=220&pane=off&overlay=rain&product=ecmwf&level=surface&pressure=true&message=true&type=map&location=coordinates&detail=false&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1" allowfullscreen loading="lazy"></iframe>
-    <div style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border-radius:6px;padding:4px 8px;font-size:.6rem;color:#fff;">Powered by Windy</div>
+  <div class="radar-map-wrap"><div id="radarMap"></div></div>
+  <div class="radar-layer-btns">
+    <button class="rlbtn on" onclick="setRadarLayer('precipitation_new')">🌧️ Rain</button>
+    <button class="rlbtn" onclick="setRadarLayer('clouds_new')">☁️ Clouds</button>
+    <button class="rlbtn" onclick="setRadarLayer('wind_new')">💨 Wind</button>
+    <button class="rlbtn" onclick="setRadarLayer('temp_new')">🌡️ Temp</button>
+    <button class="rlbtn" onclick="setRadarLayer('pressure_new')">📊 Pressure</button>
   </div>
+  <div class="radar-credit">Map: © OpenStreetMap contributors · Weather tiles: OpenWeatherMap</div>
 </div>
 
 <div class="pc" style="animation:fadeUp .5s .38s ease both">
@@ -1701,6 +1718,66 @@ ${hist?`
   /* FIX: These MUST be called after innerHTML is set — outside the template literal */
   drawTrend(d);
   renderCompare();
+  // Init/update Leaflet radar map now that #radarMap div exists in DOM
+  requestAnimationFrame(()=>initRadarMap(loc.lat, loc.lon));
+}
+
+/* ════ LEAFLET RADAR MAP ════ */
+let leafletMap=null, wxTileLayer=null, curRadarLayer='precipitation_new';
+
+function initRadarMap(lat,lon){
+  // If map already exists, just pan to new location
+  if(leafletMap){
+    leafletMap.setView([lat,lon],7);
+    return;
+  }
+  const el=document.getElementById('radarMap');
+  if(!el) return;
+
+  // Dark-styled base tiles from CartoDB (free, no key)
+  leafletMap = L.map('radarMap',{
+    center:[lat,lon],
+    zoom:7,
+    zoomControl:true,
+    attributionControl:false,
+    scrollWheelZoom:false
+  });
+
+  // Base layer — CartoDB Dark Matter (free, no key needed)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    maxZoom:19,
+    subdomains:'abcd'
+  }).addTo(leafletMap);
+
+  // Weather overlay — OpenWeatherMap free tiles (no key needed for basic layers)
+  wxTileLayer = L.tileLayer(
+    `https://tile.openweathermap.org/map/${curRadarLayer}/{z}/{x}/{y}.png?appid=9de243494c0b295cca9337e1e96b00e2`,
+    {opacity:0.65, maxZoom:19}
+  ).addTo(leafletMap);
+
+  // Custom marker for current city
+  const icon=L.divIcon({
+    html:`<div style="width:14px;height:14px;background:var(--a,#38bdf8);border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 8px rgba(56,189,248,.7);"></div>`,
+    iconSize:[14,14],iconAnchor:[7,7],className:''
+  });
+  L.marker([lat,lon],{icon}).addTo(leafletMap)
+    .bindPopup(`<b style="font-family:system-ui,sans-serif">${curCity||'Location'}</b>`,{className:'leaflet-popup-custom'});
+
+  // Prevent map from interfering with page scroll on mobile
+  leafletMap.on('touchstart',()=>{ leafletMap.scrollWheelZoom.disable(); });
+}
+
+function setRadarLayer(layer){
+  curRadarLayer=layer;
+  // Update button states
+  document.querySelectorAll('.rlbtn').forEach(b=>{
+    b.classList.toggle('on', b.getAttribute('onclick')===`setRadarLayer('${layer}')`);
+  });
+  if(!leafletMap||!wxTileLayer) return;
+  // Swap weather tile URL
+  wxTileLayer.setUrl(
+    `https://tile.openweathermap.org/map/${layer}/{z}/{x}/{y}.png?appid=9de243494c0b295cca9337e1e96b00e2`
+  );
 }
 
 /* ════ BOOT ════ */
