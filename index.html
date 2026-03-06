@@ -1437,9 +1437,7 @@
 <!-- ─── Footer ─── -->
 <footer>
   <div class="footer-text">
-    <span class="footer-accent">◈</span> LUMINA PLAYER &nbsp;·&nbsp;
-    © <strong id="footerYear"></strong> <strong>Manik Roy</strong>
-    <br>All Rights Reserved.
+    © <strong id="footerYear"></strong> <strong>Manik Roy</strong>. All Rights Reserved.
   </div>
 </footer>
 
@@ -1652,45 +1650,41 @@
     const firstNewIndex = tracks.length;
 
     arr.forEach(file => {
-      const base   = file.name.replace(/\.[^\.]+$/, '');
-      const parts  = base.split(' - ');
-      const title  = parts.length >= 2 ? parts.slice(1).join(' - ').trim() : base;
-      const artist = parts.length >= 2 ? parts[0].trim() : 'Unknown Artist';
-      const ext    = file.name.split('.').pop().toUpperCase();
+      const base    = file.name.replace(/\.[^\.]+$/, '');
+      const parts   = base.split(' - ');
+      const title   = parts.length >= 2 ? parts.slice(1).join(' - ').trim() : base;
+      const artist  = parts.length >= 2 ? parts[0].trim() : 'Unknown Artist';
+      const ext     = file.name.split('.').pop().toUpperCase();
       const isVideo = file.type.startsWith('video/');
 
+      // Use blob URL — fast, memory-efficient, works for any file size
+      const url = URL.createObjectURL(file);
+
       const track = { title, artist, genre: ext, year: String(new Date().getFullYear()),
-                      duration: '—', durationSec: 0, url: null, file, isVideo };
+                      duration: '—', durationSec: 0, url, file, isVideo };
       tracks.push(track);
 
-      const reader = new FileReader();
-      reader.onload = e => {
-        track.url = e.target.result;
-        const tmp = isVideo ? document.createElement('video') : new Audio();
-        tmp.preload = 'metadata';
-        tmp.addEventListener('loadedmetadata', () => {
-          if (isFinite(tmp.duration) && tmp.duration > 0) {
-            track.duration = fmtTime(tmp.duration);
-            track.durationSec = tmp.duration;
-          }
-          tmp.src = '';
-          renderPlaylist(); updateCount();
-        }, { once: true });
-        tmp.addEventListener('error', () => {}, { once: true });
-        tmp.src = track.url;
-
-        if (tracks.indexOf(track) === firstNewIndex && !audio.src && !track.isVideo) {
-          loadTrack(firstNewIndex, false);
-        } else if (tracks.indexOf(track) === firstNewIndex && !videoEl.src && track.isVideo) {
-          loadTrack(firstNewIndex, false);
+      // Probe duration without loading full file
+      const tmp = isVideo ? document.createElement('video') : new Audio();
+      tmp.preload = 'metadata';
+      tmp.addEventListener('loadedmetadata', () => {
+        if (isFinite(tmp.duration) && tmp.duration > 0) {
+          track.duration    = fmtTime(tmp.duration);
+          track.durationSec = tmp.duration;
         }
-      };
-      reader.onerror = () => {};
-      reader.readAsDataURL(file);
+        tmp.src = '';
+        renderPlaylist(); updateCount();
+      }, { once: true });
+      tmp.src = url;
     });
 
     toggleDropZone(); renderPlaylist(); updateCount();
     showToast(arr.length === 1 ? '1 file added' : arr.length + ' files added');
+
+    // Auto-load first new track
+    if (firstNewIndex === 0 || currentTrack === 0 && !audio.src && !videoEl.src) {
+      loadTrack(firstNewIndex, false);
+    }
   }
 
   // ─── Render Playlist ───
@@ -1703,11 +1697,11 @@
       div.className = 'playlist-item' + (active ? ' active' + (isPlaying ? ' playing' : '') : '');
       div.addEventListener('click', () => selectTrack(i));
       div.addEventListener('contextmenu', e => { e.preventDefault(); removeTrack(i); });
-      div.innerHTML = \`
-        <span class="item-num">\${String(i+1).padStart(2,'0')}</span>
+      div.innerHTML = `
+        <span class="item-num">${String(i+1).padStart(2,'0')}</span>
         <div class="item-info">
-          <div class="item-name">\${escHtml(t.title)}</div>
-          <div class="item-meta">\${escHtml(t.artist)}\${t.isVideo ? ' · <span style="color:var(--accent)">▶ VIDEO</span>' : ''}</div>
+          <div class="item-name">${escHtml(t.title)}</div>
+          <div class="item-meta">${escHtml(t.artist)}${t.isVideo ? ' · <span style="color:var(--accent)">▶ VIDEO</span>' : ''}</div>
         </div>
         <div class="eq-bars">
           <div class="eq-bar"></div><div class="eq-bar"></div>
@@ -1715,10 +1709,10 @@
         </div>
         <div class="mini-play">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-            \${active && isPlaying ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>' : '<path d="M8 5v14l11-7z"/>'}
+            ${active && isPlaying ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>' : '<path d="M8 5v14l11-7z"/>'}
           </svg>
         </div>
-        <span class="item-dur">\${escHtml(t.duration)}</span>\`;
+        <span class="item-dur">${escHtml(t.duration)}</span>`;
       playlistEl.appendChild(div);
     });
   }
@@ -1729,26 +1723,28 @@
     currentTrack = index;
     const t = tracks[index];
 
-    pendingPlay = false;
-    audio.pause();
-    audio.src = '';
-    videoEl.pause();
+    // Stop & clear both players
+    try { audio.pause(); } catch(e) {}
+    try { videoEl.pause(); } catch(e) {}
+    audio.src   = '';
     videoEl.src = '';
+    audio.load();
     cancelAnimationFrame(rafId);
-    isPlaying = false;
+    isPlaying   = false;
+    pendingPlay = false;
 
-    // Show video element over album art for video tracks
+    // Swap art / video display
     const albumArt = document.getElementById('albumArt');
     if (t.isVideo) {
-      videoEl.style.display = 'block';
-      videoEl.style.borderRadius = '50%';
-      albumArt.style.opacity = '0';
+      videoEl.style.display    = 'block';
+      albumArt.style.opacity   = '0';
     } else {
-      videoEl.style.display = 'none';
-      albumArt.style.opacity = '1';
+      videoEl.style.display    = 'none';
+      albumArt.style.opacity   = '1';
       albumArt.classList.remove('spinning');
     }
 
+    // Update info panel
     document.getElementById('trackTitle').textContent   = t.title;
     document.getElementById('trackArtist').textContent  = t.artist;
     document.getElementById('trackGenre').textContent   = t.genre;
@@ -1760,37 +1756,29 @@
     document.getElementById('progressFill').style.width = '0%';
     document.getElementById('artRing').style.setProperty('--progress','0%');
     document.querySelectorAll('.wave-bar').forEach(b => b.classList.remove('active'));
-    if (!t.isVideo) document.getElementById('albumArt').classList.remove('spinning');
-    updatePlayIcon(); renderPlaylist();
+    updatePlayIcon();
+    renderPlaylist();
 
-    if (!t.url) { if (autoPlay) pendingPlay = true; return; }
+    // Assign blob URL to correct element and play
+    const mediaEl = t.isVideo ? videoEl : audio;
+    mediaEl.src = t.url;
 
-    if (t.isVideo) {
-      // Video: set src on videoEl only
-      videoEl.src = t.url;
-      if (autoPlay) {
-        videoEl.addEventListener('canplay', function onCP() {
-          videoEl.removeEventListener('canplay', onCP);
-          videoEl.play().then(() => {
-            isPlaying = true; startRAF(); updatePlayIcon(); renderPlaylist();
-          }).catch(e => { console.warn('video play failed:', e); isPlaying = false; updatePlayIcon(); renderPlaylist(); });
-        });
+    if (autoPlay) {
+      if (!t.isVideo) {
+        // Init Web Audio on first play (requires user gesture context)
+        if (!audioCtxReady) { try { initAudioContext(); } catch(e) {} }
+        connectAudioSource();
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
       }
-    } else {
-      // Audio: set src on audio element only
-      audio.src = t.url;
-      if (autoPlay) {
-        pendingPlay = true;
-        audio.addEventListener('canplay', function onCP() {
-          audio.removeEventListener('canplay', onCP);
-          if (!pendingPlay) return;
-          pendingPlay = false;
-          if (!audioCtxReady) initAudioContext();
-          connectAudioSource();
-          if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-          audio.play().then(() => {
-            isPlaying = true; startRAF(); updatePlayIcon(); renderPlaylist();
-          }).catch(err => { console.warn('play() failed:', err); isPlaying = false; updatePlayIcon(); renderPlaylist(); });
+      // play() returns a Promise — handle it cleanly
+      const playPromise = mediaEl.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.warn('Playback failed:', err.name, err.message);
+          isPlaying = false;
+          updatePlayIcon();
+          renderPlaylist();
+          showToast('Tap play to start');
         });
       }
     }
@@ -1822,7 +1810,12 @@
   }
 
   // ─── Media Events ───
-  function onPlay()  { isPlaying = true;  document.getElementById('albumArt').classList.add('spinning'); updatePlayIcon(); renderPlaylist(); startRAF(); }
+  function onPlay()  {
+    isPlaying = true;
+    // Only spin the vinyl art for audio — video shows itself
+    if (!tracks[currentTrack]?.isVideo) document.getElementById('albumArt').classList.add('spinning');
+    updatePlayIcon(); renderPlaylist(); startRAF();
+  }
   function onPause() { isPlaying = false; document.getElementById('albumArt').classList.remove('spinning'); updatePlayIcon(); renderPlaylist(); }
   function onEnded() {
     isPlaying = false; cancelAnimationFrame(rafId);
@@ -1856,16 +1849,22 @@
     const t = tracks[currentTrack];
     const mediaEl = t?.isVideo ? videoEl : audio;
 
-    // Nothing loaded yet
-    if (!mediaEl.src) { loadTrack(currentTrack, true); return; }
+    // Nothing assigned yet — load and play
+    if (!mediaEl.src || mediaEl.src === window.location.href) {
+      loadTrack(currentTrack, true);
+      return;
+    }
 
     if (mediaEl.paused) {
       if (!t?.isVideo) {
-        if (!audioCtxReady) initAudioContext();
+        if (!audioCtxReady) { try { initAudioContext(); } catch(e) {} }
         connectAudioSource();
-        if (audioCtx?.state === 'suspended') audioCtx.resume();
+        if (audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
       }
-      mediaEl.play().catch(err => console.warn(err));
+      mediaEl.play().catch(err => {
+        console.warn('togglePlay failed:', err.name);
+        showToast('Playback blocked — try again');
+      });
     } else {
       mediaEl.pause();
     }
@@ -1893,10 +1892,15 @@
 
   function removeTrack(i) {
     const wasActive = i === currentTrack;
+    URL.revokeObjectURL(tracks[i].url);
     tracks.splice(i, 1);
     if (!tracks.length) {
-      pendingPlay = false; audio.pause(); audio.src = '';
-      videoEl.pause(); videoEl.src = ''; videoEl.style.display = 'none';
+      pendingPlay = false;
+      try { audio.pause(); } catch(e) {}
+      audio.src = '';
+      try { videoEl.pause(); } catch(e) {}
+      videoEl.src = ''; videoEl.style.display = 'none';
+      document.getElementById('albumArt').style.opacity = '1';
       isPlaying = false; cancelAnimationFrame(rafId);
       resetDisplay(); toggleDropZone(); updateCount(); showToast('Queue empty'); return;
     }
@@ -1907,10 +1911,15 @@
 
   function clearQueue() {
     if (!tracks.length) return;
-    pendingPlay = false; audio.pause(); audio.src = '';
-    videoEl.pause(); videoEl.src = ''; videoEl.style.display = 'none';
+    pendingPlay = false;
+    try { audio.pause(); } catch(e) {}
+    audio.src = '';
+    try { videoEl.pause(); } catch(e) {}
+    videoEl.src = ''; videoEl.style.display = 'none';
+    document.getElementById('albumArt').style.opacity = '1';
     isPlaying = false; cancelAnimationFrame(rafId);
-    tracks.forEach(t => { t.url = null; }); tracks.length = 0; currentTrack = 0;
+    tracks.forEach(t => { try { URL.revokeObjectURL(t.url); } catch(e) {} });
+    tracks.length = 0; currentTrack = 0;
     resetDisplay(); renderPlaylist(); updateCount(); toggleDropZone(); showToast('Queue cleared');
   }
 
@@ -1991,16 +2000,16 @@
     EQ_BANDS.forEach((band, i) => {
       const col = document.createElement('div');
       col.className = 'eq-band';
-      col.innerHTML = \`
-        <span class="eq-value" id="eqVal\${i}">0</span>
+      col.innerHTML = `
+        <span class="eq-value" id="eqVal${i}">0</span>
         <div class="eq-slider-wrap">
-          <input type="range" class="eq-slider" id="eqSlider\${i}"
+          <input type="range" class="eq-slider" id="eqSlider${i}"
             min="-12" max="12" step="0.5" value="0"
             orient="vertical"
             style="-webkit-appearance:slider-vertical;writing-mode:vertical-lr;direction:rtl;"
-            oninput="setEQBand(\${i}, this.value)">
+            oninput="setEQBand(${i}, this.value)">
         </div>
-        <span class="eq-label">\${band.label}</span>\`;
+        <span class="eq-label">${band.label}</span>`;
       grid.appendChild(col);
     });
   }
@@ -2126,7 +2135,7 @@
     document.getElementById('hueVal').textContent      = hue + '°';
     document.getElementById('blurVal').textContent     = parseFloat(blur).toFixed(1) + 'px';
 
-    const f = \`brightness(\${bright}%) contrast(\${contrast}%) saturate(\${sat}%) hue-rotate(\${hue}deg) blur(\${blur}px)\`;
+    const f = `brightness(${bright}%) contrast(${contrast}%) saturate(${sat}%) hue-rotate(${hue}deg) blur(${blur}px)`;
     videoEl.style.filter = f;
     document.getElementById('filterPreview').style.filter = f;
   }
