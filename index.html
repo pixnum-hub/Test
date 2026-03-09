@@ -3,9 +3,9 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>Tactical GPS</title>
+<title>Tactical GPS Pro</title>
 
 <link rel="manifest" href="manifest.json">
 
@@ -20,33 +20,36 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
 
 body{
 margin:0;
-font-family:Arial;
-background:#0b1220;
+background:#08101d;
 color:white;
+font-family:Arial;
 display:flex;
 justify-content:center;
 }
 
 .frame{
-
 width:100%;
-max-width:420px;
-border:2px solid rgba(255,255,255,0.2);
-border-radius:20px;
+max-width:430px;
 margin:10px;
 padding:10px;
-background:rgba(255,255,255,0.05);
-backdrop-filter:blur(15px);
+border-radius:20px;
+border:2px solid rgba(255,255,255,.2);
+background:rgba(255,255,255,.05);
+backdrop-filter:blur(12px);
 }
 
 #map{
-height:350px;
+height:320px;
 border-radius:12px;
 margin-bottom:10px;
 }
 
-button{
+.data{
+font-size:13px;
+margin:3px 0;
+}
 
+button{
 width:100%;
 padding:10px;
 margin:4px 0;
@@ -56,13 +59,7 @@ background:#00ff88;
 font-weight:bold;
 }
 
-.data{
-font-size:14px;
-margin:5px 0;
-}
-
 .toggle{
-
 position:absolute;
 right:20px;
 top:20px;
@@ -71,6 +68,13 @@ height:45px;
 border-radius:50%;
 background:#00ff88;
 border:none;
+}
+
+canvas{
+width:100%;
+background:#000;
+border-radius:10px;
+margin-top:8px;
 }
 
 .footer{
@@ -89,17 +93,26 @@ margin-top:10px;
 
 <button class="toggle" onclick="toggleMode()">🌙</button>
 
-<h3 style="text-align:center;">🛰 Tactical GPS</h3>
+<h3 style="text-align:center">🛰 Tactical GPS Pro</h3>
 
 <div id="map"></div>
 
-<div class="data" id="coords">Waiting for GPS...</div>
+<div class="data" id="coords"></div>
+<div class="data" id="utm"></div>
+<div class="data" id="mgrs"></div>
 <div class="data" id="speed"></div>
+<div class="data" id="heading"></div>
 <div class="data" id="accuracy"></div>
+<div class="data" id="altitude"></div>
 
 <button onclick="startTracking()">Start Tracking</button>
 <button onclick="addWaypoint()">Add Waypoint</button>
+<button onclick="exportGPX()">Export GPX</button>
 <button onclick="replayTrack()">Replay Track</button>
+
+<canvas id="compass" height="200"></canvas>
+<canvas id="accuracyGraph" height="120"></canvas>
+<canvas id="skyplot" height="200"></canvas>
 
 <div class="footer">
 © Manik Roy <span id="year"></span>. All Rights Reserved.
@@ -111,6 +124,8 @@ margin-top:10px;
 
 document.getElementById("year").textContent=new Date().getFullYear()
 
+/* MAP */
+
 let map=L.map("map").setView([20,0],3)
 
 L.tileLayer(
@@ -118,44 +133,46 @@ L.tileLayer(
 {maxZoom:19}
 ).addTo(map)
 
-let marker=null
-let track=[]
-let polyline=L.polyline([], {color:"lime"}).addTo(map)
+/* GRID */
 
 function drawGrid(){
 
 for(let lat=-80;lat<80;lat+=0.01){
-
-L.polyline(
-[[lat,-180],[lat,180]],
-{color:"rgba(0,255,0,0.1)",weight:1}
-).addTo(map)
-
+L.polyline([[lat,-180],[lat,180]],
+{color:"rgba(0,255,0,.1)",weight:1}).addTo(map)
 }
 
 for(let lon=-180;lon<180;lon+=0.01){
-
-L.polyline(
-[[-80,lon],[80,lon]],
-{color:"rgba(0,255,0,0.1)",weight:1}
-).addTo(map)
-
+L.polyline([[-80,lon],[80,lon]],
+{color:"rgba(0,255,0,.1)",weight:1}).addTo(map)
 }
 
 }
 
 drawGrid()
 
+/* TRACK */
+
+let track=[]
+let marker=null
+let poly=L.polyline([], {color:"lime"}).addTo(map)
+
+/* ACCURACY HISTORY */
+
+let accuracyHistory=[]
+
+/* GPS */
+
 function startTracking(){
 
-navigator.geolocation.watchPosition(
+navigator.geolocation.watchPosition(pos=>{
 
-pos=>{
-
-const lat=pos.coords.latitude
-const lon=pos.coords.longitude
-const speed=pos.coords.speed||0
-const accuracy=pos.coords.accuracy
+let lat=pos.coords.latitude
+let lon=pos.coords.longitude
+let speed=pos.coords.speed||0
+let acc=pos.coords.accuracy
+let alt=pos.coords.altitude||0
+let heading=pos.coords.heading||0
 
 document.getElementById("coords").innerHTML=
 `Lat: ${lat.toFixed(6)} | Lon: ${lon.toFixed(6)}`
@@ -163,33 +180,46 @@ document.getElementById("coords").innerHTML=
 document.getElementById("speed").innerHTML=
 `Speed: ${(speed*3.6).toFixed(1)} km/h`
 
+document.getElementById("heading").innerHTML=
+`Heading: ${heading.toFixed(1)}°`
+
 document.getElementById("accuracy").innerHTML=
-`Accuracy: ${accuracy.toFixed(1)} m`
+`Accuracy: ${acc.toFixed(1)} m`
+
+document.getElementById("altitude").innerHTML=
+`Altitude: ${alt.toFixed(1)} m`
+
+let utm=latLonToUTM(lat,lon)
+
+document.getElementById("utm").innerHTML=
+`UTM: ${utm.zone} ${utm.easting.toFixed(0)}E ${utm.northing.toFixed(0)}N`
+
+document.getElementById("mgrs").innerHTML=
+`MGRS: ${utm.zone} ${Math.floor(utm.easting)} ${Math.floor(utm.northing)}`
 
 map.setView([lat,lon],16)
 
 if(!marker){
-
 marker=L.marker([lat,lon]).addTo(map)
-
 }else{
-
 marker.setLatLng([lat,lon])
-
 }
 
 track.push([lat,lon])
-polyline.setLatLngs(track)
+poly.setLatLngs(track)
 
-},
+accuracyHistory.push(acc)
+drawAccuracy()
 
-err=>alert("GPS Error: "+err.message),
+drawCompass(heading)
 
-{enableHighAccuracy:true}
+simulateSkyplot()
 
-)
+})
 
 }
+
+/* WAYPOINT */
 
 function addWaypoint(){
 
@@ -198,9 +228,31 @@ if(track.length==0)return
 L.marker(track[track.length-1])
 .addTo(map)
 .bindPopup("Waypoint")
-.openPopup()
+}
+
+/* GPX EXPORT */
+
+function exportGPX(){
+
+let gpx='<?xml version="1.0"?><gpx><trk><trkseg>'
+
+track.forEach(p=>{
+gpx+=`<trkpt lat="${p[0]}" lon="${p[1]}"></trkpt>`
+})
+
+gpx+='</trkseg></trk></gpx>'
+
+let blob=new Blob([gpx],{type:"application/gpx+xml"})
+let url=URL.createObjectURL(blob)
+
+let a=document.createElement("a")
+a.href=url
+a.download="track.gpx"
+a.click()
 
 }
+
+/* REPLAY */
 
 function replayTrack(i=0){
 
@@ -213,18 +265,128 @@ setTimeout(()=>replayTrack(i+1),400)
 
 }
 
-function toggleMode(){
+/* UTM */
 
-document.body.style.background=
-document.body.style.background==="black"
-?"#0b1220":"black"
+const a=6378137
+const f=1/298.257223563
+const e=Math.sqrt(f*(2-f))
+const k0=.9996
+
+function latLonToUTM(lat,lon){
+
+let zone=Math.floor((lon+180)/6)+1
+let λ0=((zone-1)*6-180+3)*Math.PI/180
+
+let φ=lat*Math.PI/180
+let λ=lon*Math.PI/180
+
+let N=a/Math.sqrt(1-Math.pow(e*Math.sin(φ),2))
+let A=(λ-λ0)*Math.cos(φ)
+
+let easting=k0*N*A+500000
+let northing=k0*N*Math.tan(φ)*(A*A/2)
+
+return{zone,easting,northing}
 
 }
 
+/* COMPASS */
+
+function drawCompass(angle){
+
+let c=document.getElementById("compass")
+let ctx=c.getContext("2d")
+
+ctx.clearRect(0,0,c.width,c.height)
+
+ctx.beginPath()
+ctx.arc(150,100,80,0,2*Math.PI)
+ctx.strokeStyle="#00ff88"
+ctx.stroke()
+
+ctx.save()
+ctx.translate(150,100)
+ctx.rotate(angle*Math.PI/180)
+
+ctx.beginPath()
+ctx.moveTo(0,-70)
+ctx.lineTo(0,70)
+ctx.strokeStyle="red"
+ctx.stroke()
+
+ctx.restore()
+
+}
+
+/* ACCURACY GRAPH */
+
+function drawAccuracy(){
+
+let c=document.getElementById("accuracyGraph")
+let ctx=c.getContext("2d")
+
+ctx.clearRect(0,0,c.width,c.height)
+
+ctx.beginPath()
+
+accuracyHistory.forEach((v,i)=>{
+
+let x=i*10
+let y=100-v
+
+if(i==0) ctx.moveTo(x,y)
+else ctx.lineTo(x,y)
+
+})
+
+ctx.strokeStyle="#00ff88"
+ctx.stroke()
+
+}
+
+/* SKY PLOT */
+
+function simulateSkyplot(){
+
+let c=document.getElementById("skyplot")
+let ctx=c.getContext("2d")
+
+ctx.clearRect(0,0,c.width,c.height)
+
+ctx.beginPath()
+ctx.arc(150,100,90,0,2*Math.PI)
+ctx.strokeStyle="#0f0"
+ctx.stroke()
+
+for(let i=0;i<12;i++){
+
+let a=Math.random()*2*Math.PI
+let r=Math.random()*80
+
+let x=150+r*Math.cos(a)
+let y=100+r*Math.sin(a)
+
+ctx.fillStyle="#0f0"
+ctx.fillRect(x,y,4,4)
+
+}
+
+}
+
+/* NIGHT MODE */
+
+function toggleMode(){
+
+document.body.style.background=
+document.body.style.background=="black"
+?"#08101d":"black"
+
+}
+
+/* SERVICE WORKER */
+
 if("serviceWorker" in navigator){
-
 navigator.serviceWorker.register("service-worker.js")
-
 }
 
 </script>
