@@ -1,78 +1,98 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Tactical GPS Elite</title>
-
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<title>Ultimate Speedometer</title>
 
 <style>
 
+:root{
+--bg:#f4f6fa;
+--card:#ffffff;
+--text:#111;
+--accent:#0a84ff;
+}
+
+body.dark{
+--bg:#0f1115;
+--card:#1c1f26;
+--text:#ffffff;
+}
+
+body.oled{
+--bg:#000;
+--card:#000;
+--text:#fff;
+}
+
 body{
 margin:0;
-background:#0a1225;
-color:white;
-font-family:Arial;
+font-family:system-ui;
+background:var(--bg);
+color:var(--text);
 display:flex;
-justify-content:center;
+flex-direction:column;
+align-items:center;
+min-height:100vh;
 }
 
-.app{
-
+.container{
 width:100%;
-max-width:430px;
-margin:10px;
-padding:10px;
-border-radius:20px;
-border:2px solid rgba(255,255,255,.2);
-background:rgba(255,255,255,.05);
-backdrop-filter:blur(10px);
-
+max-width:420px;
+padding:16px;
+text-align:center;
 }
 
-#map{
-height:300px;
-border-radius:12px;
-margin-bottom:8px;
-}
-
-.panel{
-font-size:13px;
-margin:3px 0;
-}
-
-button{
-
-width:100%;
-padding:10px;
-margin:4px 0;
-border:none;
-border-radius:8px;
-background:#00ff88;
-font-weight:bold;
-
+h1{
+margin:10px 0;
 }
 
 canvas{
-
 width:100%;
-background:#000;
-border-radius:10px;
-margin-top:8px;
-
+max-width:300px;
 }
 
-.footer{
-text-align:center;
-font-size:12px;
+.speed{
+font-size:44px;
+font-weight:bold;
+}
+
+.panel{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+margin-top:15px;
+}
+
+.card{
+background:var(--card);
+padding:12px;
+border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,.15);
+}
+
+.controls{
+margin-top:15px;
+}
+
+button,select{
+padding:10px;
+margin:5px;
+border:none;
+border-radius:8px;
+background:var(--accent);
+color:#fff;
+font-size:14px;
+}
+
+footer{
+margin-top:auto;
+padding:15px;
+font-size:13px;
 opacity:.7;
-margin-top:10px;
 }
 
 </style>
@@ -80,358 +100,241 @@ margin-top:10px;
 
 <body>
 
-<div class="app">
+<div class="container">
 
-<h3 style="text-align:center">🛰 Tactical GPS Elite</h3>
+<h1>Ultimate Speedometer</h1>
 
-<div id="map"></div>
+<select id="mode">
+<option>Walking</option>
+<option>Car</option>
+<option>Bus</option>
+<option>Train</option>
+<option>Aeroplane</option>
+</select>
 
-<div class="panel" id="coords"></div>
-<div class="panel" id="speed"></div>
-<div class="panel" id="distance"></div>
-<div class="panel" id="maxspeed"></div>
-<div class="panel" id="accuracy"></div>
-<div class="panel" id="signal"></div>
+<canvas id="gauge" width="300" height="300"></canvas>
 
-<button onclick="startTracking()">Start Tracking</button>
-<button onclick="addWaypoint()">Add Waypoint</button>
-<button onclick="replayTrack()">Replay Track</button>
-<button onclick="exportGPX()">Export GPX</button>
-<button onclick="shareLocation()">Share Location</button>
+<div class="speed" id="speed">0</div>
+<div>km/h</div>
 
-<canvas id="compass" height="200"></canvas>
-<canvas id="accuracyGraph" height="120"></canvas>
-<canvas id="skyplot" height="200"></canvas>
+<div class="panel">
 
-<div class="footer">
+<div class="card">
+Distance<br>
+<b id="distance">0 km</b>
+</div>
+
+<div class="card">
+Average<br>
+<b id="avg">0 km/h</b>
+</div>
+
+<div class="card">
+Top Speed<br>
+<b id="top">0 km/h</b>
+</div>
+
+<div class="card">
+Altitude<br>
+<b id="alt">0 m</b>
+</div>
+
+<div class="card">
+Direction<br>
+<b id="dir">-</b>
+</div>
+
+<div class="card">
+Status<br>
+<b id="status">Idle</b>
+</div>
+
+</div>
+
+<div class="controls">
+
+<button onclick="startGPS()">Start GPS</button>
+<button onclick="resetTrip()">Reset Trip</button>
+
+<br>
+
+<button onclick="setTheme('light')">Light</button>
+<button onclick="setTheme('dark')">Dark</button>
+<button onclick="setTheme('oled')">OLED</button>
+
+</div>
+
+</div>
+
+<footer>
 © Manik Roy <span id="year"></span>. All Rights Reserved.
-</div>
-
-</div>
+</footer>
 
 <script>
 
 document.getElementById("year").textContent=new Date().getFullYear()
 
-/* MAP */
-
-let map=L.map("map").setView([20,0],3)
-
-let osm=L.tileLayer(
-"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-).addTo(map)
-
-let topo=L.tileLayer(
-"https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-)
-
-let satellite=L.tileLayer(
-"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-)
-
-L.control.layers({
-OSM:osm,
-Topo:topo,
-Satellite:satellite
-}).addTo(map)
-
-/* GRID */
-
-function drawGrid(){
-
-for(let lat=-80;lat<80;lat+=0.01){
-
-L.polyline([[lat,-180],[lat,180]],
-{color:"rgba(0,255,0,.1)",weight:1}).addTo(map)
-
+function setTheme(t){
+document.body.classList.remove("dark","oled")
+if(t==="dark")document.body.classList.add("dark")
+if(t==="oled")document.body.classList.add("oled")
 }
 
-for(let lon=-180;lon<180;lon+=0.01){
+const canvas=document.getElementById("gauge")
+const ctx=canvas.getContext("2d")
 
-L.polyline([[-80,lon],[80,lon]],
-{color:"rgba(0,255,0,.1)",weight:1}).addTo(map)
+let maxSpeed=900
 
-}
+function drawGauge(speed){
 
-}
+ctx.clearRect(0,0,300,300)
 
-drawGrid()
-
-/* TRACK */
-
-let track=[]
-let marker=null
-let poly=L.polyline([], {color:"lime"}).addTo(map)
-
-let totalDistance=0
-let maxSpeed=0
-
-let accuracyHistory=[]
-
-function startTracking(){
-
-navigator.geolocation.watchPosition(pos=>{
-
-let lat=pos.coords.latitude
-let lon=pos.coords.longitude
-let speed=pos.coords.speed||0
-let acc=pos.coords.accuracy
-
-updateGPS(lat,lon,speed,acc)
-
-})
-
-}
-
-function updateGPS(lat,lon,speed,acc){
-
-document.getElementById("coords").innerHTML=
-`Lat ${lat.toFixed(6)} Lon ${lon.toFixed(6)}`
-
-let kmh=speed*3.6
-
-document.getElementById("speed").innerHTML=
-`Speed ${kmh.toFixed(1)} km/h`
-
-maxSpeed=Math.max(maxSpeed,kmh)
-
-document.getElementById("maxspeed").innerHTML=
-`Max Speed ${maxSpeed.toFixed(1)} km/h`
-
-document.getElementById("accuracy").innerHTML=
-`Accuracy ${acc.toFixed(1)} m`
-
-document.getElementById("signal").innerHTML=
-`Signal ${gpsQuality(acc)}`
-
-map.setView([lat,lon],16)
-
-if(!marker){
-marker=L.marker([lat,lon]).addTo(map)
-}else{
-marker.setLatLng([lat,lon])
-}
-
-track.push([lat,lon])
-
-poly.setLatLngs(track)
-
-updateDistance()
-
-accuracyHistory.push(acc)
-
-drawAccuracy()
-
-drawCompass(0)
-
-simulateSkyplot()
-
-}
-
-function updateDistance(){
-
-if(track.length<2) return
-
-let p1=track[track.length-2]
-let p2=track[track.length-1]
-
-let d=calcDistance(p1,p2)
-
-totalDistance+=d
-
-document.getElementById("distance").innerHTML=
-"Distance "+(totalDistance/1000).toFixed(2)+" km"
-
-}
-
-/* HAVERSINE */
-
-function calcDistance(p1,p2){
-
-let R=6371000
-
-let φ1=p1[0]*Math.PI/180
-let φ2=p2[0]*Math.PI/180
-
-let Δφ=(p2[0]-p1[0])*Math.PI/180
-let Δλ=(p2[1]-p1[1])*Math.PI/180
-
-let a=Math.sin(Δφ/2)**2+
-Math.cos(φ1)*Math.cos(φ2)*
-Math.sin(Δλ/2)**2
-
-let c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))
-
-return R*c
-
-}
-
-/* WAYPOINT */
-
-function addWaypoint(){
-
-if(track.length==0) return
-
-L.marker(track[track.length-1])
-.addTo(map)
-.bindPopup("Waypoint")
-
-}
-
-/* SHARE */
-
-function shareLocation(){
-
-if(track.length==0) return
-
-let p=track[track.length-1]
-
-let url="https://maps.google.com/?q="+p[0]+","+p[1]
-
-navigator.clipboard.writeText(url)
-
-alert("Location link copied")
-
-}
-
-/* GPX */
-
-function exportGPX(){
-
-let gpx='<?xml version="1.0"?><gpx><trk><trkseg>'
-
-track.forEach(p=>{
-gpx+=`<trkpt lat="${p[0]}" lon="${p[1]}"></trkpt>`
-})
-
-gpx+='</trkseg></trk></gpx>'
-
-let blob=new Blob([gpx])
-
-let a=document.createElement("a")
-
-a.href=URL.createObjectURL(blob)
-
-a.download="track.gpx"
-
-a.click()
-
-}
-
-/* REPLAY */
-
-function replayTrack(i=0){
-
-if(i>=track.length) return
-
-marker.setLatLng(track[i])
-map.setView(track[i],16)
-
-setTimeout(()=>replayTrack(i+1),400)
-
-}
-
-/* SIGNAL QUALITY */
-
-function gpsQuality(acc){
-
-if(acc<5) return "Excellent 🟢"
-if(acc<15) return "Good 🟡"
-if(acc<30) return "Fair 🟠"
-return "Poor 🔴"
-
-}
-
-/* COMPASS */
-
-function drawCompass(angle){
-
-let c=document.getElementById("compass")
-let ctx=c.getContext("2d")
-
-ctx.clearRect(0,0,c.width,c.height)
+let c=150
 
 ctx.beginPath()
-ctx.arc(150,100,80,0,2*Math.PI)
-ctx.strokeStyle="#00ff88"
+ctx.arc(c,c,120,Math.PI,0)
+ctx.lineWidth=20
+ctx.strokeStyle="#ddd"
 ctx.stroke()
 
-ctx.save()
-
-ctx.translate(150,100)
-
-ctx.rotate(angle*Math.PI/180)
+let angle=Math.PI+(speed/maxSpeed)*Math.PI
 
 ctx.beginPath()
-ctx.moveTo(0,-70)
-ctx.lineTo(0,70)
-
+ctx.moveTo(c,c)
+ctx.lineTo(c+100*Math.cos(angle),c+100*Math.sin(angle))
+ctx.lineWidth=5
 ctx.strokeStyle="red"
 ctx.stroke()
 
-ctx.restore()
+ctx.beginPath()
+ctx.arc(c,c,7,0,Math.PI*2)
+ctx.fill()
 
 }
 
-/* ACCURACY GRAPH */
+drawGauge(0)
 
-function drawAccuracy(){
+let lastPos=null
+let lastTime=null
 
-let c=document.getElementById("accuracyGraph")
-let ctx=c.getContext("2d")
+let totalDistance=0
+let speedSum=0
+let speedCount=0
+let topSpeed=0
 
-ctx.clearRect(0,0,c.width,c.height)
+function toRad(v){return v*Math.PI/180}
 
-ctx.beginPath()
+function calcDist(a,b){
 
-accuracyHistory.forEach((v,i)=>{
+let R=6371
 
-let x=i*10
-let y=100-v
+let dLat=toRad(b.lat-a.lat)
+let dLon=toRad(b.lon-a.lon)
 
-if(i==0) ctx.moveTo(x,y)
-else ctx.lineTo(x,y)
+let lat1=toRad(a.lat)
+let lat2=toRad(b.lat)
 
+let h=Math.sin(dLat/2)**2+
+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2
+
+return 2*R*Math.asin(Math.sqrt(h))
+
+}
+
+function direction(heading){
+
+if(heading==null)return "-"
+
+const dirs=["N","NE","E","SE","S","SW","W","NW"]
+
+return dirs[Math.round(heading/45)%8]
+
+}
+
+function startGPS(){
+
+document.getElementById("status").textContent="Starting..."
+
+navigator.geolocation.watchPosition(update,error,{
+enableHighAccuracy:true,
+maximumAge:0,
+timeout:5000
 })
 
-ctx.strokeStyle="#00ff88"
+}
 
-ctx.stroke()
+function update(pos){
+
+document.getElementById("status").textContent="Tracking"
+
+let lat=pos.coords.latitude
+let lon=pos.coords.longitude
+
+let time=Date.now()
+
+let speed=0
+
+if(lastPos){
+
+let dist=calcDist(lastPos,{lat,lon})
+
+let t=(time-lastTime)/3600000
+
+speed=dist/t
+
+totalDistance+=dist
 
 }
 
-/* SKY PLOT */
+lastPos={lat,lon}
+lastTime=time
 
-function simulateSkyplot(){
+speed=Math.round(speed)
 
-let c=document.getElementById("skyplot")
-let ctx=c.getContext("2d")
+if(speed>topSpeed) topSpeed=speed
 
-ctx.clearRect(0,0,c.width,c.height)
+speedSum+=speed
+speedCount++
 
-ctx.beginPath()
-ctx.arc(150,100,90,0,2*Math.PI)
+let avg=Math.round(speedSum/speedCount)
 
-ctx.strokeStyle="#0f0"
+document.getElementById("speed").textContent=speed
+document.getElementById("distance").textContent=totalDistance.toFixed(2)+" km"
+document.getElementById("avg").textContent=avg+" km/h"
+document.getElementById("top").textContent=topSpeed+" km/h"
 
-ctx.stroke()
+let alt=pos.coords.altitude||0
+document.getElementById("alt").textContent=Math.round(alt)+" m"
 
-for(let i=0;i<12;i++){
+document.getElementById("dir").textContent=direction(pos.coords.heading)
 
-let a=Math.random()*2*Math.PI
-let r=Math.random()*80
-
-let x=150+r*Math.cos(a)
-let y=100+r*Math.sin(a)
-
-ctx.fillStyle="#0f0"
-ctx.fillRect(x,y,4,4)
+drawGauge(speed)
 
 }
+
+function error(){
+
+document.getElementById("status").textContent="Location blocked"
+
+alert("Please allow location permission.")
+
+}
+
+function resetTrip(){
+
+totalDistance=0
+speedSum=0
+speedCount=0
+topSpeed=0
+lastPos=null
+
+document.getElementById("distance").textContent="0 km"
+document.getElementById("avg").textContent="0 km/h"
+document.getElementById("top").textContent="0 km/h"
 
 }
 
 </script>
 
 </body>
-</html>
+  </html>
