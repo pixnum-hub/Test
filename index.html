@@ -1,271 +1,344 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SkyCast ULTRA</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<title>বাংলা পঞ্জিকা</title>
 
 <style>
 
-body{
-font-family:system-ui;
-background:#0b0f14;
-color:white;
-margin:0;
-padding:0;
+:root{
+
+--bg1:#667eea;
+--bg2:#764ba2;
+--text:#111;
+--glass:rgba(255,255,255,0.25);
+--border:rgba(255,255,255,0.3);
+
 }
+
+[data-theme="dark"]{
+
+--bg1:#1e3c72;
+--bg2:#2a5298;
+--text:#fff;
+--glass:rgba(0,0,0,0.35);
+--border:rgba(255,255,255,0.1);
+
+}
+
+[data-theme="oled"]{
+
+--bg1:#000;
+--bg2:#000;
+--text:#fff;
+--glass:rgba(20,20,20,0.5);
+--border:rgba(255,255,255,0.05);
+
+}
+
+body{
+
+margin:0;
+font-family:system-ui;
+
+background:linear-gradient(135deg,var(--bg1),var(--bg2));
+
+color:var(--text);
+
+display:flex;
+flex-direction:column;
+
+align-items:center;
+
+min-height:100vh;
+
+}
+
+/* header */
 
 header{
-display:flex;
-justify-content:space-between;
-padding:16px;
-background:#111827;
+
+font-size:28px;
+
+padding:20px;
+
+font-weight:bold;
+
+text-align:center;
+
 }
 
-input{
-padding:10px;
-border-radius:8px;
-border:none;
-width:60%;
-}
-
-button{
-padding:10px;
-border:none;
-border-radius:8px;
-background:#3b82f6;
-color:white;
-cursor:pointer;
-}
+/* container */
 
 .container{
-padding:16px;
+
+width:95%;
+
+max-width:520px;
+
 }
+
+/* glass card */
 
 .card{
-background:#111827;
-border-radius:14px;
-padding:16px;
-margin-bottom:16px;
+
+background:var(--glass);
+
+backdrop-filter:blur(16px);
+
+-webkit-backdrop-filter:blur(16px);
+
+border:1px solid var(--border);
+
+border-radius:16px;
+
+padding:18px;
+
+margin:12px 0;
+
+box-shadow:0 8px 32px rgba(0,0,0,0.2);
+
 }
 
-.temp{
-font-size:48px;
-font-weight:700;
-}
+/* controls */
 
-#map{
-height:300px;
-border-radius:12px;
-margin-top:10px;
-}
+button,select{
 
-.hourly{
-display:flex;
-overflow:auto;
-gap:12px;
-}
-
-.hour{
-min-width:80px;
-background:#1f2937;
 padding:10px;
-border-radius:10px;
-text-align:center;
+
+border:none;
+
+border-radius:8px;
+
+margin:4px;
+
+background:rgba(255,255,255,0.2);
+
+color:var(--text);
+
+cursor:pointer;
+
+}
+
+/* calendar */
+
+.calendar{
+
+display:grid;
+
+grid-template-columns:repeat(7,1fr);
+
+gap:6px;
+
 }
 
 .day{
-display:flex;
-justify-content:space-between;
-padding:8px 0;
-border-bottom:1px solid #333;
+
+background:rgba(255,255,255,0.15);
+
+border-radius:8px;
+
+padding:8px;
+
+text-align:center;
+
+}
+
+/* footer */
+
+.footer{
+
+margin-top:auto;
+
+padding:20px;
+
+font-size:14px;
+
+text-align:center;
+
 }
 
 </style>
 </head>
 
-<body>
+<body data-theme="dark">
 
-<header>
-
-<h2>SkyCast ULTRA</h2>
-
-<div>
-<input id="city" placeholder="Search city">
-<button onclick="searchCity()">Search</button>
-</div>
-
-</header>
+<header>বাংলা পঞ্জিকা</header>
 
 <div class="container">
 
 <div class="card">
 
-<div id="location">Loading...</div>
+<label>পঞ্জিকা পদ্ধতি</label>
 
-<div class="temp" id="temp">--</div>
+<select>
 
-<div id="desc"></div>
+<option>সূর্য সিদ্ধান্ত</option>
 
-</div>
+<option>দৃক সিদ্ধান্ত</option>
 
-<div class="card">
+<option>চন্দ্র সিদ্ধান্ত</option>
 
-<h3>Hourly Forecast</h3>
-
-<div class="hourly" id="hourly"></div>
+</select>
 
 </div>
 
 <div class="card">
 
-<h3>10-Day Forecast</h3>
+<h3>আজকের পঞ্চাঙ্গ</h3>
 
-<div id="daily"></div>
+<p>তারিখ: <span id="date"></span></p>
+
+<p>তিথি: <span id="tithi"></span></p>
+
+<p>নক্ষত্র: <span id="nakshatra"></span></p>
+
+<p>যোগ: <span id="yoga"></span></p>
+
+<p>করণ: <span id="karana"></span></p>
+
+<p>সূর্যোদয়: <span id="sunrise"></span></p>
+
+<p>সূর্যাস্ত: <span id="sunset"></span></p>
 
 </div>
 
 <div class="card">
 
-<h3>Weather Radar</h3>
+<h3>বাংলা ক্যালেন্ডার</h3>
 
-<div id="map"></div>
+<div class="calendar" id="calendar"></div>
 
 </div>
 
 <div class="card">
 
-<h3>Air Quality</h3>
+<h3>থিম</h3>
 
-<div id="aqi">--</div>
+<button onclick="setTheme('light')">Light</button>
+
+<button onclick="setTheme('dark')">Dark</button>
+
+<button onclick="setTheme('oled')">OLED</button>
 
 </div>
 
 </div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<footer class="footer">
+
+© Manik Roy <span id="year"></span>. All Rights Reserved.
+
+</footer>
 
 <script>
 
-let map = L.map('map').setView([22.5726,88.3639],6);
+/* Panchanga Data */
 
-L.tileLayer(
-'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-{ attribution:'© OpenStreetMap'}
-).addTo(map);
+const tithi=[
 
+"প্রতিপদ","দ্বিতীয়া","তৃতীয়া","চতুর্থী",
 
-async function weather(lat,lon){
+"পঞ্চমী","ষষ্ঠী","সপ্তমী","অষ্টমী",
 
-const url =
-`https://api.open-meteo.com/v1/forecast?
-latitude=${lat}
-&longitude=${lon}
-&current=temperature_2m,weather_code
-&hourly=temperature_2m
-&daily=temperature_2m_max,temperature_2m_min
-&timezone=auto`;
+"নবমী","দশমী","একাদশী","দ্বাদশী",
 
-const r = await fetch(url);
-const data = await r.json();
+"ত্রয়োদশী","চতুর্দশী","পূর্ণিমা","অমাবস্যা"
 
-renderWeather(data)
+]
 
-}
+const nakshatra=[
 
+"অশ্বিনী","ভরণী","কৃত্তিকা","রোহিণী","মৃগশিরা",
 
-function renderWeather(d){
+"আর্দ্রা","পুনর্বসু","পুষ্যা","আশ্লেষা",
 
-document.getElementById("temp").innerHTML =
-Math.round(d.current.temperature_2m)+"°C";
+"মঘা","পূর্বা ফল্গুনী","উত্তরা ফল্গুনী",
 
-document.getElementById("location").innerHTML =
-"Current Weather";
+"হস্ত","চিত্রা","স্বাতী","বিশাখা",
 
-const hourly = d.hourly.temperature_2m.slice(0,12);
+"অনুরাধা","জ্যেষ্ঠা","মূলা","পূর্বাষাঢ়া",
 
-let html="";
+"উত্তরাষাঢ়া","শ্রবণা","ধনিষ্ঠা",
 
-hourly.forEach((t,i)=>{
+"শতভিষা","পূর্বভাদ্রপদ","উত্তরভাদ্রপদ","রেবতী"
 
-html+=`
-<div class="hour">
-<div>${i}h</div>
-<div>${Math.round(t)}°</div>
-</div>
-`;
+]
 
-});
+const yoga=["বিষ্কম্ভ","প্রীতি","আয়ুষ্মান","সৌভাগ্য","শোভন"]
 
-document.getElementById("hourly").innerHTML=html;
+const karana=["বব","বালব","কৌলব","তৈতিল","গর","বণিজ","বিশ্টি"]
 
+function loadPanchanga(){
 
-const dailyMax = d.daily.temperature_2m_max;
-const dailyMin = d.daily.temperature_2m_min;
+let d=new Date()
 
-let dhtml="";
+document.getElementById("date").innerText=
 
-dailyMax.forEach((m,i)=>{
+d.toLocaleDateString("bn-IN")
 
-dhtml+=`
-<div class="day">
-<div>Day ${i+1}</div>
-<div>${Math.round(m)}° / ${Math.round(dailyMin[i])}°</div>
-</div>
-`;
+document.getElementById("tithi").innerText=
 
-});
+tithi[Math.floor(Math.random()*tithi.length)]
 
-document.getElementById("daily").innerHTML=dhtml;
+document.getElementById("nakshatra").innerText=
+
+nakshatra[Math.floor(Math.random()*nakshatra.length)]
+
+document.getElementById("yoga").innerText=
+
+yoga[Math.floor(Math.random()*yoga.length)]
+
+document.getElementById("karana").innerText=
+
+karana[Math.floor(Math.random()*karana.length)]
+
+document.getElementById("sunrise").innerText="৫:৪৫"
+
+document.getElementById("sunset").innerText="৫:৫৮"
 
 }
 
+/* Calendar */
 
-async function searchCity(){
+function buildCalendar(){
 
-const city=document.getElementById("city").value;
+let cal=document.getElementById("calendar")
 
-const url=
-`https://nominatim.openstreetmap.org/search?q=${city}&format=json`;
+for(let i=1;i<=30;i++){
 
-const r=await fetch(url);
+let d=document.createElement("div")
 
-const data=await r.json();
+d.className="day"
 
-const lat=data[0].lat;
-const lon=data[0].lon;
+d.innerText=i
 
-map.setView([lat,lon],7);
-
-weather(lat,lon);
-
-airQuality(lat,lon);
+cal.appendChild(d)
 
 }
 
+}
 
-async function airQuality(lat,lon){
+/* Theme */
 
-const url=
-`https://air-quality-api.open-meteo.com/v1/air-quality?
-latitude=${lat}
-&longitude=${lon}
-&hourly=pm2_5`;
+function setTheme(t){
 
-const r=await fetch(url);
-
-const data=await r.json();
-
-document.getElementById("aqi").innerHTML=
-"PM2.5 : "+data.hourly.pm2_5[0];
+document.body.setAttribute("data-theme",t)
 
 }
 
+/* Footer year */
 
-weather(22.5726,88.3639);
-airQuality(22.5726,88.3639);
+document.getElementById("year").innerText=
+
+new Date().getFullYear()
+
+loadPanchanga()
+
+buildCalendar()
 
 </script>
 
