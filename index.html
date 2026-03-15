@@ -1,345 +1,237 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en" data-theme="dark">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>বাংলা পঞ্জিকা</title>
-
+<title>Vastu Compass ULTRA</title>
 <style>
-
-:root{
-
---bg1:#667eea;
---bg2:#764ba2;
---text:#111;
---glass:rgba(255,255,255,0.25);
---border:rgba(255,255,255,0.3);
-
+:root {
+  --bg-color: #121212;
+  --text-color: #ffffff;
+  --accent-color: #00ffcc;
+  --highlight-color: #ffcc00;
+}
+[data-theme="light"] {
+  --bg-color: #f0f0f0;
+  --text-color: #121212;
+  --accent-color: #0077cc;
+  --highlight-color: #ff6600;
+}
+[data-theme="oled"] {
+  --bg-color: #000000;
+  --text-color: #00ffcc;
+  --accent-color: #00ffcc;
+  --highlight-color: #ffcc00;
 }
 
-[data-theme="dark"]{
-
---bg1:#1e3c72;
---bg2:#2a5298;
---text:#fff;
---glass:rgba(0,0,0,0.35);
---border:rgba(255,255,255,0.1);
-
+html, body {
+  margin:0;
+  padding:0;
+  height:100%;
+  font-family: Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  display:flex;
+  flex-direction: column;
+  justify-content:center;
+  align-items:center;
 }
 
-[data-theme="oled"]{
-
---bg1:#000;
---bg2:#000;
---text:#fff;
---glass:rgba(20,20,20,0.5);
---border:rgba(255,255,255,0.05);
-
+.compass-container {
+  display:flex;
+  flex-direction: column;
+  align-items:center;
+  text-align:center;
 }
 
-body{
-
-margin:0;
-font-family:system-ui;
-
-background:linear-gradient(135deg,var(--bg1),var(--bg2));
-
-color:var(--text);
-
-display:flex;
-flex-direction:column;
-
-align-items:center;
-
-min-height:100vh;
-
+.compass {
+  width: 280px;
+  height: 280px;
+  border: 4px solid var(--accent-color);
+  border-radius: 50%;
+  position: relative;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: conic-gradient(
+    #222 0deg 45deg,
+    #222 45deg 90deg,
+    #222 90deg 135deg,
+    #222 135deg 180deg,
+    #222 180deg 225deg,
+    #222 225deg 270deg,
+    #222 270deg 315deg,
+    #222 315deg 360deg
+  );
 }
 
-/* header */
-
-header{
-
-font-size:28px;
-
-padding:20px;
-
-font-weight:bold;
-
-text-align:center;
-
+.zone-label {
+  position: absolute;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--text-color);
+  transform: translate(-50%, -50%);
 }
 
-/* container */
-
-.container{
-
-width:95%;
-
-max-width:520px;
-
+.needle {
+  width: 4px;
+  height: 120px;
+  background: red;
+  position: absolute;
+  top: 50%;
+  transform-origin: bottom center;
+  transform: rotate(0deg);
+  transition: transform 0.3s ease-out;
 }
 
-/* glass card */
-
-.card{
-
-background:var(--glass);
-
-backdrop-filter:blur(16px);
-
--webkit-backdrop-filter:blur(16px);
-
-border:1px solid var(--border);
-
-border-radius:16px;
-
-padding:18px;
-
-margin:12px 0;
-
-box-shadow:0 8px 32px rgba(0,0,0,0.2);
-
+.direction {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 5px;
 }
 
-/* controls */
-
-button,select{
-
-padding:10px;
-
-border:none;
-
-border-radius:8px;
-
-margin:4px;
-
-background:rgba(255,255,255,0.2);
-
-color:var(--text);
-
-cursor:pointer;
-
+.vastu-suggestion {
+  font-size: 1rem;
+  margin-bottom: 15px;
+  max-width: 250px;
 }
 
-/* calendar */
-
-.calendar{
-
-display:grid;
-
-grid-template-columns:repeat(7,1fr);
-
-gap:6px;
-
+.theme-toggle {
+  margin: 10px;
+  display: flex;
+  gap: 10px;
 }
 
-.day{
-
-background:rgba(255,255,255,0.15);
-
-border-radius:8px;
-
-padding:8px;
-
-text-align:center;
-
+.theme-toggle button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  background: var(--accent-color);
+  color: var(--bg-color);
+  font-weight: bold;
 }
 
-/* footer */
-
-.footer{
-
-margin-top:auto;
-
-padding:20px;
-
-font-size:14px;
-
-text-align:center;
-
+#enableCompass {
+  margin:10px;
+  padding:10px 20px;
+  font-weight:bold;
+  cursor:pointer;
+  border:none;
+  border-radius:5px;
+  background:var(--accent-color);
+  color:var(--bg-color);
 }
 
+footer {
+  margin-top:auto;
+  padding:15px;
+  font-size:0.9rem;
+}
+
+@media (max-width:500px) {
+  .compass { width:180px; height:180px; }
+  .needle { height:90px; }
+}
 </style>
 </head>
+<body>
 
-<body data-theme="dark">
+<div class="compass-container">
+  <div class="direction" id="direction">N</div>
+  <div class="vastu-suggestion" id="suggestion">Align your home according to Vastu.</div>
+  <div class="compass" id="compass">
+    <div class="needle" id="needle"></div>
+    <div class="zone-label" style="top: 10%; left: 50%;">N</div>
+    <div class="zone-label" style="top: 30%; left: 80%;">NE</div>
+    <div class="zone-label" style="top: 50%; left: 90%;">E</div>
+    <div class="zone-label" style="top: 70%; left: 80%;">SE</div>
+    <div class="zone-label" style="top: 90%; left: 50%;">S</div>
+    <div class="zone-label" style="top: 70%; left: 20%;">SW</div>
+    <div class="zone-label" style="top: 50%; left: 10%;">W</div>
+    <div class="zone-label" style="top: 30%; left: 20%;">NW</div>
+  </div>
 
-<header>বাংলা পঞ্জিকা</header>
+  <button id="enableCompass">Enable Compass</button>
 
-<div class="container">
-
-<div class="card">
-
-<label>পঞ্জিকা পদ্ধতি</label>
-
-<select>
-
-<option>সূর্য সিদ্ধান্ত</option>
-
-<option>দৃক সিদ্ধান্ত</option>
-
-<option>চন্দ্র সিদ্ধান্ত</option>
-
-</select>
-
+  <div class="theme-toggle">
+    <button onclick="setTheme('light')">Light</button>
+    <button onclick="setTheme('dark')">Dark</button>
+    <button onclick="setTheme('oled')">OLED</button>
+  </div>
 </div>
 
-<div class="card">
-
-<h3>আজকের পঞ্চাঙ্গ</h3>
-
-<p>তারিখ: <span id="date"></span></p>
-
-<p>তিথি: <span id="tithi"></span></p>
-
-<p>নক্ষত্র: <span id="nakshatra"></span></p>
-
-<p>যোগ: <span id="yoga"></span></p>
-
-<p>করণ: <span id="karana"></span></p>
-
-<p>সূর্যোদয়: <span id="sunrise"></span></p>
-
-<p>সূর্যাস্ত: <span id="sunset"></span></p>
-
-</div>
-
-<div class="card">
-
-<h3>বাংলা ক্যালেন্ডার</h3>
-
-<div class="calendar" id="calendar"></div>
-
-</div>
-
-<div class="card">
-
-<h3>থিম</h3>
-
-<button onclick="setTheme('light')">Light</button>
-
-<button onclick="setTheme('dark')">Dark</button>
-
-<button onclick="setTheme('oled')">OLED</button>
-
-</div>
-
-</div>
-
-<footer class="footer">
-
-© Manik Roy <span id="year"></span>. All Rights Reserved.
-
-</footer>
+<footer>© Manik Roy <span id="year"></span>. All Rights Reserved.</footer>
 
 <script>
+document.getElementById('year').textContent = new Date().getFullYear();
+function setTheme(theme){ document.documentElement.setAttribute('data-theme', theme); }
 
-/* Panchanga Data */
+const needle = document.getElementById('needle');
+const directionText = document.getElementById('direction');
+const suggestionText = document.getElementById('suggestion');
+const compass = document.getElementById('compass');
+const enableBtn = document.getElementById('enableCompass');
 
-const tithi=[
+const vastuZones = [
+  {dir:'N', text:'Wealth, Career – Safe, study, cash locker', start:337.5, end:22.5},
+  {dir:'NE', text:'Puja / Meditation / Spiritual activities', start:22.5, end:67.5},
+  {dir:'E', text:'Living room, windows, social interactions', start:67.5, end:112.5},
+  {dir:'SE', text:'Kitchen / Fire-related items', start:112.5, end:157.5},
+  {dir:'S', text:'Stability, master bedroom', start:157.5, end:202.5},
+  {dir:'SW', text:'Heavy furniture, bedroom for elders', start:202.5, end:247.5},
+  {dir:'W', text:'Children’s room, study, entertainment', start:247.5, end:292.5},
+  {dir:'NW', text:'Guest room, storage', start:292.5, end:337.5}
+];
 
-"প্রতিপদ","দ্বিতীয়া","তৃতীয়া","চতুর্থী",
-
-"পঞ্চমী","ষষ্ঠী","সপ্তমী","অষ্টমী",
-
-"নবমী","দশমী","একাদশী","দ্বাদশী",
-
-"ত্রয়োদশী","চতুর্দশী","পূর্ণিমা","অমাবস্যা"
-
-]
-
-const nakshatra=[
-
-"অশ্বিনী","ভরণী","কৃত্তিকা","রোহিণী","মৃগশিরা",
-
-"আর্দ্রা","পুনর্বসু","পুষ্যা","আশ্লেষা",
-
-"মঘা","পূর্বা ফল্গুনী","উত্তরা ফল্গুনী",
-
-"হস্ত","চিত্রা","স্বাতী","বিশাখা",
-
-"অনুরাধা","জ্যেষ্ঠা","মূলা","পূর্বাষাঢ়া",
-
-"উত্তরাষাঢ়া","শ্রবণা","ধনিষ্ঠা",
-
-"শতভিষা","পূর্বভাদ্রপদ","উত্তরভাদ্রপদ","রেবতী"
-
-]
-
-const yoga=["বিষ্কম্ভ","প্রীতি","আয়ুষ্মান","সৌভাগ্য","শোভন"]
-
-const karana=["বব","বালব","কৌলব","তৈতিল","গর","বণিজ","বিশ্টি"]
-
-function loadPanchanga(){
-
-let d=new Date()
-
-document.getElementById("date").innerText=
-
-d.toLocaleDateString("bn-IN")
-
-document.getElementById("tithi").innerText=
-
-tithi[Math.floor(Math.random()*tithi.length)]
-
-document.getElementById("nakshatra").innerText=
-
-nakshatra[Math.floor(Math.random()*nakshatra.length)]
-
-document.getElementById("yoga").innerText=
-
-yoga[Math.floor(Math.random()*yoga.length)]
-
-document.getElementById("karana").innerText=
-
-karana[Math.floor(Math.random()*karana.length)]
-
-document.getElementById("sunrise").innerText="৫:৪৫"
-
-document.getElementById("sunset").innerText="৫:৫৮"
-
+function getZone(angle){
+  for(let z of vastuZones){
+    if(z.start > z.end){ // N wraps 360
+      if(angle >= z.start || angle < z.end) return z;
+    } else {
+      if(angle >= z.start && angle < z.end) return z;
+    }
+  }
+  return vastuZones[0];
 }
 
-/* Calendar */
+function handleOrientation(event){
+  let heading;
+  if(typeof event.webkitCompassHeading !== "undefined") heading = event.webkitCompassHeading;
+  else if(event.absolute && event.alpha !== null) heading = 360 - event.alpha;
+  else return;
 
-function buildCalendar(){
+  heading = heading % 360;
+  if(heading < 0) heading += 360;
 
-let cal=document.getElementById("calendar")
+  needle.style.transform = `rotate(${heading}deg)`;
+  const zone = getZone(heading);
+  directionText.textContent = zone.dir;
+  suggestionText.textContent = zone.text;
 
-for(let i=1;i<=30;i++){
-
-let d=document.createElement("div")
-
-d.className="day"
-
-d.innerText=i
-
-cal.appendChild(d)
-
+  // Highlight active zone
+  let gradient = '';
+  for(let z of vastuZones){
+    gradient += (z===zone? 'var(--highlight-color)' : '#222') + ` ${z.start}deg ${z.end}deg,`;
+  }
+  gradient = gradient.slice(0,-1);
+  compass.style.background = `conic-gradient(${gradient})`;
 }
 
+function initCompass(){
+  window.addEventListener('deviceorientation', handleOrientation, true);
 }
 
-/* Theme */
-
-function setTheme(t){
-
-document.body.setAttribute("data-theme",t)
-
-}
-
-/* Footer year */
-
-document.getElementById("year").innerText=
-
-new Date().getFullYear()
-
-loadPanchanga()
-
-buildCalendar()
-
+// Enable button for iOS 13+
+enableBtn.addEventListener('click', ()=>{
+  if(typeof DeviceOrientationEvent.requestPermission === 'function'){
+    DeviceOrientationEvent.requestPermission().then(response=>{
+      if(response==='granted'){ initCompass(); enableBtn.style.display='none'; }
+      else alert('Permission denied. Compass won’t work.');
+    }).catch(console.error);
+  } else { initCompass(); enableBtn.style.display='none'; }
+});
 </script>
 
 </body>
