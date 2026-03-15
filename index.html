@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vastu Compass Android</title>
+<title>ULTRA PRO Vastu Compass</title>
 <style>
 :root {
   --bg-color:#121212; --text-color:#fff; --accent-color:#00ffcc; --highlight-color:#ffcc00;
@@ -11,46 +11,36 @@
 [data-theme="light"]{ --bg-color:#f0f0f0; --text-color:#121212; --accent-color:#0077cc; --highlight-color:#ff6600; }
 [data-theme="oled"]{ --bg-color:#000; --text-color:#00ffcc; --accent-color:#00ffcc; --highlight-color:#ffcc00; }
 
-html,body{
-  margin:0; padding:0; height:100%;
-  font-family:Arial,sans-serif; 
-  background:var(--bg-color); 
-  color:var(--text-color); 
-  display:flex; flex-direction:column; justify-content:center; align-items:center;
+html,body{margin:0;padding:0;height:100%;font-family:Arial,sans-serif;background:var(--bg-color);color:var(--text-color);display:flex;flex-direction:column;justify-content:center;align-items:center;}
+
+.compass-container{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  backdrop-filter: blur(15px); background: rgba(255,255,255,0.05); border-radius:25px;
+  padding:25px; box-shadow:0 8px 32px rgba(0,0,0,0.4);
 }
 
-.compass-container{ display:flex; flex-direction:column; align-items:center; text-align:center; }
-
 .compass{
-  width:280px; height:280px;
-  border:4px solid var(--accent-color); border-radius:50%;
-  position:relative; display:flex; justify-content:center; align-items:center; margin-bottom:15px;
-  background: conic-gradient(
-    #222 0deg 45deg, #222 45deg 90deg, #222 90deg 135deg, #222 135deg 180deg,
-    #222 180deg 225deg, #222 225deg 270deg, #222 270deg 315deg, #222 315deg 360deg
-  );
-  overflow:hidden;
+  width:280px; height:280px; border-radius:50%; position:relative; display:flex; justify-content:center; align-items:center;
+  margin-bottom:15px; background: rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.3);
+  backdrop-filter: blur(15px); overflow:hidden; perspective:800px;
 }
 
 .zone-label{
-  position:absolute; font-size:0.8rem; font-weight:bold; color:var(--text-color); transform:translate(-50%,-50%);
+  position:absolute;font-size:0.8rem;font-weight:bold;color:var(--text-color);transform:translate(-50%,-50%);
 }
 
 .needle{
-  width:4px; height:50%; 
-  background:red; 
-  position:absolute; 
-  top:50%; left:50%;
-  transform-origin:bottom center; 
-  transform:translateX(-50%) translateY(-100%) rotate(0deg); 
-  transition:transform 0.2s ease-out;
+  width:6px; height:50%; background: linear-gradient(to top,#ffcc00,#ff6600); position:absolute;
+  top:50%; left:50%; transform-origin:bottom center;
+  transform:translateX(-50%) translateY(-100%) rotateX(20deg) rotateZ(0deg);
+  box-shadow:0 4px 12px rgba(0,0,0,0.6); border-radius:3px;
 }
 
-.direction{ font-size:1.5rem; font-weight:bold; margin-bottom:5px; }
-.vastu-suggestion{ font-size:1rem; margin-bottom:15px; max-width:250px; }
+.direction{ font-size:1.5rem;font-weight:bold;margin-bottom:5px;backdrop-filter:blur(5px); }
+.vastu-suggestion{ font-size:1rem;margin-bottom:15px;max-width:250px;backdrop-filter:blur(5px); }
 .theme-toggle{ margin:10px; display:flex; gap:10px; }
-.theme-toggle button{ padding:8px 15px; border:none; border-radius:5px; cursor:pointer; background:var(--accent-color); color:var(--bg-color); font-weight:bold; }
-footer{ margin-top:auto; padding:15px; font-size:0.9rem; }
+.theme-toggle button{ padding:8px 15px; border:none; border-radius:10px; cursor:pointer; background:var(--accent-color); color:var(--bg-color); font-weight:bold; backdrop-filter:blur(5px);}
+footer{ margin-top:auto;padding:15px;font-size:0.9rem; }
 
 @media(max-width:500px){ .compass{ width:180px; height:180px; } .needle{ height:90px; } }
 </style>
@@ -76,11 +66,13 @@ footer{ margin-top:auto; padding:15px; font-size:0.9rem; }
     <button onclick="setTheme('light')">Light</button>
     <button onclick="setTheme('dark')">Dark</button>
     <button onclick="setTheme('oled')">OLED</button>
+    <button onclick="generateVastuPDF()">PDF Report</button>
   </div>
 </div>
 
 <footer>© Manik Roy <span id="year"></span>. All Rights Reserved.</footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 document.getElementById('year').textContent = new Date().getFullYear();
 function setTheme(theme){ document.documentElement.setAttribute('data-theme',theme); }
@@ -103,39 +95,74 @@ const vastuZones=[
 
 function getZone(angle){
   for(let z of vastuZones){
-    if(z.start>z.end){ if(angle>=z.start || angle<z.end) return z;}
-    else{ if(angle>=z.start && angle<z.end) return z;}
+    if(z.start>z.end){ if(angle>=z.start || angle<z.end) return z; }
+    else{ if(angle>=z.start && angle<z.end) return z; }
   }
   return vastuZones[0];
 }
 
-function updateCompass(angle){
-  angle=angle%360; if(angle<0) angle+=360;
-  needle.style.transform=`translateX(-50%) translateY(-100%) rotate(${angle}deg)`;
-  const zone=getZone(angle);
-  directionText.textContent=zone.dir;
-  suggestionText.textContent=zone.text;
+let currentAngle = 0;
+let targetAngle = 0;
+function updateCompass(angle){ targetAngle = angle % 360; if(targetAngle<0) targetAngle+=360; }
+
+function animateNeedle(){
+  let diff = targetAngle - currentAngle;
+  if(diff>180) diff-=360;
+  if(diff<-180) diff+=360;
+  currentAngle += diff*0.1; // smooth easing
+  needle.style.transform = `translateX(-50%) translateY(-100%) rotateX(20deg) rotateZ(${currentAngle}deg)`;
+
+  const zone = getZone(currentAngle);
+  directionText.textContent = zone.dir;
+  suggestionText.textContent = zone.text;
 
   let gradient='';
   for(let z of vastuZones){
-    gradient+=(z===zone? 'var(--highlight-color)':'#222')+` ${z.start}deg ${z.end}deg,`;
+    gradient += (z===zone?'rgba(255,204,0,0.7)':'rgba(34,34,34,0.3)')+` ${z.start}deg ${z.end}deg,`;
   }
-  gradient=gradient.slice(0,-1);
-  compass.style.background=`conic-gradient(${gradient})`;
-}
+  gradient = gradient.slice(0,-1);
+  compass.style.background = `conic-gradient(${gradient})`;
 
-// Android sensor
+  requestAnimationFrame(animateNeedle);
+}
+animateNeedle();
+
 if(window.DeviceOrientationEvent){
   window.addEventListener('deviceorientation',event=>{
     if(event.alpha!==null){
-      const heading=360-event.alpha; // rotate top to North
+      const heading = 360-event.alpha;
       updateCompass(heading);
     }
   },true);
-}else{
-  alert("Device orientation not supported on this browser.");
+}else{ alert("Device orientation not supported."); }
+
+// Push Notifications
+function requestNotificationPermission(){
+  if("Notification" in window){
+    Notification.requestPermission().then(p=>{
+      if(p==="granted"){
+        setInterval(()=>{ new Notification("Vastu Reminder",{body:"Check your home’s Vastu alignment today!"}); },24*60*60*1000);
+      }
+    });
+  }
+}
+requestNotificationPermission();
+
+// PDF Report
+function generateVastuPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(16); doc.text("Vastu Compass Report",20,20);
+  vastuZones.forEach((z,i)=>{ doc.setFontSize(12); doc.text(`${z.dir}: ${z.text}`,20,30+i*10); });
+  doc.save("Vastu_Report.pdf");
 }
 </script>
 
+<script>
+// Register Service Worker for Offline Mode
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(console.error);
+}
+</script>
 </body>
-</html>
+  </html>
