@@ -30,26 +30,39 @@ body{
 .direction{font-size:1.5rem; font-weight:bold; margin-bottom:5px; backdrop-filter:blur(5px);}
 .degree-display{font-size:1rem; margin-bottom:5px;}
 .vastu-suggestion{font-size:1rem; margin-bottom:15px; max-width:300px; backdrop-filter:blur(5px);}
-.theme-toggle{margin:10px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
-.theme-toggle button{padding:8px 15px; border:none; border-radius:10px; cursor:pointer; background:var(--accent-color); color:var(--bg-color); font-weight:bold; backdrop-filter:blur(5px);}
-.room-select{margin:10px; padding:8px; border-radius:8px; background:rgba(255,255,255,0.1); color:var(--text-color); border:none; font-weight:bold;}
+.theme-toggle{
+  margin:10px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
+}
+/* 🔹 Buttons: dark green hue with gradient and hover effect */
+.theme-toggle button{
+  padding:8px 15px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  background: linear-gradient(to bottom, #00cc66, #007a3d); /* dark green gradient */
+  color:#fff;
+  font-weight:bold;
+  backdrop-filter:blur(5px);
+  transition: transform 0.1s, background 0.2s;
+}
+.theme-toggle button:hover{
+  background: linear-gradient(to bottom, #00e680, #00994d); /* slightly lighter green on hover */
+  transform: scale(1.05);
+}
+.room-select{
+  margin:10px; padding:8px; border-radius:8px; background:rgba(255,255,255,0.1); color:var(--text-color); border:none; font-weight:bold;
+}
 footer{padding:15px; font-size:0.9rem; text-align:center;}
-/* 🔹 Reduced compass size */
+/* 🔹 Compass: smaller frame, permanently black background */
 .compass-container{
-  width:85%;      /* smaller width so it doesn’t touch edges */
-  max-width:400px;/* optional max width */
-  aspect-ratio:1/1; 
-  display:flex; 
-  justify-content:center; 
-  align-items:center;
-  border-radius:50%; 
-  background:rgba(255,255,255,0.05);
-  border:3px solid rgba(255,255,255,0.3); 
-  backdrop-filter:blur(15px);
-  position:relative;
+  width:85%; max-width:400px; aspect-ratio:1/1;
+  display:flex; justify-content:center; align-items:center;
+  border-radius:50%; border:3px solid rgba(255,255,255,0.3);
+  backdrop-filter:blur(15px); position:relative;
+  background:#000;
 }
 .needle{
-  width:6px; height:60%; /* Longer needle remains */
+  width:6px; height:60%;
   background:linear-gradient(to top,#ffcc00,#ff6600);
   position:absolute; top:50%; left:50%; transform-origin:bottom center;
   transform:translate(-50%,-100%) rotate(0deg); border-radius:3px;
@@ -133,24 +146,20 @@ function getZone(angle){
 }
 
 function animateNeedle(){
-  let diff=targetAngle-currentAngle;
-  if(diff>180) diff-=360; if(diff<-180) diff+=360;
-  currentAngle+=diff*0.1;
-  needle.style.transform=`translate(-50%,-100%) rotate(${currentAngle}deg)`;
+  let diff = targetAngle - currentAngle;
+  if(diff > 180) diff -= 360; 
+  if(diff < -180) diff += 360;
+  currentAngle += diff * 0.1;
+  needle.style.transform = `translate(-50%,-100%) rotate(${currentAngle}deg)`;
 
-  const zone=getZone(currentAngle);
-  directionText.textContent=zone.dir;
-  degreeText.textContent=Math.round(currentAngle)+'°';
-  suggestionText.textContent=`${zone.text} (${roomSelect.value})`;
+  const zone = getZone(currentAngle);
+  directionText.textContent = zone.dir;
+  degreeText.textContent = Math.round(currentAngle)+'°';
+  suggestionText.textContent = `${zone.text} (${roomSelect.value})`;
 
   historyLog.push({date:new Date().toLocaleString(), room:roomSelect.value, dir:zone.dir, degree:Math.round(currentAngle)});
 
-  let gradient='';
-  for(let z of vastuZones){
-    gradient += (z===zone?'rgba(255,204,0,0.7)':'rgba(34,34,34,0.3)')+` ${z.start}deg ${z.end}deg,`;
-  }
-  gradient=gradient.slice(0,-1);
-  compass.style.background=`conic-gradient(${gradient})`;
+  compass.style.background = "#000"; // permanently black
 
   requestAnimationFrame(animateNeedle);
 }
