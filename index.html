@@ -3,200 +3,1177 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ULTRA MEGA PRO Vastu Compass 2026</title>
+<title>Lumen — Photo Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg-color:#121212; --text-color:#fff; --accent-color:#00ffcc; --highlight-color:#ffcc00;
-}
-[data-theme="light"]{
-  --bg-color:#f0f0f0; --text-color:#121212; --accent-color:#0077cc; --highlight-color:#ff6600;
-}
-[data-theme="oled"]{
-  --bg-color:#000; --text-color:#00ffcc; --accent-color:#00ffcc; --highlight-color:#ffcc00;
-}
-html,body{
-  margin:0; padding:0; height:100%;
-  display:flex; flex-direction:column;
-  font-family:Arial,sans-serif; background:var(--bg-color); color:var(--text-color);
-}
-body{
-  justify-content:center; align-items:center;
-}
-.app-wrapper{
-  display:flex; flex-direction:column; flex:1; width:100%; max-width:480px; height:100%;
-  justify-content:center; align-items:center;
-  padding:10px;
-}
-.direction{font-size:1.5rem; font-weight:bold; margin-bottom:5px; backdrop-filter:blur(5px);}
-.degree-display{font-size:1rem; margin-bottom:5px;}
-.vastu-suggestion{font-size:1rem; margin-bottom:15px; max-width:300px; backdrop-filter:blur(5px);}
-.theme-toggle{
-  margin:10px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
-}
-/* 🔹 Buttons: dark green hue with gradient and hover effect */
-.theme-toggle button{
-  padding:8px 15px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  background: linear-gradient(to bottom, #00cc66, #007a3d); /* dark green gradient */
-  color:#fff;
-  font-weight:bold;
-  backdrop-filter:blur(5px);
-  transition: transform 0.1s, background 0.2s;
-}
-.theme-toggle button:hover{
-  background: linear-gradient(to bottom, #00e680, #00994d); /* slightly lighter green on hover */
-  transform: scale(1.05);
-}
-.room-select{
-  margin:10px; padding:8px; border-radius:8px; background:rgba(255,255,255,0.1); color:var(--text-color); border:none; font-weight:bold;
-}
-footer{padding:15px; font-size:0.9rem; text-align:center;}
-/* 🔹 Compass: smaller frame, permanently black background */
-.compass-container{
-  width:85%; max-width:400px; aspect-ratio:1/1;
-  display:flex; justify-content:center; align-items:center;
-  border-radius:50%; border:3px solid rgba(255,255,255,0.3);
-  backdrop-filter:blur(15px); position:relative;
-  background:#000;
-}
-.needle{
-  width:6px; height:60%;
-  background:linear-gradient(to top,#ffcc00,#ff6600);
-  position:absolute; top:50%; left:50%; transform-origin:bottom center;
-  transform:translate(-50%,-100%) rotate(0deg); border-radius:3px;
-  transition: transform 0.1s linear;
-}
-.zone-label{position:absolute; font-size:0.8rem; font-weight:bold; color:var(--text-color); transform:translate(-50%,-50%);}
-@media(max-width:500px){.needle{height:90px;}}
+  :root {
+    --accent: #f0c040;
+    --accent2: #e8843a;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --transition: 0.22s cubic-bezier(.4,0,.2,1);
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  [data-theme="dark"] {
+    --bg: #111318;
+    --bg2: #1c1f27;
+    --bg3: #252932;
+    --surface: #2a2e3a;
+    --border: rgba(255,255,255,0.07);
+    --text: #eef0f6;
+    --text2: #8b8fa8;
+    --text3: #565a72;
+    --shadow: 0 8px 40px rgba(0,0,0,0.55);
+  }
+
+  [data-theme="light"] {
+    --bg: #f5f4f0;
+    --bg2: #ffffff;
+    --bg3: #edecea;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.08);
+    --text: #1a1b22;
+    --text2: #6b6e82;
+    --text3: #aaadb8;
+    --shadow: 0 8px 40px rgba(0,0,0,0.10);
+  }
+
+  [data-theme="oled"] {
+    --bg: #000000;
+    --bg2: #0a0a0a;
+    --bg3: #111111;
+    --surface: #141414;
+    --border: rgba(255,255,255,0.05);
+    --text: #ffffff;
+    --text2: #7a7d91;
+    --text3: #3a3d4d;
+    --shadow: 0 8px 40px rgba(0,0,0,0.9);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.5;
+    transition: background var(--transition), color var(--transition);
+    overflow-x: hidden;
+  }
+
+  /* ─── LAYOUT ──────────────────────────────── */
+  .app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+
+  /* ─── HEADER ──────────────────────────────── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* ─── THEME TOGGLE ────────────────────────── */
+  .theme-toggle {
+    display: flex;
+    background: var(--bg3);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid var(--border);
+  }
+
+  .theme-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 13px;
+    color: var(--text2);
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    font-family: var(--font-body);
+    font-weight: 500;
+  }
+
+  .theme-btn.active {
+    background: var(--surface);
+    color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+
+  .theme-btn:hover:not(.active) { color: var(--text); }
+
+  /* ─── UPLOAD ZONE ─────────────────────────── */
+  .upload-zone {
+    margin: 18px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--bg2);
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(240,192,64,0.03), rgba(232,132,58,0.03));
+    opacity: 0;
+    transition: opacity var(--transition);
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    transform: scale(1.01);
+  }
+
+  .upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 1; }
+
+  .upload-icon {
+    font-size: 38px;
+    margin-bottom: 10px;
+    display: block;
+    filter: drop-shadow(0 2px 8px rgba(240,192,64,0.3));
+  }
+
+  .upload-zone h2 {
+    font-family: var(--font-head);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .upload-zone p { color: var(--text2); font-size: 13px; }
+  .upload-zone input { display: none; }
+
+  .btn-upload {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 9px 22px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #111;
+    border: none;
+    border-radius: 999px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .btn-upload:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(240,192,64,0.35); }
+
+  /* ─── CANVAS AREA ─────────────────────────── */
+  .canvas-wrap {
+    margin: 0 18px;
+    background: var(--bg2);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+  }
+
+  .canvas-wrap canvas {
+    max-width: 100%;
+    max-height: 55vw;
+    display: block;
+    border-radius: calc(var(--radius) - 1px);
+  }
+
+  .canvas-placeholder {
+    color: var(--text3);
+    font-size: 13px;
+    text-align: center;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .canvas-placeholder span { font-size: 40px; }
+
+  /* ─── TOOLBAR ─────────────────────────────── */
+  .toolbar {
+    margin: 12px 18px 0;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .tool-btn {
+    flex: 1;
+    min-width: calc(25% - 6px);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    padding: 8px 6px;
+    font-size: 12px;
+    font-family: var(--font-body);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+  }
+
+  .tool-btn .tool-icon { font-size: 18px; }
+  .tool-btn:hover { background: var(--surface); color: var(--accent); border-color: rgba(240,192,64,0.3); }
+  .tool-btn.active { background: rgba(240,192,64,0.1); border-color: var(--accent); color: var(--accent); }
+
+  /* ─── ADJUSTMENTS PANEL ───────────────────── */
+  .panel {
+    margin: 12px 18px 0;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+  }
+
+  .panel-header h3 {
+    font-family: var(--font-head);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+
+  .panel-header .chevron {
+    color: var(--text3);
+    transition: transform var(--transition);
+    font-size: 12px;
+  }
+
+  .panel-header.open .chevron { transform: rotate(180deg); }
+
+  .panel-body {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .panel-body.hidden { display: none; }
+
+  /* ─── SLIDERS ─────────────────────────────── */
+  .slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .slider-label span:last-child {
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 30px;
+    text-align: right;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--bg3);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(240,192,64,0.4);
+    transition: transform 0.15s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    cursor: pointer; border: none;
+  }
+
+  /* ─── COLOR CONTROLS ──────────────────────── */
+  .color-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .color-preset {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .color-preset:hover, .color-preset.active {
+    border-color: var(--text);
+    transform: scale(1.15);
+  }
+
+  /* ─── FILTER PRESETS ──────────────────────── */
+  .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .filter-preset {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    transition: all var(--transition);
+    font-family: var(--font-body);
+  }
+
+  .filter-preset .filter-thumb {
+    display: block;
+    font-size: 22px;
+    margin-bottom: 4px;
+  }
+
+  .filter-preset:hover { background: var(--surface); color: var(--text); border-color: rgba(240,192,64,0.3); }
+  .filter-preset.active { border-color: var(--accent); color: var(--accent); background: rgba(240,192,64,0.08); }
+
+  /* ─── CROP / ROTATE ───────────────────────── */
+  .quick-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .action-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    padding: 10px;
+    font-size: 12px;
+    font-family: var(--font-body);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .action-btn:hover { background: var(--surface); color: var(--text); border-color: rgba(240,192,64,0.3); }
+
+  /* ─── BOTTOM ACTION BAR ───────────────────── */
+  .bottom-bar {
+    margin: 14px 18px;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 10px;
+  }
+
+  .btn-reset {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    padding: 13px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .btn-reset:hover { border-color: rgba(255,80,80,0.4); color: #ff5050; }
+
+  .btn-download {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #111;
+    padding: 13px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-download:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(240,192,64,0.4); }
+  .btn-download:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ─── FOOTER ──────────────────────────────── */
+  footer {
+    margin-top: auto;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-align: center;
+  }
+
+  .footer-brand {
+    font-family: var(--font-head);
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .footer-brand span { color: var(--accent); }
+
+  .footer-copy {
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.3px;
+  }
+
+  /* ─── TOAST ───────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 10px 22px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    box-shadow: var(--shadow);
+    z-index: 999;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ─── TABLET+ ─────────────────────────────── */
+  @media (min-width: 600px) {
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 16px;
+      padding: 18px;
+      align-items: start;
+    }
+
+    .canvas-wrap { margin: 0; min-height: 360px; }
+    .canvas-wrap canvas { max-height: 60vh; }
+
+    .side-panel { display: flex; flex-direction: column; gap: 12px; }
+    .upload-zone { margin: 0; }
+    .toolbar { margin: 0; }
+    .panel { margin: 0; }
+    .bottom-bar { margin: 0; }
+  }
+
+  @media (min-width: 900px) {
+    .main-content { grid-template-columns: 1fr 360px; }
+    header { padding: 14px 28px; }
+  }
 </style>
 </head>
 <body>
+<div class="app">
 
-<div class="app-wrapper">
-  <div class="direction" id="direction">N</div>
-  <div class="degree-display" id="degree">0°</div>
-  <div class="vastu-suggestion" id="suggestion">Align your home according to Vastu.</div>
-  
-  <div class="compass-container" id="compass">
-    <div class="needle" id="needle"></div>
-    <div class="zone-label" style="top:10%; left:50%;">N</div>
-    <div class="zone-label" style="top:30%; left:80%;">NE</div>
-    <div class="zone-label" style="top:50%; left:90%;">E</div>
-    <div class="zone-label" style="top:70%; left:80%;">SE</div>
-    <div class="zone-label" style="top:90%; left:50%;">S</div>
-    <div class="zone-label" style="top:70%; left:20%;">SW</div>
-    <div class="zone-label" style="top:50%; left:10%;">W</div>
-    <div class="zone-label" style="top:30%; left:20%;">NW</div>
-  </div>
+  <!-- HEADER -->
+  <header>
+    <div class="logo">Lum<span>en</span></div>
+    <div class="header-right">
+      <div class="theme-toggle">
+        <button class="theme-btn" data-theme-target="light">☀️ Light</button>
+        <button class="theme-btn active" data-theme-target="dark">🌙 Dark</button>
+        <button class="theme-btn" data-theme-target="oled">⬛ OLED</button>
+      </div>
+    </div>
+  </header>
 
-  <select id="roomSelect" class="room-select">
-    <option value="Bedroom">Bedroom</option>
-    <option value="Kitchen">Kitchen</option>
-    <option value="Living Room">Living Room</option>
-    <option value="Office">Office/Study</option>
-    <option value="Puja Room">Puja Room</option>
-  </select>
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
 
-  <div class="theme-toggle">
-    <button onclick="setTheme('light')">Light</button>
-    <button onclick="setTheme('dark')">Dark</button>
-    <button onclick="setTheme('oled')">OLED</button>
-    <button onclick="generateVastuPDF()">PDF Report</button>
-    <button onclick="exportHistory()">Export CSV</button>
-    <button onclick="alert('AR Overlay Coming Soon')">AR Overlay</button>
-  </div>
-</div>
+    <!-- LEFT: Canvas -->
+    <div id="canvasSection">
+      <div class="canvas-wrap" id="canvasWrap">
+        <div class="canvas-placeholder" id="placeholder">
+          <span>🖼️</span>
+          <p>Upload a photo to start editing</p>
+        </div>
+        <canvas id="mainCanvas" style="display:none;"></canvas>
+      </div>
+    </div>
 
-<footer>© Manik Roy <span id="year"></span>. All Rights Reserved.</footer>
+    <!-- RIGHT: Controls -->
+    <div class="side-panel">
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+      <!-- Upload -->
+      <div class="upload-zone" id="dropZone">
+        <span class="upload-icon">📤</span>
+        <h2>Drop or Browse Photo</h2>
+        <p>JPEG, PNG, WebP supported</p>
+        <input type="file" id="fileInput" accept="image/*">
+        <button class="btn-upload" onclick="document.getElementById('fileInput').click()">Choose Photo</button>
+      </div>
+
+      <!-- Quick Tools -->
+      <div class="toolbar">
+        <button class="tool-btn" id="btnCropMode">
+          <span class="tool-icon">✂️</span>Crop
+        </button>
+        <button class="tool-btn" onclick="rotateImage(-90)">
+          <span class="tool-icon">↩️</span>Rotate L
+        </button>
+        <button class="tool-btn" onclick="rotateImage(90)">
+          <span class="tool-icon">↪️</span>Rotate R
+        </button>
+        <button class="tool-btn" onclick="flipImage('h')">
+          <span class="tool-icon">↔️</span>Flip H
+        </button>
+        <button class="tool-btn" onclick="flipImage('v')">
+          <span class="tool-icon">↕️</span>Flip V
+        </button>
+        <button class="tool-btn" onclick="sharpenImage()">
+          <span class="tool-icon">🔍</span>Sharpen
+        </button>
+        <button class="tool-btn" onclick="vignetteEffect()">
+          <span class="tool-icon">🔵</span>Vignette
+        </button>
+        <button class="tool-btn" onclick="noiseEffect()">
+          <span class="tool-icon">✨</span>Grain
+        </button>
+      </div>
+
+      <!-- Filter Presets -->
+      <div class="panel">
+        <div class="panel-header open" id="filterHeader">
+          <h3>PRESETS</h3>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="panel-body" id="filterBody">
+          <div class="filter-grid">
+            <button class="filter-preset active" data-filter="none"><span class="filter-thumb">🟫</span>Original</button>
+            <button class="filter-preset" data-filter="vivid"><span class="filter-thumb">🌈</span>Vivid</button>
+            <button class="filter-preset" data-filter="mono"><span class="filter-thumb">⬜</span>Mono</button>
+            <button class="filter-preset" data-filter="warm"><span class="filter-thumb">🌅</span>Warm</button>
+            <button class="filter-preset" data-filter="cool"><span class="filter-thumb">🧊</span>Cool</button>
+            <button class="filter-preset" data-filter="fade"><span class="filter-thumb">🌫️</span>Fade</button>
+            <button class="filter-preset" data-filter="golden"><span class="filter-thumb">✨</span>Golden</button>
+            <button class="filter-preset" data-filter="drama"><span class="filter-thumb">🌑</span>Drama</button>
+            <button class="filter-preset" data-filter="chrome"><span class="filter-thumb">💿</span>Chrome</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Adjustments -->
+      <div class="panel">
+        <div class="panel-header open" id="adjustHeader">
+          <h3>ADJUSTMENTS</h3>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="panel-body" id="adjustBody">
+          <div class="slider-row">
+            <div class="slider-label"><span>Brightness</span><span id="valBrightness">0</span></div>
+            <input type="range" id="sBrightness" min="-100" max="100" value="0" oninput="applyAdjustments()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Contrast</span><span id="valContrast">0</span></div>
+            <input type="range" id="sContrast" min="-100" max="100" value="0" oninput="applyAdjustments()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Saturation</span><span id="valSaturation">0</span></div>
+            <input type="range" id="sSaturation" min="-100" max="100" value="0" oninput="applyAdjustments()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Exposure</span><span id="valExposure">0</span></div>
+            <input type="range" id="sExposure" min="-100" max="100" value="0" oninput="applyAdjustments()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Highlights</span><span id="valHighlights">0</span></div>
+            <input type="range" id="sHighlights" min="-100" max="100" value="0" oninput="applyAdjustments()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Shadows</span><span id="valShadows">0</span></div>
+            <input type="range" id="sShadows" min="-100" max="100" value="0" oninput="applyAdjustments()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Temperature</span><span id="valTemperature">0</span></div>
+            <input type="range" id="sTemperature" min="-100" max="100" value="0" oninput="applyAdjustments()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Tint</span><span id="valTint">0</span></div>
+            <input type="range" id="sTint" min="-100" max="100" value="0" oninput="applyAdjustments()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Clarity</span><span id="valClarity">0</span></div>
+            <input type="range" id="sClarity" min="0" max="100" value="0" oninput="applyAdjustments()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Blur</span><span id="valBlur">0</span></div>
+            <input type="range" id="sBlur" min="0" max="20" value="0" oninput="applyAdjustments()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Hue Shift</span><span id="valHue">0</span></div>
+            <input type="range" id="sHue" min="-180" max="180" value="0" oninput="applyAdjustments()">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>Opacity</span><span id="valOpacity">100</span></div>
+            <input type="range" id="sOpacity" min="0" max="100" value="100" oninput="applyAdjustments()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Actions -->
+      <div class="bottom-bar">
+        <button class="btn-reset" onclick="resetAll()">↺ Reset</button>
+        <button class="btn-download" id="btnDownload" onclick="downloadImage()" disabled>
+          ⬇ Export Photo
+        </button>
+      </div>
+
+    </div><!-- /side-panel -->
+  </div><!-- /main-content -->
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-brand">Lum<span>en</span> Photo Editor</div>
+    <div class="footer-copy">© Manik Roy <span id="footerYear"></span> · All Rights Reserved</div>
+  </footer>
+
+</div><!-- /app -->
+
+<div class="toast" id="toast"></div>
+
 <script>
-document.getElementById('year').textContent = new Date().getFullYear();
-function setTheme(theme){ document.documentElement.setAttribute('data-theme',theme); }
+// ─── STATE ────────────────────────────────────────────
+let originalImage = null;
+let currentRotation = 0;
+let flipH = false, flipV = false;
+let activeFilter = 'none';
+let extraEffects = { sharpen: false, vignette: false, grain: false };
 
-const needle=document.getElementById('needle');
-const directionText=document.getElementById('direction');
-const degreeText=document.getElementById('degree');
-const suggestionText=document.getElementById('suggestion');
-const roomSelect=document.getElementById('roomSelect');
-const compass=document.getElementById('compass');
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
 
-const vastuZones=[
-  {dir:'N', text:'Wealth, Career – Safe, study, cash locker', start:337.5, end:22.5},
-  {dir:'NE', text:'Puja / Meditation / Spiritual activities', start:22.5, end:67.5},
-  {dir:'E', text:'Living room, windows, social interactions', start:67.5, end:112.5},
-  {dir:'SE', text:'Kitchen / Fire-related items', start:112.5, end:157.5},
-  {dir:'S', text:'Stability, master bedroom', start:157.5, end:202.5},
-  {dir:'SW', text:'Heavy furniture, bedroom for elders', start:202.5, end:247.5},
-  {dir:'W', text:'Children’s room, study, entertainment', start:247.5, end:292.5},
-  {dir:'NW', text:'Guest room, storage', start:292.5, end:337.5}
-];
+// ─── FOOTER YEAR ─────────────────────────────────────
+document.getElementById('footerYear').textContent = new Date().getFullYear();
 
-let currentAngle=0,targetAngle=0;
-let historyLog=[];
-
-function getZone(angle){
-  for(let z of vastuZones){
-    if(z.start>z.end){ if(angle>=z.start||angle<z.end) return z; }
-    else{ if(angle>=z.start && angle<z.end) return z; }
-  }
-  return vastuZones[0];
-}
-
-function animateNeedle(){
-  let diff = targetAngle - currentAngle;
-  if(diff > 180) diff -= 360; 
-  if(diff < -180) diff += 360;
-  currentAngle += diff * 0.1;
-  needle.style.transform = `translate(-50%,-100%) rotate(${currentAngle}deg)`;
-
-  const zone = getZone(currentAngle);
-  directionText.textContent = zone.dir;
-  degreeText.textContent = Math.round(currentAngle)+'°';
-  suggestionText.textContent = `${zone.text} (${roomSelect.value})`;
-
-  historyLog.push({date:new Date().toLocaleString(), room:roomSelect.value, dir:zone.dir, degree:Math.round(currentAngle)});
-
-  compass.style.background = "#000"; // permanently black
-
-  requestAnimationFrame(animateNeedle);
-}
-animateNeedle();
-
-if(window.DeviceOrientationEvent){
-  window.addEventListener('deviceorientation', event=>{
-    let heading = event.alpha;
-    if(typeof event.webkitCompassHeading!=="undefined") heading=event.webkitCompassHeading;
-    if(heading!==null){ targetAngle=360-heading; }
-  }, true);
-}else{ alert("Device orientation not supported."); }
-
-if("Notification" in window){
-  Notification.requestPermission().then(p=>{
-    if(p==="granted"){ setInterval(()=>{ new Notification("Vastu Reminder",{body:"Check your home’s Vastu alignment today!"}); },24*60*60*1000);}
+// ─── THEME TOGGLE ─────────────────────────────────────
+document.querySelectorAll('.theme-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const t = btn.dataset.themeTarget;
+    document.documentElement.setAttribute('data-theme', t);
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    showToast(t === 'oled' ? 'OLED True Black' : t === 'dark' ? 'Dark Mode' : 'Light Mode');
   });
+});
+
+// ─── COLLAPSIBLE PANELS ───────────────────────────────
+['filter', 'adjust'].forEach(id => {
+  const h = document.getElementById(id + 'Header');
+  const b = document.getElementById(id + 'Body');
+  h.addEventListener('click', () => {
+    const open = h.classList.toggle('open');
+    b.classList.toggle('hidden', !open);
+  });
+});
+
+// ─── FILE UPLOAD ──────────────────────────────────────
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) loadImage(e.target.files[0]);
+});
+
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadImage(f);
+});
+
+function loadImage(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      originalImage = img;
+      currentRotation = 0; flipH = false; flipV = false;
+      activeFilter = 'none';
+      document.querySelectorAll('.filter-preset').forEach(b => b.classList.remove('active'));
+      document.querySelector('[data-filter="none"]').classList.add('active');
+      resetSliders();
+      renderImage();
+      document.getElementById('placeholder').style.display = 'none';
+      canvas.style.display = 'block';
+      document.getElementById('btnDownload').disabled = false;
+      showToast('Photo loaded ✓');
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
-function generateVastuPDF(){
-  if(!window.jspdf){ alert("PDF library not loaded!"); return; }
-  const { jsPDF }=window.jspdf;
-  const doc=new jsPDF();
-  doc.setFontSize(16); doc.text("Vastu Compass Report",20,20);
-  historyLog.forEach((h,i)=>{ doc.setFontSize(12); doc.text(`${h.date} | Room: ${h.room} | Dir: ${h.dir} | Deg: ${h.degree}`,20,30+i*10); });
-  doc.save("Vastu_Report.pdf");
+// ─── RENDER ───────────────────────────────────────────
+function renderImage() {
+  if (!originalImage) return;
+  const rot = (currentRotation % 360 + 360) % 360;
+  const swapped = rot === 90 || rot === 270;
+  const w = swapped ? originalImage.height : originalImage.width;
+  const h = swapped ? originalImage.width : originalImage.height;
+  canvas.width = w;
+  canvas.height = h;
+
+  ctx.save();
+  ctx.clearRect(0, 0, w, h);
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate((rot * Math.PI) / 180);
+  ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+  ctx.drawImage(originalImage, -originalImage.width / 2, -originalImage.height / 2);
+  ctx.restore();
+
+  applyAdjustments();
 }
 
-function exportHistory(){
-  let csv="Date,Room,Direction,Degree\n";
-  historyLog.forEach(h=>{ csv+="\ufeff"+`${h.date},${h.room},${h.dir},${h.degree}\n`; });
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const link=document.createElement('a'); link.href=URL.createObjectURL(blob);
-  link.download="Vastu_History.csv"; link.click();
+// ─── ADJUSTMENTS ──────────────────────────────────────
+function applyAdjustments() {
+  if (!originalImage) return;
+  const rot = (currentRotation % 360 + 360) % 360;
+  const swapped = rot === 90 || rot === 270;
+  const w = swapped ? originalImage.height : originalImage.width;
+  const h = swapped ? originalImage.width : originalImage.height;
+  canvas.width = w; canvas.height = h;
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate((rot * Math.PI) / 180);
+  ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+  ctx.drawImage(originalImage, -originalImage.width/2, -originalImage.height/2);
+  ctx.restore();
+
+  // Apply filter preset base
+  const imgData = ctx.getImageData(0, 0, w, h);
+  applyFilterToData(imgData, activeFilter);
+  applySliderAdjustments(imgData);
+  ctx.putImageData(imgData, 0, 0);
+
+  // Blur (CSS filter on canvas is not pixel-level, use shadow trick)
+  const blur = +document.getElementById('sBlur').value;
+  if (blur > 0) {
+    const tmp = document.createElement('canvas');
+    tmp.width = w; tmp.height = h;
+    const tc = tmp.getContext('2d');
+    tc.filter = `blur(${blur}px)`;
+    tc.drawImage(canvas, 0, 0);
+    ctx.clearRect(0,0,w,h);
+    ctx.drawImage(tmp, 0, 0);
+  }
+
+  // Vignette
+  if (extraEffects.vignette) {
+    const grd = ctx.createRadialGradient(w/2, h/2, Math.min(w,h)*0.3, w/2, h/2, Math.max(w,h)*0.75);
+    grd.addColorStop(0, 'rgba(0,0,0,0)');
+    grd.addColorStop(1, 'rgba(0,0,0,0.6)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  // Grain
+  if (extraEffects.grain) {
+    const gd = ctx.getImageData(0, 0, w, h);
+    for (let i = 0; i < gd.data.length; i += 4) {
+      const noise = (Math.random() - 0.5) * 30;
+      gd.data[i] = clamp(gd.data[i] + noise);
+      gd.data[i+1] = clamp(gd.data[i+1] + noise);
+      gd.data[i+2] = clamp(gd.data[i+2] + noise);
+    }
+    ctx.putImageData(gd, 0, 0);
+  }
+
+  updateSliderLabels();
 }
 
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(console.error); }
+function applySliderAdjustments(imgData) {
+  const brightness = +document.getElementById('sBrightness').value;
+  const contrast   = +document.getElementById('sContrast').value;
+  const saturation = +document.getElementById('sSaturation').value;
+  const exposure   = +document.getElementById('sExposure').value;
+  const highlights = +document.getElementById('sHighlights').value;
+  const shadows    = +document.getElementById('sShadows').value;
+  const temperature= +document.getElementById('sTemperature').value;
+  const tint       = +document.getElementById('sTint').value;
+  const clarity    = +document.getElementById('sClarity').value;
+  const hue        = +document.getElementById('sHue').value;
+  const opacity    = +document.getElementById('sOpacity').value;
+
+  const d = imgData.data;
+  const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i], g = d[i+1], b = d[i+2];
+
+    // Exposure (multiplicative)
+    const expMult = Math.pow(2, exposure / 50);
+    r *= expMult; g *= expMult; b *= expMult;
+
+    // Brightness
+    r += brightness * 2.55; g += brightness * 2.55; b += brightness * 2.55;
+
+    // Contrast
+    r = contrastFactor * (r - 128) + 128;
+    g = contrastFactor * (g - 128) + 128;
+    b = contrastFactor * (b - 128) + 128;
+
+    // Temperature (warm/cool)
+    r += temperature * 0.8;
+    b -= temperature * 0.8;
+    g += temperature * 0.2;
+
+    // Tint
+    g += tint * 0.6;
+    r -= tint * 0.3; b -= tint * 0.3;
+
+    // Highlights (affect bright areas)
+    const lum = 0.299*r + 0.587*g + 0.114*b;
+    const hFactor = (lum / 255);
+    r += highlights * hFactor * 0.8;
+    g += highlights * hFactor * 0.8;
+    b += highlights * hFactor * 0.8;
+
+    // Shadows (affect dark areas)
+    const sFactor = 1 - (lum / 255);
+    r += shadows * sFactor * 0.8;
+    g += shadows * sFactor * 0.8;
+    b += shadows * sFactor * 0.8;
+
+    r = clamp(r); g = clamp(g); b = clamp(b);
+
+    // Saturation
+    const gray = 0.299*r + 0.587*g + 0.114*b;
+    const sf = (saturation / 100) + 1;
+    r = clamp(gray + sf * (r - gray));
+    g = clamp(gray + sf * (g - gray));
+    b = clamp(gray + sf * (b - gray));
+
+    // Hue shift
+    if (hue !== 0) {
+      const [h2, s2, l2] = rgbToHsl(r, g, b);
+      const [nr, ng, nb] = hslToRgb((h2 + hue/360 + 1) % 1, s2, l2);
+      r = nr; g = ng; b = nb;
+    }
+
+    // Clarity (local contrast approximation)
+    if (clarity > 0) {
+      const lum2 = 0.299*r + 0.587*g + 0.114*b;
+      const cf = 1 + (clarity / 200) * (lum2 > 127 ? 1 : -1) * 0.5;
+      r = clamp(r * cf); g = clamp(g * cf); b = clamp(b * cf);
+    }
+
+    d[i] = r; d[i+1] = g; d[i+2] = b;
+    d[i+3] = Math.round(d[i+3] * (opacity / 100));
+  }
+}
+
+function applyFilterToData(imgData, filter) {
+  const d = imgData.data;
+  if (filter === 'none') return;
+
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i], g = d[i+1], b = d[i+2];
+
+    if (filter === 'mono') {
+      const gr = 0.299*r + 0.587*g + 0.114*b;
+      r = g = b = gr;
+    } else if (filter === 'vivid') {
+      const gray = 0.299*r + 0.587*g + 0.114*b;
+      r = clamp(gray + 1.6*(r - gray));
+      g = clamp(gray + 1.6*(g - gray));
+      b = clamp(gray + 1.6*(b - gray));
+      r = clamp(r * 1.05); g = clamp(g * 1.02);
+    } else if (filter === 'warm') {
+      r = clamp(r * 1.15); g = clamp(g * 1.05); b = clamp(b * 0.85);
+    } else if (filter === 'cool') {
+      r = clamp(r * 0.85); g = clamp(g * 1.02); b = clamp(b * 1.2);
+    } else if (filter === 'fade') {
+      r = clamp(r * 0.75 + 40); g = clamp(g * 0.75 + 40); b = clamp(b * 0.75 + 45);
+    } else if (filter === 'golden') {
+      r = clamp(r * 1.2 + 10); g = clamp(g * 1.1); b = clamp(b * 0.7);
+    } else if (filter === 'drama') {
+      const gr = 0.299*r + 0.587*g + 0.114*b;
+      const c = (259 * (60 + 255)) / (255 * (259 - 60));
+      let nr = c*(r-128)+128, ng = c*(g-128)+128, nb = c*(b-128)+128;
+      r = clamp(gr*0.3 + nr*0.7);
+      g = clamp(gr*0.3 + ng*0.7);
+      b = clamp(gr*0.3 + nb*0.7);
+    } else if (filter === 'chrome') {
+      const gray = 0.299*r + 0.587*g + 0.114*b;
+      r = clamp(gray * 1.05 + r * 0.3 - 10);
+      g = clamp(gray * 1.0  + g * 0.2);
+      b = clamp(gray * 1.1  + b * 0.4 + 10);
+    }
+
+    d[i] = r; d[i+1] = g; d[i+2] = b;
+  }
+}
+
+// ─── FILTER PRESETS ───────────────────────────────────
+document.querySelectorAll('.filter-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-preset').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    applyAdjustments();
+  });
+});
+
+// ─── ROTATE & FLIP ────────────────────────────────────
+function rotateImage(deg) {
+  if (!originalImage) return;
+  currentRotation += deg;
+  renderImage();
+  showToast(deg < 0 ? 'Rotated Left' : 'Rotated Right');
+}
+
+function flipImage(dir) {
+  if (!originalImage) return;
+  if (dir === 'h') flipH = !flipH;
+  else flipV = !flipV;
+  renderImage();
+  showToast(dir === 'h' ? 'Flipped Horizontal' : 'Flipped Vertical');
+}
+
+// ─── SHARPEN ──────────────────────────────────────────
+function sharpenImage() {
+  if (!originalImage) return;
+  extraEffects.sharpen = !extraEffects.sharpen;
+  if (extraEffects.sharpen) {
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const kernel = [0,-1,0,-1,5,-1,0,-1,0];
+    const out = ctx.createImageData(canvas.width, canvas.height);
+    const w = canvas.width, h = canvas.height;
+    for (let y = 1; y < h-1; y++) {
+      for (let x = 1; x < w-1; x++) {
+        let r=0,g=0,b=0;
+        for (let ky = -1; ky <= 1; ky++) {
+          for (let kx = -1; kx <= 1; kx++) {
+            const idx = ((y+ky)*w + (x+kx)) * 4;
+            const k = kernel[(ky+1)*3+(kx+1)];
+            r += imgData.data[idx]*k;
+            g += imgData.data[idx+1]*k;
+            b += imgData.data[idx+2]*k;
+          }
+        }
+        const i = (y*w+x)*4;
+        out.data[i] = clamp(r); out.data[i+1] = clamp(g); out.data[i+2] = clamp(b);
+        out.data[i+3] = imgData.data[i+3];
+      }
+    }
+    ctx.putImageData(out, 0, 0);
+    showToast('Sharpen applied');
+  } else {
+    renderImage();
+    showToast('Sharpen removed');
+  }
+}
+
+function vignetteEffect() {
+  if (!originalImage) return;
+  extraEffects.vignette = !extraEffects.vignette;
+  applyAdjustments();
+  showToast(extraEffects.vignette ? 'Vignette ON' : 'Vignette OFF');
+}
+
+function noiseEffect() {
+  if (!originalImage) return;
+  extraEffects.grain = !extraEffects.grain;
+  applyAdjustments();
+  showToast(extraEffects.grain ? 'Film Grain ON' : 'Film Grain OFF');
+}
+
+// ─── RESET ────────────────────────────────────────────
+function resetAll() {
+  if (!originalImage) return;
+  currentRotation = 0; flipH = false; flipV = false;
+  activeFilter = 'none';
+  extraEffects = { sharpen: false, vignette: false, grain: false };
+  document.querySelectorAll('.filter-preset').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-filter="none"]').classList.add('active');
+  resetSliders();
+  renderImage();
+  showToast('Reset complete');
+}
+
+function resetSliders() {
+  ['sBrightness','sContrast','sSaturation','sExposure',
+   'sHighlights','sShadows','sTemperature','sTint','sHue'].forEach(id => {
+    document.getElementById(id).value = 0;
+  });
+  document.getElementById('sClarity').value = 0;
+  document.getElementById('sBlur').value = 0;
+  document.getElementById('sOpacity').value = 100;
+  updateSliderLabels();
+}
+
+function updateSliderLabels() {
+  const map = {
+    'sBrightness':'valBrightness','sContrast':'valContrast','sSaturation':'valSaturation',
+    'sExposure':'valExposure','sHighlights':'valHighlights','sShadows':'valShadows',
+    'sTemperature':'valTemperature','sTint':'valTint','sClarity':'valClarity',
+    'sBlur':'valBlur','sHue':'valHue','sOpacity':'valOpacity'
+  };
+  for (const [s, v] of Object.entries(map)) {
+    document.getElementById(v).textContent = document.getElementById(s).value;
+  }
+}
+
+// ─── DOWNLOAD ─────────────────────────────────────────
+function downloadImage() {
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'lumen-edit-' + Date.now() + '.png';
+  a.click();
+  showToast('Exported ✓');
+}
+
+// ─── HELPERS ──────────────────────────────────────────
+function clamp(v) { return Math.min(255, Math.max(0, Math.round(v))); }
+
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h, s, l = (max+min)/2;
+  if (max === min) { h = s = 0; }
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max) {
+      case r: h = (g-b)/d + (g<b?6:0); break;
+      case g: h = (b-r)/d + 2; break;
+      default: h = (r-g)/d + 4;
+    }
+    h /= 6;
+  }
+  return [h, s, l];
+}
+
+function hslToRgb(h, s, l) {
+  let r, g, b;
+  if (s === 0) { r = g = b = l; }
+  else {
+    const q = l < 0.5 ? l*(1+s) : l+s-l*s;
+    const p = 2*l - q;
+    r = hue2rgb(p,q,h+1/3);
+    g = hue2rgb(p,q,h);
+    b = hue2rgb(p,q,h-1/3);
+  }
+  return [clamp(r*255), clamp(g*255), clamp(b*255)];
+}
+
+function hue2rgb(p, q, t) {
+  if (t < 0) t += 1;
+  if (t > 1) t -= 1;
+  if (t < 1/6) return p + (q-p)*6*t;
+  if (t < 1/2) return q;
+  if (t < 2/3) return p + (q-p)*(2/3-t)*6;
+  return p;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2000);
+}
 </script>
 </body>
-  </html>
+</html>
