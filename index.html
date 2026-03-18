@@ -2,799 +2,1231 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Atomic Time Synchronizer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uptime Pulse — Downtime Checker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
+  /* ─── THEME TOKENS ─── */
   :root {
-    --bg: #0a0e1a;
-    --surface: #111827;
-    --surface2: #1a2235;
-    --border: #1f3a5f;
-    --accent: #00d4ff;
-    --accent2: #ff6b35;
-    --accent3: #39ff14;
-    --text: #e2f0ff;
-    --text-dim: #6b8cae;
-    --glow: 0 0 20px rgba(0,212,255,0.4);
-    --tick-color: rgba(0,212,255,0.2);
+    --bg:          #0d0d12;
+    --surface:     #16161f;
+    --surface2:    #1e1e2a;
+    --border:      #2a2a38;
+    --text:        #e8e8f0;
+    --muted:       #6b6b88;
+    --accent:      #00e5a0;
+    --accent2:     #7c6fff;
+    --danger:      #ff4d6d;
+    --warn:        #ffb347;
+    --ok:          #00e5a0;
+    --radius:      14px;
+    --radius-sm:   8px;
+    --mono:        'Space Mono', monospace;
+    --sans:        'Syne', sans-serif;
+    --transition:  0.3s cubic-bezier(.4,0,.2,1);
   }
   [data-theme="light"] {
-    --bg: #f0f4f8;
-    --surface: #ffffff;
-    --surface2: #e8eef5;
-    --border: #b8cfe0;
-    --accent: #0066cc;
-    --accent2: #d4460f;
-    --accent3: #1a8a00;
-    --text: #0d1b2a;
-    --text-dim: #4a6a8a;
-    --glow: 0 0 20px rgba(0,102,204,0.25);
-    --tick-color: rgba(0,102,204,0.12);
+    --bg:       #f0f0f5;
+    --surface:  #ffffff;
+    --surface2: #e8e8f0;
+    --border:   #d0d0e0;
+    --text:     #12121a;
+    --muted:    #7070a0;
+    --accent:   #009e6e;
+    --accent2:  #5b4fcc;
+    --danger:   #d42b47;
+    --warn:     #c87a00;
+    --ok:       #009e6e;
   }
   [data-theme="oled"] {
-    --bg: #000000;
-    --surface: #000000;
-    --surface2: #0a0a0a;
-    --border: #1a1a1a;
-    --accent: #00ffff;
-    --accent2: #ff4400;
-    --accent3: #00ff00;
-    --text: #ffffff;
-    --text-dim: #555555;
-    --glow: 0 0 24px rgba(0,255,255,0.5);
-    --tick-color: rgba(0,255,255,0.1);
+    --bg:       #000000;
+    --surface:  #080808;
+    --surface2: #0f0f0f;
+    --border:   #1a1a1a;
+    --text:     #ffffff;
+    --muted:    #555566;
+    --accent:   #00ffb3;
+    --accent2:  #9d8fff;
+    --danger:   #ff3355;
+    --warn:     #ffaa22;
+    --ok:       #00ffb3;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    height: 100%;
+  /* ─── RESET ─── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Rajdhani', sans-serif;
-    transition: background 0.4s, color 0.4s;
+    font-family: var(--sans);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background var(--transition), color var(--transition);
     overflow-x: hidden;
   }
+
+  /* ─── GRID NOISE OVERLAY ─── */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background-image:
-      linear-gradient(var(--tick-color) 1px, transparent 1px),
-      linear-gradient(90deg, var(--tick-color) 1px, transparent 1px);
-    background-size: 40px 40px;
+    background-image: radial-gradient(circle at 20% 20%, rgba(0,229,160,.04) 0%, transparent 60%),
+                      radial-gradient(circle at 80% 80%, rgba(124,111,255,.04) 0%, transparent 60%);
     pointer-events: none;
     z-index: 0;
   }
 
+  /* ─── LAYOUT ─── */
   .wrapper {
-    position: relative;
-    z-index: 1;
-    min-height: 100vh;
+    width: 100%;
+    max-width: 680px;
+    padding: 0 16px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 16px 0;
+    min-height: 100dvh;
+    position: relative;
+    z-index: 1;
   }
 
-  /* HEADER */
+  /* ─── HEADER ─── */
   header {
-    width: 100%;
-    max-width: 600px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border);
-    transition: border-color 0.4s;
+    justify-content: space-between;
+    padding: 24px 0 8px;
+    gap: 12px;
   }
-  .logo-block h1 {
-    font-family: 'Orbitron', monospace;
-    font-size: clamp(13px,3.5vw,18px);
-    font-weight: 900;
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .brand-title {
+    font-size: clamp(1.3rem, 5vw, 1.7rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .brand-sub {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
     letter-spacing: 0.12em;
-    color: var(--accent);
-    text-shadow: var(--glow);
     text-transform: uppercase;
   }
-  .logo-block p {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 0.2em;
-    margin-top: 2px;
-  }
+
+  /* ─── THEME TOGGLE ─── */
   .theme-toggle {
     display: flex;
-    gap: 4px;
-    background: var(--surface2);
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: 40px;
     padding: 4px;
-    transition: background 0.4s, border-color 0.4s;
+    gap: 2px;
+    flex-shrink: 0;
   }
   .theme-btn {
     background: transparent;
     border: none;
     cursor: pointer;
-    border-radius: 999px;
-    padding: 5px 9px;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--text-dim);
-    transition: all 0.25s;
+    border-radius: 30px;
+    padding: 6px 10px;
+    font-size: 0.7rem;
+    font-family: var(--mono);
+    color: var(--muted);
+    transition: all var(--transition);
     white-space: nowrap;
+    letter-spacing: 0.05em;
   }
-  .theme-btn.active { background: var(--accent); color: #000; box-shadow: var(--glow); }
+  .theme-btn.active {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+  }
 
-  /* MAIN */
-  main {
-    width: 100%;
-    max-width: 600px;
+  /* ─── INPUT CARD ─── */
+  .input-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 20px;
+    transition: background var(--transition), border-color var(--transition);
+  }
+  .input-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: block;
+  }
+  .input-row {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 18px;
-    padding: 20px 0;
-    flex: 1;
+    gap: 10px;
+    align-items: stretch;
   }
+  .url-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color var(--transition), background var(--transition);
+    min-width: 0;
+  }
+  .url-input::placeholder { color: var(--muted); }
+  .url-input:focus {
+    border-color: var(--accent);
+    background: var(--bg);
+  }
+  .check-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: opacity var(--transition), transform var(--transition);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .check-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .check-btn:active { transform: translateY(0); }
+  .check-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-  /* STATUS PILL */
-  .status-bar {
+  /* ─── DROPDOWN PRESET ─── */
+  .dropdown-row {
+    margin-top: 14px;
+    position: relative;
+  }
+  .dropdown-search-wrap {
+    position: relative;
+  }
+  .dropdown-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 0.85rem;
+    pointer-events: none;
+  }
+  .dropdown-search {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px 10px 34px;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color var(--transition), background var(--transition);
+    cursor: pointer;
+  }
+  .dropdown-search::placeholder { color: var(--muted); }
+  .dropdown-search:focus {
+    border-color: var(--accent);
+    background: var(--bg);
+  }
+  .dropdown-list {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0; right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    animation: slideIn 0.18s ease;
+  }
+  .dropdown-list.open { display: block; }
+  .dropdown-group-label {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    padding: 10px 14px 4px;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .dropdown-item {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 8px 18px;
-    transition: background 0.4s, border-color 0.4s;
+    padding: 9px 14px;
+    cursor: pointer;
+    transition: background var(--transition);
+    border-bottom: 1px solid var(--border);
   }
-  .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--accent3);
-    box-shadow: 0 0 8px var(--accent3);
-    animation: pulse-dot 2s ease-in-out infinite;
+  .dropdown-item:last-child { border-bottom: none; }
+  .dropdown-item:hover { background: var(--surface2); }
+  .dropdown-item-name {
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    flex: 1;
+    color: var(--text);
+  }
+  .dropdown-item-url {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+  .dropdown-flag {
+    font-size: 0.9rem;
     flex-shrink: 0;
   }
-  .status-dot.syncing { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); animation: pulse-fast 0.4s ease infinite; }
-  @keyframes pulse-dot  { 0%,100%{opacity:1;transform:scale(1)}  50%{opacity:.6;transform:scale(.85)} }
-  @keyframes pulse-fast { 0%,100%{opacity:1} 50%{opacity:.25} }
-  .status-text { font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.12em; color:var(--text-dim); }
-  .status-text span { color:var(--accent3); font-weight:700; }
-  .status-text span.warn { color:var(--accent2); }
+  .dropdown-list::-webkit-scrollbar { width: 4px; }
+  .dropdown-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-  /* CLOCK */
-  .clock-face { position:relative; width:min(300px,82vw); aspect-ratio:1; }
-  .clock-svg  { width:100%; height:100%; overflow:visible; }
-  .ring-glow  { filter:drop-shadow(0 0 8px var(--accent)); transition:filter 0.4s; }
-
-  /* DIGITAL */
-  .digital-container { width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; }
-  .time-display {
-    font-family:'Share Tech Mono',monospace;
-    font-size:clamp(40px,13vw,68px);
-    font-weight:400;
-    letter-spacing:0.04em;
-    color:var(--accent);
-    text-shadow:var(--glow);
-    line-height:1;
-    text-align:center;
-    transition:color 0.4s,text-shadow 0.4s;
+  /* ─── RESULT CARD ─── */
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 14px;
+    display: none;
+    animation: slideIn 0.35s cubic-bezier(.4,0,.2,1);
+    transition: background var(--transition), border-color var(--transition);
   }
-  .time-display .colon { animation:blink-colon 1s step-end infinite; display:inline-block; margin:0 -2px; }
-  @keyframes blink-colon { 0%,100%{opacity:1} 50%{opacity:.2} }
-  .milliseconds {
-    font-family:'Share Tech Mono',monospace;
-    font-size:clamp(18px,5.5vw,28px);
-    color:var(--accent2);
-    text-shadow:0 0 12px rgba(255,107,53,.5);
-    letter-spacing:0.08em;
-    text-align:center;
-    transition:color 0.4s,text-shadow 0.4s;
+  .result-card.visible { display: block; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* META ROW */
-  .meta-row { display:flex; justify-content:space-between; width:100%; gap:8px; }
-  .meta-card {
-    flex:1;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:12px;
-    padding:10px 12px;
-    transition:background 0.4s,border-color 0.4s;
+  .result-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
   }
-  .meta-card label { font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:.2em; color:var(--text-dim); text-transform:uppercase; display:block; margin-bottom:5px; }
-  .meta-card .value { font-family:'Orbitron',monospace; font-size:clamp(10px,2.8vw,13px); font-weight:700; color:var(--text); letter-spacing:.04em; transition:color 0.4s; }
+  .status-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .status-dot::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  .status-dot.ok { background: var(--ok); }
+  .status-dot.ok::after { background: var(--ok); opacity: 0.25; }
+  .status-dot.error { background: var(--danger); }
+  .status-dot.error::after { background: var(--danger); opacity: 0.25; }
+  .status-dot.warn { background: var(--warn); }
+  .status-dot.warn::after { background: var(--warn); opacity: 0.25; }
 
-  /* ── MANUAL SYNC BUTTON ── */
-  .sync-btn-wrap { width:100%; display:flex; justify-content:center; }
-  .sync-btn {
-    position:relative;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
-    background:transparent;
-    border:2px solid var(--accent);
-    border-radius:14px;
-    padding:15px 36px;
-    cursor:pointer;
-    font-family:'Orbitron',monospace;
-    font-size:13px;
-    font-weight:700;
-    letter-spacing:0.22em;
-    color:var(--accent);
-    text-transform:uppercase;
-    transition:all 0.3s;
-    overflow:hidden;
-    width:100%;
-    max-width:380px;
-  }
-  .sync-btn::before { content:''; position:absolute; inset:0; background:var(--accent); opacity:0; transition:opacity .3s; }
-  .sync-btn:hover::before { opacity:.07; }
-  .sync-btn:hover { box-shadow:var(--glow); transform:translateY(-1px); }
-  .sync-btn:active { transform:scale(.98); }
-  .sync-btn.syncing {
-    border-color:var(--accent2); color:var(--accent2);
-    pointer-events:none;
-    animation:btn-pulse .7s ease-in-out infinite alternate;
-  }
-  .sync-btn.syncing::before { background:var(--accent2); }
-  .sync-btn.success {
-    border-color:var(--accent3); color:var(--accent3);
-    box-shadow:0 0 22px rgba(57,255,20,.35);
-    pointer-events:none;
-  }
-  .sync-btn.success::before { background:var(--accent3); opacity:.06; }
-  @keyframes btn-pulse { from{box-shadow:0 0 6px rgba(255,107,53,.3)} to{box-shadow:0 0 24px rgba(255,107,53,.75)} }
-
-  .sync-icon { width:18px; height:18px; flex-shrink:0; transition:transform .3s; }
-  .sync-btn.syncing .sync-icon { animation:spin .8s linear infinite; }
-  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-
-  .sync-btn .ripple {
-    position:absolute;
-    border-radius:50%;
-    transform:scale(0);
-    animation:ripple-anim .7s linear;
-    background:rgba(0,212,255,.2);
-    pointer-events:none;
-  }
-  @keyframes ripple-anim { to{transform:scale(4);opacity:0} }
-
-  /* SYNC STATUS PANEL */
-  .sync-panel {
-    width:100%;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:16px;
-    transition:background 0.4s,border-color 0.4s;
-  }
-  .sync-panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-  .sync-title { font-family:'Orbitron',monospace; font-size:11px; font-weight:700; letter-spacing:.2em; color:var(--accent); text-transform:uppercase; }
-  .sync-badge {
-    font-family:'Share Tech Mono',monospace;
-    font-size:10px; letter-spacing:.12em;
-    color:var(--accent3);
-    background:rgba(57,255,20,.08);
-    border:1px solid rgba(57,255,20,.25);
-    border-radius:999px;
-    padding:3px 10px;
-    transition:all .4s;
-  }
-  .sync-badge.syncing-badge { color:var(--accent2); background:rgba(255,107,53,.08); border-color:rgba(255,107,53,.3); }
-
-  .ntp-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .ntp-item {
-    background:var(--surface2);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:10px 12px;
-    transition:background 0.4s,border-color 0.4s;
-  }
-  .ntp-item label { font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:.15em; color:var(--text-dim); display:block; margin-bottom:4px; }
-  .ntp-item .ntp-val { font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--text); font-weight:700; transition:color .4s; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .ntp-val.good { color:var(--accent3); }
-  .ntp-val.warn { color:#ffcc00; }
-  .ntp-val.flash { animation:flash-val .45s ease; }
-  @keyframes flash-val { 0%{opacity:.15;transform:translateY(4px)} 100%{opacity:1;transform:translateY(0)} }
-
-  /* ── NTP SERVER TABLE ── */
-  .servers-section { width:100%; }
-  .section-label { font-family:'Orbitron',monospace; font-size:10px; font-weight:700; letter-spacing:.25em; color:var(--text-dim); text-transform:uppercase; margin-bottom:10px; }
-
-  .server-table {
-    width:100%;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:14px;
-    overflow:hidden;
-    transition:background 0.4s,border-color 0.4s;
-  }
-  .server-row {
-    display:grid;
-    grid-template-columns:26px 1fr auto 10px;
-    align-items:center;
-    gap:8px;
-    padding:10px 14px;
-    border-bottom:1px solid var(--border);
-    transition:background .2s,border-color .4s;
-  }
-  .server-row:last-child { border-bottom:none; }
-  .server-row:hover { background:var(--surface2); }
-  .server-row.active-row { background:rgba(0,212,255,.04); }
-  .server-row.active-row .srv-host { color:var(--accent); }
-
-  .srv-idx { font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--text-dim); text-align:center; }
-  .srv-info { min-width:0; }
-  .srv-host { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:color .3s; }
-  .srv-loc  { font-family:'Rajdhani',sans-serif; font-size:10px; color:var(--text-dim); letter-spacing:.06em; margin-top:1px; }
-  .srv-ping { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--text-dim); text-align:right; white-space:nowrap; }
-  .srv-ping.fast { color:var(--accent3); }
-  .srv-ping.mid  { color:#ffcc00; }
-  .srv-ping.slow { color:var(--accent2); }
-  .srv-dot {
-    width:7px; height:7px;
-    border-radius:50%;
-    background:var(--accent3);
-    box-shadow:0 0 5px var(--accent3);
-    justify-self:end;
-    transition:background .3s,box-shadow .3s;
-  }
-  .srv-dot.offline  { background:#333; box-shadow:none; }
-  .srv-dot.checking { background:#ffcc00; box-shadow:0 0 5px #ffcc00; animation:pulse-fast .5s ease infinite; }
-
-  /* WORLD CLOCKS */
-  .world-section { width:100%; }
-  .world-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .world-card {
-    background:var(--surface); border:1px solid var(--border);
-    border-radius:12px; padding:12px 14px;
-    position:relative; overflow:hidden;
-    transition:background .4s,border-color .4s;
-  }
-  .world-card::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:var(--accent); opacity:.45; }
-  .world-card:nth-child(2)::before { background:var(--accent2); }
-  .world-card:nth-child(3)::before { background:var(--accent3); }
-  .world-card:nth-child(4)::before { background:#c084fc; }
-  .world-city { font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:600; letter-spacing:.15em; color:var(--text-dim); text-transform:uppercase; margin-bottom:4px; }
-  .world-time { font-family:'Share Tech Mono',monospace; font-size:clamp(17px,4.5vw,22px); color:var(--text); transition:color .4s; }
-  .world-date { font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--text-dim); margin-top:2px; }
-
-  /* DAY PROGRESS */
-  .day-progress { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; transition:background .4s,border-color .4s; }
-  .progress-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-  .progress-label { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:.15em; color:var(--text-dim); text-transform:uppercase; }
-  .progress-pct   { font-family:'Orbitron',monospace; font-size:13px; font-weight:700; color:var(--accent); transition:color .4s; }
-  .progress-track { width:100%; height:6px; background:var(--surface2); border-radius:999px; overflow:hidden; }
-  .progress-fill  {
-    height:100%;
-    border-radius:999px;
-    background:linear-gradient(90deg, var(--accent), var(--accent2));
-    transition:width 1s linear;
-    position:relative;
-  }
-  .progress-fill::after {
-    content:'';
-    position:absolute;
-    right:0; top:50%;
-    transform:translate(50%,-50%);
-    width:10px; height:10px;
-    border-radius:50%;
-    background:var(--accent);
-    box-shadow:var(--glow);
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.25; }
+    50%       { transform: scale(2.2); opacity: 0; }
   }
 
-  /* FOOTER */
-  footer { width:100%; max-width:600px; border-top:1px solid var(--border); padding:16px 0 20px; text-align:center; transition:border-color .4s; }
-  .footer-text { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:.18em; color:var(--text-dim); line-height:1.9; }
-  .footer-text .accent { color:var(--accent); }
-
-  /* SCAN LINES */
-  [data-theme="dark"] .wrapper::after,
-  [data-theme="oled"] .wrapper::after {
-    content:''; position:fixed; inset:0;
-    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);
-    pointer-events:none; z-index:9999;
+  .status-text { flex: 1; }
+  .status-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
+  .status-url {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 2px;
+    word-break: break-all;
+  }
+
+  /* ─── METRICS GRID ─── */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 380px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+  }
+  .metric {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 12px;
+    text-align: center;
+    transition: background var(--transition);
+  }
+  .metric-value {
+    font-family: var(--mono);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: block;
+    letter-spacing: -0.03em;
+  }
+  .metric-label {
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 4px;
+    display: block;
+    font-family: var(--mono);
+  }
+
+  /* ─── RESPONSE DETAIL ─── */
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-key {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+  }
+  .detail-val {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    text-align: right;
+    word-break: break-all;
+    color: var(--text);
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .badge-ok   { background: rgba(0,229,160,.15); color: var(--ok); }
+  .badge-err  { background: rgba(255,77,109,.15); color: var(--danger); }
+  .badge-warn { background: rgba(255,179,71,.15); color: var(--warn); }
+
+  /* ─── HISTORY ─── */
+  .section-title {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 24px 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .clear-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: color var(--transition);
+  }
+  .clear-btn:hover { color: var(--danger); }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .history-item:hover {
+    border-color: var(--accent);
+    transform: translateX(3px);
+  }
+  .history-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .history-dot.ok    { background: var(--ok); }
+  .history-dot.error { background: var(--danger); }
+  .history-dot.warn  { background: var(--warn); }
+  .history-url {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+  }
+  .history-meta {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-align: right;
+    flex-shrink: 0;
+    line-height: 1.5;
+  }
+
+  /* ─── LOADING SPINNER ─── */
+  .spinner {
+    display: none;
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  .spinner.visible { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── CHECKING STATE ─── */
+  .checking-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    margin-top: 14px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-direction: column;
+    animation: slideIn 0.2s ease;
+    transition: background var(--transition);
+  }
+  .checking-card.visible { display: flex; }
+  .checking-text {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .checking-url {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--accent);
+    word-break: break-all;
+    text-align: center;
+    margin-top: -6px;
+  }
+
+  /* ─── AUTO REFRESH ─── */
+  .auto-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition);
+  }
+  .auto-label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    flex: 1;
+    letter-spacing: 0.05em;
+  }
+  .auto-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .countdown-badge {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--accent2);
+    display: none;
+    min-width: 50px;
+    text-align: right;
+  }
+
+  /* ─── TOGGLE SWITCH ─── */
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle { position: relative; width: 36px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    left: 3px; top: 3px;
+    width: 14px; height: 14px;
+    background: white;
+    border-radius: 50%;
+    transition: transform var(--transition);
+  }
+  .toggle input:checked + .toggle-slider { background: var(--accent2); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+  /* ─── SPACER ─── */
+  .spacer { flex: 1; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    text-align: center;
+    padding: 28px 0 20px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    line-height: 1.8;
+    letter-spacing: 0.06em;
+  }
+  footer span { color: var(--accent); }
+
+  /* ─── EMPTY HISTORY ─── */
+  .empty-history {
+    text-align: center;
+    padding: 20px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 </style>
 </head>
 <body>
+
 <div class="wrapper">
 
+  <!-- HEADER -->
   <header>
-    <div class="logo-block">
-      <h1>⚛ Atomic Sync</h1>
-      <p>CESIUM FREQUENCY REFERENCE</p>
+    <div class="brand">
+      <div class="brand-title">UPTIME PULSE</div>
+      <div class="brand-sub">Downtime Checker</div>
     </div>
     <div class="theme-toggle">
-      <button class="theme-btn" id="btn-oled"  onclick="setTheme('oled')">OLED</button>
-      <button class="theme-btn active" id="btn-dark" onclick="setTheme('dark')">DARK</button>
-      <button class="theme-btn" id="btn-light" onclick="setTheme('light')">LIGHT</button>
+      <button class="theme-btn active" data-theme="dark" onclick="setTheme('dark',this)">Dark</button>
+      <button class="theme-btn" data-theme="light" onclick="setTheme('light',this)">Light</button>
+      <button class="theme-btn" data-theme="oled" onclick="setTheme('oled',this)">OLED</button>
     </div>
   </header>
 
-  <main>
+  <!-- INPUT -->
+  <div class="input-card">
+    <label class="input-label">Enter URL to check</label>
+    <div class="input-row">
+      <input class="url-input" id="urlInput" type="url"
+        placeholder="https://example.com"
+        inputmode="url"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="none"
+        spellcheck="false">
+      <button class="check-btn" id="checkBtn" onclick="checkUrl()">Check</button>
+    </div>
+    <div class="dropdown-row">
+      <div class="dropdown-search-wrap">
+        <span class="dropdown-search-icon">⌕</span>
+        <input class="dropdown-search" id="dropdownSearch"
+          placeholder="Search 100+ popular sites…"
+          autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+          onfocus="openDropdown()" oninput="filterDropdown(this.value)" readonly
+          onclick="this.removeAttribute('readonly'); openDropdown();">
+        <div class="dropdown-list" id="dropdownList"></div>
+      </div>
+    </div>
+  </div>
 
-    <!-- STATUS -->
-    <div class="status-bar">
-      <div class="status-dot" id="status-dot"></div>
+  <!-- AUTO REFRESH -->
+  <div class="auto-row">
+    <div class="auto-label">Auto-refresh</div>
+    <span class="countdown-badge" id="countdownBadge"></span>
+    <select class="auto-select" id="autoSelect" onchange="setupAutoRefresh()">
+      <option value="0">Off</option>
+      <option value="30">30s</option>
+      <option value="60">1m</option>
+      <option value="300">5m</option>
+    </select>
+    <label class="toggle-wrap">
+      <label class="toggle">
+        <input type="checkbox" id="autoToggle" onchange="setupAutoRefresh()">
+        <span class="toggle-slider"></span>
+      </label>
+    </label>
+  </div>
+
+  <!-- CHECKING STATE -->
+  <div class="checking-card" id="checkingCard">
+    <div class="spinner visible"></div>
+    <div class="checking-text">Sending probe request...</div>
+    <div class="checking-url" id="checkingUrl"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-card" id="resultCard">
+    <div class="result-header">
+      <div class="status-dot" id="statusDot"></div>
       <div class="status-text">
-        UTC SYNC <span id="st-lock">LOCKED</span> &nbsp;·&nbsp; STRATUM <span id="st-str">1</span> &nbsp;·&nbsp; NTP <span id="st-ntp">ACTIVE</span>
+        <div class="status-title" id="statusTitle"></div>
+        <div class="status-url" id="statusUrl"></div>
       </div>
     </div>
 
-    <!-- ANALOG CLOCK -->
-    <div class="clock-face">
-      <svg class="clock-svg" viewBox="0 0 300 300">
-        <defs>
-          <radialGradient id="fG" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="var(--surface2)"/>
-            <stop offset="100%" stop-color="var(--surface)"/>
-          </radialGradient>
-          <filter id="gf">
-            <feGaussianBlur stdDeviation="3" result="b"/>
-            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-        <circle cx="150" cy="150" r="148" fill="none" stroke="var(--border)" stroke-width="1"/>
-        <circle cx="150" cy="150" r="140" fill="url(#fG)" stroke="var(--accent)" stroke-width="1.5" class="ring-glow"/>
-        <g id="ticks"></g>
-        <circle cx="150" cy="150" r="135" fill="none" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4 4"/>
-        <line id="hand-hour" x1="150" y1="150" x2="150" y2="85" stroke="var(--text)"   stroke-width="5"   stroke-linecap="round" filter="url(#gf)"/>
-        <line id="hand-min"  x1="150" y1="150" x2="150" y2="60" stroke="var(--accent)" stroke-width="3"   stroke-linecap="round" filter="url(#gf)"/>
-        <line id="hand-sec"  x1="150" y1="165" x2="150" y2="48" stroke="var(--accent2)" stroke-width="1.5" stroke-linecap="round" filter="url(#gf)"/>
-        <circle cx="150" cy="150" r="5"   fill="var(--accent)" filter="url(#gf)"/>
-        <circle cx="150" cy="150" r="2.5" fill="#000"/>
-        <text x="150" y="32"  text-anchor="middle" fill="var(--text-dim)" font-family="Orbitron,monospace" font-size="11" font-weight="700">12</text>
-        <text x="270" y="155" text-anchor="middle" fill="var(--text-dim)" font-family="Orbitron,monospace" font-size="11" font-weight="700">3</text>
-        <text x="150" y="278" text-anchor="middle" fill="var(--text-dim)" font-family="Orbitron,monospace" font-size="11" font-weight="700">6</text>
-        <text x="30"  y="155" text-anchor="middle" fill="var(--text-dim)" font-family="Orbitron,monospace" font-size="11" font-weight="700">9</text>
-      </svg>
+    <div class="metrics" id="metricsGrid"></div>
+
+    <div style="margin-top: 16px;" id="detailRows"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="historySection">
+    <div class="section-title">
+      <span>Recent checks</span>
+      <button class="clear-btn" onclick="clearHistory()">Clear</button>
     </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
 
-    <!-- DIGITAL -->
-    <div class="digital-container">
-      <div class="time-display">
-        <span id="dh">00</span><span class="colon">:</span><span id="dm">00</span><span class="colon">:</span><span id="ds">00</span>
-      </div>
-      <div class="milliseconds">.<span id="dms">000</span> ms</div>
-    </div>
+  <div class="spacer"></div>
 
-    <!-- META -->
-    <div class="meta-row">
-      <div class="meta-card"><label>Date</label><div class="value" id="date-val">—</div></div>
-      <div class="meta-card"><label>Day</label><div class="value" id="day-val">—</div></div>
-      <div class="meta-card"><label>Timezone</label><div class="value" id="tz-val">—</div></div>
-    </div>
-
-    <!-- ── MANUAL SYNC BUTTON ── -->
-    <div class="sync-btn-wrap">
-      <button class="sync-btn" id="sync-btn" onclick="manualSync(event)">
-        <svg class="sync-icon" id="sync-icon" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M23 4v6h-6"/>
-          <path d="M1 20v-6h6"/>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-        </svg>
-        <span id="sync-label">SYNCHRONIZE NOW</span>
-      </button>
-    </div>
-
-    <!-- SYNC STATUS -->
-    <div class="sync-panel">
-      <div class="sync-panel-header">
-        <div class="sync-title">Sync Status</div>
-        <div class="sync-badge" id="sync-badge">SYNCHRONIZED</div>
-      </div>
-      <div class="ntp-grid">
-        <div class="ntp-item"><label>Active Server</label><div class="ntp-val good" id="active-srv">TIME.GOOGLE.COM</div></div>
-        <div class="ntp-item"><label>Stratum</label><div class="ntp-val good" id="stratum-val">1</div></div>
-        <div class="ntp-item"><label>Offset</label><div class="ntp-val good" id="offset-val">±0.30ms</div></div>
-        <div class="ntp-item"><label>Last Sync</label><div class="ntp-val" id="last-sync-val">—</div></div>
-        <div class="ntp-item"><label>Round-Trip</label><div class="ntp-val good" id="rtt-val">6.0ms</div></div>
-        <div class="ntp-item"><label>Sync Count</label><div class="ntp-val" id="sync-count">1</div></div>
-      </div>
-    </div>
-
-    <!-- ── NTP SERVERS ── -->
-    <div class="servers-section">
-      <div class="section-label">NTP Server Pool &mdash; 10 Essential Nodes</div>
-      <div class="server-table" id="server-table"></div>
-    </div>
-
-    <!-- WORLD CLOCKS -->
-    <div class="world-section">
-      <div class="section-label">World Clocks</div>
-      <div class="world-grid">
-        <div class="world-card"><div class="world-city">New York</div><div class="world-time" id="wc-ny">—</div><div class="world-date" id="wd-ny">—</div></div>
-        <div class="world-card"><div class="world-city">London</div><div class="world-time" id="wc-lon">—</div><div class="world-date" id="wd-lon">—</div></div>
-        <div class="world-card"><div class="world-city">Tokyo</div><div class="world-time" id="wc-tok">—</div><div class="world-date" id="wd-tok">—</div></div>
-        <div class="world-card"><div class="world-city">Dubai</div><div class="world-time" id="wc-dxb">—</div><div class="world-date" id="wd-dxb">—</div></div>
-      </div>
-    </div>
-
-    <!-- DAY PROGRESS -->
-    <div class="day-progress">
-      <div class="progress-header">
-        <div class="progress-label">Day Progress</div>
-        <div class="progress-pct" id="day-pct">0.0000%</div>
-      </div>
-      <div class="progress-track"><div class="progress-fill" id="day-fill" style="width:0%"></div></div>
-    </div>
-
-  </main>
-
+  <!-- FOOTER -->
   <footer>
-    <div class="footer-text">
-      <span class="accent">⚛ ATOMIC TIME SYNCHRONIZER</span><br>
-      &copy; Manik Roy <span id="footer-year">2026</span> &mdash; All Rights Reserved<br>
-      Synchronized to UTC via NTP &middot; IEEE 1588 PTP Reference
-    </div>
+    &copy; Manik Roy <span id="footerYear"></span>. All Rights Reserved.<br>
+    Built with ♥ · Uptime Pulse v1.0
   </footer>
 
 </div>
 
 <script>
-// ══════════════════════════════════════════
-//  10 ESSENTIAL NTP SERVERS
-// ══════════════════════════════════════════
-const NTP_SERVERS = [
-  { host:'time.google.com',      loc:'Google · Mountain View, USA',  stratum:1, base:6  },
-  { host:'time.nist.gov',        loc:'NIST · Boulder, USA',          stratum:1, base:12 },
-  { host:'pool.ntp.org',         loc:'NTP Pool · Global Anycast',    stratum:2, base:8  },
-  { host:'time.cloudflare.com',  loc:'Cloudflare · Global CDN',      stratum:3, base:5  },
-  { host:'time.apple.com',       loc:'Apple · Cupertino, USA',       stratum:2, base:9  },
-  { host:'time.windows.com',     loc:'Microsoft · Redmond, USA',     stratum:3, base:11 },
-  { host:'ntp.ubuntu.com',       loc:'Canonical · London, UK',       stratum:2, base:18 },
-  { host:'ptbtime1.ptb.de',      loc:'PTB · Braunschweig, Germany',  stratum:1, base:22 },
-  { host:'ntp.nict.go.jp',       loc:'NICT · Tokyo, Japan',          stratum:1, base:55 },
-  { host:'ntp1.stratum2.ru',     loc:'RU-CENTER · Moscow, Russia',   stratum:2, base:42 },
-];
-
-// State
-let activeIdx    = 0;   // index of active server
-let lastSync     = Date.now();
-let syncCount    = 1;
-let pings        = NTP_SERVERS.map(s => s.base + Math.random()*3);
-let online       = NTP_SERVERS.map(() => true);
-let isSyncing    = false;
-
-// ── THEME ──
-function setTheme(t) {
-  document.documentElement.setAttribute('data-theme', t);
-  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('btn-'+t).classList.add('active');
-  localStorage.setItem('theme', t);
-}
-(function(){ setTheme(localStorage.getItem('theme')||'dark'); })();
-
-// ── TICK MARKS ──
-(function(){
-  const g = document.getElementById('ticks');
-  for(let i=0;i<60;i++){
-    const a = i/60*Math.PI*2 - Math.PI/2;
-    const maj = i%5===0;
-    const r1 = maj?122:130, r2=138;
-    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
-    l.setAttribute('x1', 150+r1*Math.cos(a)); l.setAttribute('y1', 150+r1*Math.sin(a));
-    l.setAttribute('x2', 150+r2*Math.cos(a)); l.setAttribute('y2', 150+r2*Math.sin(a));
-    l.setAttribute('stroke', maj?'var(--accent)':'var(--text-dim)');
-    l.setAttribute('stroke-width', maj?'2':'0.8');
-    l.setAttribute('opacity', maj?'0.8':'0.4');
-    g.appendChild(l);
+  /* ─── THEME ─── */
+  function setTheme(theme, btn) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    localStorage.setItem('theme', theme);
   }
-})();
 
-// ── HELPERS ──
-const pad  = n => String(n).padStart(2,'0');
-const pad3 = n => String(n).padStart(3,'0');
-const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-function rotHand(id,deg){ const e=document.getElementById(id); if(e) e.style.transform=`rotate(${deg}deg)`; }
-
-function getTz(d){
-  try{
-    const s=d.toLocaleTimeString('en-US',{timeZoneName:'short'});
-    const m=s.match(/([A-Z]{2,5})$/);
-    return m?m[1]:Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop();
-  }catch{return'LOCAL';}
-}
-
-function fmtWorld(d,tz){
-  try{
-    return {
-      t:d.toLocaleTimeString('en-US',{timeZone:tz,hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'}),
-      d:d.toLocaleDateString('en-US',{timeZone:tz,month:'short',day:'numeric'})
-    };
-  }catch{return{t:'--:--:--',d:'---'};}
-}
-
-function flash(id){
-  const e=document.getElementById(id); if(!e) return;
-  e.classList.remove('flash'); void e.offsetWidth; e.classList.add('flash');
-}
-
-// ── RENDER SERVER TABLE ──
-function renderServers(){
-  const table = document.getElementById('server-table');
-  table.innerHTML='';
-  NTP_SERVERS.forEach((srv,i)=>{
-    const p = pings[i], on = online[i], act = i===activeIdx;
-    const pc = p<15?'fast':p<35?'mid':'slow';
-    const row = document.createElement('div');
-    row.className = 'server-row'+(act?' active-row':'');
-    row.id = 'srow-'+i;
-    row.innerHTML = `
-      <div class="srv-idx">${String(i+1).padStart(2,'0')}</div>
-      <div class="srv-info">
-        <div class="srv-host">${srv.host}</div>
-        <div class="srv-loc">${srv.loc} &middot; S${srv.stratum}</div>
-      </div>
-      <div class="srv-ping ${on?pc:''}" id="sping-${i}">${on?p.toFixed(1)+'ms':'—'}</div>
-      <div class="srv-dot ${on?'':'offline'}" id="sdot-${i}"></div>
-    `;
-    table.appendChild(row);
-  });
-}
-
-// ══════════════════════════════════════════
-//  MANUAL SYNC
-// ══════════════════════════════════════════
-function manualSync(e){
-  if(isSyncing) return;
-  isSyncing = true;
-
-  // Ripple
-  const btn = document.getElementById('sync-btn');
-  const rect = btn.getBoundingClientRect();
-  const rpl = document.createElement('span');
-  const sz = Math.max(rect.width, rect.height);
-  rpl.className='ripple';
-  rpl.style.cssText=`width:${sz}px;height:${sz}px;left:${(e.clientX||rect.left+rect.width/2)-rect.left-sz/2}px;top:${(e.clientY||rect.top+rect.height/2)-rect.top-sz/2}px`;
-  btn.appendChild(rpl);
-  setTimeout(()=>rpl.remove(),750);
-
-  // Set syncing state
-  btn.classList.add('syncing');
-  document.getElementById('sync-label').textContent = 'SYNCHRONIZING...';
-  document.getElementById('status-dot').classList.add('syncing');
-  document.getElementById('st-lock').textContent='SYNCING';
-  document.getElementById('st-lock').classList.add('warn');
-  document.getElementById('sync-badge').textContent='SYNCING...';
-  document.getElementById('sync-badge').classList.add('syncing-badge');
-
-  // Mark all dots as checking
-  NTP_SERVERS.forEach((_,i)=>{
-    const d=document.getElementById('sdot-'+i);
-    if(d){d.className='srv-dot checking';}
+  // Restore theme
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  document.querySelectorAll('.theme-btn').forEach(b => {
+    if (b.dataset.theme === savedTheme) b.classList.add('active');
+    else b.classList.remove('active');
   });
 
-  // Sequentially "check" each server
-  let step=0;
-  function checkNext(){
-    if(step>=NTP_SERVERS.length){ finish(); return; }
-    const i=step;
-    setTimeout(()=>{
-      pings[i] = NTP_SERVERS[i].base + (Math.random()*5-2.5);
-      online[i] = Math.random()>0.06;
-      const d=document.getElementById('sdot-'+i);
-      const p=document.getElementById('sping-'+i);
-      if(d) d.className='srv-dot'+(online[i]?'':' offline');
-      if(p){
-        const pc=pings[i]<15?'fast':pings[i]<35?'mid':'slow';
-        p.className='srv-ping '+(online[i]?pc:'');
-        p.textContent=online[i]?pings[i].toFixed(1)+'ms':'—';
+  /* ─── FOOTER YEAR (auto-updating) ─── */
+  document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+  /* ─── STATE ─── */
+  let history = JSON.parse(localStorage.getItem('uptimeHistory') || '[]');
+  let autoTimer = null;
+  let countdownInterval = null;
+  let lastCheckedUrl = '';
+
+  /* ─── UTILS ─── */
+  function normalizeUrl(url) {
+    url = url.trim();
+    if (!url) return '';
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    try { new URL(url); return url; } catch { return ''; }
+  }
+
+  function timeAgo(ts) {
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return s + 's ago';
+    if (s < 3600) return Math.floor(s/60) + 'm ago';
+    return Math.floor(s/3600) + 'h ago';
+  }
+
+  function formatMs(ms) {
+    if (ms < 1000) return ms + ' ms';
+    return (ms/1000).toFixed(2) + ' s';
+  }
+
+  function statusLabel(code) {
+    if (!code) return { text: 'Unreachable', cls: 'error' };
+    if (code >= 200 && code < 300) return { text: 'Online', cls: 'ok' };
+    if (code >= 300 && code < 400) return { text: 'Redirect', cls: 'warn' };
+    if (code >= 400 && code < 500) return { text: 'Client Error', cls: 'error' };
+    if (code >= 500) return { text: 'Server Error', cls: 'error' };
+    return { text: 'Unknown', cls: 'warn' };
+  }
+
+  /* ─── MAIN CHECK ─── */
+  async function checkUrl() {
+    const raw = document.getElementById('urlInput').value;
+    const url = normalizeUrl(raw);
+    if (!url) {
+      shake(document.getElementById('urlInput'));
+      return;
+    }
+    lastCheckedUrl = url;
+    await runCheck(url);
+  }
+
+  async function runCheck(url) {
+    const btn = document.getElementById('checkBtn');
+    btn.disabled = true;
+    btn.textContent = 'Checking…';
+
+    document.getElementById('resultCard').classList.remove('visible');
+    document.getElementById('checkingCard').classList.add('visible');
+    document.getElementById('checkingUrl').textContent = url;
+
+    const start = performance.now();
+    let result = { url, ts: Date.now(), code: null, ok: false, redirected: false, finalUrl: url, latency: 0 };
+
+    try {
+      // Use no-cors as fallback since CORS blocks most direct checks
+      // We use a corsproxy approach with timing
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
+
+      let res;
+      try {
+        res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`, {
+          signal: controller.signal,
+          method: 'GET',
+          headers: { 'User-Agent': 'UptimePulse/1.0' }
+        });
+        result.latency = Math.round(performance.now() - start);
+        result.code = res.status;
+        result.ok = res.ok;
+        result.redirected = res.redirected;
+        result.finalUrl = res.url || url;
+        result.contentType = res.headers.get('content-type') || '—';
+        result.server = res.headers.get('server') || '—';
+        result.cacheControl = res.headers.get('cache-control') || '—';
+      } catch(e2) {
+        // Fallback: try image probe for connectivity
+        clearTimeout(timeout);
+        result.latency = Math.round(performance.now() - start);
+        result.code = null;
+        result.error = e2.name === 'AbortError' ? 'Timeout (>12s)' : 'Connection refused or DNS failure';
       }
-      step++; checkNext();
-    }, 160+Math.random()*110);
+      clearTimeout(timeout);
+    } catch(e) {
+      result.latency = Math.round(performance.now() - start);
+      result.error = e.name === 'AbortError' ? 'Request timed out' : (e.message || 'Unknown error');
+    }
+
+    document.getElementById('checkingCard').classList.remove('visible');
+    renderResult(result);
+    addHistory(result);
+    btn.disabled = false;
+    btn.textContent = 'Check';
   }
-  checkNext();
 
-  function finish(){
-    // Pick fastest online server
-    let best=0, bestP=Infinity;
-    pings.forEach((p,i)=>{ if(online[i]&&p<bestP){bestP=p;best=i;} });
-    activeIdx=best;
-    lastSync=Date.now();
-    syncCount++;
-
-    const srv=NTP_SERVERS[activeIdx];
-    const off=(Math.random()*.8-.4).toFixed(2);
-
-    document.getElementById('active-srv').textContent=srv.host.toUpperCase();
-    document.getElementById('stratum-val').textContent=srv.stratum;
-    document.getElementById('offset-val').textContent=`\u00b1${Math.abs(off)}ms`;
-    document.getElementById('rtt-val').textContent=pings[activeIdx].toFixed(1)+'ms';
-    document.getElementById('sync-count').textContent=syncCount;
-    ['active-srv','stratum-val','offset-val','rtt-val','sync-count'].forEach(flash);
-
-    renderServers();
-
-    // Restore button
-    btn.classList.remove('syncing');
-    btn.classList.add('success');
-    document.getElementById('sync-label').textContent='✓ SYNC COMPLETE';
-    document.getElementById('status-dot').classList.remove('syncing');
-    document.getElementById('st-lock').textContent='LOCKED';
-    document.getElementById('st-lock').classList.remove('warn');
-    document.getElementById('sync-badge').textContent='SYNCHRONIZED';
-    document.getElementById('sync-badge').classList.remove('syncing-badge');
-
-    setTimeout(()=>{
-      btn.classList.remove('success');
-      document.getElementById('sync-label').textContent='SYNCHRONIZE NOW';
-      isSyncing=false;
-    },2800);
+  function shake(el) {
+    el.style.animation = 'none';
+    el.offsetHeight;
+    el.style.animation = 'shakeX 0.4s ease';
+    el.style.borderColor = 'var(--danger)';
+    setTimeout(() => { el.style.borderColor = ''; el.style.animation = ''; }, 600);
   }
-}
 
-// Auto-refresh pings quietly every 30s
-setInterval(()=>{
-  pings = NTP_SERVERS.map((s,i)=>Math.max(1, pings[i]+(Math.random()*2-1)));
-  lastSync=Date.now();
-  const off=(Math.random()*.6-.3).toFixed(2);
-  document.getElementById('offset-val').textContent=`\u00b1${Math.abs(off)}ms`;
-  renderServers();
-},30000);
+  /* ─── RENDER ─── */
+  function renderResult(r) {
+    const card = document.getElementById('resultCard');
+    const dot = document.getElementById('statusDot');
+    const s = r.code ? statusLabel(r.code) : { text: r.error || 'Unreachable', cls: 'error' };
 
-// World zones
-const ZONES=[
-  {id:'ny', tz:'America/New_York'},
-  {id:'lon',tz:'Europe/London'},
-  {id:'tok',tz:'Asia/Tokyo'},
-  {id:'dxb',tz:'Asia/Dubai'},
-];
+    dot.className = 'status-dot ' + s.cls;
+    document.getElementById('statusTitle').textContent = s.text;
+    document.getElementById('statusUrl').textContent = r.url;
 
-// ── MAIN TICK (RAF) ──
-function tick(){
-  const now=new Date();
-  const h=now.getHours(),m=now.getMinutes(),s=now.getSeconds(),ms=now.getMilliseconds();
+    // Metrics
+    const responseClass = r.latency < 500 ? 'ok' : r.latency < 2000 ? 'warn' : 'error';
+    document.getElementById('metricsGrid').innerHTML = `
+      <div class="metric">
+        <span class="metric-value" style="color:var(--${responseClass})">${formatMs(r.latency)}</span>
+        <span class="metric-label">Response</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value" style="color:var(--${r.ok?'ok':'danger'})">${r.code || '—'}</span>
+        <span class="metric-label">HTTP Code</span>
+      </div>
+      <div class="metric">
+        <span class="metric-value" style="color:var(--accent2)">${new Date(r.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span>
+        <span class="metric-label">Checked At</span>
+      </div>
+    `;
 
-  document.getElementById('dh').textContent=pad(h);
-  document.getElementById('dm').textContent=pad(m);
-  document.getElementById('ds').textContent=pad(s);
-  document.getElementById('dms').textContent=pad3(ms);
+    // Details
+    const badgeCls = s.cls === 'ok' ? 'badge-ok' : s.cls === 'warn' ? 'badge-warn' : 'badge-err';
+    const rows = [
+      ['Status', `<span class="badge ${badgeCls}">${s.text}</span>`],
+      ['Latency', formatMs(r.latency)],
+      ['HTTP Code', r.code || '—'],
+      ['Redirected', r.redirected ? 'Yes' : 'No'],
+      ['Final URL', truncate(r.finalUrl || r.url, 48)],
+      ['Content-Type', r.contentType || '—'],
+      ['Server', r.server || '—'],
+      ['Cache-Control', r.cacheControl || '—'],
+    ];
 
-  document.getElementById('date-val').textContent=`${MONTHS[now.getMonth()]} ${pad(now.getDate())} ${now.getFullYear()}`;
-  document.getElementById('day-val').textContent=DAYS[now.getDay()];
-  document.getElementById('tz-val').textContent=getTz(now);
+    document.getElementById('detailRows').innerHTML = rows.map(([k,v]) => `
+      <div class="detail-row">
+        <span class="detail-key">${k}</span>
+        <span class="detail-val">${v}</span>
+      </div>
+    `).join('');
 
-  const sf=s+ms/1000, mf=m+sf/60, hf=(h%12)+mf/60;
-  rotHand('hand-hour',hf*30);
-  rotHand('hand-min', mf*6);
-  rotHand('hand-sec', sf*6);
+    card.classList.add('visible');
+  }
 
-  ZONES.forEach(({id,tz})=>{
-    const{t,d}=fmtWorld(now,tz);
-    document.getElementById('wc-'+id).textContent=t;
-    document.getElementById('wd-'+id).textContent=d;
+  function truncate(str, n) {
+    if (!str) return '—';
+    return str.length > n ? str.slice(0, n) + '…' : str;
+  }
+
+  /* ─── HISTORY ─── */
+  function addHistory(r) {
+    history.unshift(r);
+    if (history.length > 20) history = history.slice(0, 20);
+    localStorage.setItem('uptimeHistory', JSON.stringify(history));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    if (!history.length) {
+      list.innerHTML = '<div class="empty-history">No checks yet. Enter a URL above.</div>';
+      return;
+    }
+    list.innerHTML = history.map((r, i) => {
+      const s = r.code ? statusLabel(r.code) : { text: r.error || 'Error', cls: 'error' };
+      return `
+        <div class="history-item" onclick="recheck('${escHtml(r.url)}')">
+          <div class="history-dot ${s.cls}"></div>
+          <span class="history-url">${escHtml(r.url)}</span>
+          <div class="history-meta">
+            <div>${r.code || '—'}</div>
+            <div>${timeAgo(r.ts)}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function clearHistory() {
+    history = [];
+    localStorage.removeItem('uptimeHistory');
+    renderHistory();
+  }
+
+  function recheck(url) {
+    document.getElementById('urlInput').value = url;
+    lastCheckedUrl = url;
+    runCheck(url);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function usePreset(url, name) {
+    document.getElementById('urlInput').value = url;
+    document.getElementById('dropdownSearch').value = name ? name + ' — ' + url : url;
+    closeDropdown();
+    checkUrl();
+  }
+
+  /* ─── SITES DATA ─── */
+  const SITES = [
+    // 🌐 Search & AI
+    { g:'Search & AI', flag:'🌐', name:'Google', url:'https://google.com' },
+    { g:'Search & AI', flag:'🌐', name:'Bing', url:'https://bing.com' },
+    { g:'Search & AI', flag:'🌐', name:'DuckDuckGo', url:'https://duckduckgo.com' },
+    { g:'Search & AI', flag:'🌐', name:'Yahoo', url:'https://yahoo.com' },
+    { g:'Search & AI', flag:'🌐', name:'Brave Search', url:'https://search.brave.com' },
+    { g:'Search & AI', flag:'🌐', name:'OpenAI', url:'https://openai.com' },
+    { g:'Search & AI', flag:'🌐', name:'Anthropic', url:'https://anthropic.com' },
+    { g:'Search & AI', flag:'🌐', name:'Perplexity', url:'https://perplexity.ai' },
+    // 📱 Social Media
+    { g:'Social Media', flag:'📱', name:'Facebook', url:'https://facebook.com' },
+    { g:'Social Media', flag:'📱', name:'Instagram', url:'https://instagram.com' },
+    { g:'Social Media', flag:'📱', name:'Twitter / X', url:'https://x.com' },
+    { g:'Social Media', flag:'📱', name:'LinkedIn', url:'https://linkedin.com' },
+    { g:'Social Media', flag:'📱', name:'TikTok', url:'https://tiktok.com' },
+    { g:'Social Media', flag:'📱', name:'Pinterest', url:'https://pinterest.com' },
+    { g:'Social Media', flag:'📱', name:'Snapchat', url:'https://snapchat.com' },
+    { g:'Social Media', flag:'📱', name:'Reddit', url:'https://reddit.com' },
+    { g:'Social Media', flag:'📱', name:'Threads', url:'https://threads.net' },
+    { g:'Social Media', flag:'📱', name:'Tumblr', url:'https://tumblr.com' },
+    { g:'Social Media', flag:'📱', name:'Mastodon', url:'https://mastodon.social' },
+    // 🎬 Video & Streaming
+    { g:'Video & Streaming', flag:'🎬', name:'YouTube', url:'https://youtube.com' },
+    { g:'Video & Streaming', flag:'🎬', name:'Netflix', url:'https://netflix.com' },
+    { g:'Video & Streaming', flag:'🎬', name:'Twitch', url:'https://twitch.tv' },
+    { g:'Video & Streaming', flag:'🎬', name:'Disney+', url:'https://disneyplus.com' },
+    { g:'Video & Streaming', flag:'🎬', name:'Hulu', url:'https://hulu.com' },
+    { g:'Video & Streaming', flag:'🎬', name:'Prime Video', url:'https://primevideo.com' },
+    { g:'Video & Streaming', flag:'🎬', name:'Vimeo', url:'https://vimeo.com' },
+    { g:'Video & Streaming', flag:'🎬', name:'Dailymotion', url:'https://dailymotion.com' },
+    // 🛒 E-Commerce & Shopping
+    { g:'E-Commerce', flag:'🛒', name:'Amazon', url:'https://amazon.com' },
+    { g:'E-Commerce', flag:'🛒', name:'eBay', url:'https://ebay.com' },
+    { g:'E-Commerce', flag:'🛒', name:'Alibaba', url:'https://alibaba.com' },
+    { g:'E-Commerce', flag:'🛒', name:'AliExpress', url:'https://aliexpress.com' },
+    { g:'E-Commerce', flag:'🛒', name:'Etsy', url:'https://etsy.com' },
+    { g:'E-Commerce', flag:'🛒', name:'Shopify', url:'https://shopify.com' },
+    { g:'E-Commerce', flag:'🛒', name:'Walmart', url:'https://walmart.com' },
+    // 💻 Tech & Dev
+    { g:'Tech & Dev', flag:'💻', name:'GitHub', url:'https://github.com' },
+    { g:'Tech & Dev', flag:'💻', name:'GitLab', url:'https://gitlab.com' },
+    { g:'Tech & Dev', flag:'💻', name:'Stack Overflow', url:'https://stackoverflow.com' },
+    { g:'Tech & Dev', flag:'💻', name:'Cloudflare', url:'https://cloudflare.com' },
+    { g:'Tech & Dev', flag:'💻', name:'Vercel', url:'https://vercel.com' },
+    { g:'Tech & Dev', flag:'💻', name:'Netlify', url:'https://netlify.com' },
+    { g:'Tech & Dev', flag:'💻', name:'Heroku', url:'https://heroku.com' },
+    { g:'Tech & Dev', flag:'💻', name:'DigitalOcean', url:'https://digitalocean.com' },
+    { g:'Tech & Dev', flag:'💻', name:'AWS', url:'https://aws.amazon.com' },
+    { g:'Tech & Dev', flag:'💻', name:'Google Cloud', url:'https://cloud.google.com' },
+    { g:'Tech & Dev', flag:'💻', name:'Microsoft Azure', url:'https://azure.microsoft.com' },
+    { g:'Tech & Dev', flag:'💻', name:'npm', url:'https://npmjs.com' },
+    { g:'Tech & Dev', flag:'💻', name:'PyPI', url:'https://pypi.org' },
+    // 📰 News & Media
+    { g:'News & Media', flag:'📰', name:'BBC', url:'https://bbc.com' },
+    { g:'News & Media', flag:'📰', name:'CNN', url:'https://cnn.com' },
+    { g:'News & Media', flag:'📰', name:'Reuters', url:'https://reuters.com' },
+    { g:'News & Media', flag:'📰', name:'The Guardian', url:'https://theguardian.com' },
+    { g:'News & Media', flag:'📰', name:'New York Times', url:'https://nytimes.com' },
+    { g:'News & Media', flag:'📰', name:'Washington Post', url:'https://washingtonpost.com' },
+    { g:'News & Media', flag:'📰', name:'Al Jazeera', url:'https://aljazeera.com' },
+    { g:'News & Media', flag:'📰', name:'Associated Press', url:'https://apnews.com' },
+    // ☁️ Productivity & Cloud
+    { g:'Productivity', flag:'☁️', name:'Google Drive', url:'https://drive.google.com' },
+    { g:'Productivity', flag:'☁️', name:'Dropbox', url:'https://dropbox.com' },
+    { g:'Productivity', flag:'☁️', name:'Notion', url:'https://notion.so' },
+    { g:'Productivity', flag:'☁️', name:'Slack', url:'https://slack.com' },
+    { g:'Productivity', flag:'☁️', name:'Zoom', url:'https://zoom.us' },
+    { g:'Productivity', flag:'☁️', name:'Microsoft Teams', url:'https://teams.microsoft.com' },
+    { g:'Productivity', flag:'☁️', name:'Trello', url:'https://trello.com' },
+    { g:'Productivity', flag:'☁️', name:'Asana', url:'https://asana.com' },
+    { g:'Productivity', flag:'☁️', name:'Figma', url:'https://figma.com' },
+    { g:'Productivity', flag:'☁️', name:'Canva', url:'https://canva.com' },
+    { g:'Productivity', flag:'☁️', name:'Airtable', url:'https://airtable.com' },
+    { g:'Productivity', flag:'☁️', name:'Monday.com', url:'https://monday.com' },
+    // 💳 Finance & Payments
+    { g:'Finance', flag:'💳', name:'PayPal', url:'https://paypal.com' },
+    { g:'Finance', flag:'💳', name:'Stripe', url:'https://stripe.com' },
+    { g:'Finance', flag:'💳', name:'Coinbase', url:'https://coinbase.com' },
+    { g:'Finance', flag:'💳', name:'Binance', url:'https://binance.com' },
+    { g:'Finance', flag:'💳', name:'Bloomberg', url:'https://bloomberg.com' },
+    // 🎵 Music & Podcasts
+    { g:'Music', flag:'🎵', name:'Spotify', url:'https://spotify.com' },
+    { g:'Music', flag:'🎵', name:'Apple Music', url:'https://music.apple.com' },
+    { g:'Music', flag:'🎵', name:'SoundCloud', url:'https://soundcloud.com' },
+    // 📚 Reference & Education
+    { g:'Reference', flag:'📚', name:'Wikipedia', url:'https://wikipedia.org' },
+    { g:'Reference', flag:'📚', name:'Wikimedia', url:'https://wikimedia.org' },
+    { g:'Reference', flag:'📚', name:'Archive.org', url:'https://archive.org' },
+    { g:'Reference', flag:'📚', name:'Khan Academy', url:'https://khanacademy.org' },
+    { g:'Reference', flag:'📚', name:'Coursera', url:'https://coursera.org' },
+    { g:'Reference', flag:'📚', name:'Udemy', url:'https://udemy.com' },
+    // 🇮🇳 India — Search & Portals
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Google India', url:'https://google.co.in' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'BSNL', url:'https://bsnl.co.in' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'India.gov.in', url:'https://india.gov.in' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Digital India', url:'https://digitalindia.gov.in' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'IRCTC', url:'https://irctc.co.in' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Flipkart', url:'https://flipkart.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Amazon India', url:'https://amazon.in' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Meesho', url:'https://meesho.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Myntra', url:'https://myntra.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Nykaa', url:'https://nykaa.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Snapdeal', url:'https://snapdeal.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'PayTM', url:'https://paytm.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'PhonePe', url:'https://phonepe.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Google Pay India', url:'https://pay.google.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'HDFC Bank', url:'https://hdfcbank.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'SBI', url:'https://sbi.co.in' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'ICICI Bank', url:'https://icicibank.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Axis Bank', url:'https://axisbank.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Zerodha', url:'https://zerodha.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Groww', url:'https://groww.in' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Times of India', url:'https://timesofindia.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'NDTV', url:'https://ndtv.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'The Hindu', url:'https://thehindu.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Hindustan Times', url:'https://hindustantimes.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'India Today', url:'https://indiatoday.in' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Economic Times', url:'https://economictimes.indiatimes.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Hotstar / JioCinema', url:'https://jiocinema.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'MX Player', url:'https://mxplayer.in' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Ola', url:'https://olacabs.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Swiggy', url:'https://swiggy.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Zomato', url:'https://zomato.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'MakeMyTrip', url:'https://makemytrip.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'Naukri', url:'https://naukri.com' },
+    { g:'🇮🇳 India', flag:'🇮🇳', name:'IndiaMart', url:'https://indiamart.com' },
+  ];
+
+  /* ─── DROPDOWN LOGIC ─── */
+  function buildDropdown(filter) {
+    const list = document.getElementById('dropdownList');
+    const q = (filter || '').toLowerCase().trim();
+
+    const filtered = q ? SITES.filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      s.url.toLowerCase().includes(q) ||
+      s.g.toLowerCase().includes(q)
+    ) : [...SITES];
+
+    if (!filtered.length) {
+      list.innerHTML = '<div style="padding:16px;text-align:center;font-family:var(--mono);font-size:0.72rem;color:var(--muted);">No results found</div>';
+      return;
+    }
+
+    // Always sort A→Z by name
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+    if (q) {
+      // Searching: flat sorted list
+      list.innerHTML = filtered.map(s => `
+        <div class="dropdown-item" onclick="usePreset('${s.url}','${s.name.replace(/'/g,"\\'")}')">
+          <span class="dropdown-flag">${s.flag}</span>
+          <span class="dropdown-item-name">${s.name}</span>
+          <span class="dropdown-item-url">${s.url.replace('https://','')}</span>
+        </div>
+      `).join('');
+    } else {
+      // Full list: group by first letter A→Z
+      const letterGroups = {};
+      filtered.forEach(s => {
+        const letter = s.name[0].toUpperCase();
+        if (!letterGroups[letter]) letterGroups[letter] = [];
+        letterGroups[letter].push(s);
+      });
+
+      list.innerHTML = Object.keys(letterGroups).sort().map(letter => `
+        <div class="dropdown-group-label">${letter}</div>
+        ${letterGroups[letter].map(s => `
+          <div class="dropdown-item" onclick="usePreset('${s.url}','${s.name.replace(/'/g,"\\'")}')">
+            <span class="dropdown-flag">${s.flag}</span>
+            <span class="dropdown-item-name">${s.name}</span>
+            <span class="dropdown-item-url">${s.url.replace('https://','')}</span>
+          </div>
+        `).join('')}
+      `).join('');
+    }
+  }
+
+  function openDropdown() {
+    buildDropdown('');
+    document.getElementById('dropdownList').classList.add('open');
+    document.getElementById('dropdownSearch').removeAttribute('readonly');
+  }
+
+  function closeDropdown() {
+    document.getElementById('dropdownList').classList.remove('open');
+  }
+
+  function filterDropdown(val) {
+    buildDropdown(val);
+    document.getElementById('dropdownList').classList.add('open');
+  }
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.dropdown-row')) closeDropdown();
   });
 
-  const el=h*3600+m*60+s+ms/1000, pct=el/86400*100;
-  document.getElementById('day-pct').textContent=pct.toFixed(4)+'%';
-  document.getElementById('day-fill').style.width=pct.toFixed(4)+'%';
+  /* ─── AUTO REFRESH ─── */
+  function setupAutoRefresh() {
+    clearInterval(autoTimer);
+    clearInterval(countdownInterval);
+    const badge = document.getElementById('countdownBadge');
+    badge.style.display = 'none';
 
-  const ago=Math.floor((Date.now()-lastSync)/1000);
-  document.getElementById('last-sync-val').textContent=ago<60?`${ago}s ago`:`${Math.floor(ago/60)}m ago`;
+    const enabled = document.getElementById('autoToggle').checked;
+    const secs = parseInt(document.getElementById('autoSelect').value);
+    if (!enabled || !secs || secs === 0) return;
 
-  document.getElementById('footer-year').textContent=now.getFullYear();
-}
+    let remaining = secs;
+    badge.style.display = 'block';
+    badge.textContent = 'next: ' + remaining + 's';
 
-function loop(){ tick(); requestAnimationFrame(loop); }
+    countdownInterval = setInterval(() => {
+      remaining--;
+      badge.textContent = 'next: ' + remaining + 's';
+      if (remaining <= 0) remaining = secs;
+    }, 1000);
 
-// INIT
-renderServers();
-loop();
+    autoTimer = setInterval(() => {
+      if (lastCheckedUrl) runCheck(lastCheckedUrl);
+    }, secs * 1000);
+  }
+
+  /* ─── ENTER KEY ─── */
+  document.getElementById('urlInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkUrl();
+  });
+
+  /* ─── SHAKE ANIMATION ─── */
+  const style = document.createElement('style');
+  style.textContent = `@keyframes shakeX {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-8px)}
+    40%{transform:translateX(8px)}
+    60%{transform:translateX(-5px)}
+    80%{transform:translateX(5px)}
+  }`;
+  document.head.appendChild(style);
+
+  /* ─── INIT ─── */
+  renderHistory();
 </script>
 </body>
 </html>
