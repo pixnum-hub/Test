@@ -858,15 +858,19 @@ function sc(x){return x>=80?'var(--ok)':x>=55?'var(--wn)':'var(--er)';}
    ANIMATION LOOP
 ════════════════════════════════════════ */
 function animate(){
-  dispDeg+=adiff(dispDeg,effTgt())*(locked?.18:mode==='manual'?.10:.12);
-  dispDeg=((dispDeg%360)+360)%360;
+  // Smooth interpolation with correct wrap-around handling
+  const diff = adiff(dispDeg, effTgt());
+  const speed = locked ? 0.18 : mode==='manual' ? 0.10 : 0.08;
+  dispDeg += diff * speed;
+  dispDeg = ((dispDeg % 360) + 360) % 360;
+
   needle.setAttribute('transform',`rotate(${-dispDeg},160,160)`);
   const r=Math.round(dispDeg), dir=d2dir(r);
   hdgBig.textContent=DL[dir];
   hdgDeg.textContent=`${r}° — Vastu Zone: ${DZ[dir]}`;
   updateCards(dir);
   if(dir!==lastDir){srLive.textContent=`Direction: ${DL[dir]}, ${r} degrees`;lastDir=dir;vib(22);}
-  if(mode==='manual')degSl.value=Math.round(manDeg);
+  if(mode==='manual') degSl.value=Math.round(manDeg);
   toolRaf++;
   if(toolRaf%30===0) refreshLiveTool();
   raf=requestAnimationFrame(animate);
@@ -898,24 +902,62 @@ function chkTilt(b,g){tiltW.textContent=b!=null&&Math.abs(b-90)+Math.abs(g||0)>2
 /* ════════════════════════════════════════
    AUTO COMPASS
 ════════════════════════════════════════ */
+let usingAbsolute = false; // track which event source we're using
+
 function onOrient(e){
-  if(mode!=='auto'||locked)return;
-  let a=e.alpha;if(a==null){statTxt.textContent='Compass sensor unavailable';accDot.className='dot er';return;}
-  if(e.webkitCompassHeading!==undefined)a=e.webkitCompassHeading;
-  tgtDeg=a;updateAcc(a);chkTilt(e.beta,e.gamma);
-}
-async function startCompass(){
-  if(active)return;
-  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
-    try{const p=await DeviceOrientationEvent.requestPermission();if(p!=='granted'){statTxt.textContent='Permission denied — allow in Settings';return;}}
-    catch(e){statTxt.textContent='Permission error: '+e.message;return;}
+  if(mode!=='auto'||locked) return;
+
+  // If we already have an absolute source, ignore relative events
+  if(usingAbsolute && !e.absolute) return;
+
+  let heading = null;
+
+  // Priority 1: iOS webkitCompassHeading (most reliable on iOS)
+  if(typeof e.webkitCompassHeading === 'number' && e.webkitCompassHeading >= 0){
+    heading = e.webkitCompassHeading;
+    // webkitCompassAccuracy: lower is better (< 20 = good)
+    const acc = e.webkitCompassAccuracy;
+    if(acc > 0 && acc < 20)      accDot.className='dot ok';
+    else if(acc > 0 && acc < 50) accDot.className='dot wn';
+    else                          accDot.className='dot wn';
   }
-  window.addEventListener('deviceorientationabsolute',onOrient,true);
-  window.addEventListener('deviceorientation',onOrient,true);
-  active=true;btnEn.style.display='none';calibHint.style.display='block';
-  statTxt.textContent='Compass active — point your device';accDot.className='dot wn';
-  wakeLock();if(!raf)animate();
-  setTimeout(()=>{calibHint.style.display='none';},7000);
+  // Priority 2: deviceorientationabsolute (Android Chrome, accurate)
+  else if(e.absolute === true && e.alpha != null){
+    // alpha = degrees the device has rotated anticlockwise from North
+    // compass heading = (360 - alpha) % 360
+    heading = (360 - e.alpha) % 360;
+    usingAbsolute = true;
+    updateAcc(heading);
+  }
+  // Priority 3: plain deviceorientation alpha (least reliable — skip if absolute available)
+  else if(!usingAbsolute && e.alpha != null){
+    heading = (360 - e.alpha) % 360;
+    updateAcc(heading);
+  }
+
+  if(heading === null) return;
+
+  tgtDeg = heading;
+  chkTilt(e.beta, e.gamma);
+}
+
+async function startCompass(){
+  if(active) return;
+  if(typeof DeviceOrientationEvent !== 'undefined' &&
+     typeof DeviceOrientationEvent.requestPermission === 'function'){
+    try{
+      const p = await DeviceOrientationEvent.requestPermission();
+      if(p !== 'granted'){statTxt.textContent='Permission denied — allow in Settings';return;}
+    }catch(e){statTxt.textContent='Permission error: '+e.message;return;}
+  }
+  usingAbsolute = false;
+  // Listen to absolute first; also listen to generic for iOS (webkitCompassHeading)
+  window.addEventListener('deviceorientationabsolute', onOrient, true);
+  window.addEventListener('deviceorientation', onOrient, true);
+  active=true; btnEn.style.display='none'; calibHint.style.display='block';
+  statTxt.textContent='Compass active — point your device'; accDot.className='dot wn';
+  wakeLock(); if(!raf) animate();
+  setTimeout(()=>{ calibHint.style.display='none'; }, 7000);
 }
 async function wakeLock(){if('wakeLock'in navigator)try{wl=await navigator.wakeLock.request('screen');}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&active)wakeLock();});
@@ -930,6 +972,7 @@ function setMode(m){
   if(m==='manual'){
     window.removeEventListener('deviceorientationabsolute',onOrient,true);
     window.removeEventListener('deviceorientation',onOrient,true);
+    usingAbsolute=false;
     active=false;manCtrl.classList.add('on');btnEn.style.display='none';
     calibHint.style.display='none';tiltW.textContent='';
     statTxt.textContent='Manual mode — drag or use controls';
