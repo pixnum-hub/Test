@@ -1196,41 +1196,99 @@ async function runCheck(url) {
 
 async function probeUrl(url) {
   const r = { url, ts:Date.now(), code:null, ok:false, redirected:false,
-    finalUrl:url, latency:null, contentType:null, server:null, error:null };
+    finalUrl:url, latency:null, contentType:null, server:null, error:null, method:'—' };
   const t0 = performance.now();
+
+  // ── Strategy 1: corsproxy.io (full HTTP status) ──
   try {
     const ctrl = new AbortController();
-    const tid  = setTimeout(() => ctrl.abort(), 10000);
+    const tid  = setTimeout(() => ctrl.abort(), 8000);
     const res  = await fetch('https://corsproxy.io/?' + encodeURIComponent(url), {
       signal:ctrl.signal, cache:'no-store'
     });
     clearTimeout(tid);
-    r.latency     = Math.round(performance.now() - t0);
-    r.code        = res.status;
-    r.ok          = res.ok;
-    r.redirected  = res.redirected;
-    r.finalUrl    = res.url ? decodeURIComponent(res.url.replace(/^https:\/\/corsproxy\.io\/\?/,'')) : url;
-    r.contentType = res.headers.get('content-type');
-    r.server      = res.headers.get('server') || res.headers.get('x-powered-by');
-  } catch(e1) {
-    try {
-      const ctrl2 = new AbortController();
-      const tid2  = setTimeout(() => ctrl2.abort(), 8000);
-      const res2  = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url), {
-        signal:ctrl2.signal, cache:'no-store'
-      });
-      clearTimeout(tid2);
-      r.latency = Math.round(performance.now() - t0);
-      if (res2.ok) {
-        const j = await res2.json();
-        r.code = j.status?.http_code || 200;
-        r.ok   = r.code >= 200 && r.code < 300;
-      }
-    } catch(e2) {
-      r.latency = Math.round(performance.now() - t0);
-      r.error   = e1.name === 'AbortError' ? 'Request timed out' : 'Unreachable — DNS or connection failure';
+    // corsproxy itself returned — check it's not a proxy error page
+    if (res.status !== 0) {
+      r.latency     = Math.round(performance.now() - t0);
+      r.code        = res.status;
+      r.ok          = res.ok;
+      r.redirected  = res.redirected;
+      r.method      = 'Proxy';
+      try { r.finalUrl = decodeURIComponent(res.url.replace(/^https:\/\/corsproxy\.io\/\?/,'')); } catch{}
+      r.contentType = res.headers.get('content-type');
+      r.server      = res.headers.get('server') || res.headers.get('x-powered-by');
+      return r;
     }
-  }
+  } catch(e1) { /* fall through */ }
+
+  // ── Strategy 2: allorigins.win ──
+  try {
+    const ctrl2 = new AbortController();
+    const tid2  = setTimeout(() => ctrl2.abort(), 7000);
+    const res2  = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url), {
+      signal:ctrl2.signal, cache:'no-store'
+    });
+    clearTimeout(tid2);
+    r.latency = Math.round(performance.now() - t0);
+    if (res2.ok) {
+      const j = await res2.json();
+      r.code   = j.status?.http_code || 200;
+      r.ok     = r.code >= 200 && r.code < 300;
+      r.method = 'Proxy2';
+      return r;
+    }
+  } catch(e2) { /* fall through */ }
+
+  // ── Strategy 3: no-cors image/fetch probe (reachability only, no status code) ──
+  try {
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      const tid3 = setTimeout(() => { img.src=''; reject(new Error('timeout')); }, 6000);
+      img.onload = () => { clearTimeout(tid3); resolve('load'); };
+      img.onerror = () => { clearTimeout(tid3); resolve('error'); }; // error = server responded!
+      img.src = url + '/favicon.ico?_nc=' + Date.now();
+    });
+    r.latency = Math.round(performance.now() - t0);
+    // Got any response (even 404/error) = server is reachable
+    r.ok     = true;
+    r.code   = null; // can't read status from no-cors
+    r.method = 'Probe';
+    return r;
+  } catch(e3) { /* fall through */ }
+
+  // ── Strategy 4: script tag probe ──
+  try {
+    await new Promise((resolve, reject) => {
+      const s   = document.createElement('script');
+      const tid4 = setTimeout(() => { s.remove(); reject(new Error('timeout')); }, 5000);
+      s.onload = s.onerror = () => { clearTimeout(tid4); s.remove(); resolve(); };
+      s.src = url + '/robots.txt?_nc=' + Date.now();
+      document.head.appendChild(s);
+    });
+    r.latency = Math.round(performance.now() - t0);
+    r.ok     = true;
+    r.code   = null;
+    r.method = 'Probe2';
+    return r;
+  } catch(e4) { /* fall through */ }
+
+  // ── Strategy 4: no-cors direct fetch ──
+  try {
+    const ctrl4 = new AbortController();
+    const tid4  = setTimeout(() => ctrl4.abort(), 5000);
+    await fetch(url, {mode:'no-cors', signal:ctrl4.signal, cache:'no-store'});
+    clearTimeout(tid4);
+    r.latency = Math.round(performance.now() - t0);
+    r.ok     = true;
+    r.code   = null;
+    r.method = 'No-CORS';
+    return r;
+  } catch(e5) { /* fall through */ }
+
+  // ── All strategies failed ──
+  r.latency = Math.round(performance.now() - t0);
+  r.error   = 'Unreachable — all probes failed';
+  r.method  = '—';
   return r;
 }
 
@@ -1238,9 +1296,11 @@ async function probeUrl(url) {
    RENDER RESULT
 ────────────────────────────────────────────── */
 function renderResult(r) {
-  const s = r.code ? statusLabel(r.code)
-           : r.ok  ? { text:'Reachable', cls:'warn', desc:'Status unreadable (CORS)' }
-                   : { text:r.error||'Unreachable', cls:'error', desc:'Could not connect' };
+  const s = r.code
+    ? statusLabel(r.code)
+    : r.ok
+      ? { text:'Reachable ✓', cls:'ok', desc:'Server responded — status hidden by CORS (site is UP)' }
+      : { text:r.error||'Unreachable', cls:'error', desc:'All probes failed — site may be down or offline' };
 
   // Favicon
   const fav = document.getElementById('resultFavicon');
@@ -1254,7 +1314,7 @@ function renderResult(r) {
   fill.className = 'status-ring-fill ' + s.cls;
   dot.className  = 'status-ring-dot '  + s.cls;
   requestAnimationFrame(() => {
-    fill.style.strokeDashoffset = s.cls === 'ok' ? '0' : s.cls === 'warn' ? '28' : '56';
+    fill.style.strokeDashoffset = s.cls === 'ok' ? '0' : s.cls === 'warn' ? '40' : '80';
   });
 
   document.getElementById('resultStatusText').textContent = s.text;
@@ -1537,39 +1597,91 @@ async function startBulkCheck() {
     if (bulkStopped) return;
     setCardChecking(site.url);
     const t0 = performance.now();
-    let cls='error', code=null, lat=null, statusTxt='Down';
+    let cls='error', code=null, lat=null, statusTxt='Down', resolved=false;
+
+    // ── Strategy 1: corsproxy.io (real HTTP status) ──
     try {
       const ctrl = new AbortController();
-      const tid  = setTimeout(()=>ctrl.abort(),10000);
-      const res  = await fetch('https://corsproxy.io/?'+encodeURIComponent(site.url),{signal:ctrl.signal,cache:'no-store'});
+      const tid  = setTimeout(()=>ctrl.abort(), 8000);
+      const res  = await fetch('https://corsproxy.io/?'+encodeURIComponent(site.url),
+        {signal:ctrl.signal, cache:'no-store'});
       clearTimeout(tid);
-      lat  = Math.round(performance.now()-t0);
+      lat = Math.round(performance.now()-t0);
       code = res.status;
-      if (code>=200&&code<300){cls='ok';nOk++;statusTxt='Online';}
-      else if(code>=300&&code<500){cls='warn';nWarn++;statusTxt=code===401?'Auth':code===403?'Blocked':''+code;}
-      else {cls='error';nErr++;statusTxt='Error '+code;}
+      resolved = true;
+      if      (code>=200&&code<300){ cls='ok';   nOk++;   statusTxt='Online'; }
+      else if (code===401)         { cls='warn'; nWarn++; statusTxt='Auth Required'; }
+      else if (code===403)         { cls='warn'; nWarn++; statusTxt='Restricted'; }
+      else if (code===429)         { cls='warn'; nWarn++; statusTxt='Rate Limited'; }
+      else if (code>=300&&code<400){ cls='warn'; nWarn++; statusTxt='Redirect '+code; }
+      else                         { cls='error';nErr++;  statusTxt='Error '+code; }
       latencies.push(lat);
-    } catch(e1){
+    } catch(e1){ /* next */ }
+
+    // ── Strategy 2: allorigins.win ──
+    if (!resolved && !bulkStopped) {
       try {
-        const c2=new AbortController(), t2=setTimeout(()=>c2.abort(),8000);
-        const r2=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(site.url),{signal:c2.signal,cache:'no-store'});
+        const c2 = new AbortController();
+        const t2 = setTimeout(()=>c2.abort(), 7000);
+        const r2 = await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(site.url),
+          {signal:c2.signal, cache:'no-store'});
         clearTimeout(t2);
-        lat=Math.round(performance.now()-t0);
-        if(r2.ok){
-          const j=await r2.json();
-          code=(j.status?.http_code)||200;
-          if(code>=200&&code<300){cls='ok';nOk++;statusTxt='Online';}
-          else if(code>=300&&code<500){cls='warn';nWarn++;statusTxt=''+code;}
-          else{cls='error';nErr++;statusTxt='Error '+(code||'');}
-        } else {nErr++;statusTxt='Down';}
+        lat = Math.round(performance.now()-t0);
+        if (r2.ok) {
+          const j = await r2.json();
+          code = j.status?.http_code || 200;
+          resolved = true;
+          if      (code>=200&&code<300){ cls='ok';   nOk++;   statusTxt='Online'; }
+          else if (code>=300&&code<500){ cls='warn'; nWarn++; statusTxt=''+code; }
+          else                         { cls='error';nErr++;  statusTxt='Error '+code; }
+          latencies.push(lat);
+        }
+      } catch(e2){ /* next */ }
+    }
+
+    // ── Strategy 3: no-cors image probe — any server response = reachable ──
+    if (!resolved && !bulkStopped) {
+      try {
+        await new Promise((resolve, reject) => {
+          const img = new Image();
+          const tid = setTimeout(()=>{ img.src=''; reject(); }, 5000);
+          img.onload  = ()=>{ clearTimeout(tid); resolve(); };
+          img.onerror = ()=>{ clearTimeout(tid); resolve(); }; // 404 still means server is UP
+          img.src = site.url + '/favicon.ico?_nc=' + Date.now();
+        });
+        lat = Math.round(performance.now()-t0);
+        resolved = true;
+        cls='warn'; nWarn++;
+        statusTxt='Reachable';
         latencies.push(lat);
-      } catch(e2){
-        lat=Math.round(performance.now()-t0);
-        nErr++;statusTxt=e1.name==='AbortError'?'Timeout':'Down';
+      } catch(e3){ /* next */ }
+    }
+
+    // ── Strategy 4: no-cors fetch probe ──
+    if (!resolved && !bulkStopped) {
+      try {
+        const ctrl4 = new AbortController();
+        const tid4  = setTimeout(()=>ctrl4.abort(), 5000);
+        await fetch(site.url, {mode:'no-cors', signal:ctrl4.signal, cache:'no-store'});
+        clearTimeout(tid4);
+        lat = Math.round(performance.now()-t0);
+        resolved = true;
+        cls='warn'; nWarn++;
+        statusTxt='Reachable';
+        latencies.push(lat);
+      } catch(e4){
+        // AbortError or TypeError — distinguish timeout vs network
+        lat = Math.round(performance.now()-t0);
+        if (e4.name === 'AbortError') {
+          cls='error'; nErr++; statusTxt='Timeout';
+        } else {
+          cls='error'; nErr++; statusTxt='Down';
+        }
       }
     }
+
     if (!bulkStopped) {
-      bulkResults[site.url]={cls,code,latency:lat};
+      bulkResults[site.url] = {cls, code, latency:lat};
       setCardState(site.url, cls, statusTxt, lat);
       done++;
       updateProgress();
