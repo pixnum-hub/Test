@@ -1,624 +1,923 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>AI Product Counter — Manik Roy</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ScanFlow — PDF Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+window._pdfJsReady = (async () => {
+  const mod = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs');
+  window.pdfjsLib = mod;
+  mod.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
+})();
+</script>
 <style>
-/* ── THEMES ── */
-[data-theme="dark"] {
-  --bg:#0f1117; --surface:#1a1d27; --surface2:#23273a; --surface3:#2d324a;
-  --border:rgba(255,255,255,.08); --text:#e8eaf6; --muted:#7c829e;
-  --accent:#6c8bff; --accent-glow:rgba(108,139,255,.3);
-  --accent2:#ff7eb6; --accent2-glow:rgba(255,126,182,.2);
-  --green:#4dffb0; --green-glow:rgba(77,255,176,.25);
-  --warn:#ffb347; --warn-glow:rgba(255,179,71,.2);
-  --shadow:rgba(0,0,0,.5);
+:root {
+  --accent:#00e5ff; --accent2:#ff6b6b; --green:#00ffaa;
+  --radius:16px; --radius-sm:8px; --radius-xs:6px;
+  --font-d:'Syne',sans-serif; --font-m:'DM Mono',monospace;
+  --tr:0.22s cubic-bezier(.4,0,.2,1);
 }
-[data-theme="light"] {
-  --bg:#eef0fa; --surface:#fff; --surface2:#e8ebf7; --surface3:#dde2f5;
-  --border:rgba(0,0,0,.08); --text:#1a1d2e; --muted:#6b7191;
-  --accent:#3d5fe0; --accent-glow:rgba(61,95,224,.2);
-  --accent2:#e0397a; --accent2-glow:rgba(224,57,122,.15);
-  --green:#1ab87a; --green-glow:rgba(26,184,122,.2);
-  --warn:#e07830; --warn-glow:rgba(224,120,48,.15);
-  --shadow:rgba(0,0,0,.1);
-}
-[data-theme="oled"] {
-  --bg:#000; --surface:#080808; --surface2:#111; --surface3:#191919;
-  --border:rgba(255,255,255,.06); --text:#f0f0f0; --muted:#505870;
-  --accent:#4dffb0; --accent-glow:rgba(77,255,176,.25);
-  --accent2:#ff5f6d; --accent2-glow:rgba(255,95,109,.18);
-  --green:#4dffb0; --green-glow:rgba(77,255,176,.25);
-  --warn:#ffd166; --warn-glow:rgba(255,209,102,.2);
-  --shadow:rgba(0,0,0,.9);
-}
+[data-theme="dark"] { --bg:#0d0f14; --surface:#161a23; --surface2:#1e2330; --border:#252c3d; --text:#e8ecf4; --muted:#6b7594; --shadow:0 4px 32px rgba(0,0,0,.55); --glow:0 0 24px rgba(0,229,255,.13); }
+[data-theme="light"] { --bg:#eef1f8; --surface:#ffffff; --surface2:#e4e9f5; --border:#cdd4e8; --text:#0d0f1c; --muted:#5a6387; --shadow:0 4px 24px rgba(0,0,0,.09); --glow:0 0 24px rgba(0,229,255,.07); }
+[data-theme="oled"] { --bg:#000; --surface:#090909; --surface2:#111; --border:#1c1c1c; --text:#fff; --muted:#666; --shadow:0 4px 32px rgba(0,0,0,.95); --glow:0 0 28px rgba(0,229,255,.2); }
 
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{font-size:16px;-webkit-tap-highlight-color:transparent;}
-body{
-  font-family:'Syne',sans-serif;
-  background:var(--bg); color:var(--text);
-  min-height:100dvh; display:flex; flex-direction:column; align-items:center;
-  transition:background .35s,color .35s;
-  position:relative; overflow-x:hidden;
-}
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:
-    radial-gradient(ellipse 55% 40% at 15% 5%, var(--accent-glow), transparent),
-    radial-gradient(ellipse 45% 35% at 85% 90%, var(--accent2-glow), transparent);
-  transition:background .35s;
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:var(--font-d);background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--tr),color var(--tr);-webkit-font-smoothing:antialiased}
 
-/* ── LAYOUT ── */
-.wrapper{
-  position:relative;z-index:1;
-  width:100%;max-width:480px;
-  padding:20px 14px 0;
-  flex:1;display:flex;flex-direction:column;gap:14px;
-}
+/* HEADER */
+header{position:sticky;top:0;z-index:200;background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;backdrop-filter:blur(14px);box-shadow:var(--shadow);transition:background var(--tr),border-color var(--tr)}
+.logo{display:flex;align-items:center;gap:9px;font-size:1.1rem;font-weight:800;letter-spacing:-.02em;color:var(--text);white-space:nowrap;flex-shrink:0}
+.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),#007aff);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.9rem;box-shadow:var(--glow);flex-shrink:0}
+.logo span{color:var(--accent)}
+.theme-sw{display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:3px;flex-shrink:0}
+.t-btn{cursor:pointer;border:none;background:transparent;color:var(--muted);font-size:.65rem;font-family:var(--font-m);font-weight:500;padding:4px 9px;border-radius:100px;letter-spacing:.04em;transition:all var(--tr);white-space:nowrap}
+.t-btn.active{background:var(--accent);color:#000;font-weight:600;box-shadow:0 0 10px rgba(0,229,255,.35)}
+.t-btn:not(.active):hover{color:var(--text)}
 
-/* ── HEADER ── */
-header{display:flex;align-items:center;justify-content:space-between;}
-.brand-title{font-size:1.05rem;font-weight:800;letter-spacing:.02em;}
-.brand-sub{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;}
-.theme-group{display:flex;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:3px;}
-.theme-btn{
-  cursor:pointer;background:transparent;border:none;border-radius:999px;
-  width:32px;height:32px;display:flex;align-items:center;justify-content:center;
-  font-size:.95rem;color:var(--muted);transition:all .2s;
-}
-.theme-btn:active{transform:scale(.88);}
-.theme-btn.active{background:var(--accent);color:#fff;box-shadow:0 0 10px var(--accent-glow);}
+/* MODE TABS */
+.mode-tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.mode-tab{padding:12px 8px;border:1px solid var(--border);background:var(--surface2);border-radius:var(--radius-sm);cursor:pointer;text-align:center;transition:all var(--tr);font-family:var(--font-d);font-size:.82rem;font-weight:600;color:var(--muted)}
+.mode-tab .tab-icon{font-size:1.4rem;display:block;margin-bottom:5px}
+.mode-tab.active{border-color:var(--accent);color:var(--accent);background:var(--surface);box-shadow:var(--glow)}
+.mode-tab:not(.active):hover{border-color:var(--muted);color:var(--text)}
 
-/* ── BIG TOTAL ── */
-.total-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:22px;
-  padding:20px 18px;box-shadow:0 6px 32px var(--shadow);
-  display:flex;flex-direction:column;gap:10px;
-  transition:background .35s,border-color .35s;
-}
-.total-top{display:flex;align-items:center;justify-content:space-between;}
-.total-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
-.scan-count-badge{
-  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
-  padding:4px 10px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--accent);
-}
-.total-display{
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  padding:8px 0;
-}
-.total-num{
-  font-family:'JetBrains Mono',monospace;font-size:4rem;font-weight:700;
-  color:var(--accent);text-shadow:0 0 30px var(--accent-glow);
-  line-height:1;transition:all .2s;
-}
-.total-unit{
-  font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--muted);
-  align-self:flex-end;padding-bottom:8px;
-}
-.stats-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
-.stat-pill{
-  background:var(--surface2);border-radius:10px;padding:7px 6px;text-align:center;
-  transition:background .35s;
-}
-.stat-pill .sv{font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:700;color:var(--green);display:block;}
-.stat-pill .sl{font-family:'JetBrains Mono',monospace;font-size:.52rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
-.btn-reset-total{
-  cursor:pointer;background:transparent;border:1px dashed var(--border);border-radius:10px;
-  padding:9px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);
-  letter-spacing:.08em;width:100%;transition:all .2s;
-}
-.btn-reset-total:active{transform:scale(.97);}
+/* PANEL */
+.panel{display:none}
+.panel.active{display:flex;flex-direction:column;gap:18px}
 
-/* ── SCAN ZONE ── */
-.scan-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:22px;
-  padding:18px;box-shadow:0 4px 24px var(--shadow);
-  display:flex;flex-direction:column;gap:12px;
-  transition:background .35s,border-color .35s;
-}
-.scan-title{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+/* MAIN */
+main{flex:1;padding:20px 14px 36px;max-width:780px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 
-/* Upload / Camera area */
-.drop-zone{
-  border:2px dashed var(--border);border-radius:16px;
-  min-height:180px;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:10px;
-  cursor:pointer;transition:all .25s;position:relative;overflow:hidden;
-  background:var(--surface2);
-}
-.drop-zone.dragover{border-color:var(--accent);background:var(--surface3);box-shadow:0 0 0 4px var(--accent-glow);}
-.drop-zone img.preview{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px;
-  opacity:.85;
-}
-.drop-overlay{
-  position:relative;z-index:1;display:flex;flex-direction:column;
-  align-items:center;gap:8px;pointer-events:none;
-}
-.drop-icon{font-size:2.2rem;filter:drop-shadow(0 0 8px var(--accent-glow));}
-.drop-text{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);text-align:center;line-height:1.5;}
-.drop-text strong{color:var(--accent);font-weight:600;}
-input#fileInput{display:none;}
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);transition:background var(--tr),border-color var(--tr)}
 
-/* Camera / Upload buttons */
-.capture-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.btn-capture{
-  cursor:pointer;border:none;border-radius:12px;padding:13px;
-  font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  transition:all .18s;
-}
-.btn-capture:active{transform:scale(.95);}
-.btn-cam{background:var(--accent);color:#fff;box-shadow:0 4px 16px var(--accent-glow);}
-.btn-upload{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+/* DROP ZONE */
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:44px 20px;text-align:center;cursor:pointer;background:var(--surface);transition:all var(--tr);position:relative;overflow:hidden}
+.drop-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,229,255,.06) 0%,transparent 70%);pointer-events:none}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:var(--surface2);box-shadow:var(--glow)}
+.drop-icon{font-size:2.8rem;margin-bottom:12px;display:block;filter:drop-shadow(0 0 12px rgba(0,229,255,.3));animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.drop-title{font-size:1rem;font-weight:700;margin-bottom:5px;letter-spacing:-.01em}
+.drop-sub{font-size:.8rem;color:var(--muted);font-family:var(--font-m)}
+.drop-btn{display:inline-flex;align-items:center;gap:7px;margin-top:16px;background:linear-gradient(135deg,var(--accent),#007aff);color:#000;border:none;border-radius:100px;padding:10px 22px;font-size:.83rem;font-weight:700;font-family:var(--font-d);cursor:pointer;transition:all var(--tr);box-shadow:0 4px 18px rgba(0,229,255,.3)}
+.drop-btn:hover{transform:translateY(-2px);box-shadow:0 6px 26px rgba(0,229,255,.45)}
+input[type=file]{display:none}
 
-/* Product name input */
-.field-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:600;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:5px;}
-input.product-input{
-  width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;
-  padding:10px 13px;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:600;
-  color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s,background .35s;
-}
-input.product-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+/* FILE BAR */
+.file-bar{display:none;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px}
+.file-bar.visible{display:flex}
+.f-icon{font-size:1.4rem;flex-shrink:0}
+.f-details{flex:1;min-width:0}
+.f-name{font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.f-meta{font-size:.7rem;color:var(--muted);font-family:var(--font-m);margin-top:2px}
+.btn-clear{background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:var(--radius-xs);padding:5px 9px;font-size:.75rem;cursor:pointer;font-family:var(--font-m);transition:all var(--tr);flex-shrink:0}
+.btn-clear:hover{border-color:var(--accent2);color:var(--accent2)}
 
-/* Analyse button */
-.btn-analyse{
-  cursor:pointer;border:none;border-radius:14px;padding:15px;
-  background:var(--green);color:#000;
-  font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;
-  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
-  box-shadow:0 4px 20px var(--green-glow);transition:all .2s;
-}
-.btn-analyse:active{transform:scale(.97);}
-.btn-analyse:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+/* CAMERA */
+.cam-outer{position:relative;background:#000;border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3;width:100%;border:2px solid var(--border);transition:border-color var(--tr)}
+.cam-outer.live{border-color:var(--accent);box-shadow:var(--glow)}
+#camVideo{width:100%;height:100%;object-fit:cover;display:none}
+.doc-frame{position:absolute;top:8%;left:6%;right:6%;bottom:8%;border:2px solid rgba(0,229,255,.55);border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,.35)}
+.corner{position:absolute;width:22px;height:22px;border-color:var(--accent);border-style:solid}
+.corner.tl{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.corner.tr{top:-2px;right:-2px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.corner.bl{bottom:-2px;left:-2px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.corner.br{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 10px var(--accent);animation:scanline 2s ease-in-out infinite;display:none}
+.cam-outer.live .scan-line{display:block}
+@keyframes scanline{0%{top:10%;opacity:0}5%{opacity:1}95%{opacity:1}100%{top:90%;opacity:0}}
+.cam-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);text-align:center;padding:20px;gap:10px}
+.cam-placeholder .ph-icon{font-size:2.8rem;opacity:.45}
+.cam-placeholder p{font-size:.82rem;font-family:var(--font-m)}
+.cam-controls{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
+.cam-btn{flex:1;min-width:90px;padding:10px 12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:var(--radius-sm);font-size:.8rem;font-weight:600;font-family:var(--font-d);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all var(--tr)}
+.cam-btn:hover{border-color:var(--accent);color:var(--accent);box-shadow:var(--glow)}
+.cam-btn.primary{background:linear-gradient(135deg,var(--accent),#007aff);border-color:transparent;color:#000;font-weight:700;box-shadow:0 4px 18px rgba(0,229,255,.3)}
+.cam-btn.primary:hover{box-shadow:0 6px 26px rgba(0,229,255,.45);transform:translateY(-1px)}
+.cam-btn.danger{border-color:var(--accent2);color:var(--accent2)}
+.cam-btn.danger:hover{background:rgba(255,107,107,.1)}
+.cam-btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.captured-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:12px}
+.cap-thumb{position:relative;border:1px solid var(--border);border-radius:var(--radius-xs);overflow:hidden;cursor:pointer;transition:all var(--tr);background:var(--surface2)}
+.cap-thumb img{width:100%;display:block;aspect-ratio:4/3;object-fit:cover}
+.cap-thumb:hover{border-color:var(--accent);box-shadow:var(--glow)}
+.cap-del{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.75);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--tr)}
+.cap-del:hover{background:var(--accent2)}
+.cap-num{position:absolute;bottom:4px;left:6px;font-size:.6rem;font-family:var(--font-m);background:rgba(0,0,0,.65);color:#fff;padding:1px 5px;border-radius:3px;backdrop-filter:blur(4px)}
 
-/* ── RESULT PANEL ── */
-.result-panel{
-  background:var(--surface2);border:1px solid var(--border);border-radius:14px;
-  padding:14px;display:none;flex-direction:column;gap:10px;
-  transition:background .35s;
-}
-.result-panel.show{display:flex;}
-.result-top{display:flex;align-items:center;justify-content:space-between;}
-.result-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
-.result-count{
-  font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;
-  color:var(--green);text-shadow:0 0 16px var(--green-glow);
-}
-.result-desc{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);line-height:1.6;}
-.result-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.btn-add-total{
-  cursor:pointer;border:none;border-radius:10px;padding:11px;
-  background:var(--accent);color:#fff;
-  font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;
-  box-shadow:0 3px 12px var(--accent-glow);transition:all .18s;
-  display:flex;align-items:center;justify-content:center;gap:5px;
-}
-.btn-add-total:active{transform:scale(.95);}
-.btn-discard{
-  cursor:pointer;border:1px solid var(--border);border-radius:10px;padding:11px;
-  background:transparent;color:var(--muted);
-  font-family:'Syne',sans-serif;font-weight:600;font-size:.85rem;
-  transition:all .18s;
-}
-.result-edit{display:flex;align-items:center;gap:8px;}
-.result-edit label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;white-space:nowrap;}
-input#manualCount{
-  flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  padding:7px 10px;font-family:'JetBrains Mono',monospace;font-size:.9rem;
-  font-weight:700;color:var(--text);outline:none;text-align:center;
-  transition:border-color .2s;
-}
-input#manualCount:focus{border-color:var(--accent);}
+/* CONTROLS */
+.controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ctrl label{display:block;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px;font-family:var(--font-m)}
+select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:8px 28px 8px 10px;font-size:.82rem;font-family:var(--font-d);cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%236b7594' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color var(--tr)}
+select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.12)}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--border);border-radius:4px;outline:none;cursor:pointer;margin-top:10px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;background:var(--accent);border-radius:50%;border:2px solid var(--bg);box-shadow:0 0 8px rgba(0,229,255,.4);cursor:pointer;transition:transform var(--tr)}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+.range-val{font-size:.72rem;color:var(--accent);font-family:var(--font-m);font-weight:500;float:right;margin-top:-16px}
 
-/* ── HISTORY LOG ── */
-.log-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:22px;
-  padding:16px 18px;transition:background .35s,border-color .35s;
-}
-.log-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.log-title{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
-.btn-clear-log{cursor:pointer;background:none;border:none;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--accent2);letter-spacing:.06em;}
-.log-list{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.log-item{
-  display:grid;grid-template-columns:auto 1fr auto auto;
-  align-items:center;gap:8px;
-  padding:8px 10px;background:var(--surface2);border-radius:10px;
-  animation:slideIn .22s ease;transition:background .35s;
-}
-@keyframes slideIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
-.log-thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;border:1px solid var(--border);flex-shrink:0;}
-.log-thumb-placeholder{width:36px;height:36px;border-radius:8px;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
-.log-name{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.log-time{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--muted);}
-.log-pieces{font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:700;color:var(--accent);}
-.log-empty{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);text-align:center;padding:18px 0;opacity:.5;}
+/* SECTION TITLE */
+.stitle{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--font-m);margin-bottom:13px;display:flex;align-items:center;gap:8px}
+.stitle::after{content:'';flex:1;height:1px;background:var(--border)}
 
-/* ── LOADING ── */
-.loading-overlay{
-  display:none;position:absolute;inset:0;border-radius:22px;
-  background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
-  align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:10;
-}
-.loading-overlay.show{display:flex;}
-.spinner{
-  width:36px;height:36px;border:3px solid var(--border);
-  border-top-color:var(--green);border-radius:50%;
-  animation:spin .8s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg);}}
-.loading-text{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--green);letter-spacing:.1em;}
+/* CHECKBOXES */
+.opts-row{display:flex;flex-wrap:wrap;gap:8px}
+.chk-lbl{display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer;user-select:none;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;transition:all var(--tr)}
+.chk-lbl:hover{border-color:var(--accent)}
+.chk-lbl input{display:none}
+.chk-box{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.6rem;transition:all var(--tr);flex-shrink:0}
+.chk-lbl input:checked ~ .chk-box{background:var(--accent);border-color:var(--accent);color:#000}
 
-/* ── FOOTER ── */
-footer{
-  position:relative;z-index:1;width:100%;
-  padding:20px 14px 18px;
-  display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;
-}
-.footer-copy{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);letter-spacing:.05em;opacity:.7;}
-.footer-rights{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--muted);opacity:.4;letter-spacing:.08em;}
+/* SCAN BTN */
+.scan-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent) 0%,#007aff 100%);color:#000;border:none;border-radius:var(--radius);font-size:.95rem;font-weight:800;font-family:var(--font-d);cursor:pointer;transition:all var(--tr);box-shadow:0 4px 22px rgba(0,229,255,.35),var(--glow);display:flex;align-items:center;justify-content:center;gap:9px;position:relative;overflow:hidden}
+.scan-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,.12));pointer-events:none}
+.scan-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,229,255,.5)}
+.scan-btn:active:not(:disabled){transform:translateY(1px)}
+.scan-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
-/* ── TOAST ── */
-.toast{
-  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
-  background:var(--green);color:#000;
-  font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;
-  padding:10px 20px;border-radius:999px;
-  opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap;
-  box-shadow:0 4px 20px var(--green-glow);
-}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+/* PROGRESS */
+.prog-wrap{display:none}
+.prog-wrap.visible{display:block}
+.prog-track{height:6px;background:var(--surface2);border-radius:6px;overflow:hidden;margin-bottom:7px;border:1px solid var(--border)}
+.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#007aff);border-radius:6px;transition:width .3s ease;box-shadow:0 0 10px rgba(0,229,255,.5)}
+.prog-lbl{font-size:.72rem;color:var(--muted);font-family:var(--font-m);display:flex;justify-content:space-between}
 
-@media(min-width:420px){
-  .total-num{font-size:5rem;}
-}
+/* OCR */
+.ocr-wrap{display:none;margin-top:16px}
+.ocr-wrap.visible{display:block}
+.ocr-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+.ocr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,255,170,.12);border:1px solid var(--green);color:var(--green);padding:4px 12px;border-radius:100px;font-size:.7rem;font-family:var(--font-m);font-weight:600}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.ocr-text{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:.82rem;font-family:var(--font-m);line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto}
+.ocr-conf{font-size:.7rem;color:var(--muted);font-family:var(--font-m)}
+.ocr-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.ocr-act-btn{padding:8px 14px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-xs);font-size:.78rem;font-weight:600;font-family:var(--font-d);cursor:pointer;transition:all var(--tr);display:flex;align-items:center;gap:6px}
+.ocr-act-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* RESULTS */
+.results-section{display:none}
+.results-section.visible{display:flex;flex-direction:column;gap:18px}
+.pages-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:10px}
+.page-thumb{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-xs);overflow:hidden;cursor:pointer;transition:all var(--tr);position:relative}
+.page-thumb:hover{border-color:var(--accent);box-shadow:var(--glow);transform:scale(1.02)}
+.page-thumb.selected{border-color:var(--accent);box-shadow:var(--glow)}
+.page-thumb canvas{width:100%;display:block}
+.page-num{position:absolute;bottom:5px;right:6px;font-size:.62rem;font-family:var(--font-m);background:rgba(0,0,0,.65);color:#fff;padding:2px 5px;border-radius:3px;backdrop-filter:blur(4px)}
+.preview-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:10px;display:flex;align-items:center;justify-content:center;min-height:240px;position:relative}
+.preview-wrap canvas{max-width:100%;height:auto;display:block}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px;text-align:center}
+.stat-val{font-size:1.1rem;font-weight:800;color:var(--accent);font-family:var(--font-m)}
+.stat-lbl{font-size:.65rem;color:var(--muted);font-family:var(--font-m);margin-top:2px}
+.actions-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+.action-btn{flex:1;min-width:110px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);font-size:.8rem;font-weight:600;font-family:var(--font-d);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all var(--tr)}
+.action-btn:hover{border-color:var(--accent);color:var(--accent);box-shadow:var(--glow)}
+.action-btn.primary{background:linear-gradient(135deg,var(--accent),#007aff);border-color:transparent;color:#000;font-weight:700;box-shadow:0 4px 18px rgba(0,229,255,.3)}
+.action-btn.primary:hover{box-shadow:0 6px 26px rgba(0,229,255,.5);transform:translateY(-1px)}
+.meta-table{width:100%;border-collapse:collapse}
+.meta-table td{padding:7px 0;font-size:.78rem;border-bottom:1px solid var(--border);vertical-align:top}
+.meta-table td:first-child{color:var(--muted);font-family:var(--font-m);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;padding-right:14px;white-space:nowrap;width:36%}
+.meta-table tr:last-child td{border-bottom:none}
+.scanning-overlay{display:none;position:absolute;inset:0;background:linear-gradient(to bottom,transparent 48%,rgba(0,229,255,.08) 50%,transparent 52%);pointer-events:none}
+.scanning-overlay.active{display:block;animation:scanline 1.5s ease-in-out infinite}
+
+/* TOAST */
+.toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--surface);border:1px solid var(--accent);color:var(--text);padding:9px 18px;border-radius:100px;font-size:.78rem;font-family:var(--font-m);box-shadow:var(--glow),var(--shadow);opacity:0;transition:all .3s ease;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* FOOTER */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:16px 20px;text-align:center;transition:background var(--tr),border-color var(--tr)}
+.footer-copy{font-size:.72rem;color:var(--muted);font-family:var(--font-m);letter-spacing:.03em}
+.footer-copy strong{color:var(--text);font-weight:600}
+.footer-copy .acc{color:var(--accent)}
+
+@media(min-width:480px){main{padding:24px 20px 40px}.controls-grid{grid-template-columns:1fr 1fr 1fr}}
+@media(min-width:640px){header{padding:0 28px;height:62px}main{padding:28px 24px 48px;gap:22px}}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px}::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 </style>
 </head>
 <body>
 
-<div class="wrapper">
+<header>
+  <div class="logo">
+    <div class="logo-icon">⬡</div>
+    Scan<span>Flow</span>
+  </div>
+  <div class="theme-sw">
+    <button class="t-btn" data-theme="light">☀ Light</button>
+    <button class="t-btn active" data-theme="dark">◑ Dark</button>
+    <button class="t-btn" data-theme="oled">● OLED</button>
+  </div>
+</header>
 
-  <!-- HEADER -->
-  <header>
-    <div>
-      <div class="brand-title">AI Product Counter</div>
-      <div class="brand-sub">Vision · Inventory</div>
-    </div>
-    <div class="theme-group">
-      <button class="theme-btn" data-theme="light" onclick="setTheme('light')" aria-label="Light">☀️</button>
-      <button class="theme-btn active" data-theme="dark" onclick="setTheme('dark')" aria-label="Dark">🌙</button>
-      <button class="theme-btn" data-theme="oled" onclick="setTheme('oled')" aria-label="OLED">⬛</button>
-    </div>
-  </header>
+<main>
 
-  <!-- GRAND TOTAL -->
-  <div class="total-card">
-    <div class="total-top">
-      <span class="total-label">Grand Total</span>
-      <span class="scan-count-badge" id="scanCountBadge">0 scans</span>
-    </div>
-    <div class="total-display">
-      <div class="total-num" id="grandTotal">0</div>
-      <div class="total-unit">pcs</div>
-    </div>
-    <div class="stats-mini">
-      <div class="stat-pill"><span class="sv" id="statScans">0</span><span class="sl">Scans</span></div>
-      <div class="stat-pill"><span class="sv" id="statAdded">0</span><span class="sl">Added</span></div>
-      <div class="stat-pill"><span class="sv" id="statPeak">0</span><span class="sl">Peak Scan</span></div>
-    </div>
-    <button class="btn-reset-total" onclick="resetAll()">↺ Reset Everything</button>
+  <div class="mode-tabs">
+    <div class="mode-tab active" data-panel="pdf"><span class="tab-icon">📄</span>PDF File</div>
+    <div class="mode-tab" data-panel="camera"><span class="tab-icon">📷</span>Live Camera</div>
+    <div class="mode-tab" data-panel="image"><span class="tab-icon">🖼</span>Image File</div>
   </div>
 
-  <!-- SCAN CARD -->
-  <div class="scan-card" style="position:relative;">
-    <div class="loading-overlay" id="loadingOverlay">
-      <div class="spinner"></div>
-      <div class="loading-text">AI counting pieces…</div>
+  <!-- ══ PDF PANEL ══ -->
+  <div class="panel active" id="panel-pdf">
+
+    <div class="drop-zone" id="dropZone" role="button" tabindex="0">
+      <div class="scanning-overlay" id="scanOverlay"></div>
+      <span class="drop-icon" id="dropIcon">📄</span>
+      <div class="drop-title">Drop your PDF here</div>
+      <div class="drop-sub">supports PDF documents</div>
+      <button class="drop-btn" id="browseBtn" type="button">📂 Choose PDF</button>
+      <input type="file" id="fileInput" accept=".pdf,application/pdf">
     </div>
 
-    <div class="scan-title">📸 Scan Product</div>
-
-    <label class="field-label" for="productName">Product / Batch Label</label>
-    <input class="product-input" id="productName" type="text" placeholder="e.g. Bolt M6 — Box A" value=""/>
-
-    <!-- DROP ZONE -->
-    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-      <img class="preview" id="previewImg" src="" alt="" style="display:none;"/>
-      <div class="drop-overlay" id="dropOverlay">
-        <div class="drop-icon">🖼️</div>
-        <div class="drop-text"><strong>Tap to choose image</strong><br/>or drag & drop here<br/><span style="font-size:.6rem;opacity:.6;">JPG · PNG · WEBP</span></div>
+    <div class="file-bar" id="fileBar">
+      <div class="f-icon">📑</div>
+      <div class="f-details">
+        <div class="f-name" id="fileName">—</div>
+        <div class="f-meta" id="fileMeta">—</div>
       </div>
-    </div>
-    <input type="file" id="fileInput" accept="image/*" capture="environment"/>
-
-    <div class="capture-row">
-      <button class="btn-capture btn-cam" onclick="openCamera()">📷 Camera</button>
-      <button class="btn-capture btn-upload" onclick="document.getElementById('fileInput').click()">🗂 Gallery</button>
+      <button class="btn-clear" id="clearBtn">✕ Clear</button>
     </div>
 
-    <button class="btn-analyse" id="btnAnalyse" onclick="analyseImage()" disabled>
-      🔍 Count Pieces with AI
-    </button>
-
-    <!-- RESULT PANEL -->
-    <div class="result-panel" id="resultPanel">
-      <div class="result-top">
-        <span class="result-label">AI Detected</span>
-        <span class="result-count" id="resultCount">0</span>
+    <div class="card">
+      <div class="stitle">Scan Options</div>
+      <div class="controls-grid">
+        <div class="ctrl"><label>Quality</label>
+          <select id="qualitySelect">
+            <option value="0.7">Draft</option><option value="1.5" selected>Standard</option>
+            <option value="2.5">High</option><option value="3.5">Ultra</option>
+          </select>
+        </div>
+        <div class="ctrl"><label>Color Mode</label>
+          <select id="colorSelect">
+            <option value="color">Full Color</option><option value="grayscale">Grayscale</option><option value="bw">B&amp;W</option>
+          </select>
+        </div>
+        <div class="ctrl"><label>Contrast <span class="range-val" id="contrastVal">100%</span></label>
+          <input type="range" id="contrastRange" min="50" max="200" value="100">
+        </div>
       </div>
-      <div class="result-desc" id="resultDesc">—</div>
-      <div class="result-edit">
-        <label for="manualCount">Adjust:</label>
-        <input type="number" id="manualCount" min="0" value="0"/>
-      </div>
-      <div class="result-actions">
-        <button class="btn-add-total" onclick="addToTotal()">➕ Add to Total</button>
-        <button class="btn-discard" onclick="discardResult()">✕ Discard</button>
+      <div style="margin-top:14px">
+        <div class="stitle" style="margin-bottom:9px">Enhancements</div>
+        <div class="opts-row">
+          <label class="chk-lbl"><input type="checkbox" id="chkSharpen"><span class="chk-box">✓</span> Sharpen</label>
+          <label class="chk-lbl"><input type="checkbox" id="chkDeskew"><span class="chk-box">✓</span> Deskew</label>
+          <label class="chk-lbl"><input type="checkbox" id="chkBorders" checked><span class="chk-box">✓</span> Borders</label>
+          <label class="chk-lbl"><input type="checkbox" id="chkOCR"><span class="chk-box">✓</span> Run OCR</label>
+        </div>
       </div>
     </div>
+
+    <button class="scan-btn" id="scanBtn" disabled>⬡ Scan Document</button>
+
+    <div class="prog-wrap card" id="progressWrap">
+      <div class="stitle">Processing</div>
+      <div class="prog-track"><div class="prog-fill" id="progressFill"></div></div>
+      <div class="prog-lbl"><span id="progressText">Initializing…</span><span id="progressPct">0%</span></div>
+    </div>
+
+    <div class="results-section" id="resultsSection">
+      <div class="card">
+        <div class="stitle">Document Info</div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val" id="statPages">—</div><div class="stat-lbl">Pages</div></div>
+          <div class="stat-box"><div class="stat-val" id="statSize">—</div><div class="stat-lbl">File Size</div></div>
+          <div class="stat-box"><div class="stat-val" id="statDPI">—</div><div class="stat-lbl">Scan DPI</div></div>
+        </div>
+        <table class="meta-table" style="margin-top:12px"><tbody id="metaBody"></tbody></table>
+      </div>
+      <div class="card">
+        <div class="stitle">Pages</div>
+        <div class="pages-grid" id="pagesGrid"></div>
+      </div>
+      <div class="card">
+        <div class="stitle">Preview</div>
+        <div class="preview-wrap" id="previewWrap"><canvas id="previewCanvas"></canvas></div>
+        <div class="ocr-wrap" id="pdfOcrWrap">
+          <div class="ocr-header">
+            <div class="ocr-badge"><span class="dot"></span> OCR Result</div>
+            <span class="ocr-conf" id="pdfOcrConf"></span>
+          </div>
+          <div class="ocr-text" id="pdfOcrText"></div>
+          <div class="ocr-actions">
+            <button class="ocr-act-btn" id="pdfOcrCopy">📋 Copy Text</button>
+            <button class="ocr-act-btn" id="pdfOcrTxt">⬇ Save .txt</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="stitle">Export</div>
+        <div class="actions-row">
+          <button class="action-btn primary" id="btnDownload">⬇ Download</button>
+          <button class="action-btn" id="btnCopyMeta">📋 Copy Info</button>
+          <button class="action-btn" id="btnRescan">↺ Re-scan</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- HISTORY LOG -->
-  <div class="log-card">
-    <div class="log-header">
-      <span class="log-title">📋 Scan History</span>
-      <button class="btn-clear-log" onclick="clearLog()">Clear</button>
+  <!-- ══ CAMERA PANEL ══ -->
+  <div class="panel" id="panel-camera">
+
+    <div class="card">
+      <div class="stitle">Live Camera Scan</div>
+      <div class="cam-outer" id="camOuter">
+        <video id="camVideo" autoplay playsinline muted></video>
+        <div style="position:absolute;inset:0;pointer-events:none">
+          <div class="doc-frame">
+            <div class="corner tl"></div><div class="corner tr"></div>
+            <div class="corner bl"></div><div class="corner br"></div>
+          </div>
+        </div>
+        <div class="scan-line"></div>
+        <div class="cam-placeholder" id="camPlaceholder">
+          <div class="ph-icon">📷</div>
+          <p>Camera preview will appear here.<br>Allow camera access when prompted.</p>
+        </div>
+      </div>
+      <div class="cam-controls">
+        <button class="cam-btn primary" id="btnStartCam">📷 Start Camera</button>
+        <button class="cam-btn" id="btnCapture" disabled>📸 Capture</button>
+        <button class="cam-btn" id="btnFlip" disabled>🔄 Flip</button>
+        <button class="cam-btn danger" id="btnStopCam" disabled>■ Stop</button>
+      </div>
     </div>
-    <div class="log-list" id="logList">
-      <div class="log-empty">No scans yet — take a photo to start</div>
+
+    <div class="card">
+      <div class="stitle">Capture Options</div>
+      <div class="controls-grid">
+        <div class="ctrl"><label>Color Mode</label>
+          <select id="camColorSelect">
+            <option value="color">Full Color</option><option value="grayscale">Grayscale</option><option value="bw">B&amp;W</option>
+          </select>
+        </div>
+        <div class="ctrl"><label>Contrast <span class="range-val" id="camContrastVal">100%</span></label>
+          <input type="range" id="camContrastRange" min="50" max="200" value="100">
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="opts-row">
+          <label class="chk-lbl"><input type="checkbox" id="camChkSharpen"><span class="chk-box">✓</span> Sharpen</label>
+          <label class="chk-lbl"><input type="checkbox" id="camChkOCR" checked><span class="chk-box">✓</span> Auto OCR</label>
+          <label class="chk-lbl"><input type="checkbox" id="camChkAuto"><span class="chk-box">✓</span> Auto (3s)</label>
+        </div>
+      </div>
     </div>
+
+    <div class="card" id="capturedCard" style="display:none">
+      <div class="stitle">Captured Frames</div>
+      <div class="captured-grid" id="capturedGrid"></div>
+      <div class="cam-controls" style="margin-top:12px">
+        <button class="cam-btn primary" id="btnProcessCam">⬡ OCR All Frames</button>
+        <button class="cam-btn" id="btnClearCaps">🗑 Clear All</button>
+      </div>
+    </div>
+
+    <div class="prog-wrap card" id="camProgressWrap">
+      <div class="stitle">OCR Processing</div>
+      <div class="prog-track"><div class="prog-fill" id="camProgressFill"></div></div>
+      <div class="prog-lbl"><span id="camProgressText">Initializing…</span><span id="camProgressPct">0%</span></div>
+    </div>
+
+    <div class="card ocr-wrap" id="camOcrWrap">
+      <div class="ocr-header">
+        <div class="ocr-badge"><span class="dot"></span> OCR Result</div>
+        <span class="ocr-conf" id="camOcrConf"></span>
+      </div>
+      <div class="ocr-text" id="camOcrText"></div>
+      <div class="ocr-actions">
+        <button class="ocr-act-btn" id="camOcrCopy">📋 Copy Text</button>
+        <button class="ocr-act-btn" id="camOcrTxt">⬇ Save .txt</button>
+      </div>
+    </div>
+
   </div>
 
-</div>
+  <!-- ══ IMAGE PANEL ══ -->
+  <div class="panel" id="panel-image">
 
-<!-- FOOTER -->
+    <div class="drop-zone" id="imgDropZone" role="button" tabindex="0">
+      <span class="drop-icon">🖼</span>
+      <div class="drop-title">Drop an image here</div>
+      <div class="drop-sub">JPG · PNG · WEBP · BMP · TIFF</div>
+      <button class="drop-btn" id="imgBrowseBtn" type="button">📂 Choose Image</button>
+      <input type="file" id="imgFileInput" accept="image/*">
+    </div>
+
+    <div class="file-bar" id="imgFileBar">
+      <div class="f-icon">🖼</div>
+      <div class="f-details">
+        <div class="f-name" id="imgFileName">—</div>
+        <div class="f-meta" id="imgFileMeta">—</div>
+      </div>
+      <button class="btn-clear" id="imgClearBtn">✕ Clear</button>
+    </div>
+
+    <div class="card">
+      <div class="stitle">Processing Options</div>
+      <div class="controls-grid">
+        <div class="ctrl"><label>Color Mode</label>
+          <select id="imgColorSelect">
+            <option value="color">Full Color</option><option value="grayscale">Grayscale</option><option value="bw">B&amp;W</option>
+          </select>
+        </div>
+        <div class="ctrl"><label>Contrast <span class="range-val" id="imgContrastVal">100%</span></label>
+          <input type="range" id="imgContrastRange" min="50" max="200" value="100">
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="opts-row">
+          <label class="chk-lbl"><input type="checkbox" id="imgChkSharpen"><span class="chk-box">✓</span> Sharpen</label>
+          <label class="chk-lbl"><input type="checkbox" id="imgChkOCR" checked><span class="chk-box">✓</span> Run OCR</label>
+        </div>
+      </div>
+    </div>
+
+    <button class="scan-btn" id="imgScanBtn" disabled>⬡ Process Image</button>
+
+    <div class="prog-wrap card" id="imgProgressWrap">
+      <div class="stitle">Processing</div>
+      <div class="prog-track"><div class="prog-fill" id="imgProgressFill"></div></div>
+      <div class="prog-lbl"><span id="imgProgressText">Initializing…</span><span id="imgProgressPct">0%</span></div>
+    </div>
+
+    <div class="results-section" id="imgResultsSection">
+      <div class="card">
+        <div class="stitle">Result</div>
+        <div class="preview-wrap" id="imgPreviewWrap"><canvas id="imgCanvas"></canvas></div>
+        <div class="actions-row" style="margin-top:12px">
+          <button class="action-btn primary" id="imgBtnDownload">⬇ Download PNG</button>
+          <button class="action-btn" id="imgBtnReset">↺ Reset</button>
+        </div>
+        <div class="ocr-wrap" id="imgOcrWrap">
+          <div class="ocr-header">
+            <div class="ocr-badge"><span class="dot"></span> OCR Result</div>
+            <span class="ocr-conf" id="imgOcrConf"></span>
+          </div>
+          <div class="ocr-text" id="imgOcrText"></div>
+          <div class="ocr-actions">
+            <button class="ocr-act-btn" id="imgOcrCopy">📋 Copy Text</button>
+            <button class="ocr-act-btn" id="imgOcrTxt">⬇ Save .txt</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
 <footer>
-  <span class="footer-copy">© Manik Roy <span id="footerYear"></span></span>
-  <span class="footer-rights">All Rights Reserved</span>
+  <div class="footer-copy">
+    © <span id="footerYear"></span> <strong>Manik Roy</strong> · <span class="acc">ScanFlow</span> · All Rights Reserved
+  </div>
 </footer>
-
 <div class="toast" id="toast"></div>
 
 <script>
-/* ── STATE ── */
-let grandTotal = 0;
-let totalScans = 0;
-let totalAdded = 0;
-let peakScan   = 0;
-const scanLog  = [];
-let currentImageB64 = null;
-let currentResult   = 0;
+'use strict';
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
 
-/* ── THEME ── */
-function setTheme(t) {
-  document.documentElement.setAttribute('data-theme', t);
-  document.querySelectorAll('.theme-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.theme === t)
-  );
-  localStorage.setItem('mr_ai_theme', t);
+function formatSize(b) {
+  if(b<1024)return b+' B';
+  if(b<1048576)return(b/1024).toFixed(1)+' KB';
+  return(b/1048576).toFixed(2)+' MB';
+}
+function showToast(msg, dur=2800) {
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
+}
+function saveTxt(text, name='ocr-result') {
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));
+  a.download=name+'.txt'; a.click(); URL.revokeObjectURL(a.href);
+}
+function setProgress(fillId, textId, pctId, pct, label) {
+  $(fillId).style.width=pct+'%';
+  $(textId).textContent=label;
+  $(pctId).textContent=pct+'%';
+}
+function applyBW(ctx, w, h) {
+  const img=ctx.getImageData(0,0,w,h), d=img.data;
+  for(let i=0; i<d.length; i+=4) {
+    const v=(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2])>128?255:0;
+    d[i]=d[i+1]=d[i+2]=v;
+  }
+  ctx.putImageData(img,0,0);
+}
+function applySharpen(ctx, w, h) {
+  const img=ctx.getImageData(0,0,w,h), src=new Uint8ClampedArray(img.data), d=img.data;
+  const k=[0,-1,0,-1,5,-1,0,-1,0];
+  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++) {
+    let r=0,g=0,b=0;
+    for(let ky=-1;ky<=1;ky++) for(let kx=-1;kx<=1;kx++) {
+      const pi=((y+ky)*w+(x+kx))*4, ki=(ky+1)*3+(kx+1);
+      r+=src[pi]*k[ki]; g+=src[pi+1]*k[ki]; b+=src[pi+2]*k[ki];
+    }
+    const i=(y*w+x)*4;
+    d[i]=Math.max(0,Math.min(255,r));
+    d[i+1]=Math.max(0,Math.min(255,g));
+    d[i+2]=Math.max(0,Math.min(255,b));
+  }
+  ctx.putImageData(img,0,0);
+}
+function buildFilter(colorMode, contrast) {
+  let f=`contrast(${contrast}%)`;
+  if(colorMode==='grayscale') f+=' grayscale(100%)';
+  return f;
 }
 
-/* ── TOAST ── */
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2600);
+/* ── Tesseract worker (singleton) ──── */
+let _tw=null;
+async function getTW() {
+  if(_tw) return _tw;
+  showToast('⌛ Loading OCR engine…', 4000);
+  _tw = await Tesseract.createWorker('eng', 1, { logger: ()=>{} });
+  return _tw;
+}
+async function runOCR(canvas) {
+  const w=await getTW();
+  const {data}=await w.recognize(canvas);
+  return { text: data.text.trim(), confidence: Math.round(data.confidence) };
 }
 
-/* ── FILE INPUT ── */
-document.getElementById('fileInput').addEventListener('change', function() {
-  if (!this.files[0]) return;
-  loadFile(this.files[0]);
+/* ── Auto year ──── */
+$('footerYear').textContent = new Date().getFullYear();
+
+/* ── Theme ──── */
+document.querySelectorAll('.t-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.documentElement.setAttribute('data-theme', btn.dataset.theme);
+    document.querySelectorAll('.t-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
 });
 
-function openCamera() {
-  const inp = document.getElementById('fileInput');
-  inp.setAttribute('capture', 'environment');
-  inp.click();
-}
-
-function loadFile(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const dataUrl = e.target.result;
-    currentImageB64 = dataUrl.split(',')[1];
-    const img = document.getElementById('previewImg');
-    img.src = dataUrl;
-    img.style.display = 'block';
-    document.getElementById('dropOverlay').style.display = 'none';
-    document.getElementById('btnAnalyse').disabled = false;
-    document.getElementById('resultPanel').classList.remove('show');
-  };
-  reader.readAsDataURL(file);
-}
-
-/* ── DRAG & DROP ── */
-const dz = document.getElementById('dropZone');
-dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
-dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
-dz.addEventListener('drop', e => {
-  e.preventDefault(); dz.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image/')) loadFile(file);
+/* ── Mode tabs ──── */
+document.querySelectorAll('.mode-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    $('panel-'+tab.dataset.panel).classList.add('active');
+    if(tab.dataset.panel!=='camera') stopCamera();
+  });
 });
 
-/* ── AI ANALYSE ── */
-async function analyseImage() {
-  if (!currentImageB64) return;
-  const overlay = document.getElementById('loadingOverlay');
-  overlay.classList.add('show');
-  document.getElementById('btnAnalyse').disabled = true;
-  document.getElementById('resultPanel').classList.remove('show');
+/* ════════ PDF ════════ */
+let pdfFile=null, pdfDoc=null, scannedPages=[];
 
-  const productName = document.getElementById('productName').value.trim() || 'product';
+$('contrastRange').addEventListener('input',function(){ $('contrastVal').textContent=this.value+'%' });
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: 'image/jpeg', data: currentImageB64 }
-            },
-            {
-              type: 'text',
-              text: `You are an expert inventory counting AI. The user is counting: "${productName}".
+const dropZone=$('dropZone'), fileInput=$('fileInput'), browseBtn=$('browseBtn'),
+      scanBtn=$('scanBtn'), fileBar=$('fileBar'), clearBtn=$('clearBtn'), dropIcon=$('dropIcon');
 
-Carefully count ALL individual pieces/items visible in this image.
+browseBtn.addEventListener('click', e=>{ e.stopPropagation(); fileInput.click(); });
+dropZone.addEventListener('click', ()=>fileInput.click());
+dropZone.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' ') fileInput.click(); });
+['dragover','dragenter'].forEach(ev=>dropZone.addEventListener(ev, e=>{ e.preventDefault(); dropZone.classList.add('drag-over'); }));
+['dragleave','dragend'].forEach(ev=>dropZone.addEventListener(ev, ()=>dropZone.classList.remove('drag-over')));
+dropZone.addEventListener('drop', e=>{ e.preventDefault(); dropZone.classList.remove('drag-over'); if(e.dataTransfer.files[0]) loadPdfFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', ()=>{ if(fileInput.files[0]) loadPdfFile(fileInput.files[0]); });
+clearBtn.addEventListener('click', resetPdf);
 
-Respond ONLY with a JSON object (no markdown, no extra text):
-{
-  "count": <integer number of pieces>,
-  "description": "<one sentence: what you see and how you counted>",
-  "confidence": "<high|medium|low>"
-}`
-            }
-          ]
-        }]
-      })
+function loadPdfFile(file) {
+  if(file.type!=='application/pdf'&&!file.name.endsWith('.pdf')){ showToast('⚠ Please upload a PDF'); return; }
+  pdfFile=file;
+  $('fileName').textContent=file.name;
+  $('fileMeta').textContent=`${formatSize(file.size)} · ${new Date(file.lastModified).toLocaleDateString()}`;
+  fileBar.classList.add('visible'); dropIcon.textContent='✅'; scanBtn.disabled=false;
+  scannedPages=[]; $('resultsSection').classList.remove('visible');
+}
+function resetPdf() {
+  pdfFile=null; pdfDoc=null; scannedPages=[]; fileInput.value='';
+  fileBar.classList.remove('visible'); $('resultsSection').classList.remove('visible');
+  $('progressWrap').classList.remove('visible'); dropIcon.textContent='📄'; scanBtn.disabled=true;
+  $('pagesGrid').innerHTML=''; $('pdfOcrWrap').classList.remove('visible');
+}
+
+scanBtn.addEventListener('click', startPdfScan);
+
+async function startPdfScan() {
+  if(!pdfFile) return;
+  scanBtn.disabled=true;
+  $('scanOverlay').classList.add('active');
+  $('progressWrap').classList.add('visible');
+  setProgress('progressFill','progressText','progressPct',5,'Loading PDF…');
+
+  const ab=await pdfFile.arrayBuffer();
+  await window._pdfJsReady;
+  pdfDoc=await pdfjsLib.getDocument({
+    data:ab,
+    cMapUrl:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/cmaps/',
+    cMapPacked:true, useSystemFonts:true, disableFontFace:false,
+  }).promise;
+
+  const total=pdfDoc.numPages;
+  scannedPages=[];
+  setProgress('progressFill','progressText','progressPct',15,`Found ${total} page${total>1?'s':''}…`);
+
+  const scale=parseFloat($('qualitySelect').value);
+  const colorMode=$('colorSelect').value;
+  const contrast=parseInt($('contrastRange').value);
+  const doOCR=$('chkOCR').checked;
+  const doSharpen=$('chkSharpen').checked;
+
+  for(let i=1; i<=total; i++) {
+    const pct=15+Math.round((i/total)*(doOCR?50:75));
+    setProgress('progressFill','progressText','progressPct',pct,`Scanning page ${i}/${total}…`);
+    const page=await pdfDoc.getPage(i);
+    const vp=page.getViewport({scale});
+    const cv=document.createElement('canvas');
+    cv.width=vp.width; cv.height=vp.height;
+    const ctx=cv.getContext('2d');
+    ctx.filter=buildFilter(colorMode, contrast);
+    await page.render({canvasContext:ctx, viewport:vp}).promise;
+    if(colorMode==='bw') applyBW(ctx, cv.width, cv.height);
+    if(doSharpen) applySharpen(ctx, cv.width, cv.height);
+    scannedPages.push({canvas:cv, pageNum:i});
+    await delay(0);
+  }
+
+  setProgress('progressFill','progressText','progressPct',90,'Building results…');
+  const meta=await pdfDoc.getMetadata().catch(()=>({}));
+  renderPdfMeta(meta, total);
+  renderThumbs();
+  renderPdfPreview(0);
+  $('statPages').textContent=total;
+  $('statSize').textContent=formatSize(pdfFile.size);
+  $('statDPI').textContent=Math.round(scale*72);
+
+  if(doOCR && scannedPages.length>0) {
+    showToast('🔍 Running OCR on all pages…', 4000);
+    let allText='', lastConf=0;
+    for(let i=0; i<scannedPages.length; i++) {
+      setProgress('progressFill','progressText','progressPct',
+        90+Math.round((i/scannedPages.length)*8),
+        `OCR page ${i+1}/${scannedPages.length}…`);
+      const {text,confidence}=await runOCR(scannedPages[i].canvas);
+      allText+=(scannedPages.length>1?`--- Page ${i+1} ---\n`:'')+text+'\n\n';
+      lastConf=confidence;
+    }
+    $('pdfOcrText').textContent=allText.trim()||'(no text detected)';
+    $('pdfOcrConf').textContent=`Confidence: ${lastConf}%`;
+    $('pdfOcrWrap').classList.add('visible');
+  }
+
+  setProgress('progressFill','progressText','progressPct',100,'Done!');
+  await delay(400);
+  $('progressWrap').classList.remove('visible');
+  $('scanOverlay').classList.remove('active');
+  $('resultsSection').classList.add('visible');
+  scanBtn.disabled=false;
+  showToast('✅ Scan complete!');
+}
+
+function renderThumbs() {
+  const grid=$('pagesGrid'); grid.innerHTML='';
+  scannedPages.forEach((pg, idx)=>{
+    const wrap=document.createElement('div');
+    wrap.className='page-thumb'+(idx===0?' selected':'');
+    const thumb=document.createElement('canvas');
+    const tw=150, th=Math.round(pg.canvas.height*(tw/pg.canvas.width));
+    thumb.width=tw; thumb.height=th;
+    thumb.getContext('2d').drawImage(pg.canvas,0,0,tw,th);
+    const num=document.createElement('div'); num.className='page-num'; num.textContent=pg.pageNum;
+    wrap.appendChild(thumb); wrap.appendChild(num);
+    wrap.addEventListener('click',()=>{
+      document.querySelectorAll('.page-thumb').forEach(t=>t.classList.remove('selected'));
+      wrap.classList.add('selected'); renderPdfPreview(idx);
     });
-
-    const data = await response.json();
-    let raw = '';
-    data.content.forEach(block => { if (block.type === 'text') raw += block.text; });
-
-    // Strip markdown fences if present
-    raw = raw.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(raw);
-
-    currentResult = Math.max(0, parseInt(parsed.count) || 0);
-    const desc = parsed.description || 'Items counted.';
-    const conf = parsed.confidence || 'medium';
-
-    document.getElementById('resultCount').textContent = currentResult;
-    document.getElementById('manualCount').value = currentResult;
-    document.getElementById('resultDesc').textContent = `${desc} (Confidence: ${conf})`;
-    document.getElementById('resultPanel').classList.add('show');
-
-  } catch (err) {
-    showToast('⚠️ Error — check connection');
-    console.error(err);
-    document.getElementById('btnAnalyse').disabled = false;
-  }
-
-  overlay.classList.remove('show');
+    grid.appendChild(wrap);
+  });
+}
+function renderPdfPreview(idx) {
+  const pg=scannedPages[idx]; if(!pg)return;
+  const cv=$('previewCanvas'), wrap=$('previewWrap');
+  const maxW=wrap.clientWidth||600;
+  const s=Math.min(1,(maxW-24)/pg.canvas.width);
+  cv.width=Math.round(pg.canvas.width*s); cv.height=Math.round(pg.canvas.height*s);
+  cv.getContext('2d').drawImage(pg.canvas,0,0,cv.width,cv.height);
+}
+function renderPdfMeta(meta, pages) {
+  const info=meta?.info||{};
+  $('metaBody').innerHTML=[
+    ['Title',info.Title||'—'],['Author',info.Author||'—'],
+    ['Creator',info.Creator||'—'],['Producer',info.Producer||'—'],
+    ['Pages',pages],['Scanned',new Date().toLocaleString()],
+  ].map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
 }
 
-/* ── Manual count sync ── */
-document.getElementById('manualCount').addEventListener('input', function() {
-  currentResult = Math.max(0, parseInt(this.value) || 0);
-  document.getElementById('resultCount').textContent = currentResult;
+$('btnDownload').addEventListener('click',()=>{
+  if(!scannedPages.length) return;
+  showToast('⬇ Preparing download…');
+  const imgs=scannedPages.map(pg=>pg.canvas.toDataURL('image/jpeg',.92));
+  const html=`<!DOCTYPE html><html><head><style>body{margin:0;background:#fff}img{display:block;width:100%;page-break-after:always}</style></head><body>${imgs.map(s=>`<img src="${s}">`).join('')}</body></html>`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+  a.download=(pdfFile?.name?.replace('.pdf','')||'scan')+'_scanned.html';
+  a.click(); URL.revokeObjectURL(a.href); showToast('✅ Downloaded!');
 });
+$('btnCopyMeta').addEventListener('click',()=>{
+  const rows=[...$('metaBody').querySelectorAll('tr')];
+  navigator.clipboard.writeText(rows.map(r=>`${r.cells[0].textContent}: ${r.cells[1].textContent}`).join('\n')).then(()=>showToast('📋 Copied!'));
+});
+$('btnRescan').addEventListener('click',()=>{ $('resultsSection').classList.remove('visible'); scannedPages=[]; scanBtn.disabled=false; showToast('↺ Ready'); });
+$('pdfOcrCopy').addEventListener('click',()=>navigator.clipboard.writeText($('pdfOcrText').textContent).then(()=>showToast('📋 Copied!')));
+$('pdfOcrTxt').addEventListener('click',()=>saveTxt($('pdfOcrText').textContent,'pdf-ocr'));
 
-/* ── ADD TO TOTAL ── */
-function addToTotal() {
-  const name     = document.getElementById('productName').value.trim() || 'Unknown Product';
-  const pieces   = currentResult;
-  const imgSrc   = document.getElementById('previewImg').src;
-  const now      = new Date();
-  const timeStr  = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+/* ════════ CAMERA ════════ */
+let camStream=null, camFacing='environment', capturedImages=[], autoCapTimer=null;
+const camVideo=$('camVideo'), camOuter=$('camOuter'), camPlaceholder=$('camPlaceholder');
 
-  grandTotal += pieces;
-  totalScans++;
-  totalAdded += pieces;
-  if (pieces > peakScan) peakScan = pieces;
+$('camContrastRange').addEventListener('input',function(){ $('camContrastVal').textContent=this.value+'%' });
 
-  scanLog.unshift({ name, pieces, imgSrc, time: timeStr });
-  if (scanLog.length > 60) scanLog.pop();
-
-  updateTotals();
-  renderLog();
-  discardResult();
-
-  animateTotal();
-  showToast(`✅ +${pieces} pieces added!`);
-}
-
-function animateTotal() {
-  const el = document.getElementById('grandTotal');
-  el.style.transform = 'scale(1.18)';
-  el.style.textShadow = '0 0 40px var(--accent-glow)';
-  setTimeout(() => {
-    el.style.transform = 'scale(1)';
-    el.style.textShadow = '0 0 30px var(--accent-glow)';
-  }, 220);
-}
-
-/* ── DISCARD ── */
-function discardResult() {
-  document.getElementById('resultPanel').classList.remove('show');
-  currentResult = 0;
-  // Reset image area
-  document.getElementById('previewImg').style.display = 'none';
-  document.getElementById('previewImg').src = '';
-  document.getElementById('dropOverlay').style.display = 'flex';
-  document.getElementById('btnAnalyse').disabled = true;
-  document.getElementById('fileInput').value = '';
-  currentImageB64 = null;
-}
-
-/* ── UPDATE UI ── */
-function updateTotals() {
-  document.getElementById('grandTotal').textContent    = grandTotal;
-  document.getElementById('scanCountBadge').textContent = `${totalScans} scan${totalScans !== 1 ? 's' : ''}`;
-  document.getElementById('statScans').textContent      = totalScans;
-  document.getElementById('statAdded').textContent      = totalAdded;
-  document.getElementById('statPeak').textContent       = peakScan;
-}
-
-/* ── LOG ── */
-function renderLog() {
-  const list = document.getElementById('logList');
-  if (!scanLog.length) {
-    list.innerHTML = '<div class="log-empty">No scans yet — take a photo to start</div>';
-    return;
+async function startCamera() {
+  try {
+    if(camStream) stopCamera();
+    camStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:camFacing, width:{ideal:1920}, height:{ideal:1080}}
+    });
+    camVideo.srcObject=camStream;
+    camVideo.style.display='block';
+    camPlaceholder.style.display='none';
+    camOuter.classList.add('live');
+    $('btnCapture').disabled=false; $('btnFlip').disabled=false; $('btnStopCam').disabled=false; $('btnStartCam').disabled=true;
+    showToast('📷 Camera ready');
+    if($('camChkAuto').checked) startAutoCapture();
+  } catch(err) {
+    showToast('⚠ Camera error: '+err.message); console.error(err);
   }
-  list.innerHTML = scanLog.map(e => `
-    <div class="log-item">
-      ${e.imgSrc
-        ? `<img class="log-thumb" src="${e.imgSrc}" alt=""/>`
-        : `<div class="log-thumb-placeholder">📦</div>`}
-      <div>
-        <div class="log-name">${e.name}</div>
-        <div class="log-time">${e.time}</div>
-      </div>
-      <div class="log-pieces">${e.pieces}</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--muted)">pcs</div>
-    </div>`).join('');
+}
+function stopCamera() {
+  if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
+  camVideo.srcObject=null; camVideo.style.display='none';
+  camPlaceholder.style.display='';
+  camOuter.classList.remove('live');
+  $('btnCapture').disabled=true; $('btnFlip').disabled=true; $('btnStopCam').disabled=true; $('btnStartCam').disabled=false;
+  stopAutoCapture();
+}
+function captureFrame() {
+  if(!camStream) return;
+  const cv=document.createElement('canvas');
+  cv.width=camVideo.videoWidth||640; cv.height=camVideo.videoHeight||480;
+  const ctx=cv.getContext('2d');
+  const colorMode=$('camColorSelect').value;
+  const contrast=parseInt($('camContrastRange').value);
+  ctx.filter=buildFilter(colorMode, contrast);
+  ctx.drawImage(camVideo,0,0);
+  if(colorMode==='bw') applyBW(ctx, cv.width, cv.height);
+  if($('camChkSharpen').checked) applySharpen(ctx, cv.width, cv.height);
+  const dataUrl=cv.toDataURL('image/jpeg',.94);
+  capturedImages.push({dataUrl, canvas:cv});
+  renderCapturedGrid();
+  showToast(`📸 Frame ${capturedImages.length} captured`);
+  if($('camChkOCR').checked) runLiveOCR(cv);
+}
+async function runLiveOCR(cv) {
+  $('camOcrText').textContent='⌛ Running OCR…';
+  $('camOcrWrap').classList.add('visible');
+  const {text, confidence}=await runOCR(cv);
+  $('camOcrText').textContent=text||'(no text detected)';
+  $('camOcrConf').textContent=`Confidence: ${confidence}%`;
+}
+function renderCapturedGrid() {
+  const grid=$('capturedGrid'); grid.innerHTML='';
+  $('capturedCard').style.display=capturedImages.length?'block':'none';
+  capturedImages.forEach((img, idx)=>{
+    const wrap=document.createElement('div'); wrap.className='cap-thumb';
+    const im=document.createElement('img'); im.src=img.dataUrl;
+    const num=document.createElement('div'); num.className='cap-num'; num.textContent=`#${idx+1}`;
+    const del=document.createElement('button'); del.className='cap-del'; del.textContent='✕';
+    del.onclick=e=>{ e.stopPropagation(); capturedImages.splice(idx,1); renderCapturedGrid(); };
+    wrap.appendChild(im); wrap.appendChild(num); wrap.appendChild(del);
+    grid.appendChild(wrap);
+  });
+}
+function startAutoCapture() { stopAutoCapture(); autoCapTimer=setInterval(()=>{ if(camStream) captureFrame(); },3000); showToast('⏱ Auto-capture every 3s'); }
+function stopAutoCapture() { if(autoCapTimer){ clearInterval(autoCapTimer); autoCapTimer=null; } }
+
+$('btnStartCam').addEventListener('click', startCamera);
+$('btnStopCam').addEventListener('click', stopCamera);
+$('btnCapture').addEventListener('click', captureFrame);
+$('btnFlip').addEventListener('click', async()=>{ camFacing=camFacing==='environment'?'user':'environment'; await startCamera(); showToast('🔄 Camera flipped'); });
+$('camChkAuto').addEventListener('change',function(){ if(this.checked&&camStream)startAutoCapture(); else stopAutoCapture(); });
+
+$('btnProcessCam').addEventListener('click', async()=>{
+  if(!capturedImages.length){ showToast('⚠ No captured frames'); return; }
+  $('camProgressWrap').classList.add('visible');
+  let allText='', lastConf=0;
+  for(let i=0; i<capturedImages.length; i++) {
+    setProgress('camProgressFill','camProgressText','camProgressPct',
+      Math.round(((i+1)/capturedImages.length)*100), `OCR frame ${i+1}/${capturedImages.length}…`);
+    const {text,confidence}=await runOCR(capturedImages[i].canvas);
+    allText+=(capturedImages.length>1?`--- Frame ${i+1} ---\n`:'')+text+'\n\n';
+    lastConf=confidence;
+  }
+  await delay(300);
+  $('camProgressWrap').classList.remove('visible');
+  $('camOcrText').textContent=allText.trim()||'(no text detected)';
+  $('camOcrConf').textContent=`Confidence: ${lastConf}%`;
+  $('camOcrWrap').classList.add('visible');
+  showToast('✅ OCR complete!');
+});
+$('btnClearCaps').addEventListener('click',()=>{ capturedImages=[]; renderCapturedGrid(); $('camOcrWrap').classList.remove('visible'); showToast('🗑 Cleared'); });
+$('camOcrCopy').addEventListener('click',()=>navigator.clipboard.writeText($('camOcrText').textContent).then(()=>showToast('📋 Copied!')));
+$('camOcrTxt').addEventListener('click',()=>saveTxt($('camOcrText').textContent,'camera-ocr'));
+
+/* ════════ IMAGE PANEL ════════ */
+let imgFile=null, imgProcessedCanvas=null;
+
+$('imgContrastRange').addEventListener('input',function(){ $('imgContrastVal').textContent=this.value+'%' });
+
+const imgDropZone=$('imgDropZone'), imgFileInput=$('imgFileInput'),
+      imgBrowseBtn=$('imgBrowseBtn'), imgScanBtn=$('imgScanBtn'),
+      imgFileBar=$('imgFileBar'), imgClearBtn=$('imgClearBtn');
+
+imgBrowseBtn.addEventListener('click',e=>{ e.stopPropagation(); imgFileInput.click(); });
+imgDropZone.addEventListener('click',()=>imgFileInput.click());
+imgDropZone.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' ') imgFileInput.click(); });
+['dragover','dragenter'].forEach(ev=>imgDropZone.addEventListener(ev,e=>{ e.preventDefault(); imgDropZone.classList.add('drag-over'); }));
+['dragleave','dragend'].forEach(ev=>imgDropZone.addEventListener(ev,()=>imgDropZone.classList.remove('drag-over')));
+imgDropZone.addEventListener('drop',e=>{ e.preventDefault(); imgDropZone.classList.remove('drag-over'); if(e.dataTransfer.files[0]) loadImgFile(e.dataTransfer.files[0]); });
+imgFileInput.addEventListener('change',()=>{ if(imgFileInput.files[0]) loadImgFile(imgFileInput.files[0]); });
+imgClearBtn.addEventListener('click', resetImg);
+
+function loadImgFile(file) {
+  if(!file.type.startsWith('image/')){ showToast('⚠ Please upload an image file'); return; }
+  imgFile=file;
+  $('imgFileName').textContent=file.name;
+  $('imgFileMeta').textContent=`${formatSize(file.size)} · ${file.type}`;
+  imgFileBar.classList.add('visible'); imgScanBtn.disabled=false;
+  $('imgResultsSection').classList.remove('visible');
+  $('imgOcrWrap').classList.remove('visible');
+}
+function resetImg() {
+  imgFile=null; imgFileInput.value=''; imgFileBar.classList.remove('visible');
+  imgScanBtn.disabled=true; $('imgResultsSection').classList.remove('visible'); $('imgOcrWrap').classList.remove('visible');
 }
 
-function clearLog() {
-  scanLog.length = 0;
-  renderLog();
+imgScanBtn.addEventListener('click', processImage);
+
+async function processImage() {
+  if(!imgFile) return;
+  imgScanBtn.disabled=true;
+  $('imgProgressWrap').classList.add('visible');
+  setProgress('imgProgressFill','imgProgressText','imgProgressPct',10,'Loading image…');
+
+  const bitmap=await createImageBitmap(imgFile);
+  const cv=document.createElement('canvas');
+  cv.width=bitmap.width; cv.height=bitmap.height;
+  const ctx=cv.getContext('2d');
+  const colorMode=$('imgColorSelect').value;
+  const contrast=parseInt($('imgContrastRange').value);
+  ctx.filter=buildFilter(colorMode, contrast);
+  ctx.drawImage(bitmap,0,0);
+  if(colorMode==='bw') applyBW(ctx, cv.width, cv.height);
+  if($('imgChkSharpen').checked) applySharpen(ctx, cv.width, cv.height);
+  imgProcessedCanvas=cv;
+
+  setProgress('imgProgressFill','imgProgressText','imgProgressPct',55,'Rendering preview…');
+  const wrap=$('imgPreviewWrap'), previewCv=$('imgCanvas');
+  const maxW=wrap.clientWidth||600;
+  const s=Math.min(1,(maxW-24)/cv.width);
+  previewCv.width=Math.round(cv.width*s); previewCv.height=Math.round(cv.height*s);
+  previewCv.getContext('2d').drawImage(cv,0,0,previewCv.width,previewCv.height);
+
+  if($('imgChkOCR').checked) {
+    setProgress('imgProgressFill','imgProgressText','imgProgressPct',70,'Running OCR…');
+    showToast('🔍 Running OCR…', 4000);
+    const {text,confidence}=await runOCR(cv);
+    $('imgOcrText').textContent=text||'(no text detected)';
+    $('imgOcrConf').textContent=`Confidence: ${confidence}%`;
+    $('imgOcrWrap').classList.add('visible');
+  }
+
+  setProgress('imgProgressFill','imgProgressText','imgProgressPct',100,'Done!');
+  await delay(400);
+  $('imgProgressWrap').classList.remove('visible');
+  $('imgResultsSection').classList.add('visible');
+  imgScanBtn.disabled=false;
+  showToast('✅ Image processed!');
 }
 
-/* ── RESET ALL ── */
-function resetAll() {
-  grandTotal = 0; totalScans = 0; totalAdded = 0; peakScan = 0;
-  scanLog.length = 0;
-  updateTotals();
-  renderLog();
-  discardResult();
-  showToast('↺ Counter reset');
-}
-
-/* ── FOOTER YEAR ── */
-document.getElementById('footerYear').textContent = new Date().getFullYear();
-
-/* ── INIT ── */
-const saved = localStorage.getItem('mr_ai_theme');
-if (saved) setTheme(saved); else setTheme('dark');
+$('imgBtnDownload').addEventListener('click',()=>{
+  if(!imgProcessedCanvas) return;
+  const a=document.createElement('a');
+  a.href=imgProcessedCanvas.toDataURL('image/png');
+  a.download=(imgFile?.name?.replace(/\.[^.]+$/,'')||'processed')+'_scanned.png';
+  a.click(); showToast('✅ Downloaded!');
+});
+$('imgBtnReset').addEventListener('click',()=>{ $('imgResultsSection').classList.remove('visible'); imgScanBtn.disabled=false; showToast('↺ Ready'); });
+$('imgOcrCopy').addEventListener('click',()=>navigator.clipboard.writeText($('imgOcrText').textContent).then(()=>showToast('📋 Copied!')));
+$('imgOcrTxt').addEventListener('click',()=>saveTxt($('imgOcrText').textContent,'image-ocr'));
 </script>
 </body>
 </html>
