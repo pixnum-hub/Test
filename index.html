@@ -2,1260 +2,983 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>ScanFlow — PDF Scanner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Vastu Compass — Manik Roy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<script>
-window._pdfJsReady = (async () => {
-  const mod = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs');
-  window.pdfjsLib = mod;
-  mod.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
-})();
-</script>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Philosopher:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
+/* ── THEME TOKENS ─────────────────────────────────────────── */
 :root {
-  --accent:#00e5ff; --accent2:#ff6b6b; --green:#00ffaa;
-  --radius:16px; --radius-sm:8px; --radius-xs:6px;
-  --font-d:'Syne',sans-serif; --font-m:'DM Mono',monospace;
-  --tr:0.22s cubic-bezier(.4,0,.2,1);
+  --transition: 0.35s cubic-bezier(.4,0,.2,1);
+  --compass-size: min(82vw, 360px);
+  --radius-card: 20px;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Philosopher', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --accent: #c9a84c;
+  --accent2: #e8c97a;
+  --glow: rgba(201,168,76,0.35);
 }
-[data-theme="dark"] { --bg:#0d0f14; --surface:#161a23; --surface2:#1e2330; --border:#252c3d; --text:#e8ecf4; --muted:#6b7594; --shadow:0 4px 32px rgba(0,0,0,.55); --glow:0 0 24px rgba(0,229,255,.13); }
-[data-theme="light"] { --bg:#eef1f8; --surface:#ffffff; --surface2:#e4e9f5; --border:#cdd4e8; --text:#0d0f1c; --muted:#5a6387; --shadow:0 4px 24px rgba(0,0,0,.09); --glow:0 0 24px rgba(0,229,255,.07); }
-[data-theme="oled"] { --bg:#000; --surface:#090909; --surface2:#111; --border:#1c1c1c; --text:#fff; --muted:#666; --shadow:0 4px 32px rgba(0,0,0,.95); --glow:0 0 28px rgba(0,229,255,.2); }
 
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{font-size:16px;scroll-behavior:smooth}
-body{font-family:var(--font-d);background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;transition:background var(--tr),color var(--tr);-webkit-font-smoothing:antialiased}
-
-/* HEADER */
-header{position:sticky;top:0;z-index:200;background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;backdrop-filter:blur(14px);box-shadow:var(--shadow);transition:background var(--tr),border-color var(--tr)}
-.logo{display:flex;align-items:center;gap:9px;font-size:1.1rem;font-weight:800;letter-spacing:-.02em;color:var(--text);white-space:nowrap;flex-shrink:0}
-.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),#007aff);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.9rem;box-shadow:var(--glow);flex-shrink:0}
-.logo span{color:var(--accent)}
-.theme-sw{display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:3px;flex-shrink:0}
-.t-btn{cursor:pointer;border:none;background:transparent;color:var(--muted);font-size:.65rem;font-family:var(--font-m);font-weight:500;padding:4px 9px;border-radius:100px;letter-spacing:.04em;transition:all var(--tr);white-space:nowrap}
-.t-btn.active{background:var(--accent);color:#000;font-weight:600;box-shadow:0 0 10px rgba(0,229,255,.35)}
-.t-btn:not(.active):hover{color:var(--text)}
-
-/* MODE TABS */
-.mode-tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.mode-tab{padding:12px 8px;border:1px solid var(--border);background:var(--surface2);border-radius:var(--radius-sm);cursor:pointer;text-align:center;transition:all var(--tr);font-family:var(--font-d);font-size:.82rem;font-weight:600;color:var(--muted)}
-.mode-tab .tab-icon{font-size:1.4rem;display:block;margin-bottom:5px}
-.mode-tab.active{border-color:var(--accent);color:var(--accent);background:var(--surface);box-shadow:var(--glow)}
-.mode-tab:not(.active):hover{border-color:var(--muted);color:var(--text)}
-
-/* PANEL */
-.panel{display:none}
-.panel.active{display:flex;flex-direction:column;gap:18px}
-
-/* MAIN */
-main{flex:1;padding:20px 14px 36px;max-width:780px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:18px}
-
-/* CARD */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);transition:background var(--tr),border-color var(--tr)}
-
-/* DROP ZONE */
-.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:44px 20px;text-align:center;cursor:pointer;background:var(--surface);transition:all var(--tr);position:relative;overflow:hidden}
-.drop-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,229,255,.06) 0%,transparent 70%);pointer-events:none}
-.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:var(--surface2);box-shadow:var(--glow)}
-.drop-icon{font-size:2.8rem;margin-bottom:12px;display:block;filter:drop-shadow(0 0 12px rgba(0,229,255,.3));animation:float 3s ease-in-out infinite}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-.drop-title{font-size:1rem;font-weight:700;margin-bottom:5px;letter-spacing:-.01em}
-.drop-sub{font-size:.8rem;color:var(--muted);font-family:var(--font-m)}
-.drop-btn{display:inline-flex;align-items:center;gap:7px;margin-top:16px;background:linear-gradient(135deg,var(--accent),#007aff);color:#000;border:none;border-radius:100px;padding:10px 22px;font-size:.83rem;font-weight:700;font-family:var(--font-d);cursor:pointer;transition:all var(--tr);box-shadow:0 4px 18px rgba(0,229,255,.3)}
-.drop-btn:hover{transform:translateY(-2px);box-shadow:0 6px 26px rgba(0,229,255,.45)}
-input[type=file]{display:none}
-
-/* FILE BAR */
-.file-bar{display:none;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px}
-.file-bar.visible{display:flex}
-.f-icon{font-size:1.4rem;flex-shrink:0}
-.f-details{flex:1;min-width:0}
-.f-name{font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.f-meta{font-size:.7rem;color:var(--muted);font-family:var(--font-m);margin-top:2px}
-.btn-clear{background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:var(--radius-xs);padding:5px 9px;font-size:.75rem;cursor:pointer;font-family:var(--font-m);transition:all var(--tr);flex-shrink:0}
-.btn-clear:hover{border-color:var(--accent2);color:var(--accent2)}
-
-/* CAMERA */
-.cam-outer{position:relative;background:#000;border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3;width:100%;border:2px solid var(--border);transition:border-color var(--tr)}
-.cam-outer.live{border-color:var(--accent);box-shadow:var(--glow)}
-#camVideo{width:100%;height:100%;object-fit:cover;display:none}
-.doc-frame{position:absolute;top:8%;left:6%;right:6%;bottom:8%;border:2px solid rgba(0,229,255,.55);border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,.35)}
-.corner{position:absolute;width:22px;height:22px;border-color:var(--accent);border-style:solid}
-.corner.tl{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
-.corner.tr{top:-2px;right:-2px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
-.corner.bl{bottom:-2px;left:-2px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
-.corner.br{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
-.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 10px var(--accent);animation:scanline 2s ease-in-out infinite;display:none}
-.cam-outer.live .scan-line{display:block}
-@keyframes scanline{0%{top:10%;opacity:0}5%{opacity:1}95%{opacity:1}100%{top:90%;opacity:0}}
-.cam-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);text-align:center;padding:20px;gap:10px}
-.cam-placeholder .ph-icon{font-size:2.8rem;opacity:.45}
-.cam-placeholder p{font-size:.82rem;font-family:var(--font-m)}
-.cam-controls{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
-.cam-btn{flex:1;min-width:90px;padding:10px 12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:var(--radius-sm);font-size:.8rem;font-weight:600;font-family:var(--font-d);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all var(--tr)}
-.cam-btn:hover{border-color:var(--accent);color:var(--accent);box-shadow:var(--glow)}
-.cam-btn.primary{background:linear-gradient(135deg,var(--accent),#007aff);border-color:transparent;color:#000;font-weight:700;box-shadow:0 4px 18px rgba(0,229,255,.3)}
-.cam-btn.primary:hover{box-shadow:0 6px 26px rgba(0,229,255,.45);transform:translateY(-1px)}
-.cam-btn.danger{border-color:var(--accent2);color:var(--accent2)}
-.cam-btn.danger:hover{background:rgba(255,107,107,.1)}
-.cam-btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;box-shadow:none!important}
-.captured-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:12px}
-.cap-thumb{position:relative;border:1px solid var(--border);border-radius:var(--radius-xs);overflow:hidden;cursor:pointer;transition:all var(--tr);background:var(--surface2)}
-.cap-thumb img{width:100%;display:block;aspect-ratio:4/3;object-fit:cover}
-.cap-thumb:hover{border-color:var(--accent);box-shadow:var(--glow)}
-.cap-del{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.75);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--tr)}
-.cap-del:hover{background:var(--accent2)}
-.cap-num{position:absolute;bottom:4px;left:6px;font-size:.6rem;font-family:var(--font-m);background:rgba(0,0,0,.65);color:#fff;padding:1px 5px;border-radius:3px;backdrop-filter:blur(4px)}
-
-/* CONTROLS */
-.controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.ctrl label{display:block;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px;font-family:var(--font-m)}
-select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:8px 28px 8px 10px;font-size:.82rem;font-family:var(--font-d);cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%236b7594' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color var(--tr)}
-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.12)}
-input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--border);border-radius:4px;outline:none;cursor:pointer;margin-top:10px}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;background:var(--accent);border-radius:50%;border:2px solid var(--bg);box-shadow:0 0 8px rgba(0,229,255,.4);cursor:pointer;transition:transform var(--tr)}
-input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
-.range-val{font-size:.72rem;color:var(--accent);font-family:var(--font-m);font-weight:500;float:right;margin-top:-16px}
-
-/* SECTION TITLE */
-.stitle{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--font-m);margin-bottom:13px;display:flex;align-items:center;gap:8px}
-.stitle::after{content:'';flex:1;height:1px;background:var(--border)}
-
-/* CHECKBOXES */
-.opts-row{display:flex;flex-wrap:wrap;gap:8px}
-.chk-lbl{display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer;user-select:none;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;transition:all var(--tr)}
-.chk-lbl:hover{border-color:var(--accent)}
-.chk-lbl input{display:none}
-.chk-box{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.6rem;transition:all var(--tr);flex-shrink:0}
-.chk-lbl input:checked ~ .chk-box{background:var(--accent);border-color:var(--accent);color:#000}
-
-/* SCAN BTN */
-.scan-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent) 0%,#007aff 100%);color:#000;border:none;border-radius:var(--radius);font-size:.95rem;font-weight:800;font-family:var(--font-d);cursor:pointer;transition:all var(--tr);box-shadow:0 4px 22px rgba(0,229,255,.35),var(--glow);display:flex;align-items:center;justify-content:center;gap:9px;position:relative;overflow:hidden}
-.scan-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,.12));pointer-events:none}
-.scan-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,229,255,.5)}
-.scan-btn:active:not(:disabled){transform:translateY(1px)}
-.scan-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-
-/* PROGRESS */
-.prog-wrap{display:none}
-.prog-wrap.visible{display:block}
-.prog-track{height:6px;background:var(--surface2);border-radius:6px;overflow:hidden;margin-bottom:7px;border:1px solid var(--border)}
-.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#007aff);border-radius:6px;transition:width .3s ease;box-shadow:0 0 10px rgba(0,229,255,.5)}
-.prog-lbl{font-size:.72rem;color:var(--muted);font-family:var(--font-m);display:flex;justify-content:space-between}
-
-/* OCR */
-.ocr-wrap{display:none;margin-top:16px}
-.ocr-wrap.visible{display:block}
-.ocr-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap}
-.ocr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,255,170,.12);border:1px solid var(--green);color:var(--green);padding:4px 12px;border-radius:100px;font-size:.7rem;font-family:var(--font-m);font-weight:600}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.ocr-text{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:.82rem;font-family:var(--font-m);line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto}
-.ocr-conf{font-size:.7rem;color:var(--muted);font-family:var(--font-m)}
-.ocr-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.ocr-act-btn{padding:8px 14px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-xs);font-size:.78rem;font-weight:600;font-family:var(--font-d);cursor:pointer;transition:all var(--tr);display:flex;align-items:center;gap:6px}
-.ocr-act-btn:hover{border-color:var(--accent);color:var(--accent)}
-
-/* RESULTS */
-.results-section{display:none}
-.results-section.visible{display:flex;flex-direction:column;gap:18px}
-.pages-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:10px}
-.page-thumb{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-xs);overflow:hidden;cursor:pointer;transition:all var(--tr);position:relative}
-.page-thumb:hover{border-color:var(--accent);box-shadow:var(--glow);transform:scale(1.02)}
-.page-thumb.selected{border-color:var(--accent);box-shadow:var(--glow)}
-.page-thumb canvas{width:100%;display:block}
-.page-num{position:absolute;bottom:5px;right:6px;font-size:.62rem;font-family:var(--font-m);background:rgba(0,0,0,.65);color:#fff;padding:2px 5px;border-radius:3px;backdrop-filter:blur(4px)}
-.preview-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:10px;display:flex;align-items:center;justify-content:center;min-height:240px;position:relative}
-.preview-wrap canvas{max-width:100%;height:auto;display:block}
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-.stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px;text-align:center}
-.stat-val{font-size:1.1rem;font-weight:800;color:var(--accent);font-family:var(--font-m)}
-.stat-lbl{font-size:.65rem;color:var(--muted);font-family:var(--font-m);margin-top:2px}
-.actions-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
-.action-btn{flex:1;min-width:110px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);font-size:.8rem;font-weight:600;font-family:var(--font-d);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all var(--tr)}
-.action-btn:hover{border-color:var(--accent);color:var(--accent);box-shadow:var(--glow)}
-.action-btn.primary{background:linear-gradient(135deg,var(--accent),#007aff);border-color:transparent;color:#000;font-weight:700;box-shadow:0 4px 18px rgba(0,229,255,.3)}
-.action-btn.primary:hover{box-shadow:0 6px 26px rgba(0,229,255,.5);transform:translateY(-1px)}
-.meta-table{width:100%;border-collapse:collapse}
-.meta-table td{padding:7px 0;font-size:.78rem;border-bottom:1px solid var(--border);vertical-align:top}
-.meta-table td:first-child{color:var(--muted);font-family:var(--font-m);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;padding-right:14px;white-space:nowrap;width:36%}
-.meta-table tr:last-child td{border-bottom:none}
-.scanning-overlay{display:none;position:absolute;inset:0;background:linear-gradient(to bottom,transparent 48%,rgba(0,229,255,.08) 50%,transparent 52%);pointer-events:none}
-.scanning-overlay.active{display:block;animation:scanline 1.5s ease-in-out infinite}
-
-/* TOAST */
-.toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--surface);border:1px solid var(--accent);color:var(--text);padding:9px 18px;border-radius:100px;font-size:.78rem;font-family:var(--font-m);box-shadow:var(--glow),var(--shadow);opacity:0;transition:all .3s ease;pointer-events:none;z-index:999;white-space:nowrap}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* FOOTER */
-footer{background:var(--surface);border-top:1px solid var(--border);padding:16px 20px;text-align:center;transition:background var(--tr),border-color var(--tr)}
-.footer-copy{font-size:.72rem;color:var(--muted);font-family:var(--font-m);letter-spacing:.03em}
-.footer-copy strong{color:var(--text);font-weight:600}
-.footer-copy .acc{color:var(--accent)}
-
-@media(min-width:480px){main{padding:24px 20px 40px}.controls-grid{grid-template-columns:1fr 1fr 1fr}}
-@media(min-width:640px){header{padding:0 28px;height:62px}main{padding:28px 24px 48px;gap:22px}}
-/* OCR ENGINE PILLS */
-.ocr-engine-pills{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
-.eng-pill{
-  padding:7px 14px;border:1.5px solid var(--border);background:var(--surface2);
-  color:var(--muted);border-radius:100px;font-size:.78rem;font-weight:600;
-  font-family:var(--font-d);cursor:pointer;transition:all var(--tr);
-  display:flex;align-items:center;gap:5px;
+/* DARK */
+[data-theme="dark"] {
+  --bg: #0e1117;
+  --bg2: #161c27;
+  --bg3: #1e2636;
+  --surface: #1a2233;
+  --border: rgba(201,168,76,0.22);
+  --text: #e8dfc8;
+  --text2: #9a9080;
+  --needle-n: #e05555;
+  --needle-s: #e8dfc8;
+  --ring1: rgba(201,168,76,0.12);
+  --ring2: rgba(201,168,76,0.06);
+  --shadow: 0 8px 48px rgba(0,0,0,0.55);
 }
-.eng-pill:hover{border-color:var(--accent);color:var(--text)}
-.eng-pill.active{border-color:var(--accent);background:var(--accent);color:#000;box-shadow:0 0 12px rgba(0,229,255,.35)}
-.eng-pill[data-engine="handwriting"].active{background:linear-gradient(135deg,#f59e0b,#d97706);border-color:#f59e0b;color:#000;box-shadow:0 0 12px rgba(245,158,11,.4)}
-.eng-pill[data-engine="printed"].active{background:var(--accent);border-color:var(--accent);color:#000;box-shadow:0 0 12px rgba(0,229,255,.35)}
-.eng-hint{font-size:.7rem;color:var(--muted);font-family:var(--font-m);margin-top:7px;padding:6px 10px;background:var(--surface2);border-radius:var(--radius-xs);border-left:2px solid var(--accent);transition:border-color var(--tr)}
-.eng-hint.hw{border-left-color:#f59e0b}
-.eng-hint.ts{border-left-color:var(--muted)}
+/* LIGHT */
+[data-theme="light"] {
+  --bg: #f5f0e8;
+  --bg2: #ede6d5;
+  --bg3: #ddd5c0;
+  --surface: #fff8ec;
+  --border: rgba(139,100,30,0.28);
+  --text: #2a1f0a;
+  --text2: #7a6a45;
+  --needle-n: #c0392b;
+  --needle-s: #2a1f0a;
+  --ring1: rgba(139,100,30,0.10);
+  --ring2: rgba(139,100,30,0.05);
+  --shadow: 0 8px 48px rgba(100,70,10,0.18);
+  --accent: #8b641e;
+  --accent2: #a07830;
+  --glow: rgba(139,100,30,0.2);
+}
+/* OLED TRUE BLACK */
+[data-theme="oled"] {
+  --bg: #000000;
+  --bg2: #050505;
+  --bg3: #0a0a0a;
+  --surface: #080808;
+  --border: rgba(201,168,76,0.30);
+  --text: #f0e8d0;
+  --text2: #7a7060;
+  --needle-n: #ff4444;
+  --needle-s: #f0e8d0;
+  --ring1: rgba(201,168,76,0.09);
+  --ring2: rgba(201,168,76,0.04);
+  --shadow: 0 8px 60px rgba(0,0,0,0.9);
+}
+/* HIGH CONTRAST */
+[data-theme="hc"] {
+  --bg: #000000;
+  --bg2: #0a0a0a;
+  --bg3: #111111;
+  --surface: #000000;
+  --border: #ffffff;
+  --text: #ffffff;
+  --text2: #cccccc;
+  --needle-n: #ff0000;
+  --needle-s: #ffffff;
+  --ring1: rgba(255,255,255,0.12);
+  --ring2: rgba(255,255,255,0.06);
+  --shadow: 0 0 0 2px #ffffff;
+  --accent: #ffff00;
+  --accent2: #ffffff;
+  --glow: rgba(255,255,0,0.4);
+}
 
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px}::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+/* ── RESET & BASE ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: background var(--transition), color var(--transition);
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── STARFIELD BG ──────────────────────────────────────────── */
+.bg-texture {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 0%, var(--ring1) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, var(--ring2) 0%, transparent 70%);
+  transition: opacity var(--transition);
+}
+
+/* ── LAYOUT ────────────────────────────────────────────────── */
+.app {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px 0;
+}
+
+/* ── HEADER ────────────────────────────────────────────────── */
+header {
+  width: 100%;
+  padding: 28px 0 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+  transition: border-color var(--transition);
+}
+
+.header-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  opacity: 0.85;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 5vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, var(--accent2) 0%, var(--accent) 50%, var(--text) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.15;
+}
+
+.header-sub {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text2);
+  letter-spacing: 0.18em;
+  margin-top: 4px;
+}
+
+/* ── THEME TOGGLE ──────────────────────────────────────────── */
+.theme-bar {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  margin-bottom: 20px;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.theme-btn {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  padding: 6px 11px;
+  border-radius: 50px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.theme-btn.active {
+  background: var(--accent);
+  color: #000;
+  font-weight: 700;
+  box-shadow: 0 0 14px var(--glow);
+}
+
+.theme-btn:hover:not(.active) {
+  color: var(--text);
+  background: var(--bg3);
+}
+
+/* ── COMPASS CONTAINER ─────────────────────────────────────── */
+.compass-wrap {
+  position: relative;
+  width: var(--compass-size);
+  height: var(--compass-size);
+  margin-bottom: 24px;
+  flex-shrink: 0;
+}
+
+/* Outer decorative ring */
+.compass-ring-outer {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: radial-gradient(ellipse at 30% 20%, var(--ring1), transparent 60%);
+  box-shadow: var(--shadow), inset 0 0 30px var(--ring2), 0 0 0 1px var(--ring1);
+  transition: box-shadow var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.compass-ring-outer::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px dashed var(--border);
+  opacity: 0.5;
+}
+
+/* Tick marks */
+.compass-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  transition: transform 0.25s ease-out;
+}
+
+/* Inner face */
+.compass-face {
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--bg3), var(--bg2) 70%, var(--bg) 100%);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 2px 20px rgba(0,0,0,0.3), 0 0 30px var(--ring2);
+  z-index: 3;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+/* Cardinal labels */
+.cardinal {
+  position: absolute;
+  font-family: var(--font-display);
+  font-weight: 700;
+  z-index: 10;
+  transform: translate(-50%, -50%);
+  transition: color var(--transition);
+}
+.cardinal-N { top: 4%; left: 50%; font-size: clamp(0.9rem,3.5vw,1.1rem); color: var(--needle-n); text-shadow: 0 0 10px var(--needle-n); }
+.cardinal-S { bottom: -2%; left: 50%; transform: translate(-50%, -50%); font-size: clamp(0.75rem,3vw,0.95rem); color: var(--text2); }
+.cardinal-E { top: 50%; right: -1%; transform: translate(-50%, -50%); font-size: clamp(0.75rem,3vw,0.95rem); color: var(--text2); }
+.cardinal-W { top: 50%; left: 1%; transform: translate(-50%, -50%); font-size: clamp(0.75rem,3vw,0.95rem); color: var(--text2); }
+
+/* Needle */
+.needle-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  transition: transform 0.4s cubic-bezier(.17,.67,.35,1.3);
+}
+
+.needle-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Center jewel */
+.center-jewel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(18px,4.5vw,22px);
+  height: clamp(18px,4.5vw,22px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--accent2), var(--accent) 60%, #7a5a10);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 12px var(--glow), 0 2px 6px rgba(0,0,0,0.5);
+  z-index: 12;
+}
+
+/* ── DEGREE DISPLAY ────────────────────────────────────────── */
+.degree-panel {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 18px 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.deg-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.deg-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  color: var(--text2);
+  text-transform: uppercase;
+}
+
+.deg-value {
+  font-family: var(--font-mono);
+  font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+  font-weight: 400;
+  color: var(--accent);
+  line-height: 1;
+  transition: color var(--transition);
+}
+
+.deg-unit {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--text2);
+}
+
+/* ── DIRECTION DISPLAY ─────────────────────────────────────── */
+.direction-banner {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px 20px;
+  margin-bottom: 16px;
+  text-align: center;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.dir-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 4vw, 1.4rem);
+  font-weight: 600;
+  color: var(--accent2);
+  letter-spacing: 0.05em;
+}
+
+.dir-vastu {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: clamp(0.75rem, 3vw, 0.9rem);
+  color: var(--text2);
+  margin-top: 3px;
+}
+
+.dir-deity {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+/* ── VASTU GRID ────────────────────────────────────────────── */
+.vastu-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.vastu-cell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 4px;
+  text-align: center;
+  cursor: default;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.vastu-cell.active {
+  background: var(--bg3);
+  border-color: var(--accent);
+  box-shadow: 0 0 14px var(--glow);
+}
+
+.vastu-cell.active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, var(--glow), transparent 70%);
+}
+
+.vc-dir {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  position: relative;
+}
+
+.vc-god {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 0.6rem;
+  color: var(--text2);
+  line-height: 1.2;
+  position: relative;
+}
+
+.vc-elem {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  color: var(--text2);
+  margin-top: 2px;
+  position: relative;
+  opacity: 0.7;
+}
+
+/* ── CALIBRATION BUTTON ────────────────────────────────────── */
+.btn-calibrate {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: linear-gradient(135deg, var(--bg3), var(--bg2));
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-calibrate::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, var(--glow), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.btn-calibrate:hover::before,
+.btn-calibrate:active::before { opacity: 1; }
+
+.btn-calibrate:active { transform: scale(0.98); }
+
+/* ── STATUS BAR ────────────────────────────────────────────── */
+.status-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  margin-bottom: 16px;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text2);
+  transition: background 0.3s ease;
+  flex-shrink: 0;
+}
+.status-dot.active { background: #4caf7d; box-shadow: 0 0 8px #4caf7d; animation: pulse-dot 2s infinite; }
+.status-dot.error { background: #e05555; box-shadow: 0 0 8px #e05555; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.status-text {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--text2);
+  margin-left: 8px;
+  flex: 1;
+}
+
+.status-acc {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+}
+
+/* ── PERMISSION OVERLAY ────────────────────────────────────── */
+.permission-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 20;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  text-align: center;
+  padding: 20px;
+}
+
+.permission-overlay.hidden { display: none; }
+
+.perm-icon { font-size: 2rem; }
+
+.perm-text {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.perm-cta {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 50px;
+  padding: 6px 16px;
+  margin-top: 4px;
+}
+
+/* ── FOOTER ────────────────────────────────────────────────── */
+footer {
+  width: 100%;
+  border-top: 1px solid var(--border);
+  padding: 16px 0 24px;
+  text-align: center;
+  margin-top: auto;
+  transition: border-color var(--transition);
+}
+
+.footer-brand {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.footer-copy {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── DECORATIVE LINES ──────────────────────────────────────── */
+.ornament {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  justify-content: center;
+}
+.ornament-line {
+  flex: 1;
+  max-width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+.ornament-gem {
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--accent);
+  transform: rotate(45deg);
+  opacity: 0.7;
+}
+
+/* ── COMPASS ANIMATION ─────────────────────────────────────── */
+@keyframes compass-spin-demo {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <div class="logo-icon">⬡</div>
-    Scan<span>Flow</span>
-  </div>
-  <div class="theme-sw">
-    <button class="t-btn" data-theme="light">☀ Light</button>
-    <button class="t-btn active" data-theme="dark">◑ Dark</button>
-    <button class="t-btn" data-theme="oled">● OLED</button>
-  </div>
-</header>
+<div class="bg-texture"></div>
 
-<main>
+<div class="app">
+  <!-- HEADER -->
+  <header>
+    <div class="header-eyebrow">✦ Vedic Architecture ✦</div>
+    <h1>Vastu Compass</h1>
+    <div class="header-sub">वास्तु दिशा — Sacred Directional Guide</div>
+  </header>
 
-  <div class="mode-tabs">
-    <div class="mode-tab active" data-panel="pdf"><span class="tab-icon">📄</span>PDF File</div>
-    <div class="mode-tab" data-panel="camera"><span class="tab-icon">📷</span>Live Camera</div>
-    <div class="mode-tab" data-panel="image"><span class="tab-icon">🖼</span>Image File</div>
+  <!-- THEME TOGGLE BAR -->
+  <div class="theme-bar" role="group" aria-label="Theme selection">
+    <button class="theme-btn" data-theme="light" onclick="setTheme('light')">Light</button>
+    <button class="theme-btn active" data-theme="dark" onclick="setTheme('dark')">Dark</button>
+    <button class="theme-btn" data-theme="oled" onclick="setTheme('oled')">OLED</button>
+    <button class="theme-btn" data-theme="hc" onclick="setTheme('hc')">HC</button>
   </div>
 
-  <!-- ══ PDF PANEL ══ -->
-  <div class="panel active" id="panel-pdf">
+  <!-- COMPASS -->
+  <div class="compass-wrap" id="compassWrap">
+    <div class="compass-ring-outer"></div>
 
-    <div class="drop-zone" id="dropZone" role="button" tabindex="0">
-      <div class="scanning-overlay" id="scanOverlay"></div>
-      <span class="drop-icon" id="dropIcon">📄</span>
-      <div class="drop-title">Drop your PDF here</div>
-      <div class="drop-sub">supports PDF documents</div>
-      <button class="drop-btn" id="browseBtn" type="button">📂 Choose PDF</button>
-      <input type="file" id="fileInput" accept=".pdf,application/pdf">
+    <!-- Tick marks SVG (static, outside needle) -->
+    <svg class="compass-svg" id="dialSvg" viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- Will be drawn by JS -->
+    </svg>
+
+    <div class="compass-face"></div>
+
+    <!-- Cardinal labels (fixed, not rotating) -->
+    <div class="cardinal cardinal-N" aria-label="North">N</div>
+    <div class="cardinal cardinal-S" aria-label="South">S</div>
+    <div class="cardinal cardinal-E" aria-label="East">E</div>
+    <div class="cardinal cardinal-W" aria-label="West">W</div>
+
+    <!-- Needle (rotates with heading) -->
+    <div class="needle-wrap" id="needleWrap" aria-hidden="true">
+      <svg class="needle-svg" viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="needleNorth" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--needle-n)" stop-opacity="1"/>
+            <stop offset="100%" stop-color="var(--needle-n)" stop-opacity="0.5"/>
+          </linearGradient>
+          <linearGradient id="needleSouth" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--needle-s)" stop-opacity="0.7"/>
+            <stop offset="100%" stop-color="var(--needle-s)" stop-opacity="0.3"/>
+          </linearGradient>
+          <filter id="needleGlow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- North pointer -->
+        <polygon points="180,72 172,180 188,180" fill="url(#needleNorth)" filter="url(#needleGlow)" opacity="0.95"/>
+        <!-- South pointer -->
+        <polygon points="180,288 172,180 188,180" fill="url(#needleSouth)" opacity="0.7"/>
+        <!-- Small NE/SW diamonds -->
+        <polygon points="180,80 177,90 180,100 183,90" fill="var(--needle-n)" opacity="0.5"/>
+      </svg>
     </div>
 
-    <div class="file-bar" id="fileBar">
-      <div class="f-icon">📑</div>
-      <div class="f-details">
-        <div class="f-name" id="fileName">—</div>
-        <div class="f-meta" id="fileMeta">—</div>
-      </div>
-      <button class="btn-clear" id="clearBtn">✕ Clear</button>
+    <!-- Center jewel -->
+    <div class="center-jewel"></div>
+
+    <!-- Permission overlay -->
+    <div class="permission-overlay" id="permOverlay" onclick="requestCompass()" role="button" aria-label="Tap to enable compass">
+      <div class="perm-icon">🧭</div>
+      <div class="perm-text">Tap to activate live compass using device orientation</div>
+      <div class="perm-cta">Enable Compass</div>
     </div>
-
-    <div class="card">
-      <div class="stitle">Scan Options</div>
-      <div class="controls-grid">
-        <div class="ctrl"><label>Quality</label>
-          <select id="qualitySelect">
-            <option value="0.7">Draft</option><option value="1.5" selected>Standard</option>
-            <option value="2.5">High</option><option value="3.5">Ultra</option>
-          </select>
-        </div>
-        <div class="ctrl"><label>Color Mode</label>
-          <select id="colorSelect">
-            <option value="color">Full Color</option><option value="grayscale">Grayscale</option><option value="bw">B&amp;W</option>
-          </select>
-        </div>
-        <div class="ctrl"><label>Contrast <span class="range-val" id="contrastVal">100%</span></label>
-          <input type="range" id="contrastRange" min="50" max="200" value="100">
-        </div>
-      </div>
-      <div style="margin-top:14px">
-        <div class="stitle" style="margin-bottom:9px">Enhancements</div>
-        <div class="opts-row">
-          <label class="chk-lbl"><input type="checkbox" id="chkSharpen"><span class="chk-box">✓</span> Sharpen</label>
-          <label class="chk-lbl"><input type="checkbox" id="chkDeskew"><span class="chk-box">✓</span> Deskew</label>
-          <label class="chk-lbl"><input type="checkbox" id="chkBorders" checked><span class="chk-box">✓</span> Borders</label>
-          <label class="chk-lbl"><input type="checkbox" id="chkOCR"><span class="chk-box">✓</span> Run OCR</label>
-        </div>
-        <!-- OCR Engine selector -->
-        <div id="pdfOcrEngineRow" style="margin-top:12px;display:none">
-          <div class="stitle" style="margin-bottom:9px">OCR Engine</div>
-          <div class="ocr-engine-pills" id="pdfEnginePills">
-            <button class="eng-pill" data-engine="handwriting" data-target="pdfEnginePills">✍ Handwriting</button>
-            <button class="eng-pill active" data-engine="printed" data-target="pdfEnginePills">⌨ Printed Text</button>
-            <input type="hidden" class="ocr-engine-sel" id="pdfEngineVal" value="printed">
-          </div>
-          <div class="eng-hint" id="pdfEngineHint">Printed Text — fast &amp; accurate for typed/printed documents</div>
-        </div>
-        </div>
-      </div>
-    </div>
-
-    <button class="scan-btn" id="scanBtn" disabled>⬡ Scan Document</button>
-
-    <div class="prog-wrap card" id="progressWrap">
-      <div class="stitle">Processing</div>
-      <div class="prog-track"><div class="prog-fill" id="progressFill"></div></div>
-      <div class="prog-lbl"><span id="progressText">Initializing…</span><span id="progressPct">0%</span></div>
-    </div>
-
-    <div class="results-section" id="resultsSection">
-      <div class="card">
-        <div class="stitle">Document Info</div>
-        <div class="stats-row">
-          <div class="stat-box"><div class="stat-val" id="statPages">—</div><div class="stat-lbl">Pages</div></div>
-          <div class="stat-box"><div class="stat-val" id="statSize">—</div><div class="stat-lbl">File Size</div></div>
-          <div class="stat-box"><div class="stat-val" id="statDPI">—</div><div class="stat-lbl">Scan DPI</div></div>
-        </div>
-        <table class="meta-table" style="margin-top:12px"><tbody id="metaBody"></tbody></table>
-      </div>
-      <div class="card">
-        <div class="stitle">Pages</div>
-        <div class="pages-grid" id="pagesGrid"></div>
-      </div>
-      <div class="card">
-        <div class="stitle">Preview</div>
-        <div class="preview-wrap" id="previewWrap"><canvas id="previewCanvas"></canvas></div>
-        <div class="ocr-wrap" id="pdfOcrWrap">
-          <div class="ocr-header">
-            <div class="ocr-badge"><span class="dot"></span> OCR Result</div>
-            <span class="ocr-conf" id="pdfOcrConf"></span>
-          </div>
-          <div class="ocr-text" id="pdfOcrText"></div>
-          <div class="ocr-actions">
-            <button class="ocr-act-btn" id="pdfOcrCopy">📋 Copy Text</button>
-            <button class="ocr-act-btn" id="pdfOcrTxt">⬇ Save .txt</button>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="stitle">Export</div>
-        <div class="actions-row">
-          <button class="action-btn primary" id="btnDownload">⬇ Download</button>
-          <button class="action-btn" id="btnCopyMeta">📋 Copy Info</button>
-          <button class="action-btn" id="btnRescan">↺ Re-scan</button>
-        </div>
-      </div>
-    </div>
-
   </div>
 
-  <!-- ══ CAMERA PANEL ══ -->
-  <div class="panel" id="panel-camera">
-
-    <div class="card">
-      <div class="stitle">Live Camera Scan</div>
-      <div class="cam-outer" id="camOuter">
-        <video id="camVideo" autoplay playsinline muted></video>
-        <div style="position:absolute;inset:0;pointer-events:none">
-          <div class="doc-frame">
-            <div class="corner tl"></div><div class="corner tr"></div>
-            <div class="corner bl"></div><div class="corner br"></div>
-          </div>
-        </div>
-        <div class="scan-line"></div>
-        <div class="cam-placeholder" id="camPlaceholder">
-          <div class="ph-icon">📷</div>
-          <p>Camera preview will appear here.<br>Allow camera access when prompted.</p>
-        </div>
-      </div>
-      <div class="cam-controls">
-        <button class="cam-btn primary" id="btnStartCam">📷 Start Camera</button>
-        <button class="cam-btn" id="btnCapture" disabled>📸 Capture</button>
-        <button class="cam-btn" id="btnFlip" disabled>🔄 Flip</button>
-        <button class="cam-btn danger" id="btnStopCam" disabled>■ Stop</button>
-      </div>
+  <!-- DEGREE PANEL -->
+  <div class="degree-panel">
+    <div class="deg-item">
+      <div class="deg-label">Heading</div>
+      <div class="deg-value" id="degDisplay">—</div>
+      <div class="deg-unit">degrees</div>
     </div>
-
-    <div class="card">
-      <div class="stitle">Capture Options</div>
-      <div class="controls-grid">
-        <div class="ctrl"><label>Color Mode</label>
-          <select id="camColorSelect">
-            <option value="color">Full Color</option><option value="grayscale">Grayscale</option><option value="bw">B&amp;W</option>
-          </select>
-        </div>
-        <div class="ctrl"><label>Contrast <span class="range-val" id="camContrastVal">100%</span></label>
-          <input type="range" id="camContrastRange" min="50" max="200" value="100">
-        </div>
-      </div>
-      <div style="margin-top:12px">
-        <div class="opts-row">
-          <label class="chk-lbl"><input type="checkbox" id="camChkSharpen"><span class="chk-box">✓</span> Sharpen</label>
-          <label class="chk-lbl"><input type="checkbox" id="camChkOCR" checked><span class="chk-box">✓</span> Auto OCR</label>
-          <label class="chk-lbl"><input type="checkbox" id="camChkAuto"><span class="chk-box">✓</span> Auto (3s)</label>
-        </div>
-        <!-- OCR Engine -->
-        <div style="margin-top:12px">
-          <div class="stitle" style="margin-bottom:9px">OCR Engine</div>
-          <div class="ocr-engine-pills" id="camEnginePills">
-            <button class="eng-pill" data-engine="handwriting" data-target="camEnginePills">✍ Handwriting</button>
-            <button class="eng-pill active" data-engine="printed" data-target="camEnginePills">⌨ Printed Text</button>
-            <input type="hidden" class="ocr-engine-sel" id="camEngineVal" value="printed">
-          </div>
-          <div class="eng-hint" id="camEngineHint">Printed Text — fast &amp; accurate for typed/printed documents</div>
-        </div>
-        </div>
-      </div>
+    <div class="deg-item">
+      <div class="deg-label">Direction</div>
+      <div class="deg-value" id="shortDirDisplay" style="font-size:clamp(1rem,4vw,1.3rem)">—</div>
+      <div class="deg-unit">bearing</div>
     </div>
-
-    <div class="card" id="capturedCard" style="display:none">
-      <div class="stitle">Captured Frames</div>
-      <div class="captured-grid" id="capturedGrid"></div>
-      <div class="cam-controls" style="margin-top:12px">
-        <button class="cam-btn primary" id="btnProcessCam">⬡ OCR All Frames</button>
-        <button class="cam-btn" id="btnClearCaps">🗑 Clear All</button>
-      </div>
+    <div class="deg-item">
+      <div class="deg-label">Accuracy</div>
+      <div class="deg-value" id="accDisplay">—</div>
+      <div class="deg-unit">± degrees</div>
     </div>
-
-    <div class="prog-wrap card" id="camProgressWrap">
-      <div class="stitle">OCR Processing</div>
-      <div class="prog-track"><div class="prog-fill" id="camProgressFill"></div></div>
-      <div class="prog-lbl"><span id="camProgressText">Initializing…</span><span id="camProgressPct">0%</span></div>
-    </div>
-
-    <div class="card ocr-wrap" id="camOcrWrap">
-      <div class="ocr-header">
-        <div class="ocr-badge"><span class="dot"></span> OCR Result</div>
-        <span class="ocr-conf" id="camOcrConf"></span>
-      </div>
-      <div class="ocr-text" id="camOcrText"></div>
-      <div class="ocr-actions">
-        <button class="ocr-act-btn" id="camOcrCopy">📋 Copy Text</button>
-        <button class="ocr-act-btn" id="camOcrTxt">⬇ Save .txt</button>
-      </div>
-    </div>
-
   </div>
 
-  <!-- ══ IMAGE PANEL ══ -->
-  <div class="panel" id="panel-image">
-
-    <div class="drop-zone" id="imgDropZone" role="button" tabindex="0">
-      <span class="drop-icon">🖼</span>
-      <div class="drop-title">Drop an image here</div>
-      <div class="drop-sub">JPG · PNG · WEBP · BMP · TIFF</div>
-      <button class="drop-btn" id="imgBrowseBtn" type="button">📂 Choose Image</button>
-      <input type="file" id="imgFileInput" accept="image/*">
-    </div>
-
-    <div class="file-bar" id="imgFileBar">
-      <div class="f-icon">🖼</div>
-      <div class="f-details">
-        <div class="f-name" id="imgFileName">—</div>
-        <div class="f-meta" id="imgFileMeta">—</div>
-      </div>
-      <button class="btn-clear" id="imgClearBtn">✕ Clear</button>
-    </div>
-
-    <div class="card">
-      <div class="stitle">Processing Options</div>
-      <div class="controls-grid">
-        <div class="ctrl"><label>Color Mode</label>
-          <select id="imgColorSelect">
-            <option value="color">Full Color</option><option value="grayscale">Grayscale</option><option value="bw">B&amp;W</option>
-          </select>
-        </div>
-        <div class="ctrl"><label>Contrast <span class="range-val" id="imgContrastVal">100%</span></label>
-          <input type="range" id="imgContrastRange" min="50" max="200" value="100">
-        </div>
-      </div>
-      <div style="margin-top:12px">
-        <div class="opts-row">
-          <label class="chk-lbl"><input type="checkbox" id="imgChkSharpen"><span class="chk-box">✓</span> Sharpen</label>
-          <label class="chk-lbl"><input type="checkbox" id="imgChkOCR" checked><span class="chk-box">✓</span> Run OCR</label>
-        </div>
-        <!-- OCR Engine -->
-        <div style="margin-top:12px">
-          <div class="stitle" style="margin-bottom:9px">OCR Engine</div>
-          <div class="ocr-engine-pills" id="imgEnginePills">
-            <button class="eng-pill" data-engine="handwriting" data-target="imgEnginePills">✍ Handwriting</button>
-            <button class="eng-pill active" data-engine="printed" data-target="imgEnginePills">⌨ Printed Text</button>
-            <input type="hidden" class="ocr-engine-sel" id="imgEngineVal" value="printed">
-          </div>
-          <div class="eng-hint" id="imgEngineHint">Printed Text — fast &amp; accurate for typed/printed documents</div>
-        </div>
-        </div>
-      </div>
-    </div>
-
-    <button class="scan-btn" id="imgScanBtn" disabled>⬡ Process Image</button>
-
-    <div class="prog-wrap card" id="imgProgressWrap">
-      <div class="stitle">Processing</div>
-      <div class="prog-track"><div class="prog-fill" id="imgProgressFill"></div></div>
-      <div class="prog-lbl"><span id="imgProgressText">Initializing…</span><span id="imgProgressPct">0%</span></div>
-    </div>
-
-    <div class="results-section" id="imgResultsSection">
-      <div class="card">
-        <div class="stitle">Result</div>
-        <div class="preview-wrap" id="imgPreviewWrap"><canvas id="imgCanvas"></canvas></div>
-        <div class="actions-row" style="margin-top:12px">
-          <button class="action-btn primary" id="imgBtnDownload">⬇ Download PNG</button>
-          <button class="action-btn" id="imgBtnReset">↺ Reset</button>
-        </div>
-        <div class="ocr-wrap" id="imgOcrWrap">
-          <div class="ocr-header">
-            <div class="ocr-badge"><span class="dot"></span> OCR Result</div>
-            <span class="ocr-conf" id="imgOcrConf"></span>
-          </div>
-          <div class="ocr-text" id="imgOcrText"></div>
-          <div class="ocr-actions">
-            <button class="ocr-act-btn" id="imgOcrCopy">📋 Copy Text</button>
-            <button class="ocr-act-btn" id="imgOcrTxt">⬇ Save .txt</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
+  <!-- DIRECTION BANNER -->
+  <div class="direction-banner">
+    <div class="dir-name" id="directionName">Awaiting Sensor…</div>
+    <div class="dir-vastu" id="directionVastu">Enable compass to reveal Vastu zone</div>
+    <div class="dir-deity" id="directionDeity"></div>
   </div>
 
-</main>
+  <!-- VASTU GRID -->
+  <div class="vastu-grid" id="vastuGrid"></div>
 
-<footer>
-  <div class="footer-copy">
-    © <span id="footerYear"></span> <strong>Manik Roy</strong> · <span class="acc">ScanFlow</span> · All Rights Reserved
+  <!-- CALIBRATE -->
+  <button class="btn-calibrate" onclick="showCalibrationTip()">
+    ✦ Calibration Guide ✦
+  </button>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <div class="status-text" id="statusText">Tap compass to activate sensor</div>
+    <div class="status-acc" id="statusAcc"></div>
   </div>
-</footer>
-<div class="toast" id="toast"></div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="ornament">
+      <div class="ornament-line"></div>
+      <div class="ornament-gem"></div>
+      <div class="ornament-line"></div>
+    </div>
+    <div class="footer-brand">Vastu Compass</div>
+    <div class="footer-copy">
+      © Manik Roy <span id="footerYear"></span>. All Rights Reserved.<br>
+      Sacred directions for harmonious living.
+    </div>
+  </footer>
+</div>
 
 <script>
-'use strict';
-const $ = id => document.getElementById(id);
-const delay = ms => new Promise(r => setTimeout(r, ms));
+/* ── VASTU DATA ───────────────────────────────────────────── */
+const VASTU_ZONES = [
+  { dir:'N',  min:337.5, max:360,  name:'North',      deity:'Kuber',      element:'Water',  desc:'Wealth & Prosperity — Keep open & clutter-free' },
+  { dir:'N',  min:0,     max:22.5, name:'North',      deity:'Kuber',      element:'Water',  desc:'Wealth & Prosperity — Keep open & clutter-free' },
+  { dir:'NE', min:22.5,  max:67.5, name:'North-East',  deity:'Ishaan',     element:'Space',  desc:'Prayers & Wisdom — Sacred northeast corner' },
+  { dir:'E',  min:67.5,  max:112.5,name:'East',        deity:'Indra',      element:'Air',    desc:'Health & Growth — Welcome morning sun' },
+  { dir:'SE', min:112.5, max:157.5,name:'South-East',  deity:'Agni',       element:'Fire',   desc:'Kitchen & Energy — Fire element zone' },
+  { dir:'S',  min:157.5, max:202.5,name:'South',       deity:'Yama',       element:'Earth',  desc:'Fame & Career — Solid wall, master bedroom' },
+  { dir:'SW', min:202.5, max:247.5,name:'South-West',  deity:'Nairiti',    element:'Earth',  desc:'Stability & Relationships — Heaviest corner' },
+  { dir:'W',  min:247.5, max:292.5,name:'West',        deity:'Varuna',     element:'Water',  desc:'Gains & Children — Study & dining zone' },
+  { dir:'NW', min:292.5, max:337.5,name:'North-West',  deity:'Vayu',       element:'Air',    desc:'Support & Travel — Movement of guests & air' },
+];
 
-function formatSize(b) {
-  if(b<1024)return b+' B';
-  if(b<1048576)return(b/1024).toFixed(1)+' KB';
-  return(b/1048576).toFixed(2)+' MB';
+const DIR_SHORT = ['N','NE','E','SE','S','SW','W','NW'];
+
+function getZone(deg) {
+  const d = ((deg % 360) + 360) % 360;
+  return VASTU_ZONES.find(z => {
+    if (z.min > z.max) return d >= z.min || d < z.max;
+    return d >= z.min && d < z.max;
+  }) || VASTU_ZONES[0];
 }
-function showToast(msg, dur=2800) {
-  const t=$('toast'); t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), dur);
-}
-function saveTxt(text, name='ocr-result') {
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));
-  a.download=name+'.txt'; a.click(); URL.revokeObjectURL(a.href);
-}
-function setProgress(fillId, textId, pctId, pct, label) {
-  $(fillId).style.width=pct+'%';
-  $(textId).textContent=label;
-  $(pctId).textContent=pct+'%';
-}
-function applyBW(ctx, w, h) {
-  const img=ctx.getImageData(0,0,w,h), d=img.data;
-  for(let i=0; i<d.length; i+=4) {
-    const v=(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2])>128?255:0;
-    d[i]=d[i+1]=d[i+2]=v;
+
+/* ── COMPASS STATE ──────────────────────────────────────────── */
+let currentHeading = null;
+let sensorActive = false;
+let targetAngle = 0;
+let displayAngle = 0;
+let animFrame;
+
+/* ── DRAW DIAL ───────────────────────────────────────────────── */
+function drawDial() {
+  const svg = document.getElementById('dialSvg');
+  const cx = 180, cy = 180, r = 165;
+  let html = '';
+
+  for (let i = 0; i < 360; i += 5) {
+    const angle = (i - 90) * Math.PI / 180;
+    const isMajor = i % 45 === 0;
+    const isMid = i % 15 === 0 && !isMajor;
+    const len = isMajor ? 16 : isMid ? 10 : 5;
+    const x1 = cx + (r - 2) * Math.cos(angle);
+    const y1 = cy + (r - 2) * Math.sin(angle);
+    const x2 = cx + (r - 2 - len) * Math.cos(angle);
+    const y2 = cy + (r - 2 - len) * Math.sin(angle);
+    const strokeColor = isMajor ? 'var(--accent)' : 'var(--border)';
+    const sw = isMajor ? '1.5' : '0.8';
+    html += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="${strokeColor}" stroke-width="${sw}" opacity="${isMid?0.6:0.9}"/>`;
   }
-  ctx.putImageData(img,0,0);
-}
-function applySharpen(ctx, w, h) {
-  const img=ctx.getImageData(0,0,w,h), src=new Uint8ClampedArray(img.data), d=img.data;
-  const k=[0,-1,0,-1,5,-1,0,-1,0];
-  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++) {
-    let r=0,g=0,b=0;
-    for(let ky=-1;ky<=1;ky++) for(let kx=-1;kx<=1;kx++) {
-      const pi=((y+ky)*w+(x+kx))*4, ki=(ky+1)*3+(kx+1);
-      r+=src[pi]*k[ki]; g+=src[pi+1]*k[ki]; b+=src[pi+2]*k[ki];
-    }
-    const i=(y*w+x)*4;
-    d[i]=Math.max(0,Math.min(255,r));
-    d[i+1]=Math.max(0,Math.min(255,g));
-    d[i+2]=Math.max(0,Math.min(255,b));
+
+  // Degree labels at 45s
+  const labels45 = ['0°','45°','90°','135°','180°','225°','270°','315°'];
+  for (let i = 0; i < 8; i++) {
+    const deg = i * 45;
+    const angle = (deg - 90) * Math.PI / 180;
+    const tr = r - 28;
+    const x = cx + tr * Math.cos(angle);
+    const y = cy + tr * Math.sin(angle);
+    html += `<text x="${x.toFixed(2)}" y="${(y+4).toFixed(2)}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="var(--text2)" opacity="0.7">${labels45[i]}</text>`;
   }
-  ctx.putImageData(img,0,0);
-}
-function buildFilter(colorMode, contrast) {
-  let f=`contrast(${contrast}%)`;
-  if(colorMode==='grayscale') f+=' grayscale(100%)';
-  return f;
+
+  svg.innerHTML = html;
 }
 
-/* ════════════════════════════════════════════════════════════
-   OCR ENGINE  —  100 % FREE · NO API KEY · FULLY OFFLINE
-   Tesseract.js with a 9-stage preprocessing pipeline that
-   dramatically improves handwriting recognition accuracy.
-   ════════════════════════════════════════════════════════════ */
-
-function getOCREngine() {
-  const active = document.querySelector('.panel.active .ocr-engine-sel');
-  return active ? active.value : 'printed';
+/* ── BUILD VASTU GRID ───────────────────────────────────────── */
+function buildVastuGrid() {
+  const grid = document.getElementById('vastuGrid');
+  const unique = ['N','NE','E','SE','S','SW','W','NW'].map(d => VASTU_ZONES.find(z => z.dir === d));
+  grid.innerHTML = unique.map(z => `
+    <div class="vastu-cell" id="vc-${z.dir}" title="${z.desc}">
+      <div class="vc-dir">${z.dir}</div>
+      <div class="vc-god">${z.deity}</div>
+      <div class="vc-elem">${z.element}</div>
+    </div>
+  `).join('');
 }
 
-/* ── Tesseract worker singletons ── */
-let _twPrint = null, _twHand = null;
+/* ── UPDATE UI ───────────────────────────────────────────────── */
+function updateUI(heading) {
+  const zone = getZone(heading);
+  const deg = Math.round(heading);
 
-async function getWorker(mode) {
-  if (mode === 'handwriting') {
-    if (_twHand) return _twHand;
-    showToast('⌛ Loading handwriting engine…', 3500);
-    _twHand = await Tesseract.createWorker('eng', 1, { logger: () => {} });
-    await _twHand.setParameters({
-      tessedit_pageseg_mode:       '6',   // single uniform text block
-      tessedit_ocr_engine_mode:    '1',   // LSTM only
-      user_defined_dpi:            '300',
-      tessedit_char_blacklist:     '',
-      classify_bln_numeric_mode:   '0',
-      textord_heavy_nr:            '1',   // more aggressive noise removal
-      edges_max_children_per_outline: '40',
-    });
-    return _twHand;
+  document.getElementById('degDisplay').textContent = deg + '°';
+  document.getElementById('shortDirDisplay').textContent = zone.dir;
+  document.getElementById('directionName').textContent = zone.name;
+  document.getElementById('directionVastu').textContent = zone.desc;
+  document.getElementById('directionDeity').textContent = `Presiding Deity: ${zone.deity} · Element: ${zone.element}`;
+
+  // Highlight vastu grid
+  document.querySelectorAll('.vastu-cell').forEach(el => el.classList.remove('active'));
+  const active = document.getElementById('vc-' + zone.dir);
+  if (active) active.classList.add('active');
+}
+
+/* ── NEEDLE SMOOTH ANIMATION ──────────────────────────────── */
+function animateNeedle() {
+  const needleWrap = document.getElementById('needleWrap');
+  
+  // Shortest arc
+  let diff = targetAngle - displayAngle;
+  while (diff > 180) diff -= 360;
+  while (diff < -180) diff += 360;
+
+  displayAngle += diff * 0.12;
+
+  needleWrap.style.transform = `rotate(${displayAngle}deg)`;
+  animFrame = requestAnimationFrame(animateNeedle);
+}
+
+/* ── COMPASS HEADING HANDLER ──────────────────────────────── */
+function handleOrientation(event) {
+  let heading = null;
+
+  if (event.webkitCompassHeading !== undefined) {
+    heading = event.webkitCompassHeading;
+  } else if (event.alpha !== null) {
+    heading = (360 - event.alpha) % 360;
   }
-  if (_twPrint) return _twPrint;
-  showToast('⌛ Loading OCR engine…', 3000);
-  _twPrint = await Tesseract.createWorker('eng', 1, { logger: () => {} });
-  await _twPrint.setParameters({
-    tessedit_pageseg_mode:    '3',
-    tessedit_ocr_engine_mode: '1',
-    user_defined_dpi:         '300',
+
+  if (heading === null) return;
+
+  currentHeading = heading;
+  targetAngle = heading;
+
+  const acc = event.webkitCompassAccuracy;
+  document.getElementById('degDisplay').textContent = Math.round(heading) + '°';
+  document.getElementById('accDisplay').textContent = acc ? Math.round(acc) : '< 5';
+  document.getElementById('statusAcc').textContent = acc ? `±${Math.round(acc)}°` : '';
+
+  updateUI(heading);
+
+  if (!sensorActive) {
+    sensorActive = true;
+    setStatus('active', 'Live compass active');
+    document.getElementById('permOverlay').classList.add('hidden');
+  }
+}
+
+/* ── REQUEST PERMISSION ──────────────────────────────────── */
+function requestCompass() {
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(state => {
+        if (state === 'granted') {
+          window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+          window.addEventListener('deviceorientation', handleOrientation, true);
+          setStatus('active', 'Sensor permission granted');
+        } else {
+          setStatus('error', 'Permission denied — use manual demo');
+          startDemoMode();
+        }
+      })
+      .catch(() => { setStatus('error', 'Sensor error'); startDemoMode(); });
+  } else if (window.DeviceOrientationEvent) {
+    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    window.addEventListener('deviceorientation', handleOrientation, true);
+    setStatus('active', 'Listening for orientation…');
+    setTimeout(() => {
+      if (!sensorActive) startDemoMode();
+    }, 2500);
+  } else {
+    setStatus('error', 'No sensor — running demo');
+    startDemoMode();
+  }
+}
+
+/* ── DEMO MODE ───────────────────────────────────────────── */
+let demoAngle = 0;
+let demoInterval;
+function startDemoMode() {
+  document.getElementById('permOverlay').classList.add('hidden');
+  setStatus('active', 'Demo mode — rotate device to test');
+  document.getElementById('accDisplay').textContent = 'Demo';
+
+  function demoStep() {
+    demoAngle = (demoAngle + 0.4) % 360;
+    targetAngle = demoAngle;
+    updateUI(demoAngle);
+    document.getElementById('degDisplay').textContent = Math.round(demoAngle) + '°';
+  }
+  demoInterval = setInterval(demoStep, 30);
+}
+
+/* ── STATUS ──────────────────────────────────────────────── */
+function setStatus(state, text) {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = 'status-dot ' + state;
+  txt.textContent = text;
+}
+
+/* ── CALIBRATION TIP ─────────────────────────────────────── */
+function showCalibrationTip() {
+  alert('🔄 Compass Calibration\n\nHold your phone and slowly draw a figure-8 in the air three times.\n\nKeep device away from metal objects, electronics, and speakers.\n\nFor best accuracy, tilt the phone to face the horizon.');
+}
+
+/* ── THEME ───────────────────────────────────────────────── */
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === theme);
   });
-  return _twPrint;
+  // Redraw dial with new colors
+  requestAnimationFrame(drawDial);
 }
 
-/* ═══════════════════════════════════════════════════════
-   9-STAGE HANDWRITING PREPROCESSING PIPELINE
-   ═══════════════════════════════════════════════════════
+/* ── FOOTER YEAR ─────────────────────────────────────────── */
+document.getElementById('footerYear').textContent = new Date().getFullYear();
 
-   Stage 1  ─ 3× upscale with bicubic smoothing
-   Stage 2  ─ Luminance-weighted grayscale
-   Stage 3  ─ Gamma correction (brighten mid-tones)
-   Stage 4  ─ 5×5 Gaussian blur (smooth noise)
-   Stage 5  ─ Unsharp mask (recover edges after blur)
-   Stage 6  ─ Sauvola adaptive threshold (handle uneven
-               lighting, pencil, ink, coloured paper)
-   Stage 7  ─ 3×3 median filter (remove salt-and-pepper)
-   Stage 8  ─ 2-pass dilation (thicken thin pen strokes,
-               reconnect broken characters)
-   Stage 9  ─ 1-pass erosion (remove smudge blobs
-               introduced by over-dilation)
-   ═══════════════════════════════════════════════════════ */
-function preprocessForHandwriting(src) {
+/* ── INIT ────────────────────────────────────────────────── */
+drawDial();
+buildVastuGrid();
+animateNeedle();
 
-  /* ── Stage 1: 3× upscale ── */
-  const SCALE = 3;
-  const W = Math.round(src.width  * SCALE);
-  const H = Math.round(src.height * SCALE);
-  const cv = document.createElement('canvas');
-  cv.width = W; cv.height = H;
-  const ctx = cv.getContext('2d');
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(src, 0, 0, W, H);
-
-  let id = ctx.getImageData(0, 0, W, H);
-  let d  = id.data;
-
-  /* ── Stage 2: Luminance-weighted grayscale ── */
-  for (let i = 0; i < d.length; i += 4) {
-    const g = 0.2126 * d[i] + 0.7152 * d[i+1] + 0.0722 * d[i+2];
-    d[i] = d[i+1] = d[i+2] = g;
-  }
-
-  /* ── Stage 3: Gamma correction γ = 0.7 (lift dark ink on cream paper) ── */
-  const gammaLUT = new Uint8Array(256);
-  for (let v = 0; v < 256; v++) gammaLUT[v] = Math.round(255 * Math.pow(v / 255, 0.7));
-  for (let i = 0; i < d.length; i += 4) d[i] = d[i+1] = d[i+2] = gammaLUT[d[i]];
-
-  /* ── Stage 4: 5×5 Gaussian blur (σ≈1.1) ── */
-  const G5 = [
-    1, 4,  7,  4,  1,
-    4,16, 26, 16,  4,
-    7,26, 41, 26,  7,
-    4,16, 26, 16,  4,
-    1, 4,  7,  4,  1
-  ];
-  const G5sum = G5.reduce((a, b) => a + b, 0);
-  const blur5 = new Uint8ClampedArray(d.length);
-  for (let y = 2; y < H - 2; y++) {
-    for (let x = 2; x < W - 2; x++) {
-      let s = 0;
-      for (let ky = -2; ky <= 2; ky++)
-        for (let kx = -2; kx <= 2; kx++)
-          s += d[((y+ky)*W+(x+kx))*4] * G5[(ky+2)*5+(kx+2)];
-      const v = Math.round(s / G5sum);
-      const i = (y*W+x)*4;
-      blur5[i] = blur5[i+1] = blur5[i+2] = v; blur5[i+3] = 255;
-    }
-  }
-  // copy border pixels unchanged
-  for (let i = 0; i < d.length; i += 4) {
-    const y = Math.floor(i / 4 / W), x = (i / 4) % W;
-    if (y < 2 || y >= H-2 || x < 2 || x >= W-2)
-      blur5[i] = blur5[i+1] = blur5[i+2] = d[i], blur5[i+3] = 255;
-  }
-
-  /* ── Stage 5: Unsharp mask (amount=1.8, radius already blurred) ── */
-  const AMOUNT = 1.8;
-  for (let i = 0; i < d.length; i += 4) {
-    const sharp = Math.round(d[i] + AMOUNT * (d[i] - blur5[i]));
-    d[i] = d[i+1] = d[i+2] = Math.max(0, Math.min(255, sharp));
-  }
-
-  /* ── Stage 6: Sauvola adaptive threshold ──
-     window = 31×31, k = 0.25, R = 128
-     Handles: uneven lighting, pencil, faded ink, coloured paper
-  ── */
-  const gray = new Float32Array(W * H);
-  for (let i = 0; i < W * H; i++) gray[i] = d[i * 4];
-
-  const WW = W + 1;
-  const II  = new Float64Array((W+1) * (H+1));
-  const II2 = new Float64Array((W+1) * (H+1));
-  for (let y = 1; y <= H; y++) {
-    for (let x = 1; x <= W; x++) {
-      const v = gray[(y-1)*W+(x-1)];
-      II [y*WW+x] = v   + II [(y-1)*WW+x] + II [y*WW+x-1] - II [(y-1)*WW+x-1];
-      II2[y*WW+x] = v*v + II2[(y-1)*WW+x] + II2[y*WW+x-1] - II2[(y-1)*WW+x-1];
-    }
-  }
-  const HW_R = 15;   // half-window = 15 → 31×31 window
-  const K    = 0.25;
-  const RVAL = 128;
-  const bin  = new Uint8Array(W * H); // 1 = ink (dark), 0 = paper
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      const x1 = Math.max(0, x - HW_R), y1 = Math.max(0, y - HW_R);
-      const x2 = Math.min(W-1, x + HW_R), y2 = Math.min(H-1, y + HW_R);
-      const n  = (x2-x1+1) * (y2-y1+1);
-      const s  = II [(y2+1)*WW+(x2+1)] - II [y1*WW+(x2+1)] - II [(y2+1)*WW+x1] + II [y1*WW+x1];
-      const s2 = II2[(y2+1)*WW+(x2+1)] - II2[y1*WW+(x2+1)] - II2[(y2+1)*WW+x1] + II2[y1*WW+x1];
-      const mean = s / n;
-      const std  = Math.sqrt(Math.max(0, s2/n - mean*mean));
-      const thr  = mean * (1 - K * (1 - std / RVAL));
-      bin[y*W+x] = gray[y*W+x] <= thr ? 1 : 0;
-    }
-  }
-
-  /* ── Stage 7: 3×3 median filter on binary (remove salt-and-pepper) ── */
-  const med = new Uint8Array(W * H);
-  for (let y = 1; y < H-1; y++) {
-    for (let x = 1; x < W-1; x++) {
-      let cnt = 0;
-      for (let ky = -1; ky <= 1; ky++)
-        for (let kx = -1; kx <= 1; kx++)
-          cnt += bin[(y+ky)*W+(x+kx)];
-      med[y*W+x] = cnt >= 5 ? 1 : 0;  // majority vote
-    }
-  }
-
-  /* ── Stage 8: 2-pass 3×3 dilation (thicken strokes, reconnect gaps) ── */
-  function dilate3(src_b, W, H) {
-    const dst = new Uint8Array(W * H);
-    for (let y = 1; y < H-1; y++)
-      for (let x = 1; x < W-1; x++) {
-        if (src_b[y*W+x]) { dst[y*W+x] = 1; continue; }
-        let found = 0;
-        outer: for (let ky = -1; ky <= 1; ky++)
-          for (let kx = -1; kx <= 1; kx++)
-            if (src_b[(y+ky)*W+(x+kx)]) { found=1; break outer; }
-        dst[y*W+x] = found;
-      }
-    return dst;
-  }
-  let processed = dilate3(med, W, H);
-  processed = dilate3(processed, W, H);
-
-  /* ── Stage 9: 1-pass 3×3 erosion (clean up over-dilation blobs) ── */
-  const eroded = new Uint8Array(W * H);
-  for (let y = 1; y < H-1; y++)
-    for (let x = 1; x < W-1; x++) {
-      if (!processed[y*W+x]) continue;
-      let allInk = 1;
-      for (let ky = -1; ky <= 1 && allInk; ky++)
-        for (let kx = -1; kx <= 1 && allInk; kx++)
-          if (!processed[(y+ky)*W+(x+kx)]) allInk = 0;
-      eroded[y*W+x] = allInk;
-    }
-
-  /* ── Write final binary image (black ink on white) ── */
-  for (let i = 0; i < W * H; i++) {
-    const v = eroded[i] ? 0 : 255;
-    d[i*4] = d[i*4+1] = d[i*4+2] = v;
-    d[i*4+3] = 255;
-  }
-
-  ctx.putImageData(id, 0, 0);
-  return cv;
+// Auto-start on desktop or if no permission API
+if (typeof DeviceOrientationEvent === 'undefined' || typeof DeviceOrientationEvent.requestPermission !== 'function') {
+  // Non-iOS: auto-listen
+  window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+  window.addEventListener('deviceorientation', handleOrientation, true);
+  setTimeout(() => {
+    if (!sensorActive) startDemoMode();
+  }, 1500);
+} else {
+  // iOS: needs tap
+  setStatus('', 'Tap compass dial to enable sensor');
 }
-
-/* ── Print preprocessing (lighter pipeline) ── */
-function preprocessForPrint(src) {
-  const SCALE = 2;
-  const W = Math.round(src.width * SCALE), H = Math.round(src.height * SCALE);
-  const cv = document.createElement('canvas');
-  cv.width = W; cv.height = H;
-  const ctx = cv.getContext('2d');
-  ctx.filter = 'grayscale(1) contrast(1.5) brightness(1.05)';
-  ctx.drawImage(src, 0, 0, W, H);
-  return cv;
-}
-
-/* ── Runners ── */
-async function runTesseractPrint(canvas) {
-  const proc = preprocessForPrint(canvas);
-  const w = await getWorker('printed');
-  const { data } = await w.recognize(proc);
-  return { text: data.text.trim(), confidence: Math.round(data.confidence), engine: 'Tesseract · Print' };
-}
-
-async function runTesseractHandwriting(canvas) {
-  showToast('🔬 Running 9-stage preprocessing…', 4000);
-  // Run preprocessing off the main thread via a small scheduler
-  const proc = await new Promise(resolve => {
-    setTimeout(() => resolve(preprocessForHandwriting(canvas)), 0);
-  });
-  const w = await getWorker('handwriting');
-  const { data } = await w.recognize(proc);
-  return { text: data.text.trim(), confidence: Math.round(data.confidence), engine: 'Tesseract · Handwriting' };
-}
-
-/* ── Dispatcher ── */
-async function runOCR(canvas, engineOverride) {
-  const engine = engineOverride || getOCREngine();
-  if (engine === 'handwriting') return runTesseractHandwriting(canvas);
-  return runTesseractPrint(canvas);
-}
-
-/* ── Auto year ──── */
-$('footerYear').textContent = new Date().getFullYear();
-
-/* ── Theme ──── */
-document.querySelectorAll('.t-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.documentElement.setAttribute('data-theme', btn.dataset.theme);
-    document.querySelectorAll('.t-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-  });
-});
-
-/* ── Mode tabs ──── */
-document.querySelectorAll('.mode-tab').forEach(tab=>{
-  tab.addEventListener('click',()=>{
-    document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-    tab.classList.add('active');
-    $('panel-'+tab.dataset.panel).classList.add('active');
-    if(tab.dataset.panel!=='camera') stopCamera();
-  });
-});
-
-/* ── Engine pill interaction ──── */
-const ENGINE_HINTS = {
-  handwriting: { text: 'Handwriting — adaptive threshold + stroke repair pipeline, PSM 6. Best for cursive &amp; messy writing.', cls: 'hw' },
-  printed:     { text: 'Printed Text — upscale + contrast boost, PSM 3. Best for typed or printed documents.',                    cls: 'ts' },
-};
-document.querySelectorAll('.eng-pill').forEach(pill=>{
-  pill.addEventListener('click', ()=>{
-    const target = pill.dataset.target;
-    const engine = pill.dataset.engine;
-    // Update pills in same group
-    document.querySelectorAll(`[data-target="${target}"]`).forEach(p=>p.classList.remove('active'));
-    pill.classList.add('active');
-    // Update hidden input
-    const valId = target.replace('Pills','Val');
-    const inp = document.getElementById(valId);
-    if(inp) inp.value = engine;
-    // Update hint
-    const hintId = target.replace('Pills','Hint');
-    const hint = document.getElementById(hintId);
-    if(hint) {
-      hint.innerHTML = ENGINE_HINTS[engine].text;
-      hint.className = 'eng-hint ' + ENGINE_HINTS[engine].cls;
-    }
-  });
-});
-
-/* Show/hide PDF engine row when OCR checkbox toggled */
-$('chkOCR').addEventListener('change', function() {
-  $('pdfOcrEngineRow').style.display = this.checked ? 'block' : 'none';
-});
-
-/* ════════ PDF ════════ */
-let pdfFile=null, pdfDoc=null, scannedPages=[];
-
-$('contrastRange').addEventListener('input',function(){ $('contrastVal').textContent=this.value+'%' });
-
-const dropZone=$('dropZone'), fileInput=$('fileInput'), browseBtn=$('browseBtn'),
-      scanBtn=$('scanBtn'), fileBar=$('fileBar'), clearBtn=$('clearBtn'), dropIcon=$('dropIcon');
-
-browseBtn.addEventListener('click', e=>{ e.stopPropagation(); fileInput.click(); });
-dropZone.addEventListener('click', ()=>fileInput.click());
-dropZone.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' ') fileInput.click(); });
-['dragover','dragenter'].forEach(ev=>dropZone.addEventListener(ev, e=>{ e.preventDefault(); dropZone.classList.add('drag-over'); }));
-['dragleave','dragend'].forEach(ev=>dropZone.addEventListener(ev, ()=>dropZone.classList.remove('drag-over')));
-dropZone.addEventListener('drop', e=>{ e.preventDefault(); dropZone.classList.remove('drag-over'); if(e.dataTransfer.files[0]) loadPdfFile(e.dataTransfer.files[0]); });
-fileInput.addEventListener('change', ()=>{ if(fileInput.files[0]) loadPdfFile(fileInput.files[0]); });
-clearBtn.addEventListener('click', resetPdf);
-
-function loadPdfFile(file) {
-  if(file.type!=='application/pdf'&&!file.name.endsWith('.pdf')){ showToast('⚠ Please upload a PDF'); return; }
-  pdfFile=file;
-  $('fileName').textContent=file.name;
-  $('fileMeta').textContent=`${formatSize(file.size)} · ${new Date(file.lastModified).toLocaleDateString()}`;
-  fileBar.classList.add('visible'); dropIcon.textContent='✅'; scanBtn.disabled=false;
-  scannedPages=[]; $('resultsSection').classList.remove('visible');
-}
-function resetPdf() {
-  pdfFile=null; pdfDoc=null; scannedPages=[]; fileInput.value='';
-  fileBar.classList.remove('visible'); $('resultsSection').classList.remove('visible');
-  $('progressWrap').classList.remove('visible'); dropIcon.textContent='📄'; scanBtn.disabled=true;
-  $('pagesGrid').innerHTML=''; $('pdfOcrWrap').classList.remove('visible');
-}
-
-scanBtn.addEventListener('click', startPdfScan);
-
-async function startPdfScan() {
-  if(!pdfFile) return;
-  scanBtn.disabled=true;
-  $('scanOverlay').classList.add('active');
-  $('progressWrap').classList.add('visible');
-  setProgress('progressFill','progressText','progressPct',5,'Loading PDF…');
-
-  const ab=await pdfFile.arrayBuffer();
-  await window._pdfJsReady;
-  pdfDoc=await pdfjsLib.getDocument({
-    data:ab,
-    cMapUrl:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/cmaps/',
-    cMapPacked:true, useSystemFonts:true, disableFontFace:false,
-  }).promise;
-
-  const total=pdfDoc.numPages;
-  scannedPages=[];
-  setProgress('progressFill','progressText','progressPct',15,`Found ${total} page${total>1?'s':''}…`);
-
-  const scale=parseFloat($('qualitySelect').value);
-  const colorMode=$('colorSelect').value;
-  const contrast=parseInt($('contrastRange').value);
-  const doOCR=$('chkOCR').checked;
-  const doSharpen=$('chkSharpen').checked;
-
-  for(let i=1; i<=total; i++) {
-    const pct=15+Math.round((i/total)*(doOCR?50:75));
-    setProgress('progressFill','progressText','progressPct',pct,`Scanning page ${i}/${total}…`);
-    const page=await pdfDoc.getPage(i);
-    const vp=page.getViewport({scale});
-    const cv=document.createElement('canvas');
-    cv.width=vp.width; cv.height=vp.height;
-    const ctx=cv.getContext('2d');
-    ctx.filter=buildFilter(colorMode, contrast);
-    await page.render({canvasContext:ctx, viewport:vp}).promise;
-    if(colorMode==='bw') applyBW(ctx, cv.width, cv.height);
-    if(doSharpen) applySharpen(ctx, cv.width, cv.height);
-    scannedPages.push({canvas:cv, pageNum:i});
-    await delay(0);
-  }
-
-  setProgress('progressFill','progressText','progressPct',90,'Building results…');
-  const meta=await pdfDoc.getMetadata().catch(()=>({}));
-  renderPdfMeta(meta, total);
-  renderThumbs();
-  renderPdfPreview(0);
-  $('statPages').textContent=total;
-  $('statSize').textContent=formatSize(pdfFile.size);
-  $('statDPI').textContent=Math.round(scale*72);
-
-  if(doOCR && scannedPages.length>0) {
-    showToast('🔍 Running OCR on all pages…', 4000);
-    let allText='', lastConf=null, lastEngine='';
-    const engineOverride = $('pdfEngineVal').value;
-    for(let i=0; i<scannedPages.length; i++) {
-      setProgress('progressFill','progressText','progressPct',
-        90+Math.round((i/scannedPages.length)*8),
-        `OCR page ${i+1}/${scannedPages.length}…`);
-      try {
-        const {text,confidence,engine}=await runOCR(scannedPages[i].canvas, engineOverride);
-        allText+=(scannedPages.length>1?`--- Page ${i+1} ---\n`:'')+text+'\n\n';
-        lastConf=confidence; lastEngine=engine;
-      } catch(e) {
-        allText+=(scannedPages.length>1?`--- Page ${i+1} ---\n`:'')+'[OCR failed: '+e.message+']\n\n';
-        showToast('⚠ OCR error: '+e.message, 4000);
-      }
-    }
-    $('pdfOcrText').textContent=allText.trim()||'(no text detected)';
-    $('pdfOcrConf').textContent = lastConf !== null ? `Confidence: ${lastConf}%` : (lastEngine ? `Engine: ${lastEngine}` : '');
-    $('pdfOcrWrap').classList.add('visible');
-  }
-
-  setProgress('progressFill','progressText','progressPct',100,'Done!');
-  await delay(400);
-  $('progressWrap').classList.remove('visible');
-  $('scanOverlay').classList.remove('active');
-  $('resultsSection').classList.add('visible');
-  scanBtn.disabled=false;
-  showToast('✅ Scan complete!');
-}
-
-function renderThumbs() {
-  const grid=$('pagesGrid'); grid.innerHTML='';
-  scannedPages.forEach((pg, idx)=>{
-    const wrap=document.createElement('div');
-    wrap.className='page-thumb'+(idx===0?' selected':'');
-    const thumb=document.createElement('canvas');
-    const tw=150, th=Math.round(pg.canvas.height*(tw/pg.canvas.width));
-    thumb.width=tw; thumb.height=th;
-    thumb.getContext('2d').drawImage(pg.canvas,0,0,tw,th);
-    const num=document.createElement('div'); num.className='page-num'; num.textContent=pg.pageNum;
-    wrap.appendChild(thumb); wrap.appendChild(num);
-    wrap.addEventListener('click',()=>{
-      document.querySelectorAll('.page-thumb').forEach(t=>t.classList.remove('selected'));
-      wrap.classList.add('selected'); renderPdfPreview(idx);
-    });
-    grid.appendChild(wrap);
-  });
-}
-function renderPdfPreview(idx) {
-  const pg=scannedPages[idx]; if(!pg)return;
-  const cv=$('previewCanvas'), wrap=$('previewWrap');
-  const maxW=wrap.clientWidth||600;
-  const s=Math.min(1,(maxW-24)/pg.canvas.width);
-  cv.width=Math.round(pg.canvas.width*s); cv.height=Math.round(pg.canvas.height*s);
-  cv.getContext('2d').drawImage(pg.canvas,0,0,cv.width,cv.height);
-}
-function renderPdfMeta(meta, pages) {
-  const info=meta?.info||{};
-  $('metaBody').innerHTML=[
-    ['Title',info.Title||'—'],['Author',info.Author||'—'],
-    ['Creator',info.Creator||'—'],['Producer',info.Producer||'—'],
-    ['Pages',pages],['Scanned',new Date().toLocaleString()],
-  ].map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
-}
-
-$('btnDownload').addEventListener('click',()=>{
-  if(!scannedPages.length) return;
-  showToast('⬇ Preparing download…');
-  const imgs=scannedPages.map(pg=>pg.canvas.toDataURL('image/jpeg',.92));
-  const html=`<!DOCTYPE html><html><head><style>body{margin:0;background:#fff}img{display:block;width:100%;page-break-after:always}</style></head><body>${imgs.map(s=>`<img src="${s}">`).join('')}</body></html>`;
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
-  a.download=(pdfFile?.name?.replace('.pdf','')||'scan')+'_scanned.html';
-  a.click(); URL.revokeObjectURL(a.href); showToast('✅ Downloaded!');
-});
-$('btnCopyMeta').addEventListener('click',()=>{
-  const rows=[...$('metaBody').querySelectorAll('tr')];
-  navigator.clipboard.writeText(rows.map(r=>`${r.cells[0].textContent}: ${r.cells[1].textContent}`).join('\n')).then(()=>showToast('📋 Copied!'));
-});
-$('btnRescan').addEventListener('click',()=>{ $('resultsSection').classList.remove('visible'); scannedPages=[]; scanBtn.disabled=false; showToast('↺ Ready'); });
-$('pdfOcrCopy').addEventListener('click',()=>navigator.clipboard.writeText($('pdfOcrText').textContent).then(()=>showToast('📋 Copied!')));
-$('pdfOcrTxt').addEventListener('click',()=>saveTxt($('pdfOcrText').textContent,'pdf-ocr'));
-
-/* ════════ CAMERA ════════ */
-let camStream=null, camFacing='environment', capturedImages=[], autoCapTimer=null;
-const camVideo=$('camVideo'), camOuter=$('camOuter'), camPlaceholder=$('camPlaceholder');
-
-$('camContrastRange').addEventListener('input',function(){ $('camContrastVal').textContent=this.value+'%' });
-
-async function startCamera() {
-  try {
-    if(camStream) stopCamera();
-    camStream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:camFacing, width:{ideal:1920}, height:{ideal:1080}}
-    });
-    camVideo.srcObject=camStream;
-    camVideo.style.display='block';
-    camPlaceholder.style.display='none';
-    camOuter.classList.add('live');
-    $('btnCapture').disabled=false; $('btnFlip').disabled=false; $('btnStopCam').disabled=false; $('btnStartCam').disabled=true;
-    showToast('📷 Camera ready');
-    if($('camChkAuto').checked) startAutoCapture();
-  } catch(err) {
-    showToast('⚠ Camera error: '+err.message); console.error(err);
-  }
-}
-function stopCamera() {
-  if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
-  camVideo.srcObject=null; camVideo.style.display='none';
-  camPlaceholder.style.display='';
-  camOuter.classList.remove('live');
-  $('btnCapture').disabled=true; $('btnFlip').disabled=true; $('btnStopCam').disabled=true; $('btnStartCam').disabled=false;
-  stopAutoCapture();
-}
-function captureFrame() {
-  if(!camStream) return;
-  const cv=document.createElement('canvas');
-  cv.width=camVideo.videoWidth||640; cv.height=camVideo.videoHeight||480;
-  const ctx=cv.getContext('2d');
-  const colorMode=$('camColorSelect').value;
-  const contrast=parseInt($('camContrastRange').value);
-  ctx.filter=buildFilter(colorMode, contrast);
-  ctx.drawImage(camVideo,0,0);
-  if(colorMode==='bw') applyBW(ctx, cv.width, cv.height);
-  if($('camChkSharpen').checked) applySharpen(ctx, cv.width, cv.height);
-  const dataUrl=cv.toDataURL('image/jpeg',.94);
-  capturedImages.push({dataUrl, canvas:cv});
-  renderCapturedGrid();
-  showToast(`📸 Frame ${capturedImages.length} captured`);
-  if($('camChkOCR').checked) runLiveOCR(cv);
-}
-async function runLiveOCR(cv) {
-  $('camOcrText').textContent='⌛ Running OCR…';
-  $('camOcrWrap').classList.add('visible');
-  try {
-    const engine = $('camEngineVal').value;
-    const {text, confidence, engine:eng}=await runOCR(cv, engine);
-    $('camOcrText').textContent=text||'(no text detected)';
-    $('camOcrConf').textContent = confidence !== null ? `Confidence: ${confidence}% · ${eng}` : `Engine: ${eng}`;
-  } catch(e) {
-    $('camOcrText').textContent='[OCR error: '+e.message+']';
-    $('camOcrConf').textContent='';
-    showToast('⚠ OCR error: '+e.message, 4000);
-  }
-}
-function renderCapturedGrid() {
-  const grid=$('capturedGrid'); grid.innerHTML='';
-  $('capturedCard').style.display=capturedImages.length?'block':'none';
-  capturedImages.forEach((img, idx)=>{
-    const wrap=document.createElement('div'); wrap.className='cap-thumb';
-    const im=document.createElement('img'); im.src=img.dataUrl;
-    const num=document.createElement('div'); num.className='cap-num'; num.textContent=`#${idx+1}`;
-    const del=document.createElement('button'); del.className='cap-del'; del.textContent='✕';
-    del.onclick=e=>{ e.stopPropagation(); capturedImages.splice(idx,1); renderCapturedGrid(); };
-    wrap.appendChild(im); wrap.appendChild(num); wrap.appendChild(del);
-    grid.appendChild(wrap);
-  });
-}
-function startAutoCapture() { stopAutoCapture(); autoCapTimer=setInterval(()=>{ if(camStream) captureFrame(); },3000); showToast('⏱ Auto-capture every 3s'); }
-function stopAutoCapture() { if(autoCapTimer){ clearInterval(autoCapTimer); autoCapTimer=null; } }
-
-$('btnStartCam').addEventListener('click', startCamera);
-$('btnStopCam').addEventListener('click', stopCamera);
-$('btnCapture').addEventListener('click', captureFrame);
-$('btnFlip').addEventListener('click', async()=>{ camFacing=camFacing==='environment'?'user':'environment'; await startCamera(); showToast('🔄 Camera flipped'); });
-$('camChkAuto').addEventListener('change',function(){ if(this.checked&&camStream)startAutoCapture(); else stopAutoCapture(); });
-
-$('btnProcessCam').addEventListener('click', async()=>{
-  if(!capturedImages.length){ showToast('⚠ No captured frames'); return; }
-  $('camProgressWrap').classList.add('visible');
-  const engineOverride = $('camEngineVal').value;
-  let allText='', lastConf=null, lastEngine='';
-  for(let i=0; i<capturedImages.length; i++) {
-    setProgress('camProgressFill','camProgressText','camProgressPct',
-      Math.round(((i+1)/capturedImages.length)*100), `OCR frame ${i+1}/${capturedImages.length}…`);
-    try {
-      const {text,confidence,engine}=await runOCR(capturedImages[i].canvas, engineOverride);
-      allText+=(capturedImages.length>1?`--- Frame ${i+1} ---\n`:'')+text+'\n\n';
-      lastConf=confidence; lastEngine=engine;
-    } catch(e) {
-      allText+=(capturedImages.length>1?`--- Frame ${i+1} ---\n`:'')+'[OCR failed: '+e.message+']\n\n';
-      showToast('⚠ OCR error: '+e.message, 4000);
-    }
-  }
-  await delay(300);
-  $('camProgressWrap').classList.remove('visible');
-  $('camOcrText').textContent=allText.trim()||'(no text detected)';
-  $('camOcrConf').textContent = lastConf !== null ? `Confidence: ${lastConf}% · ${lastEngine}` : (lastEngine ? `Engine: ${lastEngine}` : '');
-  $('camOcrWrap').classList.add('visible');
-  showToast('✅ OCR complete!');
-});
-$('btnClearCaps').addEventListener('click',()=>{ capturedImages=[]; renderCapturedGrid(); $('camOcrWrap').classList.remove('visible'); showToast('🗑 Cleared'); });
-$('camOcrCopy').addEventListener('click',()=>navigator.clipboard.writeText($('camOcrText').textContent).then(()=>showToast('📋 Copied!')));
-$('camOcrTxt').addEventListener('click',()=>saveTxt($('camOcrText').textContent,'camera-ocr'));
-
-/* ════════ IMAGE PANEL ════════ */
-let imgFile=null, imgProcessedCanvas=null;
-
-$('imgContrastRange').addEventListener('input',function(){ $('imgContrastVal').textContent=this.value+'%' });
-
-const imgDropZone=$('imgDropZone'), imgFileInput=$('imgFileInput'),
-      imgBrowseBtn=$('imgBrowseBtn'), imgScanBtn=$('imgScanBtn'),
-      imgFileBar=$('imgFileBar'), imgClearBtn=$('imgClearBtn');
-
-imgBrowseBtn.addEventListener('click',e=>{ e.stopPropagation(); imgFileInput.click(); });
-imgDropZone.addEventListener('click',()=>imgFileInput.click());
-imgDropZone.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' ') imgFileInput.click(); });
-['dragover','dragenter'].forEach(ev=>imgDropZone.addEventListener(ev,e=>{ e.preventDefault(); imgDropZone.classList.add('drag-over'); }));
-['dragleave','dragend'].forEach(ev=>imgDropZone.addEventListener(ev,()=>imgDropZone.classList.remove('drag-over')));
-imgDropZone.addEventListener('drop',e=>{ e.preventDefault(); imgDropZone.classList.remove('drag-over'); if(e.dataTransfer.files[0]) loadImgFile(e.dataTransfer.files[0]); });
-imgFileInput.addEventListener('change',()=>{ if(imgFileInput.files[0]) loadImgFile(imgFileInput.files[0]); });
-imgClearBtn.addEventListener('click', resetImg);
-
-function loadImgFile(file) {
-  if(!file.type.startsWith('image/')){ showToast('⚠ Please upload an image file'); return; }
-  imgFile=file;
-  $('imgFileName').textContent=file.name;
-  $('imgFileMeta').textContent=`${formatSize(file.size)} · ${file.type}`;
-  imgFileBar.classList.add('visible'); imgScanBtn.disabled=false;
-  $('imgResultsSection').classList.remove('visible');
-  $('imgOcrWrap').classList.remove('visible');
-}
-function resetImg() {
-  imgFile=null; imgFileInput.value=''; imgFileBar.classList.remove('visible');
-  imgScanBtn.disabled=true; $('imgResultsSection').classList.remove('visible'); $('imgOcrWrap').classList.remove('visible');
-}
-
-imgScanBtn.addEventListener('click', processImage);
-
-async function processImage() {
-  if(!imgFile) return;
-  imgScanBtn.disabled=true;
-  $('imgProgressWrap').classList.add('visible');
-  setProgress('imgProgressFill','imgProgressText','imgProgressPct',10,'Loading image…');
-
-  const bitmap=await createImageBitmap(imgFile);
-  const cv=document.createElement('canvas');
-  cv.width=bitmap.width; cv.height=bitmap.height;
-  const ctx=cv.getContext('2d');
-  const colorMode=$('imgColorSelect').value;
-  const contrast=parseInt($('imgContrastRange').value);
-  ctx.filter=buildFilter(colorMode, contrast);
-  ctx.drawImage(bitmap,0,0);
-  if(colorMode==='bw') applyBW(ctx, cv.width, cv.height);
-  if($('imgChkSharpen').checked) applySharpen(ctx, cv.width, cv.height);
-  imgProcessedCanvas=cv;
-
-  setProgress('imgProgressFill','imgProgressText','imgProgressPct',55,'Rendering preview…');
-  const wrap=$('imgPreviewWrap'), previewCv=$('imgCanvas');
-  const maxW=wrap.clientWidth||600;
-  const s=Math.min(1,(maxW-24)/cv.width);
-  previewCv.width=Math.round(cv.width*s); previewCv.height=Math.round(cv.height*s);
-  previewCv.getContext('2d').drawImage(cv,0,0,previewCv.width,previewCv.height);
-
-  if($('imgChkOCR').checked) {
-    setProgress('imgProgressFill','imgProgressText','imgProgressPct',70,'Running OCR…');
-    showToast('🔍 Running OCR…', 4000);
-    try {
-      const engineOverride = $('imgEngineVal').value;
-      const {text,confidence,engine}=await runOCR(cv, engineOverride);
-      $('imgOcrText').textContent=text||'(no text detected)';
-      $('imgOcrConf').textContent = confidence !== null ? `Confidence: ${confidence}% · ${engine}` : `Engine: ${engine}`;
-      $('imgOcrWrap').classList.add('visible');
-    } catch(e) {
-      $('imgOcrText').textContent='[OCR error: '+e.message+']';
-      $('imgOcrConf').textContent='';
-      $('imgOcrWrap').classList.add('visible');
-      showToast('⚠ OCR error: '+e.message, 5000);
-    }
-  }
-
-  setProgress('imgProgressFill','imgProgressText','imgProgressPct',100,'Done!');
-  await delay(400);
-  $('imgProgressWrap').classList.remove('visible');
-  $('imgResultsSection').classList.add('visible');
-  imgScanBtn.disabled=false;
-  showToast('✅ Image processed!');
-}
-
-$('imgBtnDownload').addEventListener('click',()=>{
-  if(!imgProcessedCanvas) return;
-  const a=document.createElement('a');
-  a.href=imgProcessedCanvas.toDataURL('image/png');
-  a.download=(imgFile?.name?.replace(/\.[^.]+$/,'')||'processed')+'_scanned.png';
-  a.click(); showToast('✅ Downloaded!');
-});
-$('imgBtnReset').addEventListener('click',()=>{ $('imgResultsSection').classList.remove('visible'); imgScanBtn.disabled=false; showToast('↺ Ready'); });
-$('imgOcrCopy').addEventListener('click',()=>navigator.clipboard.writeText($('imgOcrText').textContent).then(()=>showToast('📋 Copied!')));
-$('imgOcrTxt').addEventListener('click',()=>saveTxt($('imgOcrText').textContent,'image-ocr'));
 </script>
 </body>
 </html>
