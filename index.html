@@ -3,61 +3,159 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Minimal Weather UI</title>
+<title>Smart Weather AI (Full + Minimal UI)</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
 <style>
-body{
-  margin:0;
-  background:#000;
-  color:#fff;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
+:root{
+  --bg-color:#000;
+  --text-color:#fff;
+  --card-bg:linear-gradient(145deg,#1a1a1a,#111);
+  --transition:0.3s;
 }
-.container{
-  text-align:center;
-}
-.temp{
-  font-size:120px;
-  font-weight:300;
-}
-.icon{
-  font-size:80px;
-  margin-top:10px;
-}
+body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg-color);color:var(--text-color);}
+.app{max-width:420px;margin:auto;padding:20px;}
+
+/* MINIMAL TOP */
+.top{text-align:center;margin-bottom:20px;}
+.tempBig{font-size:100px;font-weight:300;}
+.iconBig{font-size:70px;margin-top:-10px;}
+.locationTitle{text-align:center;opacity:0.7;}
+
+/* CONTROLS */
+.themeToggle{display:flex;gap:10px;justify-content:center;margin:15px 0;}
+.themeToggle button{padding:8px 14px;border:none;border-radius:20px;background:#222;color:#fff;cursor:pointer;}
+.searchBox{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;}
+.searchBox input,.searchBox button{padding:12px;border-radius:25px;border:none;background:#1c1c1e;color:#fff;}
+
+/* CARDS */
+.segment h3{margin-top:20px;opacity:0.8;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.card{background:var(--card-bg);padding:15px;border-radius:15px;text-align:center;}
+.scroll{display:flex;overflow-x:auto;gap:10px;}
+.label{font-size:12px;opacity:0.6;}
+.value{font-size:18px;font-weight:600;}
+
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="temp" id="temp">--°C</div>
-  <div class="icon" id="icon">⛅</div>
+<div class="app">
+
+<div class="top">
+  <div class="tempBig" id="mainTemp">--°C</div>
+  <div class="iconBig" id="weatherIcon">⛅</div>
+  <div class="locationTitle" id="locationInfo">Loading...</div>
+</div>
+
+<div class="themeToggle">
+<button onclick="setTheme('light')">Light</button>
+<button onclick="setTheme('dark')">Dark</button>
+<button onclick="setTheme('oled')">OLED</button>
+</div>
+
+<div class="searchBox">
+<input id="cityInput" placeholder="Search city">
+<button onclick="searchCity()">Search</button>
+<button onclick="detectLocation()">📍 Use Location</button>
+</div>
+
+<div class="segment">
+<h3>Weather</h3>
+<div class="grid">
+<div class="card"><div class="label">Wind</div><div class="value" id="windValue"></div></div>
+<div class="card"><div class="label">Humidity</div><div class="value" id="humidityValue"></div></div>
+<div class="card"><div class="label">Feels</div><div class="value" id="feelsValue"></div></div>
+<div class="card"><div class="label">AC Advice</div><div class="value" id="acAdvice"></div></div>
+</div>
+</div>
+
+<div class="segment">
+<h3>24H Temperature</h3>
+<div class="scroll" id="temp24"></div>
+</div>
+
+<div class="segment">
+<h3>24H AQI</h3>
+<div class="scroll" id="aqi24"></div>
+</div>
+
+<div class="segment">
+<h3>24H Rain</h3>
+<div class="scroll" id="rain24"></div>
+</div>
+
+<div class="segment">
+<h3>7-Day Temperature</h3>
+<div class="scroll" id="temp7"></div>
+</div>
+
+<div class="segment">
+<h3>7-Day AQI</h3>
+<div class="scroll" id="aqi7"></div>
+</div>
+
+<div class="segment">
+<h3>7-Day Rain</h3>
+<div class="scroll" id="rain7"></div>
+</div>
+
 </div>
 
 <script>
-function getWeatherIcon(code){
-  if(code===0)return"☀️";
-  if(code<=3)return"⛅";
-  if(code<=48)return"🌫";
-  if(code<=67)return"🌧";
-  if(code<=77)return"🌨";
-  if(code<=82)return"🌦";
-  if(code<=99)return"⛈";
-  return"🌍";
+function setTheme(mode){
+ if(mode==='light'){document.documentElement.style.setProperty('--bg-color','#f4f4f4');document.documentElement.style.setProperty('--text-color','#000');}
+ else{document.documentElement.style.setProperty('--bg-color','#000');document.documentElement.style.setProperty('--text-color','#fff');}
 }
 
-async function loadWeather(){
-  let lat=22.57, lon=88.36;
-  let data=await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`)).json();
+function icon(code){if(code==0)return"☀️";if(code<=3)return"⛅";if(code<=48)return"🌫";if(code<=67)return"🌧";if(code<=82)return"🌦";return"⛈";}
+function aqi(pm){return Math.round(pm*4);}
+function ac(temp){if(temp>35)return"24°C";if(temp>30)return"25°C";if(temp>25)return"26°C";return"Off";}
 
-  let temp=data.current_weather.temperature;
-  let code=data.current_weather.weathercode;
+async function loadWeather(lat,lon){
+let w=await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,precipitation,apparent_temperature&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`)).json();
+let a=await (await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5&timezone=auto`)).json();
 
-  document.getElementById("temp").innerText=temp.toFixed(1)+"°C";
-  document.getElementById("icon").innerText=getWeatherIcon(code);
+let idx=0;
+
+let temp=w.current_weather.temperature;
+document.getElementById("mainTemp").innerText=temp+"°C";
+document.getElementById("weatherIcon").innerText=icon(w.current_weather.weathercode);
+
+document.getElementById("windValue").innerText=w.current_weather.windspeed;
+document.getElementById("humidityValue").innerText=w.hourly.relative_humidity_2m[idx];
+document.getElementById("feelsValue").innerText=w.hourly.apparent_temperature[idx];
+document.getElementById("acAdvice").innerText=ac(temp);
+
+// 24h temp
+for(let i=0;i<24;i++){let c=document.createElement("div");c.className="card";c.innerHTML=w.hourly.temperature_2m[idx+i]+"°";temp24.appendChild(c);} 
+
+// 24h aqi
+for(let i=0;i<24;i++){let c=document.createElement("div");c.className="card";c.innerHTML=aqi(a.hourly.pm2_5[idx+i]);aqi24.appendChild(c);} 
+
+// 24h rain
+for(let i=0;i<24;i++){let c=document.createElement("div");c.className="card";c.innerHTML=w.hourly.precipitation[idx+i]+"mm";rain24.appendChild(c);} 
+
+// 7 day temp
+for(let i=0;i<7;i++){let c=document.createElement("div");c.className="card";c.innerHTML=w.daily.temperature_2m_min[i]+"/"+w.daily.temperature_2m_max[i];temp7.appendChild(c);} 
+
+// 7 day aqi
+for(let i=0;i<7;i++){let slice=a.hourly.pm2_5.slice(i*24,(i+1)*24);let avg=slice.reduce((x,y)=>x+y,0)/slice.length;let c=document.createElement("div");c.className="card";c.innerHTML=aqi(avg);aqi7.appendChild(c);} 
+
+// 7 day rain
+for(let i=0;i<7;i++){let c=document.createElement("div");c.className="card";c.innerHTML=w.daily.precipitation_sum[i]+"mm";rain7.appendChild(c);} 
 }
 
-loadWeather();
+function detectLocation(){navigator.geolocation.getCurrentPosition(p=>{loadWeather(p.coords.latitude,p.coords.longitude);});}
+
+async function searchCity(){
+let city=cityInput.value;
+let g=await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`)).json();
+let r=g.results[0];
+locationInfo.innerText=r.name+", "+r.country;
+loadWeather(r.latitude,r.longitude);
+}
+
+window.onload=detectLocation;
 </script>
 </body>
 </html>
