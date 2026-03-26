@@ -3,116 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Weather AI - Full Pro</title>
+<title>Minimal Weather UI</title>
 <style>
-:root{
-  --bg-color:#000;
-  --text-color:#fff;
-  --card-bg:linear-gradient(145deg,#1a1a1a,#111);
+body{
+  margin:0;
+  background:#000;
+  color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
 }
-body{margin:0;font-family:sans-serif;background:var(--bg-color);color:var(--text-color);} 
-.app{max-width:420px;margin:auto;padding:20px;}
-.heading{text-align:center;font-size:26px;margin-bottom:10px;}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.card{background:var(--card-bg);padding:15px;border-radius:15px;text-align:center;}
-.scroll{display:flex;overflow-x:auto;gap:10px;}
-.segment h3{margin-top:20px;}
+.container{
+  text-align:center;
+}
+.temp{
+  font-size:120px;
+  font-weight:300;
+}
+.icon{
+  font-size:80px;
+  margin-top:10px;
+}
 </style>
 </head>
 <body>
-<div class="app">
-<div class="heading">🌤 Smart Weather AI PRO</div>
-
-<div id="mainTemp">Loading...</div>
-
-<div class="segment">
-<h3>24H Temperature</h3>
-<div class="scroll" id="temp24"></div>
-</div>
-
-<div class="segment">
-<h3>24H AQI</h3>
-<div class="scroll" id="aqi24"></div>
-</div>
-
-<div class="segment">
-<h3>24H Rain</h3>
-<div class="scroll" id="rain24"></div>
-</div>
-
-<div class="segment">
-<h3>7-Day Temperature</h3>
-<div class="scroll" id="temp7"></div>
-</div>
-
-<div class="segment">
-<h3>7-Day AQI</h3>
-<div class="scroll" id="aqi7"></div>
-</div>
-
-<div class="segment">
-<h3>7-Day Rain</h3>
-<div class="scroll" id="rain7"></div>
-</div>
-
+<div class="container">
+  <div class="temp" id="temp">--°C</div>
+  <div class="icon" id="icon">⛅</div>
 </div>
 
 <script>
-function aqi(pm){return Math.round(pm*4);}
-
-async function load(){
-let lat=22.57, lon=88.36;
-let w=await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`)).json();
-let a=await (await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5&timezone=auto`)).json();
-
-let idx=0;
-
-// 24H TEMP
-for(let i=0;i<24;i++){
-let c=document.createElement("div");c.className="card";
-c.innerHTML=w.hourly.temperature_2m[idx+i]+"°";
-document.getElementById("temp24").appendChild(c);
+function getWeatherIcon(code){
+  if(code===0)return"☀️";
+  if(code<=3)return"⛅";
+  if(code<=48)return"🌫";
+  if(code<=67)return"🌧";
+  if(code<=77)return"🌨";
+  if(code<=82)return"🌦";
+  if(code<=99)return"⛈";
+  return"🌍";
 }
 
-// 24H AQI
-for(let i=0;i<24;i++){
-let c=document.createElement("div");c.className="card";
-c.innerHTML=aqi(a.hourly.pm2_5[idx+i]);
-document.getElementById("aqi24").appendChild(c);
+async function loadWeather(){
+  let lat=22.57, lon=88.36;
+  let data=await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`)).json();
+
+  let temp=data.current_weather.temperature;
+  let code=data.current_weather.weathercode;
+
+  document.getElementById("temp").innerText=temp.toFixed(1)+"°C";
+  document.getElementById("icon").innerText=getWeatherIcon(code);
 }
 
-// 24H RAIN
-for(let i=0;i<24;i++){
-let c=document.createElement("div");c.className="card";
-c.innerHTML=w.hourly.precipitation[idx+i]+"mm";
-document.getElementById("rain24").appendChild(c);
-}
-
-// 7 DAY TEMP
-for(let i=0;i<7;i++){
-let c=document.createElement("div");c.className="card";
-c.innerHTML=w.daily.temperature_2m_min[i]+"/"+w.daily.temperature_2m_max[i];
-document.getElementById("temp7").appendChild(c);
-}
-
-// 7 DAY AQI
-for(let i=0;i<7;i++){
-let slice=a.hourly.pm2_5.slice(i*24,(i+1)*24);
-let avg=slice.reduce((x,y)=>x+y,0)/slice.length;
-let c=document.createElement("div");c.className="card";
-c.innerHTML=aqi(avg);
-document.getElementById("aqi7").appendChild(c);
-}
-
-// 7 DAY RAIN
-for(let i=0;i<7;i++){
-let c=document.createElement("div");c.className="card";
-c.innerHTML=w.daily.precipitation_sum[i]+"mm";
-document.getElementById("rain7").appendChild(c);
-}
-
-}
-load();
+loadWeather();
 </script>
 </body>
 </html>
