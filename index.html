@@ -5,21 +5,75 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smart Weather AI</title>
 
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
 <style>
 :root{
   --bg:#000;
   --text:#fff;
+  --font-small:14px;
+  --font-medium:18px;
+  --font-large:30px;
 }
-body{margin:0;background:var(--bg);color:var(--text);font-family:sans-serif;}
+
+.elderly{
+  --font-small:18px;
+  --font-medium:24px;
+  --font-large:42px;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:sans-serif;
+  transition:0.5s;
+}
+
 .app{max-width:420px;margin:auto;padding:15px;}
-.heading{text-align:center;font-size:24px;font-weight:700;}
-input,button{padding:12px;border:none;border-radius:20px;background:#1c1c1e;color:white;}
+
+.heading{text-align:center;font-size:var(--font-large);font-weight:700;}
+
+.controls{display:flex;flex-direction:column;gap:10px;margin:15px 0;}
+
+input,button{
+  padding:16px;
+  font-size:var(--font-medium);
+  border:none;
+  border-radius:25px;
+  background:#1c1c1e;
+  color:#fff;
+}
+
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.card{background:#111;padding:15px;border-radius:15px;text-align:center;}
+
+.card{
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.1);
+  padding:18px;
+  border-radius:18px;
+  text-align:center;
+}
+
+.label{font-size:var(--font-small);opacity:0.8;}
+.value{font-size:var(--font-medium);font-weight:600;}
+
+.segment h3{margin-top:25px;font-size:var(--font-medium);}
 .scroll{display:flex;overflow-x:auto;gap:10px;}
-.scroll .card{min-width:85px;}
-.aqi-good{color:#00e400;} .aqi-mod{color:#ffff00;}
-.aqi-usg{color:#ff7e00;} .aqi-unhealthy{color:#ff0000;}
+.scroll .card{min-width:110px;}
+
+#aqi.good{color:#00e400;}
+#aqi.mod{color:#ffff00;}
+#aqi.usg{color:#ff7e00;}
+#aqi.bad{color:#ff0000;}
+
+#advice{
+  text-align:center;
+  margin:15px;
+  font-size:var(--font-medium);
+}
 </style>
 </head>
 
@@ -28,134 +82,177 @@ input,button{padding:12px;border:none;border-radius:20px;background:#1c1c1e;colo
 
 <div class="heading">🌤 Smart Weather AI</div>
 
+<div style="text-align:center;margin:10px;">
+<button onclick="toggleElderlyMode()">👴 Elderly Mode</button>
+</div>
+
+<div class="controls">
 <input id="cityInput" placeholder="Search city">
 <button onclick="searchCity()">Search</button>
 <button onclick="detectLocation()">📍 Use Location</button>
-
-<div id="locationInfo">Loading Kolkata...</div>
-<div id="mainTemp" style="font-size:60px;text-align:center;">--</div>
-
-<!-- Weather -->
-<div class="grid">
-<div class="card">Wind: <span id="wind"></span></div>
-<div class="card">Humidity: <span id="hum"></span></div>
 </div>
 
-<!-- AQI -->
+<div id="locationInfo">Loading...</div>
+<div id="mainTemp" style="font-size:var(--font-large);text-align:center;">--</div>
+
+<div id="advice"></div>
+
 <div class="grid">
-<div class="card">AQI: <span id="aqi"></span></div>
-<div class="card">PM2.5: <span id="pm"></span></div>
+<div class="card"><div class="label">Wind</div><div id="wind" class="value"></div></div>
+<div class="card"><div class="label">Humidity</div><div id="hum" class="value"></div></div>
 </div>
 
-<!-- 24h Temp -->
-<h3>24h Temp</h3>
-<div id="temp24" class="scroll"></div>
+<div class="grid">
+<div class="card"><div class="label">AQI</div><div id="aqi" class="value"></div></div>
+<div class="card"><div class="label">PM2.5</div><div id="pm" class="value"></div></div>
+</div>
 
-<!-- 24h AQI -->
-<h3>24h AQI</h3>
-<div id="aqi24" class="scroll"></div>
-
-<!-- 24h Rain -->
-<h3>24h Rain</h3>
-<div id="rain24" class="scroll"></div>
-
-<!-- 7 days -->
-<h3>7 Days</h3>
-<div id="days7" class="scroll"></div>
+<div class="segment"><h3>24h Temperature</h3><div id="temp24" class="scroll"></div></div>
+<div class="segment"><h3>24h AQI</h3><div id="aqi24" class="scroll"></div></div>
+<div class="segment"><h3>24h Rain</h3><div id="rain24" class="scroll"></div></div>
+<div class="segment"><h3>7-Day Forecast</h3><div id="days7" class="scroll"></div></div>
 
 </div>
 
 <script>
-const KOLKATA=[22.57,88.36];
+const DEFAULT={lat:22.5726,lon:88.3639,name:"Kolkata, India"};
+let currentLat, currentLon, currentLabel;
 
-function safe(arr,i){return arr?.[i]??0;}
+function safe(a,i){return a?.[i]??0;}
 
 function aqiCalc(pm){
 if(pm<=12)return (50/12)*pm;
-if(pm<=35.4)return 51+(pm-12)*2.1;
-if(pm<=55.4)return 101+(pm-35.4)*2.5;
-return 151+(pm-55.4)*2;
+if(pm<=35.4)return ((100-51)/(35.4-12))*(pm-12)+51;
+if(pm<=55.4)return ((150-101)/(55.4-35.4))*(pm-35.4)+101;
+if(pm<=150.4)return ((200-151)/(150.4-55.4))*(pm-55.4)+151;
+return 200+(pm-150.4);
 }
 
-function aqiColor(a){
-if(a<=50)return"aqi-good";
-if(a<=100)return"aqi-mod";
-if(a<=150)return"aqi-usg";
-return"aqi-unhealthy";
+function aqiClass(a){
+if(a<=50)return"good";
+if(a<=100)return"mod";
+if(a<=150)return"usg";
+return"bad";
 }
 
-async function load(lat,lon){
+function advice(temp,aqi,rain){
+if(aqi>150)return"⚠️ Avoid outdoor activity";
+if(temp>35)return"🥵 Stay hydrated";
+if(temp<15)return"🧥 Wear warm clothes";
+if(rain>5)return"🌧 Carry umbrella";
+return"✅ Good weather";
+}
+
+function setBG(temp,rain){
+let bg="#000";
+if(rain>5)bg="linear-gradient(#1e3c72,#2a5298)";
+else if(temp>35)bg="linear-gradient(#ff512f,#dd2476)";
+else bg="linear-gradient(#0f2027,#2c5364)";
+document.body.style.background=bg;
+}
+
+function hour(t){return new Date(t).getHours()+":00";}
+
+async function load(lat,lon,label){
+currentLat=lat;currentLon=lon;currentLabel=label;
+
 try{
+document.getElementById("locationInfo").innerText=label;
 
 let w=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,precipitation,precipitation_probability&daily=temperature_2m_max,temperature_2m_min&timezone=auto`).then(r=>r.json());
 
-let a=await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5`).then(r=>r.json());
+let a=await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5&timezone=auto`).then(r=>r.json());
 
 let idx=0;
 
-document.getElementById("mainTemp").innerText=w.current_weather.temperature+"°C";
-document.getElementById("wind").innerText=w.current_weather.windspeed;
-document.getElementById("hum").innerText=safe(w.hourly.relative_humidity_2m,idx);
-
+let temp=w.current_weather.temperature;
+let wind=w.current_weather.windspeed;
+let hum=safe(w.hourly.relative_humidity_2m,idx);
 let pm=safe(a.hourly.pm2_5,idx);
 let aq=Math.round(aqiCalc(pm));
+let rain=safe(w.hourly.precipitation,idx);
 
-let aqiEl=document.getElementById("aqi");
-aqiEl.innerText=aq;
-aqiEl.className=aqiColor(aq);
-
+document.getElementById("mainTemp").innerText=temp+"°C";
+document.getElementById("wind").innerText=wind;
+document.getElementById("hum").innerText=hum;
 document.getElementById("pm").innerText=pm;
 
-let t24=document.getElementById("temp24"); t24.innerHTML="";
-let a24=document.getElementById("aqi24"); a24.innerHTML="";
-let r24=document.getElementById("rain24"); r24.innerHTML="";
+let aqEl=document.getElementById("aqi");
+aqEl.innerText=aq;
+aqEl.className="value "+aqiClass(aq);
 
+document.getElementById("advice").innerText=advice(temp,aq,rain);
+
+setBG(temp,rain);
+
+// notification
+if(rain>10 && Notification.permission==="granted"){
+new Notification("Heavy Rain Alert ☔");
+}
+
+// 24h loop
+let t24="",a24="",r24="";
 for(let i=0;i<24;i++){
+let j=i;
 
-let temp=safe(w.hourly.temperature_2m,i);
-let rain=safe(w.hourly.precipitation,i);
-let prob=safe(w.hourly.precipitation_probability,i);
-let aqi=Math.round(aqiCalc(safe(a.hourly.pm2_5,i)));
+t24+=`<div class="card"><div>${hour(w.hourly.time[j])}</div><div>${safe(w.hourly.temperature_2m,j)}°</div></div>`;
 
-t24.innerHTML+=`<div class="card">${i}:00<br>${temp}°</div>`;
+let aqi=Math.round(aqiCalc(safe(a.hourly.pm2_5,j)));
+a24+=`<div class="card ${aqiClass(aqi)}">${aqi}</div>`;
 
-a24.innerHTML+=`<div class="card ${aqiColor(aqi)}">${i}:00<br>${aqi}</div>`;
-
-r24.innerHTML+=`
-<div class="card">
-${i}:00<br>${rain}mm
-<div style="height:4px;background:#333;margin-top:4px;">
-<div style="width:${Math.min(rain*10,100)}%;height:100%;background:#00c6ff;"></div>
-</div>
-${prob}%
-</div>`;
+let rain=safe(w.hourly.precipitation,j);
+r24+=`<div class="card">${rain}mm</div>`;
 }
 
-let d7=document.getElementById("days7"); d7.innerHTML="";
+temp24.innerHTML=t24;
+aqi24.innerHTML=a24;
+rain24.innerHTML=r24;
+
+// 7 days
+let d7="";
 for(let i=0;i<7;i++){
-d7.innerHTML+=`<div class="card">${w.daily.temperature_2m_min[i]}°/${w.daily.temperature_2m_max[i]}°</div>`;
+d7+=`<div class="card">${w.daily.temperature_2m_min[i]}° / ${w.daily.temperature_2m_max[i]}°</div>`;
 }
+days7.innerHTML=d7;
 
-}catch{alert("Data error");}
+}catch{
+locationInfo.innerText="Error loading data";
+}
 }
 
 function detectLocation(){
-navigator.geolocation.getCurrentPosition(p=>{
-load(p.coords.latitude,p.coords.longitude);
-},()=>load(...KOLKATA));
+navigator.geolocation.getCurrentPosition(pos=>{
+load(pos.coords.latitude,pos.coords.longitude,"Your Location");
+},()=>load(DEFAULT.lat,DEFAULT.lon,DEFAULT.name));
 }
 
 function searchCity(){
-let c=document.getElementById("cityInput").value;
+let c=cityInput.value;
 fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${c}`)
-.then(r=>r.json()).then(d=>{
-let x=d.results[0];
-load(x.latitude,x.longitude);
+.then(r=>r.json())
+.then(d=>{
+let x=d.results?.[0];
+if(x) load(x.latitude,x.longitude,x.name);
 });
 }
 
-window.onload=detectLocation;
-</script>
+function toggleElderlyMode(){
+document.body.classList.toggle("elderly");
+localStorage.setItem("elderly",document.body.classList.contains("elderly"));
+}
 
+if(localStorage.getItem("elderly")==="true"){
+document.body.classList.add("elderly");
+}
+
+// PWA
+if("serviceWorker" in navigator){
+navigator.serviceWorker.register("sw.js");
+}
+
+Notification.requestPermission();
+
+detectLocation();
+</script>
 </body>
 </html>
