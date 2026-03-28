@@ -3,159 +3,260 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Weather AI (Full + Minimal UI)</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
+<title>Weather Ultra Pro</title>
+
 <style>
-:root{
-  --bg-color:#000;
-  --text-color:#fff;
-  --card-bg:linear-gradient(145deg,#1a1a1a,#111);
-  --transition:0.3s;
+:root {
+  --bg:#f5f5f5;
+  --text:#111;
+  --card:rgba(255,255,255,0.7);
 }
-body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg-color);color:var(--text-color);}
-.app{max-width:420px;margin:auto;padding:20px;}
 
-/* MINIMAL TOP */
-.top{text-align:center;margin-bottom:20px;}
-.tempBig{font-size:100px;font-weight:300;}
-.iconBig{font-size:70px;margin-top:-10px;}
-.locationTitle{text-align:center;opacity:0.7;}
+body.dark { --bg:#121212; --text:#fff; --card:rgba(255,255,255,0.05); }
+body.oled { --bg:#000; --text:#fff; --card:rgba(255,255,255,0.03); }
+body.hc { --bg:#000; --text:#0f0; --card:#000; }
 
-/* CONTROLS */
-.themeToggle{display:flex;gap:10px;justify-content:center;margin:15px 0;}
-.themeToggle button{padding:8px 14px;border:none;border-radius:20px;background:#222;color:#fff;cursor:pointer;}
-.searchBox{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;}
-.searchBox input,.searchBox button{padding:12px;border-radius:25px;border:none;background:#1c1c1e;color:#fff;}
+body{
+  margin:0;
+  font-family:sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
 
-/* CARDS */
-.segment h3{margin-top:20px;opacity:0.8;}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.card{background:var(--card-bg);padding:15px;border-radius:15px;text-align:center;}
-.scroll{display:flex;overflow-x:auto;gap:10px;}
-.label{font-size:12px;opacity:0.6;}
-.value{font-size:18px;font-weight:600;}
+#bgCanvas{
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  z-index:-1;
+}
 
+.container{
+  width:100%;
+  max-width:420px;
+  padding:12px;
+}
+
+.card{
+  background:var(--card);
+  backdrop-filter:blur(15px);
+  padding:14px;
+  border-radius:16px;
+  margin-bottom:12px;
+}
+
+.hourly,.daily{
+  display:flex;
+  overflow-x:auto;
+  gap:10px;
+}
+
+.small{
+  min-width:65px;
+  text-align:center;
+}
+
+button,input{
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  margin:4px;
+}
+
+footer{
+  margin-top:auto;
+  padding:10px;
+  font-size:12px;
+}
 </style>
 </head>
-<body>
-<div class="app">
 
-<div class="top">
-  <div class="tempBig" id="mainTemp">--°C</div>
-  <div class="iconBig" id="weatherIcon">⛅</div>
-  <div class="locationTitle" id="locationInfo">Loading...</div>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<div class="container">
+
+<h2>Weather Ultra Pro</h2>
+
+<input id="city" placeholder="Enter city">
+<button onclick="search()">Search</button>
+
+<div class="card">
+  <div id="loc">Loading...</div>
+  <div id="temp" style="font-size:40px"></div>
+  <div id="desc"></div>
 </div>
 
-<div class="themeToggle">
-<button onclick="setTheme('light')">Light</button>
+<div class="card">
+  <h3>🤖 AI Insights</h3>
+  <div id="insights"></div>
+</div>
+
+<div class="card">
+  <h3>📊 Temperature Chart</h3>
+  <canvas id="chart" height="150"></canvas>
+</div>
+
+<div class="card">
+  <h3>Hourly</h3>
+  <div class="hourly" id="hourly"></div>
+</div>
+
+<div class="card">
+  <h3>7-Day</h3>
+  <div class="daily" id="daily"></div>
+</div>
+
+<div class="card">
+  <h3>🗺️ Radar</h3>
+  <iframe src="https://www.rainviewer.com/map.html?loc=22.57,88.36,6"
+    width="100%" height="250" style="border:none;border-radius:12px"></iframe>
+</div>
+
+<button onclick="setTheme('')">Light</button>
 <button onclick="setTheme('dark')">Dark</button>
 <button onclick="setTheme('oled')">OLED</button>
-</div>
-
-<div class="searchBox">
-<input id="cityInput" placeholder="Search city">
-<button onclick="searchCity()">Search</button>
-<button onclick="detectLocation()">📍 Use Location</button>
-</div>
-
-<div class="segment">
-<h3>Weather</h3>
-<div class="grid">
-<div class="card"><div class="label">Wind</div><div class="value" id="windValue"></div></div>
-<div class="card"><div class="label">Humidity</div><div class="value" id="humidityValue"></div></div>
-<div class="card"><div class="label">Feels</div><div class="value" id="feelsValue"></div></div>
-<div class="card"><div class="label">AC Advice</div><div class="value" id="acAdvice"></div></div>
-</div>
-</div>
-
-<div class="segment">
-<h3>24H Temperature</h3>
-<div class="scroll" id="temp24"></div>
-</div>
-
-<div class="segment">
-<h3>24H AQI</h3>
-<div class="scroll" id="aqi24"></div>
-</div>
-
-<div class="segment">
-<h3>24H Rain</h3>
-<div class="scroll" id="rain24"></div>
-</div>
-
-<div class="segment">
-<h3>7-Day Temperature</h3>
-<div class="scroll" id="temp7"></div>
-</div>
-
-<div class="segment">
-<h3>7-Day AQI</h3>
-<div class="scroll" id="aqi7"></div>
-</div>
-
-<div class="segment">
-<h3>7-Day Rain</h3>
-<div class="scroll" id="rain7"></div>
-</div>
+<button onclick="setTheme('hc')">HC</button>
 
 </div>
+
+<footer>
+© Manik Roy <span id="year"></span>. All Rights Reserved.
+</footer>
 
 <script>
-function setTheme(mode){
- if(mode==='light'){document.documentElement.style.setProperty('--bg-color','#f4f4f4');document.documentElement.style.setProperty('--text-color','#000');}
- else{document.documentElement.style.setProperty('--bg-color','#000');document.documentElement.style.setProperty('--text-color','#fff');}
+// Year
+year.textContent=new Date().getFullYear();
+
+// Theme
+function setTheme(t){ document.body.className=t; }
+
+// Canvas Animation
+const canvas=document.getElementById("bgCanvas");
+const ctx=canvas.getContext("2d");
+canvas.width=innerWidth;
+canvas.height=innerHeight;
+
+let rain=[];
+
+function rainAnim(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle="rgba(200,200,255,0.5)";
+  rain.forEach(p=>{
+    ctx.beginPath();
+    ctx.moveTo(p.x,p.y);
+    ctx.lineTo(p.x,p.y+10);
+    ctx.stroke();
+    p.y+=8;
+    if(p.y>canvas.height)p.y=0;
+  });
+  requestAnimationFrame(rainAnim);
 }
 
-function icon(code){if(code==0)return"☀️";if(code<=3)return"⛅";if(code<=48)return"🌫";if(code<=67)return"🌧";if(code<=82)return"🌦";return"⛈";}
-function aqi(pm){return Math.round(pm*4);}
-function ac(temp){if(temp>35)return"24°C";if(temp>30)return"25°C";if(temp>25)return"26°C";return"Off";}
-
-async function loadWeather(lat,lon){
-let w=await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,precipitation,apparent_temperature&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`)).json();
-let a=await (await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5&timezone=auto`)).json();
-
-let idx=0;
-
-let temp=w.current_weather.temperature;
-document.getElementById("mainTemp").innerText=temp+"°C";
-document.getElementById("weatherIcon").innerText=icon(w.current_weather.weathercode);
-
-document.getElementById("windValue").innerText=w.current_weather.windspeed;
-document.getElementById("humidityValue").innerText=w.hourly.relative_humidity_2m[idx];
-document.getElementById("feelsValue").innerText=w.hourly.apparent_temperature[idx];
-document.getElementById("acAdvice").innerText=ac(temp);
-
-// 24h temp
-for(let i=0;i<24;i++){let c=document.createElement("div");c.className="card";c.innerHTML=w.hourly.temperature_2m[idx+i]+"°";temp24.appendChild(c);} 
-
-// 24h aqi
-for(let i=0;i<24;i++){let c=document.createElement("div");c.className="card";c.innerHTML=aqi(a.hourly.pm2_5[idx+i]);aqi24.appendChild(c);} 
-
-// 24h rain
-for(let i=0;i<24;i++){let c=document.createElement("div");c.className="card";c.innerHTML=w.hourly.precipitation[idx+i]+"mm";rain24.appendChild(c);} 
-
-// 7 day temp
-for(let i=0;i<7;i++){let c=document.createElement("div");c.className="card";c.innerHTML=w.daily.temperature_2m_min[i]+"/"+w.daily.temperature_2m_max[i];temp7.appendChild(c);} 
-
-// 7 day aqi
-for(let i=0;i<7;i++){let slice=a.hourly.pm2_5.slice(i*24,(i+1)*24);let avg=slice.reduce((x,y)=>x+y,0)/slice.length;let c=document.createElement("div");c.className="card";c.innerHTML=aqi(avg);aqi7.appendChild(c);} 
-
-// 7 day rain
-for(let i=0;i<7;i++){let c=document.createElement("div");c.className="card";c.innerHTML=w.daily.precipitation_sum[i]+"mm";rain7.appendChild(c);} 
+function setBG(code){
+  if(code<3){
+    canvas.style.background="linear-gradient(#4facfe,#00f2fe)";
+  }else if(code<60){
+    canvas.style.background="#888";
+  }else{
+    rain=Array.from({length:100},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height}));
+    rainAnim();
+  }
 }
 
-function detectLocation(){navigator.geolocation.getCurrentPosition(p=>{loadWeather(p.coords.latitude,p.coords.longitude);});}
+// AI Insights
+function insights(data){
+  let t=data.hourly.temperature_2m.slice(0,24);
+  let r=data.hourly.precipitation||[];
+  let w=data.hourly.windspeed_10m||[];
+  let out=[];
 
-async function searchCity(){
-let city=cityInput.value;
-let g=await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`)).json();
-let r=g.results[0];
-locationInfo.innerText=r.name+", "+r.country;
-loadWeather(r.latitude,r.longitude);
+  for(let i=0;i<r.length;i++){
+    if(r[i]>0.5){ out.push("🌧️ Rain likely in "+i+"h"); break;}
+  }
+
+  let diff=t[t.length-1]-t[0];
+  if(diff>3) out.push("🔥 Warming trend");
+  if(diff<-3) out.push("❄️ Cooling trend");
+
+  for(let i=0;i<w.length;i++){
+    if(w[i]>30){ out.push("🌬️ Wind alert in "+i+"h"); break;}
+  }
+
+  if(out.length==0) out.push("☀️ Stable weather");
+
+  document.getElementById("insights").innerHTML=out.join("<br>");
 }
 
-window.onload=detectLocation;
+// Chart
+function chart(data){
+  let c=document.getElementById("chart");
+  let ctx=c.getContext("2d");
+  let t=data.hourly.temperature_2m.slice(0,24);
+
+  let max=Math.max(...t),min=Math.min(...t);
+
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.beginPath();
+
+  t.forEach((v,i)=>{
+    let x=i*(c.width/24);
+    let y=c.height-((v-min)/(max-min))*c.height;
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  });
+
+  ctx.stroke();
+}
+
+// Alerts
+function alerts(data){
+  if(data.current_weather.windspeed>50){
+    alert("⚠️ High wind!");
+  }
+}
+
+// Weather load
+async function load(lat,lon,name="Location"){
+  const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,windspeed_10m&daily=temperature_2m_max,temperature_2m_min&current_weather=true&timezone=auto`);
+  const d=await res.json();
+
+  loc.innerText=name;
+  temp.innerText=d.current_weather.temperature+"°C";
+  desc.innerText="Wind "+d.current_weather.windspeed;
+
+  setBG(d.current_weather.weathercode);
+  insights(d);
+  chart(d);
+  alerts(d);
+
+  // hourly
+  hourly.innerHTML=d.hourly.temperature_2m.slice(0,24).map((t,i)=>
+    `<div class="small">${i}h<br>${t}°</div>`).join("");
+
+  // daily
+  daily.innerHTML=d.daily.temperature_2m_max.map((t,i)=>
+    `<div class="small">D${i+1}<br>${t}/${d.daily.temperature_2m_min[i]}</div>`).join("");
+}
+
+// Search
+async function search(){
+  let city=document.getElementById("city").value;
+  let g=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`);
+  let d=await g.json();
+  if(d.results){
+    let p=d.results[0];
+    load(p.latitude,p.longitude,p.name);
+  }
+}
+
+// Location
+navigator.geolocation.getCurrentPosition(p=>{
+  load(p.coords.latitude,p.coords.longitude,"Your Location");
+});
 </script>
+
 </body>
 </html>
