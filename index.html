@@ -1,683 +1,531 @@
- <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>WeatherNow</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PC Builder — Manik Roy</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0f1117;--card:#1a1d27;--card2:#222535;--text:#f0f2ff;--sub:#8890b0;--acc:#4f9fff;--acc2:#7c3aff;--bdr:#2a2d3e;--shadow:0 4px 24px #0008;--rad:18px;--F:'DM Sans',sans-serif;--FH:'Syne',sans-serif}
-[data-theme=light]{--bg:#eef2fb;--card:#fff;--card2:#f0f4ff;--text:#0d0f1a;--sub:#5a6080;--acc:#2563eb;--acc2:#6d28d9;--bdr:#d4daef;--shadow:0 4px 20px #0001}
-[data-theme=oled]{--bg:#000;--card:#0a0a0a;--card2:#111;--text:#fff;--sub:#888;--acc:#3d9bff;--acc2:#9f6fff;--bdr:#1a1a1a;--shadow:0 4px 24px #000b}
-[data-theme=hc]{--bg:#000;--card:#000;--card2:#111;--text:#fff;--sub:#ff0;--acc:#0ff;--acc2:#f0f;--bdr:#fff;--shadow:none}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:var(--F);min-height:100dvh;display:flex;flex-direction:column;align-items:center;transition:background .3s,color .3s;padding-bottom:env(safe-area-inset-bottom,16px)}
-/* HEADER */
-header{width:100%;max-width:500px;padding:clamp(12px,4vw,20px) clamp(12px,4vw,18px) 0;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.logo{font-family:var(--FH);font-size:clamp(1.05rem,5vw,1.35rem);font-weight:800;letter-spacing:-.4px;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;flex-shrink:0}
-.hdr-r{display:flex;align-items:center;gap:7px;flex-shrink:0}
-/* UNIT TOGGLE */
-.unit-tog{display:flex;background:var(--card2);border:1.5px solid var(--bdr);border-radius:10px;overflow:hidden;flex-shrink:0}
-.ubtn{padding:5px 10px;font-family:var(--FH);font-size:.73rem;font-weight:700;border:none;background:none;color:var(--sub);cursor:pointer;transition:.2s;touch-action:manipulation}
-.ubtn.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-radius:8px}
-/* THEME BUTTONS */
-.themes{display:flex;gap:4px}
-.tbtn{width:29px;height:29px;border-radius:50%;border:2px solid var(--bdr);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:.2s;background:var(--card);touch-action:manipulation}
-.tbtn:hover{border-color:var(--acc);transform:scale(1.1)}
-.tbtn.on{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent)}
-/* MAIN */
-main{width:100%;max-width:500px;padding:12px clamp(10px,4vw,16px) 16px;display:flex;flex-direction:column;gap:11px}
-/* SAVED CITIES */
-.saved-scroll{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 0 4px}
-.saved-scroll::-webkit-scrollbar{display:none}
-.chip{flex-shrink:0;background:var(--card2);border:1.5px solid var(--bdr);border-radius:10px;padding:6px 11px;font-size:.78rem;font-weight:600;cursor:pointer;transition:.2s;white-space:nowrap;font-family:var(--FH);display:flex;align-items:center;gap:5px}
-.chip:hover{border-color:var(--acc);color:var(--acc)}
-.chip .x{color:var(--sub);font-size:.8rem}.chip .x:hover{color:#ff6b6b}
-.chip-add{border-style:dashed;color:var(--sub)}
-/* SEARCH */
-.srch{display:flex;gap:7px;position:relative}
-.srch input{flex:1;background:var(--card);border:1.5px solid var(--bdr);border-radius:13px;padding:13px 15px;color:var(--text);font-family:var(--F);font-size:1rem;outline:none;transition:.2s;min-width:0;-webkit-appearance:none;appearance:none}
-.srch input:focus{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 13%,transparent)}
-.srch input::placeholder{color:var(--sub)}
-.sbtn{background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:13px;padding:13px 15px;color:#fff;font-family:var(--FH);font-weight:700;font-size:.87rem;cursor:pointer;transition:.2s;white-space:nowrap;touch-action:manipulation}
-.sbtn:active{opacity:.8;transform:scale(.97)}
-.loc{background:var(--card);border:1.5px solid var(--bdr);color:var(--text);font-size:1.1rem}
-.loc:hover{border-color:var(--acc);background:var(--card2)}
-/* SUGGESTIONS */
-#sug{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);border:1.5px solid var(--bdr);border-radius:13px;z-index:99;display:none;overflow:hidden;box-shadow:var(--shadow)}
-.si{padding:11px 15px;cursor:pointer;font-size:.88rem;border-bottom:1px solid var(--bdr);transition:.15s}
-.si:last-child{border-bottom:none}.si:hover{background:var(--card2);color:var(--acc)}
-/* ERROR / ALERT */
-#err{background:#ff4d4d18;border:1.5px solid #ff4d4d55;border-radius:12px;padding:11px 15px;color:#ff6b6b;font-size:.87rem;display:none}
-.alert{background:#ff990018;border:1.5px solid #ff990055;border-radius:12px;padding:11px 15px;color:#ffaa33;font-size:.83rem;display:none;line-height:1.55}
-.alert strong{display:block;margin-bottom:2px}
-/* LOADER */
-.ld{display:none;text-align:center;padding:28px;color:var(--sub);font-size:.88rem}
-.spin{width:34px;height:34px;border:3px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 10px}
-@keyframes sp{to{transform:rotate(360deg)}}
-/* CARDS */
-.card{background:var(--card);border:1.5px solid var(--bdr);border-radius:var(--rad);padding:17px;box-shadow:var(--shadow);transition:background .3s,border-color .3s;animation:fu .4s ease both}
-@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.card:nth-child(1){animation-delay:.04s}.card:nth-child(2){animation-delay:.08s}.card:nth-child(3){animation-delay:.12s}.card:nth-child(4){animation-delay:.16s}.card:nth-child(5){animation-delay:.2s}.card:nth-child(6){animation-delay:.24s}.card:nth-child(7){animation-delay:.28s}.card:nth-child(8){animation-delay:.32s}.card:nth-child(9){animation-delay:.36s}
-/* NOW CARD */
-.now{text-align:center;position:relative;overflow:hidden}
-.now::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:260px;height:260px;background:radial-gradient(circle,var(--acc),transparent 70%);opacity:.07;pointer-events:none;animation:gp 4s ease-in-out infinite}
-@keyframes gp{0%,100%{opacity:.05}50%{opacity:.11}}
-.now-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
-.city-name{font-family:var(--FH);font-size:clamp(1.15rem,6vw,1.55rem);font-weight:800;line-height:1.2;text-align:left}
-.sub-row{display:flex;align-items:center;gap:7px;margin-top:3px;flex-wrap:wrap}
-.country{font-size:.81rem;color:var(--sub)}
-.ltime{font-size:.78rem;color:var(--acc);font-weight:600;background:color-mix(in srgb,var(--acc) 12%,transparent);padding:2px 7px;border-radius:6px}
-.wicon{font-size:clamp(3.5rem,14vw,5rem);line-height:1;margin:8px 0 2px;filter:drop-shadow(0 4px 14px color-mix(in srgb,var(--acc) 38%,transparent));cursor:pointer;transition:transform .25s;display:inline-block}
-.wicon:active{transform:scale(.9) rotate(-8deg)}
-.tbig{font-family:var(--FH);font-size:clamp(2.8rem,15vw,4.5rem);font-weight:800;line-height:1;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.trange{font-size:.83rem;color:var(--sub);margin-top:2px}
-.hi{color:#fb7185}.lo{color:var(--acc)}
-.desc{color:var(--sub);font-size:.93rem;text-transform:capitalize;margin-top:2px}
-.feels{color:var(--sub);font-size:.79rem;margin-top:2px}
-/* GRID */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
-.st{background:var(--card2);border-radius:11px;padding:10px 12px;border:1px solid var(--bdr);transition:.2s}
-.st:hover{border-color:var(--acc)}
-.sl{color:var(--sub);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
-.sv{font-family:var(--FH);font-size:1rem;font-weight:700}
-/* SECTION TITLE */
-.stit{font-family:var(--FH);font-size:.8rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:11px}
-/* HOURLY */
-.hs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.hs::-webkit-scrollbar{display:none}
-.hi2{flex-shrink:0;background:var(--card2);border:1px solid var(--bdr);border-radius:11px;padding:9px 12px;text-align:center;min-width:60px}
-.hi2.now-h{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,var(--card2))}
-.ht{color:var(--sub);font-size:.71rem;margin-bottom:4px}
-.hic{font-size:1.35rem;margin-bottom:4px}
-.htp{font-family:var(--FH);font-size:.88rem;font-weight:700}
-.hr{font-size:.67rem;color:#60a5fa;margin-top:2px}
-/* FORECAST */
-.fl{display:flex;flex-direction:column;gap:7px}
-.fr{display:flex;align-items:center;background:var(--card2);border:1px solid var(--bdr);border-radius:11px;padding:10px 12px;gap:9px;transition:.2s}
-.fr:hover{border-color:var(--acc)}
-.fd{font-family:var(--FH);font-weight:700;font-size:.87rem;flex:1;min-width:50px}
-.fc{font-size:1.25rem;flex-shrink:0}
-.fdsc{color:var(--sub);font-size:.77rem;flex:2;text-align:center;text-transform:capitalize;line-height:1.3}
-.frp{font-size:.7rem;color:#60a5fa;flex-shrink:0;min-width:30px;text-align:right}
-.ftp{font-family:var(--FH);font-size:.87rem;font-weight:700;text-align:right;white-space:nowrap;flex-shrink:0}
-.flo{color:var(--sub);font-weight:400}
-/* AQI */
-.aqi-c{text-align:center;padding:2px 0 10px}
-.aqi-n{font-family:var(--FH);font-size:2.8rem;font-weight:800;line-height:1}
-.aqi-lb{font-size:.93rem;font-weight:600;margin-top:3px}
-.aqi-ad{font-size:.79rem;color:var(--sub);margin-top:3px;line-height:1.55}
-.aqi-sc{display:flex;height:7px;border-radius:99px;overflow:hidden;margin:12px 0 5px}
-.aqi-sc div{flex:1}
-.aqi-mw{position:relative;height:13px;margin-bottom:9px}
-.aqi-mk{position:absolute;width:11px;height:11px;background:var(--text);border-radius:50%;top:1px;transform:translateX(-50%);transition:left .7s ease;box-shadow:0 0 5px #0008}
-.pg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
-.pi{background:var(--card2);border-radius:9px;padding:8px 11px;border:1px solid var(--bdr)}
-.pn{font-size:.69rem;color:var(--sub);margin-bottom:2px}
-.pv{font-family:var(--FH);font-size:.93rem;font-weight:700}
-/* SUN ARC */
-.sun-l{display:flex;justify-content:space-between;font-size:.78rem;color:var(--sub);margin-top:3px}
-.uvbg{background:var(--card2);border-radius:7px;overflow:hidden;height:7px;margin-top:7px}
-.uvb{height:100%;border-radius:7px;background:linear-gradient(90deg,#22c55e,#eab308,#f97316,#ef4444,#7c3aed);transition:width .7s ease}
-/* WIND COMPASS */
-.wc{display:flex;align-items:center;gap:16px}
-.cr{width:78px;height:78px;border-radius:50%;border:2px solid var(--bdr);position:relative;background:var(--card2);flex-shrink:0}
-.cn{position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:.64rem;font-weight:700;color:var(--sub);font-family:var(--FH)}
-.ndl{position:absolute;top:50%;left:50%;width:3px;height:30px;background:linear-gradient(to top,var(--acc),transparent);transform-origin:bottom center;transform:translateX(-50%) translateY(-100%);transition:transform .9s ease;border-radius:3px}
-/* MOON */
-.moon-r{display:flex;align-items:center;gap:13px;padding:5px 0}
-.mi{font-size:2.6rem;line-height:1}
-.mp{font-family:var(--FH);font-weight:700;font-size:.97rem}
-.md{font-size:.78rem;color:var(--sub);margin-top:2px}
-/* POLLEN BARS */
-.pb-bg{background:var(--card2);border-radius:5px;height:5px;overflow:hidden;margin-top:3px}
-.pb{height:100%;border-radius:5px;transition:width .7s ease}
-/* TIPS */
-.tp{display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--bdr)}
-.tp:last-child{border-bottom:none}
-.tic{font-size:1.25rem;flex-shrink:0;margin-top:1px}
-.tt{font-size:.82rem;line-height:1.55;color:var(--sub)}
-.tt strong{color:var(--text)}
-/* SHARE */
-.shrbtn{display:flex;align-items:center;gap:5px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:9px;padding:7px 12px;font-family:var(--FH);font-size:.78rem;font-weight:700;cursor:pointer;color:var(--text);transition:.2s;touch-action:manipulation;white-space:nowrap;flex-shrink:0}
-.shrbtn:hover{border-color:var(--acc);color:var(--acc)}
-.upd{font-size:.71rem;color:var(--sub);text-align:center;margin-top:-3px}
-/* FOOTER */
-footer{width:100%;max-width:500px;text-align:center;padding:15px clamp(10px,4vw,16px);color:var(--sub);font-size:.74rem;border-top:1px solid var(--bdr);line-height:1.85}
-footer .copy{font-family:var(--FH);font-weight:700;color:var(--text)}
-footer .a{color:var(--acc)}
-/* APP */
-#app{width:100%;max-width:500px;display:none;flex-direction:column;gap:11px}
-#saved{display:none}
-@media(max-width:360px){.sv{font-size:.9rem}.tbig{font-size:clamp(2.4rem,17vw,3.5rem)}.sbtn{padding:13px 10px;font-size:.82rem}}
+:root{--bg:#0f1117;--sur:#1a1d27;--bdr:#2a2e3e;--ac:#00e5ff;--ac2:#ff6b35;--ok:#00ff88;--wn:#ff6b35;--tx:#e8eaf0;--sub:#7a7f96;--r:10px;--sh:0 4px 24px rgba(0,0,0,.4)}
+[data-theme=light]{--bg:#f0f2f8;--sur:#fff;--bdr:#d8dce8;--ac:#0077cc;--ac2:#e8460a;--ok:#009944;--wn:#e8460a;--tx:#1a1d27;--sub:#5a6080;--sh:0 4px 24px rgba(0,0,0,.12)}
+[data-theme=oled]{--bg:#000;--sur:#080808;--bdr:#1c1c1c;--ac:#00ff88;--ac2:#ff3366;--ok:#00ff88;--wn:#ff3366;--tx:#fff;--sub:#555;--sh:0 4px 24px rgba(0,255,136,.07)}
+[data-theme=hc]{--bg:#000;--sur:#000;--bdr:#fff;--ac:#ff0;--ac2:#0ff;--ok:#0f0;--wn:#f00;--tx:#fff;--sub:#ccc;--sh:none}
+[data-theme=hc] *{outline:1px solid #fff!important}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;align-items:center;transition:background .3s,color .3s}
+header{width:100%;max-width:740px;padding:18px 14px 0;text-align:center}
+h1{font-family:'Space Mono',monospace;font-size:clamp(1.2rem,5vw,1.9rem);color:var(--ac);letter-spacing:2px;text-transform:uppercase}
+h1 span{color:var(--ac2)}
+.tagline{font-size:.72rem;color:var(--sub);margin-top:3px;letter-spacing:1px}
+.rate-bar{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-family:'Space Mono',monospace;font-size:.68rem}
+.rate-chip{padding:3px 10px;border-radius:12px;border:1px solid var(--bdr);background:var(--sur);color:var(--sub)}
+.rate-chip b{color:var(--ac)}
+.rate-dot{width:6px;height:6px;border-radius:50%;background:#aaa;animation:pulse 2s infinite}
+.rate-dot.live{background:var(--ok)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.ctrl-bar{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:10px 0 0;align-items:center}
+.tbtn{padding:4px 12px;border-radius:18px;border:1.5px solid var(--bdr);background:var(--sur);color:var(--tx);font-family:'Space Mono',monospace;font-size:.65rem;cursor:pointer;transition:all .2s;letter-spacing:.5px}
+.tbtn:hover,.tbtn.active{border-color:var(--ac);color:var(--ac);background:rgba(0,229,255,.06)}
+.cur-tog{display:flex;border-radius:18px;border:1.5px solid var(--ac);overflow:hidden;font-family:'Space Mono',monospace;font-size:.7rem}
+.cur-tog button{padding:4px 13px;border:none;background:transparent;color:var(--ac);cursor:pointer;font-family:inherit;font-size:inherit;font-weight:700;letter-spacing:.5px;transition:background .2s,color .2s}
+.cur-tog button.active{background:var(--ac);color:#000}
+main{width:100%;max-width:740px;padding:14px;flex:1;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--sur);border:1.5px solid var(--bdr);border-radius:var(--r);padding:13px;box-shadow:var(--sh);transition:background .3s,border .3s}
+.ch{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.ico{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
+.ct{font-family:'Space Mono',monospace;font-size:.78rem;text-transform:uppercase;letter-spacing:1px;color:var(--ac)}
+.plist{display:flex;flex-direction:column;gap:10px}
+.prow{display:flex;flex-direction:column;gap:4px}
+.ptop{display:flex;gap:7px;align-items:center}
+.badge{font-family:'Space Mono',monospace;font-size:.64rem;padding:4px 8px;border-radius:6px;background:rgba(0,229,255,.07);color:var(--ac);border:1px solid rgba(0,229,255,.16);white-space:nowrap;min-width:90px;text-align:center;flex-shrink:0}
+select{flex:1;min-width:0;background:var(--bg);color:var(--tx);border:1.5px solid var(--bdr);border-radius:7px;padding:8px 10px;font-family:'Sora',sans-serif;font-size:.78rem;outline:none;transition:border .22s,box-shadow .22s;appearance:none;-webkit-appearance:none}
+select:focus{border-color:var(--ac);box-shadow:0 0 0 2px rgba(0,229,255,.1)}
+select.sok{border-color:var(--ok)!important;box-shadow:0 0 0 2px rgba(0,255,136,.1)!important}
+select.swn{border-color:var(--wn)!important;box-shadow:0 0 0 2px rgba(255,107,53,.12)!important}
+.phint{font-size:.68rem;padding:4px 9px;border-radius:5px;display:none;line-height:1.5}
+.phint.ok{display:block;color:var(--ok);background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.18)}
+.phint.warn{display:block;color:var(--wn);background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.22)}
+.phint.info{display:block;color:var(--sub);background:rgba(120,130,160,.05);border:1px solid var(--bdr)}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.si{text-align:center;padding:11px 7px;border:1.5px solid var(--bdr);border-radius:8px;background:var(--bg)}
+.sl{font-size:.6rem;color:var(--sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+.sv{font-family:'Space Mono',monospace;font-size:.95rem;color:var(--ac);font-weight:700}
+.sv.wn{color:var(--wn)}
+.bwrap{margin-top:9px}
+.bl{display:flex;justify-content:space-between;font-size:.68rem;color:var(--sub);margin-bottom:4px}
+.btrack{height:7px;border-radius:4px;background:var(--bdr);overflow:hidden}
+.bfill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--ac),var(--ac2));transition:width .5s cubic-bezier(.4,0,.2,1)}
+.bfill.over{background:linear-gradient(90deg,#ff3366,#ff6b35)}
+.cbox{padding:9px 13px;border-radius:8px;font-size:.75rem;line-height:1.8;border:1.5px solid var(--bdr);background:var(--bg);color:var(--sub);transition:all .3s}
+.cbox.ok{border-color:var(--ok);color:var(--ok);background:rgba(0,255,136,.04)}
+.cbox.warn{border-color:var(--wn);color:var(--wn);background:rgba(255,107,53,.04)}
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tpl-card{padding:9px 11px;border:1.5px solid var(--bdr);border-radius:8px;cursor:pointer;transition:border .2s,background .2s;background:var(--bg)}
+.tpl-card:hover{border-color:var(--ac);background:rgba(0,229,255,.04)}
+.tpl-name{font-family:'Space Mono',monospace;font-size:.67rem;color:var(--ac);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+.tpl-desc{font-size:.65rem;color:var(--sub);line-height:1.4;margin-bottom:5px}
+.tpl-price{font-family:'Space Mono',monospace;font-size:.75rem;color:var(--ac2);font-weight:700}
+.btnrow{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+button.pri{padding:9px 20px;background:var(--ac);color:#000;border:none;border-radius:7px;font-family:'Space Mono',monospace;font-size:.75rem;font-weight:700;cursor:pointer;letter-spacing:1px;transition:opacity .2s,transform .1s;text-transform:uppercase}
+button.pri:active{transform:scale(.97);opacity:.85}
+button.sec{padding:9px 18px;background:transparent;color:var(--ac);border:1.5px solid var(--ac);border-radius:7px;font-family:'Space Mono',monospace;font-size:.75rem;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .2s}
+button.sec:hover{background:rgba(0,229,255,.06)}
+.slist{list-style:none;display:flex;flex-direction:column;gap:5px;max-height:130px;overflow-y:auto}
+.slist li{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;padding:6px 9px;border-radius:6px;background:var(--bg);border:1px solid var(--bdr);transition:border .2s}
+.slist li:hover{border-color:var(--ac)}
+.slist li span{cursor:pointer;flex:1}
+.dbtn{color:var(--ac2);background:none;border:none;cursor:pointer;font-size:.85rem;padding:0 3px}
+.enote{font-size:.72rem;color:var(--sub);text-align:center;padding:9px}
+footer{width:100%;max-width:740px;padding:16px;text-align:center;font-family:'Space Mono',monospace;font-size:.62rem;color:var(--sub);letter-spacing:1px;border-top:1px solid var(--bdr);margin-top:6px}
+footer a{color:var(--ac);text-decoration:none}
+@media(min-width:500px){.sgrid{grid-template-columns:repeat(4,1fr)}.tpl-grid{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
-<body>
-
+<body data-theme="dark">
 <header>
-  <div class="logo">⛅ WeatherNow</div>
-  <div class="hdr-r">
-    <div class="unit-tog">
-      <button class="ubtn on" id="btnC">°C</button>
-      <button class="ubtn" id="btnF">°F</button>
-    </div>
-    <div class="themes">
-      <button class="tbtn on" data-t="dark" title="Dark">🌙</button>
-      <button class="tbtn" data-t="light" title="Light">☀️</button>
-      <button class="tbtn" data-t="oled" title="OLED">⬛</button>
-      <button class="tbtn" data-t="hc" title="High Contrast">⚡</button>
+  <h1>⚙ PC<span>Builder</span></h1>
+  <div class="tagline">Assemble · Estimate · Compare</div>
+  <div class="rate-bar">
+    <div class="rate-chip">1 USD = <b id="rate-val">84.00</b> INR</div>
+    <div class="rate-dot" id="rate-dot"></div>
+    <span id="rate-status" style="font-size:.62rem;color:var(--sub)">Fetching live rate…</span>
+  </div>
+  <div class="ctrl-bar">
+    <button class="tbtn active" onclick="setTheme('dark',this)">Dark</button>
+    <button class="tbtn" onclick="setTheme('light',this)">Light</button>
+    <button class="tbtn" onclick="setTheme('oled',this)">OLED</button>
+    <button class="tbtn" onclick="setTheme('hc',this)">HC</button>
+    <div class="cur-tog">
+      <button id="busd" onclick="setCur('usd')">$ USD</button>
+      <button id="binr" class="active" onclick="setCur('inr')">₹ INR</button>
     </div>
   </div>
 </header>
-
 <main>
-  <!-- SAVED CITIES -->
-  <div id="saved"><div class="saved-scroll" id="savedRow"></div></div>
-
-  <!-- SEARCH -->
-  <div class="srch">
-    <input type="text" id="ci" placeholder="Search city, town…" autocomplete="off" inputmode="search">
-    <button class="sbtn loc" id="locBtn" aria-label="Use my location">📍</button>
-    <button class="sbtn" id="goBtn">Search</button>
-    <div id="sug"></div>
+  <!-- Components -->
+  <div class="card">
+    <div class="ch"><div class="ico">🧩</div><span class="ct">Select Components</span></div>
+    <div class="plist" id="plist"></div>
   </div>
-  <div id="err"></div>
-  <div class="alert" id="alrt"></div>
-
-  <!-- LOADER -->
-  <div class="ld" id="ld"><div class="spin"></div>Fetching weather…</div>
-
-  <!-- APP -->
-  <div id="app">
-
-    <!-- 1. CURRENT WEATHER -->
-    <div class="card now">
-      <div class="now-top">
-        <div>
-          <div class="city-name" id="cname"></div>
-          <div class="sub-row"><span class="country" id="cntry"></span><span class="ltime" id="ltime"></span></div>
-        </div>
-        <button class="shrbtn" id="shrBtn">📤 Share</button>
-      </div>
-      <div class="wicon" id="wicon">⛅</div>
-      <div class="tbig" id="tbig">--°</div>
-      <div class="trange"><span class="hi" id="thi"></span> / <span class="lo" id="tlo"></span></div>
-      <div class="desc" id="wdesc"></div>
-      <div class="feels" id="feels"></div>
-      <div class="g2">
-        <div class="st"><div class="sl">💧 Humidity</div><div class="sv" id="hum"></div></div>
-        <div class="st"><div class="sl">💨 Wind</div><div class="sv" id="wnd"></div></div>
-        <div class="st"><div class="sl">👁 Visibility</div><div class="sv" id="vis"></div></div>
-        <div class="st"><div class="sl">🌡 Pressure</div><div class="sv" id="pres"></div></div>
-        <div class="st"><div class="sl">💦 Dew Point</div><div class="sv" id="dew"></div></div>
-        <div class="st"><div class="sl">☁️ Cloud Cover</div><div class="sv" id="cld"></div></div>
-      </div>
-      <div class="upd" id="upd"></div>
+  <!-- Templates -->
+  <div class="card">
+    <div class="ch"><div class="ico">🏗</div><span class="ct">Pre-Built Templates</span></div>
+    <div class="tpl-grid" id="tpl-grid"></div>
+  </div>
+  <!-- Summary -->
+  <div class="card">
+    <div class="ch"><div class="ico">📊</div><span class="ct">Build Summary</span></div>
+    <div class="sgrid">
+      <div class="si"><div class="sl">Total Cost</div><div class="sv" id="sc">—</div></div>
+      <div class="si"><div class="sl">TDP Watts</div><div class="sv" id="st">0W</div></div>
+      <div class="si"><div class="sl">Parts Added</div><div class="sv" id="sp">0/8</div></div>
+      <div class="si"><div class="sl">PSU Status</div><div class="sv" id="ss">—</div></div>
     </div>
-
-    <!-- 2. AQI -->
-    <div class="card">
-      <div class="stit">🌬 Air Quality (AQI)</div>
-      <div class="aqi-c">
-        <div class="aqi-n" id="aqiN">--</div>
-        <div class="aqi-lb" id="aqiL"></div>
-        <div class="aqi-ad" id="aqiA"></div>
-      </div>
-      <div class="aqi-sc">
-        <div style="background:#22c55e"></div><div style="background:#84cc16"></div>
-        <div style="background:#eab308"></div><div style="background:#f97316"></div>
-        <div style="background:#ef4444"></div><div style="background:#7c3aed"></div>
-      </div>
-      <div class="aqi-mw"><div class="aqi-mk" id="aqiMk"></div></div>
-      <div class="pg" id="pgrid"></div>
+    <div class="bwrap">
+      <div class="bl"><span>Power Load</span><span id="bpct">0%</span></div>
+      <div class="btrack"><div class="bfill" id="bfill" style="width:0%"></div></div>
     </div>
-
-    <!-- 3. HOURLY FORECAST -->
-    <div class="card">
-      <div class="stit">⏱ 24-Hour Forecast</div>
-      <div class="hs" id="hscrl"></div>
+  </div>
+  <!-- Compat -->
+  <div class="card">
+    <div class="ch"><div class="ico">✅</div><span class="ct">Compatibility</span></div>
+    <div class="cbox" id="cbox">Select components to run compatibility check.</div>
+  </div>
+  <!-- Saves -->
+  <div class="card">
+    <div class="ch"><div class="ico">💾</div><span class="ct">Saved Builds</span></div>
+    <div class="btnrow" style="margin-bottom:11px">
+      <button class="pri" onclick="saveBuild()">💾 Save</button>
+      <button class="sec" onclick="resetBuild()">🔄 Reset</button>
+      <button class="sec" onclick="exportBuild()">📋 Export</button>
     </div>
-
-    <!-- 4. 7-DAY FORECAST -->
-    <div class="card">
-      <div class="stit">📅 7-Day Forecast</div>
-      <div class="fl" id="flist"></div>
-    </div>
-
-    <!-- 5. SUN, MOON & UV -->
-    <div class="card">
-      <div class="stit">🌅 Sun, Moon & UV</div>
-      <svg viewBox="0 0 220 90" style="width:100%;max-width:300px;display:block;margin:0 auto">
-        <defs>
-          <linearGradient id="sg" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#f97316"/>
-            <stop offset="100%" stop-color="#facc15"/>
-          </linearGradient>
-        </defs>
-        <path d="M20 80 Q110 0 200 80" fill="none" stroke="var(--bdr)" stroke-width="3" stroke-linecap="round"/>
-        <path d="M20 80 Q110 0 200 80" fill="none" stroke="url(#sg)" stroke-width="3" stroke-linecap="round" id="arc" stroke-dasharray="0 9999"/>
-        <circle r="8" fill="#facc15" id="sdot" cx="20" cy="80" filter="url(#glow)"/>
-        <defs><filter id="glow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-        <text x="20" y="88" text-anchor="middle" font-size="7.5" fill="var(--sub)" id="sr">--</text>
-        <text x="200" y="88" text-anchor="middle" font-size="7.5" fill="var(--sub)" id="ss">--</text>
-      </svg>
-      <div class="sun-l">
-        <span>🌅 <span id="sunrise"></span></span>
-        <span id="daylen" style="color:var(--acc);font-size:.74rem"></span>
-        <span>🌇 <span id="sunset"></span></span>
-      </div>
-      <div style="margin-top:13px">
-        <div class="sl">🔆 UV Index</div>
-        <div class="sv" id="uvi" style="margin-top:3px"></div>
-        <div class="uvbg"><div class="uvb" id="uvb" style="width:0"></div></div>
-      </div>
-      <div class="moon-r" style="margin-top:13px">
-        <div class="mi" id="micon">🌑</div>
-        <div><div class="mp" id="mphase">—</div><div class="md" id="mdet"></div></div>
-      </div>
-    </div>
-
-    <!-- 6. WIND DETAIL -->
-    <div class="card">
-      <div class="stit">🌀 Wind Detail</div>
-      <div class="wc">
-        <div class="cr">
-          <div class="cn">N</div>
-          <div class="ndl" id="ndl"></div>
-        </div>
-        <div class="g2" style="flex:1;margin-top:0">
-          <div class="st"><div class="sl">Speed</div><div class="sv" id="wspd"></div></div>
-          <div class="st"><div class="sl">Gusts</div><div class="sv" id="wgst"></div></div>
-          <div class="st"><div class="sl">Direction</div><div class="sv" id="wdir"></div></div>
-          <div class="st"><div class="sl">Beaufort</div><div class="sv" id="bft"></div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 7. PRECIPITATION -->
-    <div class="card">
-      <div class="stit">🌧 Precipitation</div>
-      <div class="g2" style="margin-top:0">
-        <div class="st"><div class="sl">Today Rain</div><div class="sv" id="rain"></div></div>
-        <div class="st"><div class="sl">Snow Depth</div><div class="sv" id="snow"></div></div>
-        <div class="st"><div class="sl">Rain Chance</div><div class="sv" id="rprob"></div></div>
-        <div class="st"><div class="sl">Evapotransp.</div><div class="sv" id="evap"></div></div>
-      </div>
-    </div>
-
-    <!-- 8. HEALTH, POLLEN & COMFORT -->
-    <div class="card">
-      <div class="stit">🌿 Health & Comfort</div>
-      <div id="plnGrid" style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px"></div>
-      <div class="g2" style="margin-top:0">
-        <div class="st"><div class="sl">🤧 Allergy Risk</div><div class="sv" id="allgy"></div></div>
-        <div class="st"><div class="sl">🏃 Exercise</div><div class="sv" id="exrc"></div></div>
-        <div class="st"><div class="sl">😴 Sleep</div><div class="sv" id="slp"></div></div>
-        <div class="st"><div class="sl">👗 Clothing</div><div class="sv" id="cloth"></div></div>
-      </div>
-    </div>
-
-    <!-- 9. SMART TIPS -->
-    <div class="card">
-      <div class="stit">💡 Smart Tips</div>
-      <div id="tips"></div>
-    </div>
-
-  </div><!-- /app -->
+    <ul class="slist" id="slist"></ul>
+    <div class="enote" id="enote">No saved builds yet.</div>
+  </div>
 </main>
-
-<footer>
-  <div class="copy">© <span id="yr"></span> Manik Roy</div>
-  All Rights Reserved<br>
-  <span class="a">Open-Meteo</span> · <span class="a">Air Quality API</span> · <span class="a">Nominatim</span> — Zero API keys required
-</footer>
+<footer>© <span id="yr"></span> Manik Roy. All Rights Reserved. | <a href="#">PC Builder</a></footer>
 
 <script>
-'use strict';
-let GEO=null,RAW=null,AQIR=null,UNIT='C';
-const $=id=>document.getElementById(id);
-$('yr').textContent=new Date().getFullYear();
+document.getElementById('yr').textContent = new Date().getFullYear();
 
-// THEME
-const tbs=document.querySelectorAll('.tbtn');
-tbs.forEach(b=>b.addEventListener('click',()=>{
-  document.documentElement.setAttribute('data-theme',b.dataset.t);
-  tbs.forEach(x=>x.classList.remove('on'));b.classList.add('on');
-  localStorage.setItem('wn-t',b.dataset.t);
-}));
-const ST=localStorage.getItem('wn-t');
-if(ST){document.documentElement.setAttribute('data-theme',ST);tbs.forEach(b=>b.classList.toggle('on',b.dataset.t===ST));}
-
-// UNIT
-$('btnC').addEventListener('click',()=>setU('C'));
-$('btnF').addEventListener('click',()=>setU('F'));
-function setU(u){UNIT=u;$('btnC').classList.toggle('on',u==='C');$('btnF').classList.toggle('on',u==='F');localStorage.setItem('wn-u',u);if(RAW&&GEO)render(GEO,RAW,AQIR);}
-const SU=localStorage.getItem('wn-u');if(SU)setU(SU);
-const T=v=>UNIT==='F'?Math.round(v*9/5+32):Math.round(v);
-const TU=()=>UNIT==='F'?'°F':'°C';
-const SPD=v=>UNIT==='F'?(v*0.621).toFixed(1)+' mph':v.toFixed(1)+' km/h';
-
-// WMO MAP
-function wmo(c){
-  const m={0:['✨','Clear sky'],1:['🌤','Mainly clear'],2:['⛅','Partly cloudy'],3:['☁️','Overcast'],
-    45:['🌫','Fog'],48:['🌫','Icing fog'],51:['🌦','Light drizzle'],53:['🌧','Drizzle'],55:['🌧','Heavy drizzle'],
-    61:['🌦','Light rain'],63:['🌧','Moderate rain'],65:['🌧','Heavy rain'],71:['🌨','Light snow'],
-    73:['❄️','Moderate snow'],75:['❄️','Heavy snow'],77:['🌨','Snow grains'],80:['🌦','Showers'],
-    81:['🌧','Rain showers'],82:['⛈','Violent showers'],85:['🌨','Snow showers'],86:['❄️','Heavy snow showers'],
-    95:['⛈','Thunderstorm'],96:['⛈','Thunderstorm+hail'],99:['⛈','Heavy thunderstorm']};
-  return m[c]||['🌤','Unknown'];
-}
-
-// UTILS
-const fmtT=iso=>new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:true});
-function fmtD(iso,i){if(i===0)return'Today';if(i===1)return'Tomorrow';return new Date(iso).toLocaleDateString([],{weekday:'short'});}
-function wdirL(d){return['N','NE','E','SE','S','SW','W','NW'][Math.round(d/45)%8];}
-function bf(k){const b=[1,5,11,19,28,38,49,61,74,88,102,117];let s=0;b.forEach((v,i)=>{if(k>=v)s=i+1;});return s;}
-const bfD=['Calm','Light air','Light breeze','Gentle breeze','Mod. breeze','Fresh breeze','Strong breeze','Near gale','Gale','Severe gale','Storm','Violent storm','Hurricane'];
-function ltime(tz){try{return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:tz});}catch{return '';}}
-function dayLen(sr,ss){const m=Math.round((new Date(ss)-new Date(sr))/60000);return`${Math.floor(m/60)}h ${m%60}m`;}
-
-// MOON PHASE
-function moon(){
-  const known=new Date(2000,0,6,18,14,0);
-  const pct=(((Date.now()-known.getTime())/(1000*60*60*24))%29.53058867+29.53058867)%29.53058867/29.53058867;
-  const p=[{mx:.025,n:'New Moon',i:'🌑'},{mx:.25,n:'Waxing Crescent',i:'🌒'},{mx:.275,n:'First Quarter',i:'🌓'},
-    {mx:.5,n:'Waxing Gibbous',i:'🌔'},{mx:.525,n:'Full Moon',i:'🌕'},{mx:.75,n:'Waning Gibbous',i:'🌖'},
-    {mx:.775,n:'Last Quarter',i:'🌗'},{mx:1,n:'Waning Crescent',i:'🌘'}];
-  for(const x of p)if(pct<=x.mx)return{...x,pct};
-  return{n:'New Moon',i:'🌑',pct:0};
-}
-
-// AQI
-function aqiI(v){
-  if(v<=50)  return{lb:'Good',c:'#22c55e',ad:'Air quality is satisfactory. Enjoy outdoor activities!',pct:v/50*16};
-  if(v<=100) return{lb:'Moderate',c:'#eab308',ad:'Acceptable. Sensitive individuals should limit outdoor exertion.',pct:16+(v-50)/50*16};
-  if(v<=150) return{lb:'Unhealthy for Sensitive Groups',c:'#f97316',ad:'Sensitive groups should reduce outdoor exertion.',pct:33+(v-100)/50*17};
-  if(v<=200) return{lb:'Unhealthy',c:'#ef4444',ad:'Everyone may experience health effects. Limit outdoor activity.',pct:50+(v-150)/50*16};
-  if(v<=300) return{lb:'Very Unhealthy',c:'#a855f7',ad:'Health alert — everyone may experience serious effects.',pct:66+(v-200)/100*17};
-  return{lb:'Hazardous',c:'#7c3aed',ad:'Health emergency. Avoid all outdoor activity.',pct:100};
-}
-
-// POLLEN ESTIMATE
-function pln(uv,hum,temp){
-  const s=Math.round((uv/11*3)+(hum>60?2:0)+(temp>18&&temp<30?2:1));
-  if(s<=2)return{lb:'Low',c:'#22c55e',pct:20};
-  if(s<=4)return{lb:'Moderate',c:'#eab308',pct:50};
-  if(s<=6)return{lb:'High',c:'#f97316',pct:75};
-  return{lb:'Very High',c:'#ef4444',pct:95};
-}
-
-// CLOTHING SUGGESTION
-function clothing(temp){
-  if(temp<0)return'🧥 Heavy coat + layers';
-  if(temp<8)return'🧥 Warm coat';
-  if(temp<15)return'🧶 Light jacket';
-  if(temp<22)return'👕 Light layers';
-  if(temp<28)return'🩱 Light clothing';
-  return'☀️ Very light, breathable';
-}
-
-// SMART TIPS
-function tips(c,aqi){
-  const t=[],temp=c.temperature_2m,h=c.relative_humidity_2m,w=c.weather_code,ws=c.wind_speed_10m;
-  if([61,63,65,80,81,82,51,53,55].includes(w))t.push({i:'☂️',s:'Bring an umbrella',d:'Rain is expected or ongoing.'});
-  if([71,73,75,85,86].includes(w))t.push({i:'🧥',s:'Dress warm & waterproof',d:'Snow conditions detected.'});
-  if(temp<2)t.push({i:'🧤',s:'Near freezing',d:'Risk of ice — wear warm layers and grip shoes.'});
-  else if(temp<10)t.push({i:'🥶',s:'Cold outside',d:'Bundle up before heading out.'});
-  if(temp>33)t.push({i:'🌊',s:'Stay hydrated',d:'High heat — drink water frequently and seek shade.'});
-  if(h>80)t.push({i:'😓',s:'High humidity',d:'Feels muggier than the temperature shows.'});
-  if(ws>40)t.push({i:'💨',s:'Strong winds',d:'Secure loose outdoor objects and hold onto hats!'});
-  if(aqi&&aqi.us_aqi>100)t.push({i:'😷',s:'Poor air quality',d:'Consider wearing a mask outdoors.'});
-  if([0,1].includes(w)&&temp>15&&temp<28)t.push({i:'🕶️',s:'Great day outside!',d:'Perfect conditions for outdoor activities.'});
-  if([95,96,99].includes(w))t.push({i:'⚡',s:'Thunderstorm risk',d:'Stay indoors and away from tall objects.'});
-  if(t.length===0)t.push({i:'✅',s:'Conditions look good!',d:'No special precautions needed today.'});
-  return t;
-}
-
-// SUN ARC
-function renderArc(sr,ss){
-  const now=Date.now(),s=new Date(sr).getTime(),e=new Date(ss).getTime();
-  const pct=Math.max(0,Math.min(1,(now-s)/(e-s)));
-  const L=314;
-  $('arc').setAttribute('stroke-dasharray',`${pct*L} ${L}`);
-  const a=Math.PI*pct;
-  const cx=20+(180*pct),cy=80-Math.sin(a)*70;
-  $('sdot').setAttribute('cx',cx.toFixed(1));$('sdot').setAttribute('cy',cy.toFixed(1));
-  $('sr').textContent=fmtT(sr);$('ss').textContent=fmtT(ss);
-}
-
-// SAVED CITIES
-let saved=JSON.parse(localStorage.getItem('wn-sv')||'[]');
-function renderSaved(){
-  const sec=$('saved'),row=$('savedRow');row.innerHTML='';
-  saved.forEach((c,i)=>{
-    const el=document.createElement('div');el.className='chip';
-    el.innerHTML=`<span>${c}</span><span class="x" data-i="${i}">✕</span>`;
-    el.addEventListener('click',e=>{if(!e.target.classList.contains('x'))load(c);});
-    el.querySelector('.x').addEventListener('click',e=>{e.stopPropagation();saved.splice(i,1);localStorage.setItem('wn-sv',JSON.stringify(saved));renderSaved();});
-    row.appendChild(el);
-  });
-  if(GEO&&!saved.includes(GEO.name)){
-    const a=document.createElement('div');a.className='chip chip-add';a.textContent='+ Save city';
-    a.addEventListener('click',()=>{if(GEO&&!saved.includes(GEO.name)){saved.push(GEO.name);localStorage.setItem('wn-sv',JSON.stringify(saved));renderSaved();}});
-    row.appendChild(a);
+// ── LIVE EXCHANGE RATE ──────────────────────────────────────────
+let INR_RATE = 84;
+async function fetchRate() {
+  try {
+    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    const d = await r.json();
+    INR_RATE = d.rates.INR || 84;
+    document.getElementById('rate-val').textContent = INR_RATE.toFixed(2);
+    document.getElementById('rate-dot').classList.add('live');
+    document.getElementById('rate-status').textContent = 'Live rate ✓';
+    document.getElementById('rate-status').style.color = 'var(--ok)';
+    rebuildOptions(); update();
+  } catch {
+    document.getElementById('rate-status').textContent = 'Using ₹84 (offline)';
   }
-  sec.style.display=saved.length>0||GEO?'block':'none';
 }
+fetchRate();
+setInterval(fetchRate, 5 * 60 * 1000); // refresh every 5 min
 
-// AUTOCOMPLETE
-let sugT;
-$('ci').addEventListener('input',function(){
-  clearTimeout(sugT);const v=this.value.trim();
-  if(v.length<2){$('sug').style.display='none';return;}
-  sugT=setTimeout(async()=>{
-    try{
-      const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(v)}&format=json&limit=5`,{headers:{'Accept-Language':'en'}});
-      const d=await r.json();const sg=$('sug');
-      if(!d.length){sg.style.display='none';return;}
-      sg.innerHTML='';
-      d.forEach(item=>{
-        const pts=item.display_name.split(',');
-        const el=document.createElement('div');el.className='si';el.textContent=[pts[0],pts[pts.length-1]].join(',');
-        el.addEventListener('click',()=>{$('ci').value=pts[0].trim();sg.style.display='none';load(pts[0].trim());});
-        sg.appendChild(el);
-      });sg.style.display='block';
-    }catch(e){}
-  },280);
-});
-document.addEventListener('click',e=>{if(!e.target.closest('.srch'))$('sug').style.display='none';});
+// ── CURRENCY ───────────────────────────────────────────────────
+let currency = 'inr';
+function setTheme(t,el){document.body.dataset.theme=t;document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));el.classList.add('active');}
+function setCur(c){currency=c;document.getElementById('busd').classList.toggle('active',c==='usd');document.getElementById('binr').classList.toggle('active',c==='inr');rebuildOptions();update();}
+function fmt(usd){if(currency==='inr'){const v=Math.round(usd*INR_RATE);return '₹'+v.toLocaleString('en-IN');}return '$'+usd.toLocaleString('en-US');}
+function fmtBoth(usd){return '₹'+Math.round(usd*INR_RATE).toLocaleString('en-IN')+' / $'+usd.toLocaleString();}
 
-// ERROR / LOADER
-function showE(m){$('err').textContent=m;$('err').style.display='block';}
-function clrE(){$('err').style.display='none';}
-function ldv(v){$('ld').style.display=v?'block':'none';}
+// ── PARTS DATA (prices in USD, ~INR equiv shown) ────────────────
+// Each part has 15 options (index 0 = None) + 15 real options
+const PARTS = [
+ {id:'cpu',label:'CPU',icon:'🖥',options:[
+  {n:'None',p:0,tdp:0,sock:null},
+  {n:'Intel Celeron G6900',p:59,tdp:46,sock:'lga1700'},      // ~₹4950
+  {n:'Intel Pentium Gold G7400',p:69,tdp:46,sock:'lga1700'}, // ~₹5800
+  {n:'AMD Athlon 3000G',p:75,tdp:35,sock:'am4'},              // ~₹6300
+  {n:'Intel Core i3-12100',p:97,tdp:60,sock:'lga1700'},       // ~₹8150
+  {n:'Intel Core i3-13100',p:115,tdp:60,sock:'lga1700'},      // ~₹9660
+  {n:'AMD Ryzen 3 4100',p:79,tdp:65,sock:'am4'},              // ~₹6640
+  {n:'AMD Ryzen 5 5500',p:119,tdp:65,sock:'am4'},             // ~₹9996
+  {n:'AMD Ryzen 5 5600',p:139,tdp:65,sock:'am4'},             // ~₹11676
+  {n:'AMD Ryzen 5 5600X',p:159,tdp:65,sock:'am4'},            // ~₹13356
+  {n:'Intel Core i5-12400F',p:149,tdp:65,sock:'lga1700'},     // ~₹12516
+  {n:'Intel Core i5-13600K',p:249,tdp:125,sock:'lga1700'},    // ~₹20916
+  {n:'AMD Ryzen 7 5700X',p:189,tdp:65,sock:'am4'},            // ~₹15876
+  {n:'AMD Ryzen 7 7700X',p:299,tdp:105,sock:'am5'},           // ~₹25116
+  {n:'Intel Core i7-13700K',p:349,tdp:125,sock:'lga1700'},    // ~₹29316
+  {n:'AMD Ryzen 9 7950X',p:589,tdp:170,sock:'am5'}            // ~₹49476
+ ]},
+ {id:'mb',label:'Motherboard',icon:'🔌',options:[
+  {n:'None',p:0,tdp:0,sock:null,ddr:null},
+  {n:'H510M mATX (B460)',p:59,tdp:25,sock:'lga1700',ddr:'ddr4'},   // ~₹4956
+  {n:'B560M mATX DDR4',p:69,tdp:28,sock:'lga1700',ddr:'ddr4'},
+  {n:'A320M mATX DDR4',p:59,tdp:25,sock:'am4',ddr:'ddr4'},
+  {n:'B450M mATX DDR4',p:75,tdp:28,sock:'am4',ddr:'ddr4'},
+  {n:'B550M mATX DDR4',p:89,tdp:30,sock:'am4',ddr:'ddr4'},
+  {n:'B660M DDR4 mATX',p:109,tdp:30,sock:'lga1700',ddr:'ddr4'},
+  {n:'X470 ATX DDR4',p:99,tdp:35,sock:'am4',ddr:'ddr4'},
+  {n:'X570 ATX DDR4',p:149,tdp:40,sock:'am4',ddr:'ddr4'},
+  {n:'B650 mATX DDR5',p:149,tdp:35,sock:'am5',ddr:'ddr5'},
+  {n:'Z690 DDR4 ATX',p:179,tdp:40,sock:'lga1700',ddr:'ddr4'},
+  {n:'Z690 DDR5 ATX',p:199,tdp:40,sock:'lga1700',ddr:'ddr5'},
+  {n:'X570 ATX WiFi DDR4',p:199,tdp:42,sock:'am4',ddr:'ddr4'},
+  {n:'Z790 DDR5 ATX',p:249,tdp:42,sock:'lga1700',ddr:'ddr5'},
+  {n:'X670 ATX DDR5',p:269,tdp:45,sock:'am5',ddr:'ddr5'},
+  {n:'X670E ATX DDR5',p:349,tdp:48,sock:'am5',ddr:'ddr5'}
+ ]},
+ {id:'ram',label:'RAM',icon:'💾',options:[
+  {n:'None',p:0,tdp:0,gen:null},
+  {n:'4GB DDR4-2666',p:12,tdp:2,gen:'ddr4'},
+  {n:'8GB DDR4-2666',p:18,tdp:3,gen:'ddr4'},
+  {n:'8GB DDR4-3200',p:22,tdp:3,gen:'ddr4'},
+  {n:'16GB DDR4-2666',p:29,tdp:5,gen:'ddr4'},
+  {n:'16GB DDR4-3200',p:35,tdp:5,gen:'ddr4'},
+  {n:'16GB DDR4-3600',p:42,tdp:5,gen:'ddr4'},
+  {n:'32GB DDR4-3200',p:59,tdp:8,gen:'ddr4'},
+  {n:'32GB DDR4-3600',p:69,tdp:8,gen:'ddr4'},
+  {n:'16GB DDR5-4800',p:49,tdp:6,gen:'ddr5'},
+  {n:'16GB DDR5-5600',p:59,tdp:6,gen:'ddr5'},
+  {n:'32GB DDR5-5200',p:79,tdp:9,gen:'ddr5'},
+  {n:'32GB DDR5-6000',p:95,tdp:10,gen:'ddr5'},
+  {n:'64GB DDR4-3200',p:119,tdp:13,gen:'ddr4'},
+  {n:'64GB DDR5-5600',p:169,tdp:15,gen:'ddr5'},
+  {n:'128GB DDR5-4800',p:289,tdp:20,gen:'ddr5'}
+ ]},
+ {id:'gpu',label:'GPU',icon:'🎮',options:[
+  {n:'None / iGPU',p:0,tdp:0},
+  {n:'Intel UHD 730 (iGPU)',p:0,tdp:15},
+  {n:'AMD Radeon RX 550',p:69,tdp:50},
+  {n:'NVIDIA GT 1030',p:79,tdp:30},
+  {n:'NVIDIA GTX 1050 Ti',p:89,tdp:75},
+  {n:'NVIDIA GTX 1650',p:129,tdp:75},
+  {n:'NVIDIA GTX 1660',p:159,tdp:120},
+  {n:'NVIDIA GTX 1660 Super',p:179,tdp:125},
+  {n:'AMD RX 6600',p:189,tdp:132},
+  {n:'NVIDIA RTX 3060',p:249,tdp:170},
+  {n:'AMD RX 6700 XT',p:269,tdp:230},
+  {n:'NVIDIA RTX 3070',p:319,tdp:220},
+  {n:'NVIDIA RTX 4070',p:549,tdp:200},
+  {n:'NVIDIA RTX 4070 Ti',p:749,tdp:285},
+  {n:'AMD RX 7900 XTX',p:899,tdp:355},
+  {n:'NVIDIA RTX 4090',p:1599,tdp:450}
+ ]},
+ {id:'storage',label:'Storage',icon:'💿',options:[
+  {n:'None',p:0,tdp:0},
+  {n:'120GB SATA SSD',p:16,tdp:2},
+  {n:'240GB SATA SSD',p:22,tdp:2},
+  {n:'480GB SATA SSD',p:32,tdp:2},
+  {n:'500GB SATA SSD',p:38,tdp:2},
+  {n:'1TB SATA SSD',p:55,tdp:3},
+  {n:'2TB SATA SSD',p:89,tdp:3},
+  {n:'500GB NVMe Gen3',p:45,tdp:5},
+  {n:'1TB NVMe Gen3',p:59,tdp:5},
+  {n:'2TB NVMe Gen3',p:89,tdp:6},
+  {n:'500GB NVMe Gen4',p:59,tdp:6},
+  {n:'1TB NVMe Gen4',p:79,tdp:7},
+  {n:'2TB NVMe Gen4',p:129,tdp:8},
+  {n:'4TB HDD 5400rpm',p:55,tdp:8},
+  {n:'4TB HDD 7200rpm',p:69,tdp:10},
+  {n:'8TB HDD 7200rpm',p:139,tdp:12}
+ ]},
+ {id:'psu',label:'PSU',icon:'⚡',options:[
+  {n:'None',p:0,tdp:0,watts:0},
+  {n:'300W Generic',p:19,tdp:0,watts:300},
+  {n:'400W 80+ White',p:29,tdp:0,watts:400},
+  {n:'450W 80+ Bronze',p:35,tdp:0,watts:450},
+  {n:'500W 80+ Bronze',p:42,tdp:0,watts:500},
+  {n:'550W 80+ Bronze',p:49,tdp:0,watts:550},
+  {n:'600W 80+ Bronze',p:55,tdp:0,watts:600},
+  {n:'650W 80+ Gold',p:69,tdp:0,watts:650},
+  {n:'700W 80+ Gold',p:79,tdp:0,watts:700},
+  {n:'750W 80+ Gold',p:89,tdp:0,watts:750},
+  {n:'800W 80+ Gold',p:99,tdp:0,watts:800},
+  {n:'850W 80+ Platinum',p:119,tdp:0,watts:850},
+  {n:'900W 80+ Platinum',p:139,tdp:0,watts:900},
+  {n:'1000W 80+ Platinum',p:159,tdp:0,watts:1000},
+  {n:'1000W 80+ Titanium',p:189,tdp:0,watts:1000},
+  {n:'1200W 80+ Titanium',p:249,tdp:0,watts:1200}
+ ]},
+ {id:'case',label:'Case',icon:'🗄',options:[
+  {n:'None',p:0,tdp:0},
+  {n:'Generic mATX Mini',p:19,tdp:0},
+  {n:'Basic mATX Tower',p:29,tdp:0},
+  {n:'Budget ATX Mid Tower',p:39,tdp:0},
+  {n:'Ant Esports ICE-100',p:35,tdp:0},
+  {n:'Zebronics Zeb-Bijli',p:29,tdp:0},
+  {n:'Corsair 4000D Airflow',p:89,tdp:0},
+  {n:'NZXT H510',p:79,tdp:0},
+  {n:'Phanteks P400A',p:89,tdp:0},
+  {n:'Lian Li PC-O11 Dynamic',p:129,tdp:0},
+  {n:'Fractal Design Meshify C',p:99,tdp:0},
+  {n:'be quiet! Pure Base 500',p:89,tdp:0},
+  {n:'Cooler Master MasterBox',p:69,tdp:0},
+  {n:'NZXT H710i ATX',p:169,tdp:0},
+  {n:'Lian Li O11D XL',p:179,tdp:0},
+  {n:'Thermaltake Tower 900',p:299,tdp:0}
+ ]},
+ {id:'cooling',label:'Cooling',icon:'❄',options:[
+  {n:'None / Stock Cooler',p:0,tdp:0},
+  {n:'Intel Box Cooler',p:0,tdp:0},
+  {n:'AMD Wraith Stealth',p:0,tdp:0},
+  {n:'Deepcool GAMMAXX 400',p:19,tdp:0},
+  {n:'Cooler Master Hyper 212',p:29,tdp:0},
+  {n:'ID-Cooling SE-224-XT',p:25,tdp:0},
+  {n:'Noctua NH-U12S',p:65,tdp:0},
+  {n:'be quiet! Pure Rock 2',p:39,tdp:0},
+  {n:'Scythe Mugen 5',p:49,tdp:0},
+  {n:'Noctua NH-D15',p:89,tdp:0},
+  {n:'DeepCool AK620',p:59,tdp:0},
+  {n:'240mm AIO (Generic)',p:55,tdp:0},
+  {n:'Corsair H100i 240mm AIO',p:99,tdp:0},
+  {n:'NZXT Kraken 240 AIO',p:109,tdp:0},
+  {n:'Corsair H150i 360mm AIO',p:149,tdp:0},
+  {n:'NZXT Kraken Z73 360mm',p:199,tdp:0}
+ ]}
+];
 
-// GEOCODE
-async function geo(city){
-  const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`,{headers:{'Accept-Language':'en'}});
-  const d=await r.json();if(!d.length)throw new Error('City not found. Try a different name.');
-  const p=d[0].display_name.split(',');
-  return{lat:parseFloat(d[0].lat),lon:parseFloat(d[0].lon),name:p[0].trim(),country:p[p.length-1].trim()};
-}
+// ── 15 PRE-BUILT TEMPLATES (part indices into PARTS arrays) ────
+const TEMPLATES = [
+ {name:'Basic Office',desc:'Web browsing, documents, basic tasks',
+  s:{cpu:1,mb:1,ram:2,gpu:1,storage:1,psu:3,case:1,cooling:1}},
+ {name:'Office Pro',desc:'Daily office work, light multitasking',
+  s:{cpu:2,mb:2,ram:3,gpu:1,storage:3,psu:4,case:3,cooling:1}},
+ {name:'Budget Home PC',desc:'Everyday use, YouTube, social media',
+  s:{cpu:4,mb:3,ram:4,gpu:1,storage:4,psu:4,case:4,cooling:3}},
+ {name:'Student Build',desc:'Assignments, coding, light gaming',
+  s:{cpu:7,mb:4,ram:5,gpu:5,storage:7,psu:5,case:5,cooling:4}},
+ {name:'Entry Gaming',desc:'1080p gaming at medium settings',
+  s:{cpu:8,mb:5,ram:5,gpu:6,storage:8,psu:6,case:6,cooling:4}},
+ {name:'1080p Gamer',desc:'Smooth 1080p high-settings gaming',
+  s:{cpu:9,mb:6,ram:6,gpu:7,storage:8,psu:7,case:7,cooling:5}},
+ {name:'Balanced 1080p',desc:'Great 1080p + content creation',
+  s:{cpu:10,mb:6,ram:6,gpu:8,storage:9,psu:7,case:8,cooling:6}},
+ {name:'Mid-Range Ryzen',desc:'1080p–1440p gaming, streaming',
+  s:{cpu:12,mb:8,ram:7,gpu:9,storage:9,psu:8,case:9,cooling:7}},
+ {name:'1440p Gamer',desc:'High-fps 1440p gaming powerhouse',
+  s:{cpu:11,mb:10,ram:8,gpu:10,storage:11,psu:9,case:10,cooling:10}},
+ {name:'Creator Starter',desc:'Video editing, Photoshop, 3D basics',
+  s:{cpu:13,mb:11,ram:12,gpu:11,storage:11,psu:9,case:11,cooling:10}},
+ {name:'Ryzen 7 Beast',desc:'4K gaming + heavy multitasking',
+  s:{cpu:13,mb:9,ram:11,gpu:12,storage:12,psu:10,case:12,cooling:11}},
+ {name:'Intel Z790 Pro',desc:'High-end Intel 1440p/4K gaming',
+  s:{cpu:14,mb:12,ram:12,gpu:12,storage:12,psu:11,case:10,cooling:12}},
+ {name:'Pro Workstation',desc:'3D rendering, VFX, ML training',
+  s:{cpu:15,mb:13,ram:14,gpu:14,storage:13,psu:13,case:13,cooling:14}},
+ {name:'Extreme Gaming',desc:'4K/144Hz — no compromise build',
+  s:{cpu:14,mb:12,ram:13,gpu:14,storage:12,psu:13,case:14,cooling:14}},
+ {name:'Ultimate Rig',desc:'Top-of-line: RTX 4090 + Ryzen 9',
+  s:{cpu:15,mb:15,ram:15,gpu:15,storage:15,psu:15,case:15,cooling:15}}
+];
 
-// FETCH WEATHER
-async function fwx(lat,lon){
-  const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-    +`&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,visibility,cloud_cover,dew_point_2m`
-    +`&hourly=temperature_2m,weather_code,precipitation_probability`
-    +`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max,snow_depth,et0_fao_evapotranspiration`
-    +`&wind_speed_unit=kmh&timezone=auto&forecast_days=7`;
-  const res=await fetch(u);
-  if(!res.ok)throw new Error(`Weather API error: ${res.status}`);
-  const d=await res.json();
-  if(d.error)throw new Error(d.reason||'Weather data unavailable for this location.');
-  if(!d.current||d.current.weather_code==null)throw new Error('Incomplete weather data returned. Please try again.');
-  return d;
-}
+// ── STATE ──────────────────────────────────────────────────────
+const sel = {};
+PARTS.forEach(p => sel[p.id] = 0);
 
-// FETCH AQI
-async function faq(lat,lon){
-  try{return(await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,ozone,dust`)).json();}
-  catch{return null;}
-}
+function getPart(id){const p=PARTS.find(x=>x.id===id);return p.options[sel[id]]||p.options[0];}
+function getTDP(){let t=0;PARTS.forEach(p=>{t+=getPart(p.id).tdp||0;});return t;}
+function getTplCost(tpl){let c=0;PARTS.forEach(p=>{const idx=tpl.s[p.id]||0;c+=p.options[idx]?.p||0;});return c;}
 
-// RENDER
-function render(g,d,a){
-  // Safety guard — should never reach here without valid data due to fwx() checks, but belt-and-suspenders
-  if(!d||!d.current||d.current.weather_code==null){showE('Weather data is missing. Please search again.');return;}
-  $('app').style.display='flex';
-  const c=d.current;
-  const daily=d.daily||{};
-  const hourly=d.hourly||{};
-  const[ic,dc]=wmo(c.weather_code);
-
-  // Current
-  $('cname').textContent=g.name;$('cntry').textContent=g.country;
-  $('ltime').textContent=ltime(d.timezone)||'';
-  $('wicon').textContent=ic;
-  $('tbig').textContent=T(c.temperature_2m)+TU();
-  $('thi').textContent='H:'+(daily.temperature_2m_max?.[0]!=null?T(daily.temperature_2m_max[0])+'°':'--');
-  $('tlo').textContent='L:'+(daily.temperature_2m_min?.[0]!=null?T(daily.temperature_2m_min[0])+'°':'--');
-  $('wdesc').textContent=dc;
-  $('feels').textContent='Feels like '+T(c.apparent_temperature)+TU();
-  $('hum').textContent=c.relative_humidity_2m+'%';
-  $('wnd').textContent=SPD(c.wind_speed_10m);
-  $('vis').textContent=c.visibility!=null?(c.visibility/1000).toFixed(1)+' km':'N/A';
-  $('pres').textContent=Math.round(c.surface_pressure)+' hPa';
-  $('dew').textContent=T(c.dew_point_2m)+TU();
-  $('cld').textContent=(c.cloud_cover??'--')+'%';
-  $('upd').textContent='Updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-
-  // AQI
-  if(a&&a.current){
-    const av=a.current.us_aqi??0,inf=aqiI(av);
-    $('aqiN').textContent=av;$('aqiN').style.color=inf.c;
-    $('aqiL').textContent=inf.lb;$('aqiL').style.color=inf.c;
-    $('aqiA').textContent=inf.ad;
-    $('aqiMk').style.left=Math.min(inf.pct,96)+'%';
-    const polls=[{n:'PM2.5',v:a.current.pm2_5},{n:'PM10',v:a.current.pm10},{n:'NO₂',v:a.current.nitrogen_dioxide},{n:'O₃',v:a.current.ozone},{n:'CO',v:a.current.carbon_monoxide},{n:'Dust',v:a.current.dust}];
-    $('pgrid').innerHTML=polls.map(p=>`<div class="pi"><div class="pn">${p.n}</div><div class="pv">${p.v!=null?p.v.toFixed(1):'N/A'} <span style="font-size:.63rem;color:var(--sub)">μg/m³</span></div></div>`).join('');
-  }else{$('aqiN').textContent='N/A';$('aqiL').textContent='Data unavailable for this location';}
-
-  // Hourly
-  const now=new Date(),nh=now.getHours();
-  $('hscrl').innerHTML='';let cnt=0;
-  const htimes=hourly.time||[];
-  for(let i=0;i<htimes.length&&cnt<24;i++){
-    const t=new Date(htimes[i]);
-    if(t<now&&t.getHours()!==nh)continue;
-    const[hi]=wmo(hourly.weather_code?.[i]??0);
-    const rp=hourly.precipitation_probability?.[i]??0;
-    const el=document.createElement('div');el.className='hi2'+(cnt===0?' now-h':'');
-    el.innerHTML=`<div class="ht">${cnt===0?'Now':t.toLocaleTimeString([],{hour:'numeric',hour12:true})}</div><div class="hic">${hi}</div><div class="htp">${T(hourly.temperature_2m?.[i]??0)}°</div>${rp>20?`<div class="hr">💧${rp}%</div>`:''}`;
-    $('hscrl').appendChild(el);cnt++;
-  }
-
-  // 7-day
-  $('flist').innerHTML='';
-  (daily.time||[]).forEach((day,i)=>{
-    const[di,dd]=wmo(daily.weather_code?.[i]??0);
-    const rp=daily.precipitation_probability_max?.[i]??0;
-    const el=document.createElement('div');el.className='fr';
-    el.innerHTML=`<div class="fd">${fmtD(day,i)}</div><div class="fc">${di}</div><div class="fdsc">${dd}</div><div class="frp">${rp>10?'💧'+rp+'%':''}</div><div class="ftp">${daily.temperature_2m_max?.[i]!=null?T(daily.temperature_2m_max[i])+'°':'--'} <span class="flo">${daily.temperature_2m_min?.[i]!=null?T(daily.temperature_2m_min[i])+'°':'--'}</span></div>`;
-    $('flist').appendChild(el);
+// ── BUILD DOM ─────────────────────────────────────────────────
+function buildDOM(){
+  // Parts
+  const el=document.getElementById('plist');el.innerHTML='';
+  PARTS.forEach(p=>{
+    const row=document.createElement('div');row.className='prow';row.id='prow-'+p.id;
+    const top=document.createElement('div');top.className='ptop';
+    const badge=document.createElement('span');badge.className='badge';badge.textContent=p.icon+' '+p.label;
+    const s=document.createElement('select');s.id='sel-'+p.id;
+    fillOpts(s,p);s.value=sel[p.id];
+    s.onchange=()=>{sel[p.id]=+s.value;update();};
+    const hint=document.createElement('div');hint.className='phint';hint.id='hint-'+p.id;
+    top.appendChild(badge);top.appendChild(s);
+    row.appendChild(top);row.appendChild(hint);
+    el.appendChild(row);
   });
-
-  // Sun arc & times
-  const sr0=daily.sunrise?.[0],ss0=daily.sunset?.[0];
-  if(sr0&&ss0){renderArc(sr0,ss0);$('sunrise').textContent=fmtT(sr0);$('sunset').textContent=fmtT(ss0);$('daylen').textContent=dayLen(sr0,ss0);}
-  const uv=daily.uv_index_max?.[0]??0;
-  $('uvi').textContent=uv.toFixed(1)+' — '+(uv<=2?'Low 🟢':uv<=5?'Moderate 🟡':uv<=7?'High 🟠':uv<=10?'Very High 🔴':'Extreme 🟣');
-  $('uvb').style.width=Math.min(uv/12*100,100)+'%';
-
-  // Moon
-  const mp=moon();$('micon').textContent=mp.i;$('mphase').textContent=mp.n;$('mdet').textContent=`Illumination: ${(mp.pct*100).toFixed(0)}%`;
-
-  // Wind
-  const wd=c.wind_direction_10m??0,bfv=bf(c.wind_speed_10m);
-  $('ndl').style.transform=`translateX(-50%) translateY(-100%) rotate(${wd}deg)`;
-  $('wspd').textContent=SPD(c.wind_speed_10m);
-  $('wgst').textContent=SPD(c.wind_gusts_10m??c.wind_speed_10m);
-  $('wdir').textContent=wdirL(wd)+` (${wd}°)`;
-  $('bft').textContent=`${bfv} — ${bfD[bfv]||''}`;
-
-  // Precip
-  $('rain').textContent=(daily.precipitation_sum?.[0]??0).toFixed(1)+' mm';
-  $('snow').textContent=(daily.snow_depth?.[0]??0).toFixed(0)+' cm';
-  $('rprob').textContent=(daily.precipitation_probability_max?.[0]??0)+'%';
-  $('evap').textContent=(daily.et0_fao_evapotranspiration?.[0]??0).toFixed(1)+' mm';
-
-  // Health & Pollen
-  const pl=pln(uv,c.relative_humidity_2m??50,c.temperature_2m??20);
-  $('plnGrid').innerHTML=`
-    <div><div class="sl">🌼 Tree Pollen</div><div style="font-family:var(--FH);font-weight:700;font-size:.95rem;color:${pl.c};margin:2px 0">${pl.lb}</div><div class="pb-bg"><div class="pb" style="width:${pl.pct}%;background:${pl.c}"></div></div></div>
-    <div><div class="sl">🌾 Grass Pollen</div><div style="font-family:var(--FH);font-weight:700;font-size:.95rem;color:${pl.c};margin:2px 0">${pl.lb}</div><div class="pb-bg"><div class="pb" style="width:${Math.max(0,pl.pct-12)}%;background:${pl.c}"></div></div></div>`;
-  $('allgy').textContent=pl.lb;$('allgy').style.color=pl.c;
-  const exOk=[0,1,2].includes(c.weather_code)&&c.temperature_2m>8&&c.temperature_2m<32&&c.relative_humidity_2m<75;
-  $('exrc').textContent=exOk?'Excellent 🏃':'Fair 🚶';
-  const slpOk=c.temperature_2m>=15&&c.temperature_2m<=22&&c.relative_humidity_2m<65;
-  $('slp').textContent=slpOk?'Ideal 😴':c.temperature_2m>24?'Warm 🌡':c.relative_humidity_2m>70?'Humid 💧':'Fair 🙂';
-  $('cloth').textContent=clothing(c.temperature_2m);
-
-  // Tips
-  const ts=tips(c,a?.current);
-  $('tips').innerHTML=ts.map(t=>`<div class="tp"><div class="tic">${t.i}</div><div class="tt"><strong>${t.s}</strong> — ${t.d}</div></div>`).join('');
-
-  // Alert banner
-  const ab=$('alrt');
-  if([95,96,99].includes(c.weather_code)){ab.innerHTML='<strong>⚡ Thunderstorm Alert</strong>Severe thunderstorm conditions. Stay indoors.';ab.style.display='block';}
-  else if((c.wind_gusts_10m??0)>80){ab.innerHTML='<strong>🌪 Wind Advisory</strong>Gusts may exceed 80 km/h. Secure outdoor objects.';ab.style.display='block';}
-  else ab.style.display='none';
-
-  // Share
-  $('shrBtn').onclick=()=>{
-    const txt=`📍 ${g.name}: ${T(c.temperature_2m??0)}${TU()}, ${dc}. Feels like ${T(c.apparent_temperature??0)}${TU()}. Humidity ${c.relative_humidity_2m??'--'}%. Wind ${SPD(c.wind_speed_10m??0)}.`;
-    if(navigator.share)navigator.share({title:'WeatherNow',text:txt});
-    else{navigator.clipboard?.writeText(txt);alert('Copied to clipboard!');}
-  };
-
-  renderSaved();
+  // Templates
+  const tg=document.getElementById('tpl-grid');tg.innerHTML='';
+  TEMPLATES.forEach((t,i)=>{
+    const cost=getTplCost(t);
+    const card=document.createElement('div');card.className='tpl-card';
+    card.innerHTML=`<div class="tpl-name">${t.name}</div><div class="tpl-desc">${t.desc}</div><div class="tpl-price">${fmt(cost)}</div>`;
+    card.onclick=()=>loadTemplate(i);
+    card.id='tpl-'+i;
+    tg.appendChild(card);
+  });
 }
 
-// LOAD
-async function load(city){
-  clrE();ldv(true);$('sug').style.display='none';
-  try{
-    GEO=await geo(city);
-    const[wx,aq]=await Promise.all([fwx(GEO.lat,GEO.lon),faq(GEO.lat,GEO.lon)]);
-    RAW=wx;AQIR=aq;render(GEO,RAW,AQIR);
-  }catch(e){showE(e.message||'Something went wrong. Please try again.');}
-  finally{ldv(false);}
+function fillOpts(s,p){
+  s.innerHTML='';
+  p.options.forEach((o,i)=>{
+    const opt=document.createElement('option');opt.value=i;
+    opt.textContent=o.p>0?o.n+' ('+fmt(o.p)+')':o.n;
+    s.appendChild(opt);
+  });
 }
 
-// EVENTS
-$('goBtn').addEventListener('click',()=>{const v=$('ci').value.trim();if(v)load(v);});
-$('ci').addEventListener('keydown',e=>{if(e.key==='Enter'){$('sug').style.display='none';const v=e.target.value.trim();if(v)load(v);}});
+function rebuildOptions(){
+  PARTS.forEach(p=>{const s=document.getElementById('sel-'+p.id);if(s){fillOpts(s,p);s.value=sel[p.id];}});
+  // Update template prices
+  TEMPLATES.forEach((t,i)=>{
+    const card=document.getElementById('tpl-'+i);
+    if(card){const pEl=card.querySelector('.tpl-price');if(pEl)pEl.textContent=fmt(getTplCost(t));}
+  });
+}
 
-$('locBtn').addEventListener('click',()=>{
-  if(!navigator.geolocation)return showE('Geolocation not supported by your browser.');
-  ldv(true);clrE();
-  navigator.geolocation.getCurrentPosition(async p=>{
-    try{
-      const{latitude:la,longitude:lo}=p.coords;
-      const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${la}&lon=${lo}&format=json`,{headers:{'Accept-Language':'en'}});
-      const d=await r.json();
-      GEO={lat:la,lon:lo,name:d.address.city||d.address.town||d.address.village||d.address.county||'Your Location',country:d.address.country||''};
-      const[wx,aq]=await Promise.all([fwx(la,lo),faq(la,lo)]);
-      RAW=wx;AQIR=aq;render(GEO,RAW,AQIR);
-    }catch(e){showE('Could not fetch weather for your location.');}
-    finally{ldv(false);}
-  },()=>{showE('Location access denied. Please search manually.');ldv(false);});
-});
+function loadTemplate(i){
+  const t=TEMPLATES[i];
+  PARTS.forEach(p=>{const idx=t.s[p.id]||0;sel[p.id]=idx;const s=document.getElementById('sel-'+p.id);if(s)s.value=idx;});
+  update();window.scrollTo({top:0,behavior:'smooth'});
+}
 
-// AUTO-REFRESH every 10 min
-setInterval(()=>{if(GEO)load(GEO.name);},600000);
+// ── COMPAT HINTS ──────────────────────────────────────────────
+function getHint(id){
+  const cpu=getPart('cpu'),mb=getPart('mb'),ram=getPart('ram'),psu=getPart('psu'),cool=getPart('cooling');
+  const tdp=getTDP(),psuW=psu.watts||0;
+  if(id==='cpu'){
+    if(!cpu.p)return null;
+    if(!mb.p)return{t:'info',m:'ℹ Select a motherboard to verify socket match.'};
+    return cpu.sock===mb.sock?{t:'ok',m:'✓ Socket '+cpu.sock.toUpperCase()+' matches motherboard.'}:{t:'warn',m:'⚠ Socket mismatch! CPU ('+cpu.sock.toUpperCase()+') ≠ MB ('+mb.sock.toUpperCase()+').'};
+  }
+  if(id==='mb'){
+    if(!mb.p)return null;
+    const msgs=[];
+    if(cpu.p){cpu.sock!==mb.sock?msgs.push('⚠ Socket mismatch with CPU.'):msgs.push('✓ Socket compatible with CPU.');}
+    if(ram.p&&mb.ddr){ram.gen!==mb.ddr?msgs.push('⚠ Board needs '+mb.ddr.toUpperCase()+', RAM is '+ram.gen.toUpperCase()+'.'):msgs.push('✓ '+ram.gen.toUpperCase()+' RAM matches board.');}
+    if(!msgs.length)return{t:'ok',m:'✓ Motherboard compatible with current selection.'};
+    return{t:msgs.some(m=>m.startsWith('⚠'))?'warn':'ok',m:msgs.join(' ')};
+  }
+  if(id==='ram'){
+    if(!ram.p)return null;
+    if(!mb.p)return{t:'info',m:'ℹ Select a motherboard to check DDR generation.'};
+    if(!mb.ddr)return null;
+    return ram.gen===mb.ddr?{t:'ok',m:'✓ '+ram.gen.toUpperCase()+' RAM matches board.'}:{t:'warn',m:'⚠ Board needs '+mb.ddr.toUpperCase()+', selected RAM is '+ram.gen.toUpperCase()+'.'};
+  }
+  if(id==='gpu'){
+    const gpu=getPart('gpu');if(!gpu.p)return null;
+    if(!psuW)return{t:'info',m:'ℹ Add a PSU to check power compatibility.'};
+    return tdp>psuW*.9?{t:'warn',m:'⚠ System draw ('+tdp+'W) may exceed PSU ('+psuW+'W).'}:{t:'ok',m:'✓ PSU handles GPU power ('+tdp+'W / '+psuW+'W).'};
+  }
+  if(id==='psu'){
+    if(!psuW)return null;
+    const pct=Math.round((tdp/psuW)*100);
+    if(!tdp)return{t:'info',m:'ℹ Add components to estimate power draw.'};
+    if(pct>90)return{t:'warn',m:'⚠ Load '+pct+'% — PSU may be underpowered.'};
+    return{t:'ok',m:'✓ Load at '+pct+'% — '+(pct>70?'acceptable.':'healthy headroom.')};
+  }
+  if(id==='cooling'){
+    if(!cool.p&&!cool.n.includes('AMD')&&!cool.n.includes('Intel'))return null;
+    if(!cpu.p)return null;
+    if((cool.n.includes('Stock')||cool.n.includes('None'))&&cpu.tdp>=125)return{t:'warn',m:'⚠ '+cpu.tdp+'W CPU needs aftermarket cooling.'};
+    if(cool.n.includes('Budget')&&cpu.tdp>=105)return{t:'warn',m:'⚠ Budget cooler may struggle with '+cpu.tdp+'W TDP.'};
+    if(cpu.p)return{t:'ok',m:'✓ Cooler adequate for CPU ('+cpu.tdp+'W TDP).'};
+  }
+  return null;
+}
 
-load('London');
+// ── MAIN UPDATE ───────────────────────────────────────────────
+function update(){
+  let cost=0,tdp=0,count=0;
+  PARTS.forEach(p=>{const o=getPart(p.id);cost+=o.p;tdp+=o.tdp||0;if(o.p>0)count++;});
+  document.getElementById('sc').textContent=count>0?fmt(cost):'—';
+  document.getElementById('st').textContent=tdp+'W';
+  document.getElementById('sp').textContent=count+'/8';
+  const psuW=getPart('psu').watts||0;
+  const pct=psuW>0?Math.round((tdp/psuW)*100):0;
+  document.getElementById('bpct').textContent=pct+'%';
+  const bf=document.getElementById('bfill');
+  bf.style.width=Math.min(pct,100)+'%';bf.className='bfill'+(pct>90?' over':'');
+  const ss=document.getElementById('ss');
+  if(!psuW){ss.textContent='—';ss.className='sv';}
+  else if(pct>90){ss.textContent='⚠ Over';ss.className='sv wn';}
+  else{ss.textContent='✓ OK';ss.className='sv';}
+  PARTS.forEach(p=>{
+    const h=document.getElementById('hint-'+p.id);
+    const s=document.getElementById('sel-'+p.id);
+    s.classList.remove('sok','swn');
+    const r=getHint(p.id);
+    if(r){h.className='phint '+r.t;h.textContent=r.m;if(r.t==='ok')s.classList.add('sok');if(r.t==='warn')s.classList.add('swn');}
+    else{h.className='phint';}
+  });
+  const warns=[];
+  PARTS.forEach(p=>{const r=getHint(p.id);if(r&&r.t==='warn')warns.push('• '+r.m);});
+  const cb=document.getElementById('cbox');
+  if(!count){cb.className='cbox';cb.textContent='Select components to run compatibility check.';}
+  else if(warns.length){cb.className='cbox warn';cb.innerHTML=warns.join('<br>');}
+  else{cb.className='cbox ok';cb.textContent='✓ All selected components are compatible!';}
+}
+
+// ── SAVES ────────────────────────────────────────────────────
+let saves=JSON.parse(localStorage.getItem('pcb2_saves')||'[]');
+function renderSaves(){
+  const ul=document.getElementById('slist');ul.innerHTML='';
+  document.getElementById('enote').style.display=saves.length?'none':'block';
+  saves.forEach((s,i)=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span onclick="loadBuild(${i})">🔧 ${s.name} — <b>${s.disp}</b></span><button class="dbtn" onclick="delBuild(${i})">🗑</button>`;
+    ul.appendChild(li);
+  });
+}
+function saveBuild(){
+  const name=prompt('Name this build:','My Build '+(saves.length+1));if(!name)return;
+  let cost=0;const snap={};
+  PARTS.forEach(p=>{cost+=getPart(p.id).p;snap[p.id]=sel[p.id];});
+  saves.push({name,disp:fmtBoth(cost),snap});
+  localStorage.setItem('pcb2_saves',JSON.stringify(saves));renderSaves();
+}
+function loadBuild(i){
+  const s=saves[i];Object.keys(s.snap).forEach(k=>{sel[k]=s.snap[k];const el=document.getElementById('sel-'+k);if(el)el.value=s.snap[k];});update();
+}
+function delBuild(i){saves.splice(i,1);localStorage.setItem('pcb2_saves',JSON.stringify(saves));renderSaves();}
+function resetBuild(){PARTS.forEach(p=>{sel[p.id]=0;const el=document.getElementById('sel-'+p.id);if(el)el.value=0;});update();}
+function exportBuild(){
+  let txt='=== PC BUILD ===\n';
+  PARTS.forEach(p=>{const o=getPart(p.id);if(o.p>0)txt+=p.label+': '+o.n+' ('+fmtBoth(o.p)+')\n';});
+  let cost=0;PARTS.forEach(p=>{cost+=getPart(p.id).p;});
+  txt+='\nTotal: '+fmtBoth(cost)+'\n1 USD = ₹'+INR_RATE.toFixed(2)+' (live)\n© '+new Date().getFullYear()+' Manik Roy. All Rights Reserved.';
+  navigator.clipboard.writeText(txt).then(()=>alert('✓ Copied to clipboard!')).catch(()=>prompt('Copy this:',txt));
+}
+
+buildDOM();renderSaves();update();
 </script>
 </body>
 </html>
