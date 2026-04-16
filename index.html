@@ -1,1409 +1,683 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Image Clone App © Manik Roy 2026</title>
-  <style>
-    /* ── CSS Variables ── */
-    :root {
-      --radius: 14px;
-      --radius-sm: 8px;
-      --transition: 0.25s ease;
-      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      --shadow: 0 4px 24px rgba(0,0,0,0.18);
-      --shadow-lg: 0 8px 40px rgba(0,0,0,0.28);
-    }
-
-    /* ── DARK Theme ── */
-    [data-theme="dark"] {
-      --bg: #111318;
-      --surface: #1c1f26;
-      --surface2: #252830;
-      --border: #2e3140;
-      --text: #e8eaf0;
-      --text-muted: #8b90a0;
-      --accent: #6c8ef7;
-      --accent-hover: #5577f0;
-      --accent-glow: rgba(108,142,247,0.18);
-      --btn-bg: #252830;
-      --btn-hover: #2e3140;
-      --badge: #1a2a4a;
-      --badge-text: #6c8ef7;
-      --success: #34d399;
-      --warning: #fbbf24;
-      --danger: #f87171;
-      --toggle-bg: #252830;
-      --toggle-border: #3a3f52;
-    }
-
-    /* ── LIGHT Theme ── */
-    [data-theme="light"] {
-      --bg: #f0f2f8;
-      --surface: #ffffff;
-      --surface2: #f5f7ff;
-      --border: #dde1ee;
-      --text: #1a1d2e;
-      --text-muted: #5c6080;
-      --accent: #4a6cf7;
-      --accent-hover: #3a5ce0;
-      --accent-glow: rgba(74,108,247,0.12);
-      --btn-bg: #f0f2f8;
-      --btn-hover: #e4e7f5;
-      --badge: #e8ecff;
-      --badge-text: #4a6cf7;
-      --success: #10b981;
-      --warning: #d97706;
-      --danger: #ef4444;
-      --toggle-bg: #ffffff;
-      --toggle-border: #dde1ee;
-    }
-
-    /* ── OLED True Black Theme ── */
-    [data-theme="oled"] {
-      --bg: #000000;
-      --surface: #0a0a0a;
-      --surface2: #0f0f0f;
-      --border: #1a1a1a;
-      --text: #ffffff;
-      --text-muted: #666680;
-      --accent: #7b96ff;
-      --accent-hover: #6a85ff;
-      --accent-glow: rgba(123,150,255,0.2);
-      --btn-bg: #0f0f0f;
-      --btn-hover: #1a1a1a;
-      --badge: #0d1a33;
-      --badge-text: #7b96ff;
-      --success: #00e5a0;
-      --warning: #ffcc00;
-      --danger: #ff5555;
-      --toggle-bg: #0a0a0a;
-      --toggle-border: #222222;
-    }
-
-    /* ── Reset & Base ── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      transition: background var(--transition), color var(--transition);
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* ── Header ── */
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      gap: 12px;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-    }
-
-    .logo-icon {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, var(--accent), #a78bfa);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
-      box-shadow: 0 2px 12px var(--accent-glow);
-    }
-
-    .logo-text {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: -0.3px;
-    }
-
-    .logo-sub {
-      font-size: 10px;
-      color: var(--text-muted);
-      font-weight: 400;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      display: block;
-      line-height: 1;
-      margin-top: 1px;
-    }
-
-    /* ── Theme Toggle ── */
-    .theme-toggle {
-      display: flex;
-      background: var(--toggle-bg);
-      border: 1px solid var(--toggle-border);
-      border-radius: 40px;
-      padding: 4px;
-      gap: 2px;
-    }
-
-    .theme-btn {
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      padding: 6px 10px;
-      border-radius: 30px;
-      font-size: 14px;
-      color: var(--text-muted);
-      transition: all var(--transition);
-      line-height: 1;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .theme-btn span.label {
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      display: none;
-    }
-
-    @media (min-width: 480px) {
-      .theme-btn span.label { display: inline; }
-    }
-
-    .theme-btn.active {
-      background: var(--accent);
-      color: #fff;
-      box-shadow: 0 2px 8px var(--accent-glow);
-    }
-
-    .theme-btn:not(.active):hover {
-      background: var(--btn-hover);
-      color: var(--text);
-    }
-
-    /* ── Main ── */
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 20px 16px 24px;
-      gap: 20px;
-      width: 100%;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    /* ── Upload Zone ── */
-    .upload-zone {
-      width: 100%;
-      background: var(--surface);
-      border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 32px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: all var(--transition);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .upload-zone::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: var(--accent-glow);
-      opacity: 0;
-      transition: opacity var(--transition);
-    }
-
-    .upload-zone:hover, .upload-zone.drag-over {
-      border-color: var(--accent);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 24px var(--accent-glow);
-    }
-
-    .upload-zone:hover::before, .upload-zone.drag-over::before {
-      opacity: 1;
-    }
-
-    .upload-zone input[type="file"] {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
-    }
-
-    .upload-icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-      display: block;
-      position: relative;
-      z-index: 1;
-    }
-
-    .upload-title {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 6px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .upload-sub {
-      font-size: 13px;
-      color: var(--text-muted);
-      position: relative;
-      z-index: 1;
-    }
-
-    .upload-formats {
-      display: flex;
-      gap: 6px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 14px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .badge {
-      background: var(--badge);
-      color: var(--badge-text);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      padding: 3px 8px;
-      border-radius: 20px;
-      text-transform: uppercase;
-    }
-
-    /* ── Controls Panel ── */
-    .controls-panel {
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      display: none;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .controls-panel.visible {
-      display: flex;
-    }
-
-    .panel-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-    }
-
-    .control-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .control-label {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text);
-      flex: 1;
-      min-width: 120px;
-    }
-
-    .control-label small {
-      display: block;
-      font-size: 11px;
-      font-weight: 400;
-      color: var(--text-muted);
-      margin-top: 1px;
-    }
-
-    .control-value {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--accent);
-      min-width: 40px;
-      text-align: right;
-    }
-
-    input[type="range"] {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 5px;
-      background: var(--border);
-      border-radius: 10px;
-      outline: none;
-      cursor: pointer;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 18px;
-      height: 18px;
-      background: var(--accent);
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 2px 8px var(--accent-glow);
-      transition: transform 0.1s;
-    }
-
-    input[type="range"]::-webkit-slider-thumb:active {
-      transform: scale(1.25);
-    }
-
-    input[type="range"]::-moz-range-thumb {
-      width: 18px;
-      height: 18px;
-      background: var(--accent);
-      border: none;
-      border-radius: 50%;
-      cursor: pointer;
-    }
-
-    .range-wrapper {
-      flex: 2;
-      min-width: 120px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 16px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--btn-bg);
-      color: var(--text);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all var(--transition);
-      flex: 1;
-      justify-content: center;
-      min-width: 100px;
-      white-space: nowrap;
-    }
-
-    .btn:hover {
-      background: var(--btn-hover);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow);
-    }
-
-    .btn:active { transform: scale(0.97); }
-
-    .btn-primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-      box-shadow: 0 3px 12px var(--accent-glow);
-    }
-
-    .btn-primary:hover {
-      background: var(--accent-hover);
-      border-color: var(--accent-hover);
-    }
-
-    .btn-danger {
-      border-color: var(--danger);
-      color: var(--danger);
-    }
-
-    .btn-danger:hover {
-      background: rgba(248,113,113,0.1);
-    }
-
-    .btn-success {
-      background: var(--success);
-      border-color: var(--success);
-      color: #000;
-      font-weight: 700;
-    }
-
-    .btn-success:hover {
-      filter: brightness(1.1);
-      background: var(--success);
-    }
-
-    /* ── Preview Grid ── */
-    .preview-grid {
-      width: 100%;
-      display: none;
-      gap: 16px;
-      flex-direction: column;
-    }
-
-    .preview-grid.visible {
-      display: flex;
-    }
-
-    @media (min-width: 600px) {
-      .preview-grid {
-        flex-direction: row;
-      }
-    }
-
-    .preview-card {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .preview-header {
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .preview-label {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--text-muted);
-    }
-
-    .preview-meta {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .preview-body {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      min-height: 200px;
-      background: var(--surface2);
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* Checkerboard for transparency */
-    .preview-body.checkered {
-      background-image:
-        linear-gradient(45deg, var(--border) 25%, transparent 25%),
-        linear-gradient(-45deg, var(--border) 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, var(--border) 75%),
-        linear-gradient(-45deg, transparent 75%, var(--border) 75%);
-      background-size: 20px 20px;
-      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-    }
-
-    .preview-body img {
-      max-width: 100%;
-      max-height: 320px;
-      object-fit: contain;
-      border-radius: 6px;
-      display: block;
-      transition: filter var(--transition);
-    }
-
-    .preview-footer {
-      padding: 10px 16px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .stat-chip {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-muted);
-      background: var(--surface2);
-      padding: 3px 8px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-    }
-
-    /* ── Compare Slider ── */
-    .compare-section {
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      display: none;
-    }
-
-    .compare-section.visible { display: block; }
-
-    .compare-header {
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .compare-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .compare-body {
-      position: relative;
-      overflow: hidden;
-      cursor: ew-resize;
-      user-select: none;
-      min-height: 250px;
-    }
-
-    .compare-body img {
-      display: block;
-      width: 100%;
-      height: auto;
-      max-height: 400px;
-      object-fit: contain;
-    }
-
-    .compare-after {
-      position: absolute;
-      inset: 0;
-      overflow: hidden;
-    }
-
-    .compare-after img {
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-
-    .compare-divider {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      background: var(--accent);
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      cursor: ew-resize;
-    }
-
-    .compare-handle {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 36px;
-      height: 36px;
-      background: var(--accent);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 16px;
-      box-shadow: 0 2px 12px var(--accent-glow);
-      cursor: ew-resize;
-    }
-
-    .compare-tag {
-      position: absolute;
-      top: 10px;
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      padding: 3px 8px;
-      border-radius: 4px;
-      color: white;
-      pointer-events: none;
-      z-index: 5;
-    }
-
-    .compare-tag.original { left: 10px; background: rgba(0,0,0,0.55); }
-    .compare-tag.cloned { right: 10px; background: var(--accent); }
-
-    /* ── Status Bar ── */
-    .status-bar {
-      width: 100%;
-      padding: 12px 16px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 13px;
-      color: var(--text-muted);
-      display: none;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .status-bar.visible { display: flex; }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--success);
-      flex-shrink: 0;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.8); }
-    }
-
-    /* ── Progress Bar ── */
-    .progress-bar-wrap {
-      width: 100%;
-      height: 4px;
-      background: var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-      display: none;
-    }
-
-    .progress-bar-wrap.visible { display: block; }
-
-    .progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent), #a78bfa);
-      border-radius: 10px;
-      width: 0%;
-      transition: width 0.3s ease;
-    }
-
-    /* ── Footer ── */
-    footer {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: 18px 16px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-    }
-
-    .footer-copy {
-      font-size: 12px;
-      color: var(--text-muted);
-      font-weight: 500;
-      letter-spacing: 0.2px;
-    }
-
-    .footer-rights {
-      font-size: 11px;
-      color: var(--text-muted);
-      opacity: 0.65;
-    }
-
-    .footer-accent {
-      color: var(--accent);
-      font-weight: 700;
-    }
-
-    /* ── Utility ── */
-    .divider {
-      width: 100%;
-      height: 1px;
-      background: var(--border);
-    }
-
-    .section-title {
-      width: 100%;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .section-title::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
-
-    /* ── Empty State ── */
-    .empty-hint {
-      width: 100%;
-      text-align: center;
-      padding: 24px;
-      color: var(--text-muted);
-      font-size: 14px;
-    }
-
-    /* ── Responsive tweaks ── */
-    @media (min-width: 600px) {
-      main { padding: 28px 24px 32px; gap: 24px; }
-      header { padding: 16px 24px; }
-      footer { padding: 22px 24px; }
-    }
-
-    @media (min-width: 900px) {
-      main { padding: 32px 32px 40px; }
-    }
-
-    /* ── Animations ── */
-    @keyframes fadeSlideIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .anim-in {
-      animation: fadeSlideIn 0.35s ease both;
-    }
-
-    /* ── Toast ── */
-    #toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(80px);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-size: 13px;
-      font-weight: 600;
-      padding: 12px 20px;
-      border-radius: 40px;
-      box-shadow: var(--shadow-lg);
-      transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
-      opacity: 0;
-      z-index: 999;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      white-space: nowrap;
-    }
-
-    #toast.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>WeatherNow</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--card:#1a1d27;--card2:#222535;--text:#f0f2ff;--sub:#8890b0;--acc:#4f9fff;--acc2:#7c3aff;--bdr:#2a2d3e;--shadow:0 4px 24px #0008;--rad:18px;--F:'DM Sans',sans-serif;--FH:'Syne',sans-serif}
+[data-theme=light]{--bg:#eef2fb;--card:#fff;--card2:#f0f4ff;--text:#0d0f1a;--sub:#5a6080;--acc:#2563eb;--acc2:#6d28d9;--bdr:#d4daef;--shadow:0 4px 20px #0001}
+[data-theme=oled]{--bg:#000;--card:#0a0a0a;--card2:#111;--text:#fff;--sub:#888;--acc:#3d9bff;--acc2:#9f6fff;--bdr:#1a1a1a;--shadow:0 4px 24px #000b}
+[data-theme=hc]{--bg:#000;--card:#000;--card2:#111;--text:#fff;--sub:#ff0;--acc:#0ff;--acc2:#f0f;--bdr:#fff;--shadow:none}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--F);min-height:100dvh;display:flex;flex-direction:column;align-items:center;transition:background .3s,color .3s;padding-bottom:env(safe-area-inset-bottom,16px)}
+/* HEADER */
+header{width:100%;max-width:500px;padding:clamp(12px,4vw,20px) clamp(12px,4vw,18px) 0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.logo{font-family:var(--FH);font-size:clamp(1.05rem,5vw,1.35rem);font-weight:800;letter-spacing:-.4px;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;flex-shrink:0}
+.hdr-r{display:flex;align-items:center;gap:7px;flex-shrink:0}
+/* UNIT TOGGLE */
+.unit-tog{display:flex;background:var(--card2);border:1.5px solid var(--bdr);border-radius:10px;overflow:hidden;flex-shrink:0}
+.ubtn{padding:5px 10px;font-family:var(--FH);font-size:.73rem;font-weight:700;border:none;background:none;color:var(--sub);cursor:pointer;transition:.2s;touch-action:manipulation}
+.ubtn.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-radius:8px}
+/* THEME BUTTONS */
+.themes{display:flex;gap:4px}
+.tbtn{width:29px;height:29px;border-radius:50%;border:2px solid var(--bdr);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:.2s;background:var(--card);touch-action:manipulation}
+.tbtn:hover{border-color:var(--acc);transform:scale(1.1)}
+.tbtn.on{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent)}
+/* MAIN */
+main{width:100%;max-width:500px;padding:12px clamp(10px,4vw,16px) 16px;display:flex;flex-direction:column;gap:11px}
+/* SAVED CITIES */
+.saved-scroll{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 0 4px}
+.saved-scroll::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;background:var(--card2);border:1.5px solid var(--bdr);border-radius:10px;padding:6px 11px;font-size:.78rem;font-weight:600;cursor:pointer;transition:.2s;white-space:nowrap;font-family:var(--FH);display:flex;align-items:center;gap:5px}
+.chip:hover{border-color:var(--acc);color:var(--acc)}
+.chip .x{color:var(--sub);font-size:.8rem}.chip .x:hover{color:#ff6b6b}
+.chip-add{border-style:dashed;color:var(--sub)}
+/* SEARCH */
+.srch{display:flex;gap:7px;position:relative}
+.srch input{flex:1;background:var(--card);border:1.5px solid var(--bdr);border-radius:13px;padding:13px 15px;color:var(--text);font-family:var(--F);font-size:1rem;outline:none;transition:.2s;min-width:0;-webkit-appearance:none;appearance:none}
+.srch input:focus{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 13%,transparent)}
+.srch input::placeholder{color:var(--sub)}
+.sbtn{background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:13px;padding:13px 15px;color:#fff;font-family:var(--FH);font-weight:700;font-size:.87rem;cursor:pointer;transition:.2s;white-space:nowrap;touch-action:manipulation}
+.sbtn:active{opacity:.8;transform:scale(.97)}
+.loc{background:var(--card);border:1.5px solid var(--bdr);color:var(--text);font-size:1.1rem}
+.loc:hover{border-color:var(--acc);background:var(--card2)}
+/* SUGGESTIONS */
+#sug{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);border:1.5px solid var(--bdr);border-radius:13px;z-index:99;display:none;overflow:hidden;box-shadow:var(--shadow)}
+.si{padding:11px 15px;cursor:pointer;font-size:.88rem;border-bottom:1px solid var(--bdr);transition:.15s}
+.si:last-child{border-bottom:none}.si:hover{background:var(--card2);color:var(--acc)}
+/* ERROR / ALERT */
+#err{background:#ff4d4d18;border:1.5px solid #ff4d4d55;border-radius:12px;padding:11px 15px;color:#ff6b6b;font-size:.87rem;display:none}
+.alert{background:#ff990018;border:1.5px solid #ff990055;border-radius:12px;padding:11px 15px;color:#ffaa33;font-size:.83rem;display:none;line-height:1.55}
+.alert strong{display:block;margin-bottom:2px}
+/* LOADER */
+.ld{display:none;text-align:center;padding:28px;color:var(--sub);font-size:.88rem}
+.spin{width:34px;height:34px;border:3px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 10px}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* CARDS */
+.card{background:var(--card);border:1.5px solid var(--bdr);border-radius:var(--rad);padding:17px;box-shadow:var(--shadow);transition:background .3s,border-color .3s;animation:fu .4s ease both}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.card:nth-child(1){animation-delay:.04s}.card:nth-child(2){animation-delay:.08s}.card:nth-child(3){animation-delay:.12s}.card:nth-child(4){animation-delay:.16s}.card:nth-child(5){animation-delay:.2s}.card:nth-child(6){animation-delay:.24s}.card:nth-child(7){animation-delay:.28s}.card:nth-child(8){animation-delay:.32s}.card:nth-child(9){animation-delay:.36s}
+/* NOW CARD */
+.now{text-align:center;position:relative;overflow:hidden}
+.now::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:260px;height:260px;background:radial-gradient(circle,var(--acc),transparent 70%);opacity:.07;pointer-events:none;animation:gp 4s ease-in-out infinite}
+@keyframes gp{0%,100%{opacity:.05}50%{opacity:.11}}
+.now-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.city-name{font-family:var(--FH);font-size:clamp(1.15rem,6vw,1.55rem);font-weight:800;line-height:1.2;text-align:left}
+.sub-row{display:flex;align-items:center;gap:7px;margin-top:3px;flex-wrap:wrap}
+.country{font-size:.81rem;color:var(--sub)}
+.ltime{font-size:.78rem;color:var(--acc);font-weight:600;background:color-mix(in srgb,var(--acc) 12%,transparent);padding:2px 7px;border-radius:6px}
+.wicon{font-size:clamp(3.5rem,14vw,5rem);line-height:1;margin:8px 0 2px;filter:drop-shadow(0 4px 14px color-mix(in srgb,var(--acc) 38%,transparent));cursor:pointer;transition:transform .25s;display:inline-block}
+.wicon:active{transform:scale(.9) rotate(-8deg)}
+.tbig{font-family:var(--FH);font-size:clamp(2.8rem,15vw,4.5rem);font-weight:800;line-height:1;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.trange{font-size:.83rem;color:var(--sub);margin-top:2px}
+.hi{color:#fb7185}.lo{color:var(--acc)}
+.desc{color:var(--sub);font-size:.93rem;text-transform:capitalize;margin-top:2px}
+.feels{color:var(--sub);font-size:.79rem;margin-top:2px}
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
+.st{background:var(--card2);border-radius:11px;padding:10px 12px;border:1px solid var(--bdr);transition:.2s}
+.st:hover{border-color:var(--acc)}
+.sl{color:var(--sub);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.sv{font-family:var(--FH);font-size:1rem;font-weight:700}
+/* SECTION TITLE */
+.stit{font-family:var(--FH);font-size:.8rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:11px}
+/* HOURLY */
+.hs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.hs::-webkit-scrollbar{display:none}
+.hi2{flex-shrink:0;background:var(--card2);border:1px solid var(--bdr);border-radius:11px;padding:9px 12px;text-align:center;min-width:60px}
+.hi2.now-h{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,var(--card2))}
+.ht{color:var(--sub);font-size:.71rem;margin-bottom:4px}
+.hic{font-size:1.35rem;margin-bottom:4px}
+.htp{font-family:var(--FH);font-size:.88rem;font-weight:700}
+.hr{font-size:.67rem;color:#60a5fa;margin-top:2px}
+/* FORECAST */
+.fl{display:flex;flex-direction:column;gap:7px}
+.fr{display:flex;align-items:center;background:var(--card2);border:1px solid var(--bdr);border-radius:11px;padding:10px 12px;gap:9px;transition:.2s}
+.fr:hover{border-color:var(--acc)}
+.fd{font-family:var(--FH);font-weight:700;font-size:.87rem;flex:1;min-width:50px}
+.fc{font-size:1.25rem;flex-shrink:0}
+.fdsc{color:var(--sub);font-size:.77rem;flex:2;text-align:center;text-transform:capitalize;line-height:1.3}
+.frp{font-size:.7rem;color:#60a5fa;flex-shrink:0;min-width:30px;text-align:right}
+.ftp{font-family:var(--FH);font-size:.87rem;font-weight:700;text-align:right;white-space:nowrap;flex-shrink:0}
+.flo{color:var(--sub);font-weight:400}
+/* AQI */
+.aqi-c{text-align:center;padding:2px 0 10px}
+.aqi-n{font-family:var(--FH);font-size:2.8rem;font-weight:800;line-height:1}
+.aqi-lb{font-size:.93rem;font-weight:600;margin-top:3px}
+.aqi-ad{font-size:.79rem;color:var(--sub);margin-top:3px;line-height:1.55}
+.aqi-sc{display:flex;height:7px;border-radius:99px;overflow:hidden;margin:12px 0 5px}
+.aqi-sc div{flex:1}
+.aqi-mw{position:relative;height:13px;margin-bottom:9px}
+.aqi-mk{position:absolute;width:11px;height:11px;background:var(--text);border-radius:50%;top:1px;transform:translateX(-50%);transition:left .7s ease;box-shadow:0 0 5px #0008}
+.pg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
+.pi{background:var(--card2);border-radius:9px;padding:8px 11px;border:1px solid var(--bdr)}
+.pn{font-size:.69rem;color:var(--sub);margin-bottom:2px}
+.pv{font-family:var(--FH);font-size:.93rem;font-weight:700}
+/* SUN ARC */
+.sun-l{display:flex;justify-content:space-between;font-size:.78rem;color:var(--sub);margin-top:3px}
+.uvbg{background:var(--card2);border-radius:7px;overflow:hidden;height:7px;margin-top:7px}
+.uvb{height:100%;border-radius:7px;background:linear-gradient(90deg,#22c55e,#eab308,#f97316,#ef4444,#7c3aed);transition:width .7s ease}
+/* WIND COMPASS */
+.wc{display:flex;align-items:center;gap:16px}
+.cr{width:78px;height:78px;border-radius:50%;border:2px solid var(--bdr);position:relative;background:var(--card2);flex-shrink:0}
+.cn{position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:.64rem;font-weight:700;color:var(--sub);font-family:var(--FH)}
+.ndl{position:absolute;top:50%;left:50%;width:3px;height:30px;background:linear-gradient(to top,var(--acc),transparent);transform-origin:bottom center;transform:translateX(-50%) translateY(-100%);transition:transform .9s ease;border-radius:3px}
+/* MOON */
+.moon-r{display:flex;align-items:center;gap:13px;padding:5px 0}
+.mi{font-size:2.6rem;line-height:1}
+.mp{font-family:var(--FH);font-weight:700;font-size:.97rem}
+.md{font-size:.78rem;color:var(--sub);margin-top:2px}
+/* POLLEN BARS */
+.pb-bg{background:var(--card2);border-radius:5px;height:5px;overflow:hidden;margin-top:3px}
+.pb{height:100%;border-radius:5px;transition:width .7s ease}
+/* TIPS */
+.tp{display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--bdr)}
+.tp:last-child{border-bottom:none}
+.tic{font-size:1.25rem;flex-shrink:0;margin-top:1px}
+.tt{font-size:.82rem;line-height:1.55;color:var(--sub)}
+.tt strong{color:var(--text)}
+/* SHARE */
+.shrbtn{display:flex;align-items:center;gap:5px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:9px;padding:7px 12px;font-family:var(--FH);font-size:.78rem;font-weight:700;cursor:pointer;color:var(--text);transition:.2s;touch-action:manipulation;white-space:nowrap;flex-shrink:0}
+.shrbtn:hover{border-color:var(--acc);color:var(--acc)}
+.upd{font-size:.71rem;color:var(--sub);text-align:center;margin-top:-3px}
+/* FOOTER */
+footer{width:100%;max-width:500px;text-align:center;padding:15px clamp(10px,4vw,16px);color:var(--sub);font-size:.74rem;border-top:1px solid var(--bdr);line-height:1.85}
+footer .copy{font-family:var(--FH);font-weight:700;color:var(--text)}
+footer .a{color:var(--acc)}
+/* APP */
+#app{width:100%;max-width:500px;display:none;flex-direction:column;gap:11px}
+#saved{display:none}
+@media(max-width:360px){.sv{font-size:.9rem}.tbig{font-size:clamp(2.4rem,17vw,3.5rem)}.sbtn{padding:13px 10px;font-size:.82rem}}
+</style>
 </head>
 <body>
 
-  <!-- ── Header ── -->
-  <header>
-    <a class="logo" href="#">
-      <div class="logo-icon">🪞</div>
-      <div>
-        <span class="logo-text">ImageClone</span>
-        <span class="logo-sub">Exact Copy Tool</span>
-      </div>
-    </a>
-
-    <div class="theme-toggle" role="group" aria-label="Theme switcher">
-      <button class="theme-btn" id="btn-light" onclick="setTheme('light')" title="Light mode">
-        ☀️ <span class="label">Light</span>
-      </button>
-      <button class="theme-btn active" id="btn-dark" onclick="setTheme('dark')" title="Dark mode">
-        🌙 <span class="label">Dark</span>
-      </button>
-      <button class="theme-btn" id="btn-oled" onclick="setTheme('oled')" title="OLED True Black">
-        ⬛ <span class="label">OLED</span>
-      </button>
+<header>
+  <div class="logo">⛅ WeatherNow</div>
+  <div class="hdr-r">
+    <div class="unit-tog">
+      <button class="ubtn on" id="btnC">°C</button>
+      <button class="ubtn" id="btnF">°F</button>
     </div>
-  </header>
+    <div class="themes">
+      <button class="tbtn on" data-t="dark" title="Dark">🌙</button>
+      <button class="tbtn" data-t="light" title="Light">☀️</button>
+      <button class="tbtn" data-t="oled" title="OLED">⬛</button>
+      <button class="tbtn" data-t="hc" title="High Contrast">⚡</button>
+    </div>
+  </div>
+</header>
 
-  <!-- ── Main ── -->
-  <main>
+<main>
+  <!-- SAVED CITIES -->
+  <div id="saved"><div class="saved-scroll" id="savedRow"></div></div>
 
-    <!-- Upload Zone -->
-    <div class="upload-zone anim-in" id="uploadZone"
-         ondragover="handleDragOver(event)"
-         ondragleave="handleDragLeave(event)"
-         ondrop="handleDrop(event)">
-      <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)" />
-      <span class="upload-icon">🖼️</span>
-      <div class="upload-title">Drop your image here</div>
-      <div class="upload-sub">or tap to browse from your device</div>
-      <div class="upload-formats">
-        <span class="badge">PNG</span>
-        <span class="badge">JPG</span>
-        <span class="badge">WEBP</span>
-        <span class="badge">GIF</span>
-        <span class="badge">BMP</span>
-        <span class="badge">SVG</span>
-        <span class="badge">AVIF</span>
+  <!-- SEARCH -->
+  <div class="srch">
+    <input type="text" id="ci" placeholder="Search city, town…" autocomplete="off" inputmode="search">
+    <button class="sbtn loc" id="locBtn" aria-label="Use my location">📍</button>
+    <button class="sbtn" id="goBtn">Search</button>
+    <div id="sug"></div>
+  </div>
+  <div id="err"></div>
+  <div class="alert" id="alrt"></div>
+
+  <!-- LOADER -->
+  <div class="ld" id="ld"><div class="spin"></div>Fetching weather…</div>
+
+  <!-- APP -->
+  <div id="app">
+
+    <!-- 1. CURRENT WEATHER -->
+    <div class="card now">
+      <div class="now-top">
+        <div>
+          <div class="city-name" id="cname"></div>
+          <div class="sub-row"><span class="country" id="cntry"></span><span class="ltime" id="ltime"></span></div>
+        </div>
+        <button class="shrbtn" id="shrBtn">📤 Share</button>
       </div>
+      <div class="wicon" id="wicon">⛅</div>
+      <div class="tbig" id="tbig">--°</div>
+      <div class="trange"><span class="hi" id="thi"></span> / <span class="lo" id="tlo"></span></div>
+      <div class="desc" id="wdesc"></div>
+      <div class="feels" id="feels"></div>
+      <div class="g2">
+        <div class="st"><div class="sl">💧 Humidity</div><div class="sv" id="hum"></div></div>
+        <div class="st"><div class="sl">💨 Wind</div><div class="sv" id="wnd"></div></div>
+        <div class="st"><div class="sl">👁 Visibility</div><div class="sv" id="vis"></div></div>
+        <div class="st"><div class="sl">🌡 Pressure</div><div class="sv" id="pres"></div></div>
+        <div class="st"><div class="sl">💦 Dew Point</div><div class="sv" id="dew"></div></div>
+        <div class="st"><div class="sl">☁️ Cloud Cover</div><div class="sv" id="cld"></div></div>
+      </div>
+      <div class="upd" id="upd"></div>
     </div>
 
-    <!-- Progress -->
-    <div class="progress-bar-wrap" id="progressWrap">
-      <div class="progress-bar-fill" id="progressFill"></div>
+    <!-- 2. AQI -->
+    <div class="card">
+      <div class="stit">🌬 Air Quality (AQI)</div>
+      <div class="aqi-c">
+        <div class="aqi-n" id="aqiN">--</div>
+        <div class="aqi-lb" id="aqiL"></div>
+        <div class="aqi-ad" id="aqiA"></div>
+      </div>
+      <div class="aqi-sc">
+        <div style="background:#22c55e"></div><div style="background:#84cc16"></div>
+        <div style="background:#eab308"></div><div style="background:#f97316"></div>
+        <div style="background:#ef4444"></div><div style="background:#7c3aed"></div>
+      </div>
+      <div class="aqi-mw"><div class="aqi-mk" id="aqiMk"></div></div>
+      <div class="pg" id="pgrid"></div>
     </div>
 
-    <!-- Status -->
-    <div class="status-bar" id="statusBar">
-      <div class="status-dot"></div>
-      <span id="statusText">Image loaded successfully</span>
+    <!-- 3. HOURLY FORECAST -->
+    <div class="card">
+      <div class="stit">⏱ 24-Hour Forecast</div>
+      <div class="hs" id="hscrl"></div>
     </div>
 
-    <!-- Controls -->
-    <div class="controls-panel" id="controlsPanel">
-      <div class="panel-title">🎛️ Clone Options</div>
+    <!-- 4. 7-DAY FORECAST -->
+    <div class="card">
+      <div class="stit">📅 7-Day Forecast</div>
+      <div class="fl" id="flist"></div>
+    </div>
 
-      <div class="control-row">
-        <div class="control-label">
-          Quality / Fidelity
-          <small>Output image sharpness</small>
-        </div>
-        <div class="range-wrapper">
-          <input type="range" id="qualityRange" min="0.1" max="1" step="0.01" value="1"
-                 oninput="updateQuality(this.value)" />
-        </div>
-        <div class="control-value" id="qualityVal">100%</div>
+    <!-- 5. SUN, MOON & UV -->
+    <div class="card">
+      <div class="stit">🌅 Sun, Moon & UV</div>
+      <svg viewBox="0 0 220 90" style="width:100%;max-width:300px;display:block;margin:0 auto">
+        <defs>
+          <linearGradient id="sg" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#f97316"/>
+            <stop offset="100%" stop-color="#facc15"/>
+          </linearGradient>
+        </defs>
+        <path d="M20 80 Q110 0 200 80" fill="none" stroke="var(--bdr)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M20 80 Q110 0 200 80" fill="none" stroke="url(#sg)" stroke-width="3" stroke-linecap="round" id="arc" stroke-dasharray="0 9999"/>
+        <circle r="8" fill="#facc15" id="sdot" cx="20" cy="80" filter="url(#glow)"/>
+        <defs><filter id="glow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+        <text x="20" y="88" text-anchor="middle" font-size="7.5" fill="var(--sub)" id="sr">--</text>
+        <text x="200" y="88" text-anchor="middle" font-size="7.5" fill="var(--sub)" id="ss">--</text>
+      </svg>
+      <div class="sun-l">
+        <span>🌅 <span id="sunrise"></span></span>
+        <span id="daylen" style="color:var(--acc);font-size:.74rem"></span>
+        <span>🌇 <span id="sunset"></span></span>
       </div>
-
-      <div class="control-row">
-        <div class="control-label">
-          Scale Factor
-          <small>Output resolution multiplier</small>
-        </div>
-        <div class="range-wrapper">
-          <input type="range" id="scaleRange" min="0.1" max="3" step="0.1" value="1"
-                 oninput="updateScale(this.value)" />
-        </div>
-        <div class="control-value" id="scaleVal">1×</div>
+      <div style="margin-top:13px">
+        <div class="sl">🔆 UV Index</div>
+        <div class="sv" id="uvi" style="margin-top:3px"></div>
+        <div class="uvbg"><div class="uvb" id="uvb" style="width:0"></div></div>
       </div>
-
-      <div class="control-row">
-        <div class="control-label">
-          Brightness
-          <small>Clone brightness adjust</small>
-        </div>
-        <div class="range-wrapper">
-          <input type="range" id="brightnessRange" min="0.1" max="2" step="0.05" value="1"
-                 oninput="updateBrightness(this.value)" />
-        </div>
-        <div class="control-value" id="brightnessVal">100%</div>
-      </div>
-
-      <div class="control-row">
-        <div class="control-label">
-          Contrast
-          <small>Clone contrast adjust</small>
-        </div>
-        <div class="range-wrapper">
-          <input type="range" id="contrastRange" min="0.1" max="2" step="0.05" value="1"
-                 oninput="updateContrast(this.value)" />
-        </div>
-        <div class="control-value" id="contrastVal">100%</div>
-      </div>
-
-      <div class="control-row">
-        <div class="control-label">
-          Saturation
-          <small>Clone color saturation</small>
-        </div>
-        <div class="range-wrapper">
-          <input type="range" id="saturationRange" min="0" max="3" step="0.05" value="1"
-                 oninput="updateSaturation(this.value)" />
-        </div>
-        <div class="control-value" id="saturationVal">100%</div>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn btn-primary" onclick="cloneImage()">🪞 Clone Image</button>
-        <button class="btn" onclick="resetControls()">↺ Reset</button>
-        <button class="btn btn-danger" onclick="clearAll()">✕ Clear</button>
+      <div class="moon-r" style="margin-top:13px">
+        <div class="mi" id="micon">🌑</div>
+        <div><div class="mp" id="mphase">—</div><div class="md" id="mdet"></div></div>
       </div>
     </div>
 
-    <!-- Preview Grid -->
-    <div class="section-title" id="previewLabel" style="display:none">🔍 Preview</div>
-
-    <div class="preview-grid" id="previewGrid">
-      <!-- Original -->
-      <div class="preview-card anim-in">
-        <div class="preview-header">
-          <span class="preview-label">Original</span>
-          <span class="preview-meta" id="origMeta">—</span>
+    <!-- 6. WIND DETAIL -->
+    <div class="card">
+      <div class="stit">🌀 Wind Detail</div>
+      <div class="wc">
+        <div class="cr">
+          <div class="cn">N</div>
+          <div class="ndl" id="ndl"></div>
         </div>
-        <div class="preview-body checkered" id="origBody">
-          <img id="originalImg" alt="Original" />
-        </div>
-        <div class="preview-footer">
-          <span class="stat-chip" id="origSize">—</span>
-          <span class="stat-chip" id="origDims">—</span>
-        </div>
-      </div>
-
-      <!-- Clone -->
-      <div class="preview-card anim-in">
-        <div class="preview-header">
-          <span class="preview-label" style="color:var(--accent)">Clone</span>
-          <span class="preview-meta" id="cloneMeta">—</span>
-        </div>
-        <div class="preview-body checkered" id="cloneBody">
-          <img id="clonedImg" alt="Cloned" />
-        </div>
-        <div class="preview-footer">
-          <span class="stat-chip" id="cloneSize">—</span>
-          <span class="stat-chip" id="cloneDims">—</span>
+        <div class="g2" style="flex:1;margin-top:0">
+          <div class="st"><div class="sl">Speed</div><div class="sv" id="wspd"></div></div>
+          <div class="st"><div class="sl">Gusts</div><div class="sv" id="wgst"></div></div>
+          <div class="st"><div class="sl">Direction</div><div class="sv" id="wdir"></div></div>
+          <div class="st"><div class="sl">Beaufort</div><div class="sv" id="bft"></div></div>
         </div>
       </div>
     </div>
 
-    <!-- Download Buttons -->
-    <div class="btn-row" id="downloadRow" style="display:none; width:100%">
-      <button class="btn btn-success" onclick="downloadClone('png')">⬇ Download PNG</button>
-      <button class="btn btn-success" onclick="downloadClone('jpeg')">⬇ Download JPG</button>
-      <button class="btn btn-success" onclick="downloadClone('webp')">⬇ Download WEBP</button>
-    </div>
-
-    <!-- Compare Slider -->
-    <div class="compare-section" id="compareSection">
-      <div class="compare-header">
-        <span class="compare-title">🔀 Side-by-Side Compare</span>
-        <span class="stat-chip" id="matchScore">—</span>
-      </div>
-      <div class="compare-body" id="compareBody"
-           onmousedown="startDrag(event)"
-           ontouchstart="startDragTouch(event)">
-        <img id="compareOrig" alt="Original compare" />
-        <div class="compare-after" id="compareAfter">
-          <img id="compareClone" alt="Clone compare" />
-        </div>
-        <div class="compare-divider" id="compareDivider">
-          <div class="compare-handle">⇔</div>
-        </div>
-        <span class="compare-tag original">Original</span>
-        <span class="compare-tag cloned">Clone</span>
+    <!-- 7. PRECIPITATION -->
+    <div class="card">
+      <div class="stit">🌧 Precipitation</div>
+      <div class="g2" style="margin-top:0">
+        <div class="st"><div class="sl">Today Rain</div><div class="sv" id="rain"></div></div>
+        <div class="st"><div class="sl">Snow Depth</div><div class="sv" id="snow"></div></div>
+        <div class="st"><div class="sl">Rain Chance</div><div class="sv" id="rprob"></div></div>
+        <div class="st"><div class="sl">Evapotransp.</div><div class="sv" id="evap"></div></div>
       </div>
     </div>
 
-  </main>
-
-  <!-- ── Footer ── -->
-  <footer>
-    <div class="footer-copy">
-      &copy; <span id="footerYear"></span> <span class="footer-accent">Manik Roy</span>. ImageClone App.
+    <!-- 8. HEALTH, POLLEN & COMFORT -->
+    <div class="card">
+      <div class="stit">🌿 Health & Comfort</div>
+      <div id="plnGrid" style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px"></div>
+      <div class="g2" style="margin-top:0">
+        <div class="st"><div class="sl">🤧 Allergy Risk</div><div class="sv" id="allgy"></div></div>
+        <div class="st"><div class="sl">🏃 Exercise</div><div class="sv" id="exrc"></div></div>
+        <div class="st"><div class="sl">😴 Sleep</div><div class="sv" id="slp"></div></div>
+        <div class="st"><div class="sl">👗 Clothing</div><div class="sv" id="cloth"></div></div>
+      </div>
     </div>
-    <div class="footer-rights">All Rights Reserved.</div>
-  </footer>
 
-  <!-- ── Toast ── -->
-  <div id="toast"></div>
+    <!-- 9. SMART TIPS -->
+    <div class="card">
+      <div class="stit">💡 Smart Tips</div>
+      <div id="tips"></div>
+    </div>
 
-  <!-- ── Canvas (hidden, for processing) ── -->
-  <canvas id="processingCanvas" style="display:none"></canvas>
+  </div><!-- /app -->
+</main>
 
-  <script>
-    /* ──────────────────────────────────────────
-       STATE
-    ────────────────────────────────────────── */
-    let originalFile = null;
-    let originalDataURL = null;
-    let clonedDataURL = null;
-    let isDragging = false;
-    let comparePos = 50;
+<footer>
+  <div class="copy">© <span id="yr"></span> Manik Roy</div>
+  All Rights Reserved<br>
+  <span class="a">Open-Meteo</span> · <span class="a">Air Quality API</span> · <span class="a">Nominatim</span> — Zero API keys required
+</footer>
 
-    const state = {
-      quality: 1,
-      scale: 1,
-      brightness: 1,
-      contrast: 1,
-      saturation: 1,
-    };
+<script>
+'use strict';
+let GEO=null,RAW=null,AQIR=null,UNIT='C';
+const $=id=>document.getElementById(id);
+$('yr').textContent=new Date().getFullYear();
 
-    /* ──────────────────────────────────────────
-       THEME
-    ────────────────────────────────────────── */
-    function setTheme(t) {
-      document.documentElement.setAttribute('data-theme', t);
-      document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('btn-' + t).classList.add('active');
-      localStorage.setItem('img-clone-theme', t);
-    }
+// THEME
+const tbs=document.querySelectorAll('.tbtn');
+tbs.forEach(b=>b.addEventListener('click',()=>{
+  document.documentElement.setAttribute('data-theme',b.dataset.t);
+  tbs.forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  localStorage.setItem('wn-t',b.dataset.t);
+}));
+const ST=localStorage.getItem('wn-t');
+if(ST){document.documentElement.setAttribute('data-theme',ST);tbs.forEach(b=>b.classList.toggle('on',b.dataset.t===ST));}
 
-    // Load saved theme
-    (function () {
-      const saved = localStorage.getItem('img-clone-theme') || 'dark';
-      setTheme(saved);
-    })();
+// UNIT
+$('btnC').addEventListener('click',()=>setU('C'));
+$('btnF').addEventListener('click',()=>setU('F'));
+function setU(u){UNIT=u;$('btnC').classList.toggle('on',u==='C');$('btnF').classList.toggle('on',u==='F');localStorage.setItem('wn-u',u);if(RAW&&GEO)render(GEO,RAW,AQIR);}
+const SU=localStorage.getItem('wn-u');if(SU)setU(SU);
+const T=v=>UNIT==='F'?Math.round(v*9/5+32):Math.round(v);
+const TU=()=>UNIT==='F'?'°F':'°C';
+const SPD=v=>UNIT==='F'?(v*0.621).toFixed(1)+' mph':v.toFixed(1)+' km/h';
 
-    /* ──────────────────────────────────────────
-       FOOTER YEAR
-    ────────────────────────────────────────── */
-    document.getElementById('footerYear').textContent = new Date().getFullYear();
+// WMO MAP
+function wmo(c){
+  const m={0:['✨','Clear sky'],1:['🌤','Mainly clear'],2:['⛅','Partly cloudy'],3:['☁️','Overcast'],
+    45:['🌫','Fog'],48:['🌫','Icing fog'],51:['🌦','Light drizzle'],53:['🌧','Drizzle'],55:['🌧','Heavy drizzle'],
+    61:['🌦','Light rain'],63:['🌧','Moderate rain'],65:['🌧','Heavy rain'],71:['🌨','Light snow'],
+    73:['❄️','Moderate snow'],75:['❄️','Heavy snow'],77:['🌨','Snow grains'],80:['🌦','Showers'],
+    81:['🌧','Rain showers'],82:['⛈','Violent showers'],85:['🌨','Snow showers'],86:['❄️','Heavy snow showers'],
+    95:['⛈','Thunderstorm'],96:['⛈','Thunderstorm+hail'],99:['⛈','Heavy thunderstorm']};
+  return m[c]||['🌤','Unknown'];
+}
 
-    /* ──────────────────────────────────────────
-       DRAG & DROP
-    ────────────────────────────────────────── */
-    function handleDragOver(e) {
-      e.preventDefault();
-      document.getElementById('uploadZone').classList.add('drag-over');
-    }
+// UTILS
+const fmtT=iso=>new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:true});
+function fmtD(iso,i){if(i===0)return'Today';if(i===1)return'Tomorrow';return new Date(iso).toLocaleDateString([],{weekday:'short'});}
+function wdirL(d){return['N','NE','E','SE','S','SW','W','NW'][Math.round(d/45)%8];}
+function bf(k){const b=[1,5,11,19,28,38,49,61,74,88,102,117];let s=0;b.forEach((v,i)=>{if(k>=v)s=i+1;});return s;}
+const bfD=['Calm','Light air','Light breeze','Gentle breeze','Mod. breeze','Fresh breeze','Strong breeze','Near gale','Gale','Severe gale','Storm','Violent storm','Hurricane'];
+function ltime(tz){try{return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:tz});}catch{return '';}}
+function dayLen(sr,ss){const m=Math.round((new Date(ss)-new Date(sr))/60000);return`${Math.floor(m/60)}h ${m%60}m`;}
 
-    function handleDragLeave(e) {
-      document.getElementById('uploadZone').classList.remove('drag-over');
-    }
+// MOON PHASE
+function moon(){
+  const known=new Date(2000,0,6,18,14,0);
+  const pct=(((Date.now()-known.getTime())/(1000*60*60*24))%29.53058867+29.53058867)%29.53058867/29.53058867;
+  const p=[{mx:.025,n:'New Moon',i:'🌑'},{mx:.25,n:'Waxing Crescent',i:'🌒'},{mx:.275,n:'First Quarter',i:'🌓'},
+    {mx:.5,n:'Waxing Gibbous',i:'🌔'},{mx:.525,n:'Full Moon',i:'🌕'},{mx:.75,n:'Waning Gibbous',i:'🌖'},
+    {mx:.775,n:'Last Quarter',i:'🌗'},{mx:1,n:'Waning Crescent',i:'🌘'}];
+  for(const x of p)if(pct<=x.mx)return{...x,pct};
+  return{n:'New Moon',i:'🌑',pct:0};
+}
 
-    function handleDrop(e) {
-      e.preventDefault();
-      document.getElementById('uploadZone').classList.remove('drag-over');
-      const f = e.dataTransfer.files[0];
-      if (f && f.type.startsWith('image/')) loadImageFile(f);
-      else toast('⚠️ Please drop a valid image file', true);
-    }
+// AQI
+function aqiI(v){
+  if(v<=50)  return{lb:'Good',c:'#22c55e',ad:'Air quality is satisfactory. Enjoy outdoor activities!',pct:v/50*16};
+  if(v<=100) return{lb:'Moderate',c:'#eab308',ad:'Acceptable. Sensitive individuals should limit outdoor exertion.',pct:16+(v-50)/50*16};
+  if(v<=150) return{lb:'Unhealthy for Sensitive Groups',c:'#f97316',ad:'Sensitive groups should reduce outdoor exertion.',pct:33+(v-100)/50*17};
+  if(v<=200) return{lb:'Unhealthy',c:'#ef4444',ad:'Everyone may experience health effects. Limit outdoor activity.',pct:50+(v-150)/50*16};
+  if(v<=300) return{lb:'Very Unhealthy',c:'#a855f7',ad:'Health alert — everyone may experience serious effects.',pct:66+(v-200)/100*17};
+  return{lb:'Hazardous',c:'#7c3aed',ad:'Health emergency. Avoid all outdoor activity.',pct:100};
+}
 
-    function handleFile(e) {
-      const f = e.target.files[0];
-      if (f) loadImageFile(f);
-    }
+// POLLEN ESTIMATE
+function pln(uv,hum,temp){
+  const s=Math.round((uv/11*3)+(hum>60?2:0)+(temp>18&&temp<30?2:1));
+  if(s<=2)return{lb:'Low',c:'#22c55e',pct:20};
+  if(s<=4)return{lb:'Moderate',c:'#eab308',pct:50};
+  if(s<=6)return{lb:'High',c:'#f97316',pct:75};
+  return{lb:'Very High',c:'#ef4444',pct:95};
+}
 
-    /* ──────────────────────────────────────────
-       FILE LOADING
-    ────────────────────────────────────────── */
-    function loadImageFile(file) {
-      originalFile = file;
-      showProgress();
+// CLOTHING SUGGESTION
+function clothing(temp){
+  if(temp<0)return'🧥 Heavy coat + layers';
+  if(temp<8)return'🧥 Warm coat';
+  if(temp<15)return'🧶 Light jacket';
+  if(temp<22)return'👕 Light layers';
+  if(temp<28)return'🩱 Light clothing';
+  return'☀️ Very light, breathable';
+}
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        originalDataURL = e.target.result;
-        const img = new Image();
-        img.onload = () => {
-          hideProgress();
-          // Set original preview
-          document.getElementById('originalImg').src = originalDataURL;
-          document.getElementById('origMeta').textContent = file.name;
-          document.getElementById('origSize').textContent = formatBytes(file.size);
-          document.getElementById('origDims').textContent = `${img.width} × ${img.height}`;
+// SMART TIPS
+function tips(c,aqi){
+  const t=[],temp=c.temperature_2m,h=c.relative_humidity_2m,w=c.weather_code,ws=c.wind_speed_10m;
+  if([61,63,65,80,81,82,51,53,55].includes(w))t.push({i:'☂️',s:'Bring an umbrella',d:'Rain is expected or ongoing.'});
+  if([71,73,75,85,86].includes(w))t.push({i:'🧥',s:'Dress warm & waterproof',d:'Snow conditions detected.'});
+  if(temp<2)t.push({i:'🧤',s:'Near freezing',d:'Risk of ice — wear warm layers and grip shoes.'});
+  else if(temp<10)t.push({i:'🥶',s:'Cold outside',d:'Bundle up before heading out.'});
+  if(temp>33)t.push({i:'🌊',s:'Stay hydrated',d:'High heat — drink water frequently and seek shade.'});
+  if(h>80)t.push({i:'😓',s:'High humidity',d:'Feels muggier than the temperature shows.'});
+  if(ws>40)t.push({i:'💨',s:'Strong winds',d:'Secure loose outdoor objects and hold onto hats!'});
+  if(aqi&&aqi.us_aqi>100)t.push({i:'😷',s:'Poor air quality',d:'Consider wearing a mask outdoors.'});
+  if([0,1].includes(w)&&temp>15&&temp<28)t.push({i:'🕶️',s:'Great day outside!',d:'Perfect conditions for outdoor activities.'});
+  if([95,96,99].includes(w))t.push({i:'⚡',s:'Thunderstorm risk',d:'Stay indoors and away from tall objects.'});
+  if(t.length===0)t.push({i:'✅',s:'Conditions look good!',d:'No special precautions needed today.'});
+  return t;
+}
 
-          // Show UI
-          showUI();
-          toast('✅ Image loaded! Ready to clone.');
-        };
-        img.src = originalDataURL;
-      };
-      reader.readAsDataURL(file);
-    }
+// SUN ARC
+function renderArc(sr,ss){
+  const now=Date.now(),s=new Date(sr).getTime(),e=new Date(ss).getTime();
+  const pct=Math.max(0,Math.min(1,(now-s)/(e-s)));
+  const L=314;
+  $('arc').setAttribute('stroke-dasharray',`${pct*L} ${L}`);
+  const a=Math.PI*pct;
+  const cx=20+(180*pct),cy=80-Math.sin(a)*70;
+  $('sdot').setAttribute('cx',cx.toFixed(1));$('sdot').setAttribute('cy',cy.toFixed(1));
+  $('sr').textContent=fmtT(sr);$('ss').textContent=fmtT(ss);
+}
 
-    function showUI() {
-      document.getElementById('controlsPanel').classList.add('visible');
-      document.getElementById('previewGrid').classList.add('visible');
-      document.getElementById('previewLabel').style.display = 'flex';
-      document.getElementById('statusBar').classList.add('visible');
-      document.getElementById('statusText').textContent = `"${originalFile.name}" loaded — adjust settings and clone!`;
-    }
+// SAVED CITIES
+let saved=JSON.parse(localStorage.getItem('wn-sv')||'[]');
+function renderSaved(){
+  const sec=$('saved'),row=$('savedRow');row.innerHTML='';
+  saved.forEach((c,i)=>{
+    const el=document.createElement('div');el.className='chip';
+    el.innerHTML=`<span>${c}</span><span class="x" data-i="${i}">✕</span>`;
+    el.addEventListener('click',e=>{if(!e.target.classList.contains('x'))load(c);});
+    el.querySelector('.x').addEventListener('click',e=>{e.stopPropagation();saved.splice(i,1);localStorage.setItem('wn-sv',JSON.stringify(saved));renderSaved();});
+    row.appendChild(el);
+  });
+  if(GEO&&!saved.includes(GEO.name)){
+    const a=document.createElement('div');a.className='chip chip-add';a.textContent='+ Save city';
+    a.addEventListener('click',()=>{if(GEO&&!saved.includes(GEO.name)){saved.push(GEO.name);localStorage.setItem('wn-sv',JSON.stringify(saved));renderSaved();}});
+    row.appendChild(a);
+  }
+  sec.style.display=saved.length>0||GEO?'block':'none';
+}
 
-    /* ──────────────────────────────────────────
-       PROGRESS
-    ────────────────────────────────────────── */
-    function showProgress() {
-      const wrap = document.getElementById('progressWrap');
-      const fill = document.getElementById('progressFill');
-      wrap.classList.add('visible');
-      fill.style.width = '0%';
-      let p = 0;
-      const iv = setInterval(() => {
-        p = Math.min(p + Math.random() * 20, 90);
-        fill.style.width = p + '%';
-        if (p >= 90) clearInterval(iv);
-      }, 80);
-      wrap._interval = iv;
-      wrap._fill = fill;
-    }
+// AUTOCOMPLETE
+let sugT;
+$('ci').addEventListener('input',function(){
+  clearTimeout(sugT);const v=this.value.trim();
+  if(v.length<2){$('sug').style.display='none';return;}
+  sugT=setTimeout(async()=>{
+    try{
+      const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(v)}&format=json&limit=5`,{headers:{'Accept-Language':'en'}});
+      const d=await r.json();const sg=$('sug');
+      if(!d.length){sg.style.display='none';return;}
+      sg.innerHTML='';
+      d.forEach(item=>{
+        const pts=item.display_name.split(',');
+        const el=document.createElement('div');el.className='si';el.textContent=[pts[0],pts[pts.length-1]].join(',');
+        el.addEventListener('click',()=>{$('ci').value=pts[0].trim();sg.style.display='none';load(pts[0].trim());});
+        sg.appendChild(el);
+      });sg.style.display='block';
+    }catch(e){}
+  },280);
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.srch'))$('sug').style.display='none';});
 
-    function hideProgress() {
-      const wrap = document.getElementById('progressWrap');
-      clearInterval(wrap._interval);
-      wrap._fill.style.width = '100%';
-      setTimeout(() => wrap.classList.remove('visible'), 500);
-    }
+// ERROR / LOADER
+function showE(m){$('err').textContent=m;$('err').style.display='block';}
+function clrE(){$('err').style.display='none';}
+function ldv(v){$('ld').style.display=v?'block':'none';}
 
-    /* ──────────────────────────────────────────
-       CONTROLS
-    ────────────────────────────────────────── */
-    function updateQuality(v) {
-      state.quality = parseFloat(v);
-      document.getElementById('qualityVal').textContent = Math.round(v * 100) + '%';
-      if (clonedDataURL) applyFilters();
-    }
+// GEOCODE
+async function geo(city){
+  const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`,{headers:{'Accept-Language':'en'}});
+  const d=await r.json();if(!d.length)throw new Error('City not found. Try a different name.');
+  const p=d[0].display_name.split(',');
+  return{lat:parseFloat(d[0].lat),lon:parseFloat(d[0].lon),name:p[0].trim(),country:p[p.length-1].trim()};
+}
 
-    function updateScale(v) {
-      state.scale = parseFloat(v);
-      document.getElementById('scaleVal').textContent = parseFloat(v).toFixed(1) + '×';
-      if (clonedDataURL) applyFilters();
-    }
+// FETCH WEATHER
+async function fwx(lat,lon){
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    +`&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,visibility,cloud_cover,dew_point_2m`
+    +`&hourly=temperature_2m,weather_code,precipitation_probability`
+    +`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max,snow_depth,et0_fao_evapotranspiration`
+    +`&wind_speed_unit=kmh&timezone=auto&forecast_days=7`;
+  const res=await fetch(u);
+  if(!res.ok)throw new Error(`Weather API error: ${res.status}`);
+  const d=await res.json();
+  if(d.error)throw new Error(d.reason||'Weather data unavailable for this location.');
+  if(!d.current||d.current.weather_code==null)throw new Error('Incomplete weather data returned. Please try again.');
+  return d;
+}
 
-    function updateBrightness(v) {
-      state.brightness = parseFloat(v);
-      document.getElementById('brightnessVal').textContent = Math.round(v * 100) + '%';
-      if (clonedDataURL) applyFilters();
-    }
+// FETCH AQI
+async function faq(lat,lon){
+  try{return(await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,ozone,dust`)).json();}
+  catch{return null;}
+}
 
-    function updateContrast(v) {
-      state.contrast = parseFloat(v);
-      document.getElementById('contrastVal').textContent = Math.round(v * 100) + '%';
-      if (clonedDataURL) applyFilters();
-    }
+// RENDER
+function render(g,d,a){
+  // Safety guard — should never reach here without valid data due to fwx() checks, but belt-and-suspenders
+  if(!d||!d.current||d.current.weather_code==null){showE('Weather data is missing. Please search again.');return;}
+  $('app').style.display='flex';
+  const c=d.current;
+  const daily=d.daily||{};
+  const hourly=d.hourly||{};
+  const[ic,dc]=wmo(c.weather_code);
 
-    function updateSaturation(v) {
-      state.saturation = parseFloat(v);
-      document.getElementById('saturationVal').textContent = Math.round(v * 100) + '%';
-      if (clonedDataURL) applyFilters();
-    }
+  // Current
+  $('cname').textContent=g.name;$('cntry').textContent=g.country;
+  $('ltime').textContent=ltime(d.timezone)||'';
+  $('wicon').textContent=ic;
+  $('tbig').textContent=T(c.temperature_2m)+TU();
+  $('thi').textContent='H:'+(daily.temperature_2m_max?.[0]!=null?T(daily.temperature_2m_max[0])+'°':'--');
+  $('tlo').textContent='L:'+(daily.temperature_2m_min?.[0]!=null?T(daily.temperature_2m_min[0])+'°':'--');
+  $('wdesc').textContent=dc;
+  $('feels').textContent='Feels like '+T(c.apparent_temperature)+TU();
+  $('hum').textContent=c.relative_humidity_2m+'%';
+  $('wnd').textContent=SPD(c.wind_speed_10m);
+  $('vis').textContent=c.visibility!=null?(c.visibility/1000).toFixed(1)+' km':'N/A';
+  $('pres').textContent=Math.round(c.surface_pressure)+' hPa';
+  $('dew').textContent=T(c.dew_point_2m)+TU();
+  $('cld').textContent=(c.cloud_cover??'--')+'%';
+  $('upd').textContent='Updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 
-    function resetControls() {
-      document.getElementById('qualityRange').value = 1;
-      document.getElementById('scaleRange').value = 1;
-      document.getElementById('brightnessRange').value = 1;
-      document.getElementById('contrastRange').value = 1;
-      document.getElementById('saturationRange').value = 1;
-      updateQuality(1); updateScale(1); updateBrightness(1);
-      updateContrast(1); updateSaturation(1);
-      toast('↺ Controls reset');
-    }
+  // AQI
+  if(a&&a.current){
+    const av=a.current.us_aqi??0,inf=aqiI(av);
+    $('aqiN').textContent=av;$('aqiN').style.color=inf.c;
+    $('aqiL').textContent=inf.lb;$('aqiL').style.color=inf.c;
+    $('aqiA').textContent=inf.ad;
+    $('aqiMk').style.left=Math.min(inf.pct,96)+'%';
+    const polls=[{n:'PM2.5',v:a.current.pm2_5},{n:'PM10',v:a.current.pm10},{n:'NO₂',v:a.current.nitrogen_dioxide},{n:'O₃',v:a.current.ozone},{n:'CO',v:a.current.carbon_monoxide},{n:'Dust',v:a.current.dust}];
+    $('pgrid').innerHTML=polls.map(p=>`<div class="pi"><div class="pn">${p.n}</div><div class="pv">${p.v!=null?p.v.toFixed(1):'N/A'} <span style="font-size:.63rem;color:var(--sub)">μg/m³</span></div></div>`).join('');
+  }else{$('aqiN').textContent='N/A';$('aqiL').textContent='Data unavailable for this location';}
 
-    /* ──────────────────────────────────────────
-       CLONE LOGIC
-    ────────────────────────────────────────── */
-    function cloneImage() {
-      if (!originalDataURL) { toast('⚠️ No image loaded!', true); return; }
+  // Hourly
+  const now=new Date(),nh=now.getHours();
+  $('hscrl').innerHTML='';let cnt=0;
+  const htimes=hourly.time||[];
+  for(let i=0;i<htimes.length&&cnt<24;i++){
+    const t=new Date(htimes[i]);
+    if(t<now&&t.getHours()!==nh)continue;
+    const[hi]=wmo(hourly.weather_code?.[i]??0);
+    const rp=hourly.precipitation_probability?.[i]??0;
+    const el=document.createElement('div');el.className='hi2'+(cnt===0?' now-h':'');
+    el.innerHTML=`<div class="ht">${cnt===0?'Now':t.toLocaleTimeString([],{hour:'numeric',hour12:true})}</div><div class="hic">${hi}</div><div class="htp">${T(hourly.temperature_2m?.[i]??0)}°</div>${rp>20?`<div class="hr">💧${rp}%</div>`:''}`;
+    $('hscrl').appendChild(el);cnt++;
+  }
 
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.getElementById('processingCanvas');
-        const ctx = canvas.getContext('2d');
+  // 7-day
+  $('flist').innerHTML='';
+  (daily.time||[]).forEach((day,i)=>{
+    const[di,dd]=wmo(daily.weather_code?.[i]??0);
+    const rp=daily.precipitation_probability_max?.[i]??0;
+    const el=document.createElement('div');el.className='fr';
+    el.innerHTML=`<div class="fd">${fmtD(day,i)}</div><div class="fc">${di}</div><div class="fdsc">${dd}</div><div class="frp">${rp>10?'💧'+rp+'%':''}</div><div class="ftp">${daily.temperature_2m_max?.[i]!=null?T(daily.temperature_2m_max[i])+'°':'--'} <span class="flo">${daily.temperature_2m_min?.[i]!=null?T(daily.temperature_2m_min[i])+'°':'--'}</span></div>`;
+    $('flist').appendChild(el);
+  });
 
-        const w = Math.round(img.width * state.scale);
-        const h = Math.round(img.height * state.scale);
-        canvas.width = w;
-        canvas.height = h;
+  // Sun arc & times
+  const sr0=daily.sunrise?.[0],ss0=daily.sunset?.[0];
+  if(sr0&&ss0){renderArc(sr0,ss0);$('sunrise').textContent=fmtT(sr0);$('sunset').textContent=fmtT(ss0);$('daylen').textContent=dayLen(sr0,ss0);}
+  const uv=daily.uv_index_max?.[0]??0;
+  $('uvi').textContent=uv.toFixed(1)+' — '+(uv<=2?'Low 🟢':uv<=5?'Moderate 🟡':uv<=7?'High 🟠':uv<=10?'Very High 🔴':'Extreme 🟣');
+  $('uvb').style.width=Math.min(uv/12*100,100)+'%';
 
-        // Apply CSS filters via canvas filter property
-        ctx.filter = `brightness(${state.brightness}) contrast(${state.contrast}) saturate(${state.saturation})`;
-        ctx.drawImage(img, 0, 0, w, h);
-        ctx.filter = 'none';
+  // Moon
+  const mp=moon();$('micon').textContent=mp.i;$('mphase').textContent=mp.n;$('mdet').textContent=`Illumination: ${(mp.pct*100).toFixed(0)}%`;
 
-        const mimeType = 'image/png';
-        clonedDataURL = canvas.toDataURL(mimeType, state.quality);
+  // Wind
+  const wd=c.wind_direction_10m??0,bfv=bf(c.wind_speed_10m);
+  $('ndl').style.transform=`translateX(-50%) translateY(-100%) rotate(${wd}deg)`;
+  $('wspd').textContent=SPD(c.wind_speed_10m);
+  $('wgst').textContent=SPD(c.wind_gusts_10m??c.wind_speed_10m);
+  $('wdir').textContent=wdirL(wd)+` (${wd}°)`;
+  $('bft').textContent=`${bfv} — ${bfD[bfv]||''}`;
 
-        // Update clone preview
-        const cloneImg = document.getElementById('clonedImg');
-        cloneImg.src = clonedDataURL;
-        document.getElementById('cloneMeta').textContent = `Clone (${w}×${h})`;
-        document.getElementById('cloneDims').textContent = `${w} × ${h}`;
-        document.getElementById('cloneSize').textContent = formatDataURLSize(clonedDataURL);
+  // Precip
+  $('rain').textContent=(daily.precipitation_sum?.[0]??0).toFixed(1)+' mm';
+  $('snow').textContent=(daily.snow_depth?.[0]??0).toFixed(0)+' cm';
+  $('rprob').textContent=(daily.precipitation_probability_max?.[0]??0)+'%';
+  $('evap').textContent=(daily.et0_fao_evapotranspiration?.[0]??0).toFixed(1)+' mm';
 
-        // Update compare
-        document.getElementById('compareOrig').src = originalDataURL;
-        document.getElementById('compareClone').src = clonedDataURL;
-        document.getElementById('compareSection').classList.add('visible');
-        setComparePos(50);
+  // Health & Pollen
+  const pl=pln(uv,c.relative_humidity_2m??50,c.temperature_2m??20);
+  $('plnGrid').innerHTML=`
+    <div><div class="sl">🌼 Tree Pollen</div><div style="font-family:var(--FH);font-weight:700;font-size:.95rem;color:${pl.c};margin:2px 0">${pl.lb}</div><div class="pb-bg"><div class="pb" style="width:${pl.pct}%;background:${pl.c}"></div></div></div>
+    <div><div class="sl">🌾 Grass Pollen</div><div style="font-family:var(--FH);font-weight:700;font-size:.95rem;color:${pl.c};margin:2px 0">${pl.lb}</div><div class="pb-bg"><div class="pb" style="width:${Math.max(0,pl.pct-12)}%;background:${pl.c}"></div></div></div>`;
+  $('allgy').textContent=pl.lb;$('allgy').style.color=pl.c;
+  const exOk=[0,1,2].includes(c.weather_code)&&c.temperature_2m>8&&c.temperature_2m<32&&c.relative_humidity_2m<75;
+  $('exrc').textContent=exOk?'Excellent 🏃':'Fair 🚶';
+  const slpOk=c.temperature_2m>=15&&c.temperature_2m<=22&&c.relative_humidity_2m<65;
+  $('slp').textContent=slpOk?'Ideal 😴':c.temperature_2m>24?'Warm 🌡':c.relative_humidity_2m>70?'Humid 💧':'Fair 🙂';
+  $('cloth').textContent=clothing(c.temperature_2m);
 
-        // Match score
-        const matchPct = computeMatch();
-        document.getElementById('matchScore').textContent = `Match: ${matchPct}%`;
+  // Tips
+  const ts=tips(c,a?.current);
+  $('tips').innerHTML=ts.map(t=>`<div class="tp"><div class="tic">${t.i}</div><div class="tt"><strong>${t.s}</strong> — ${t.d}</div></div>`).join('');
 
-        // Download buttons
-        document.getElementById('downloadRow').style.display = 'flex';
+  // Alert banner
+  const ab=$('alrt');
+  if([95,96,99].includes(c.weather_code)){ab.innerHTML='<strong>⚡ Thunderstorm Alert</strong>Severe thunderstorm conditions. Stay indoors.';ab.style.display='block';}
+  else if((c.wind_gusts_10m??0)>80){ab.innerHTML='<strong>🌪 Wind Advisory</strong>Gusts may exceed 80 km/h. Secure outdoor objects.';ab.style.display='block';}
+  else ab.style.display='none';
 
-        toast(`🪞 Clone created! ${w}×${h}px`);
-      };
-      img.src = originalDataURL;
-    }
+  // Share
+  $('shrBtn').onclick=()=>{
+    const txt=`📍 ${g.name}: ${T(c.temperature_2m??0)}${TU()}, ${dc}. Feels like ${T(c.apparent_temperature??0)}${TU()}. Humidity ${c.relative_humidity_2m??'--'}%. Wind ${SPD(c.wind_speed_10m??0)}.`;
+    if(navigator.share)navigator.share({title:'WeatherNow',text:txt});
+    else{navigator.clipboard?.writeText(txt);alert('Copied to clipboard!');}
+  };
 
-    function applyFilters() {
-      const cloneImg = document.getElementById('clonedImg');
-      cloneImg.style.filter = `brightness(${state.brightness}) contrast(${state.contrast}) saturate(${state.saturation})`;
-    }
+  renderSaved();
+}
 
-    function computeMatch() {
-      // Simplified: high match if scale=1, quality=1, and all filters at default
-      const q = state.quality;
-      const s = Math.abs(state.scale - 1);
-      const b = Math.abs(state.brightness - 1);
-      const c = Math.abs(state.contrast - 1);
-      const sat = Math.abs(state.saturation - 1);
-      const delta = s * 20 + b * 30 + c * 30 + sat * 15 + (1 - q) * 10;
-      return Math.max(0, Math.round(100 - delta * 100));
-    }
+// LOAD
+async function load(city){
+  clrE();ldv(true);$('sug').style.display='none';
+  try{
+    GEO=await geo(city);
+    const[wx,aq]=await Promise.all([fwx(GEO.lat,GEO.lon),faq(GEO.lat,GEO.lon)]);
+    RAW=wx;AQIR=aq;render(GEO,RAW,AQIR);
+  }catch(e){showE(e.message||'Something went wrong. Please try again.');}
+  finally{ldv(false);}
+}
 
-    /* ──────────────────────────────────────────
-       DOWNLOAD
-    ────────────────────────────────────────── */
-    function downloadClone(fmt) {
-      if (!originalDataURL) { toast('⚠️ Clone an image first!', true); return; }
+// EVENTS
+$('goBtn').addEventListener('click',()=>{const v=$('ci').value.trim();if(v)load(v);});
+$('ci').addEventListener('keydown',e=>{if(e.key==='Enter'){$('sug').style.display='none';const v=e.target.value.trim();if(v)load(v);}});
 
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.getElementById('processingCanvas');
-        const ctx = canvas.getContext('2d');
-        const w = Math.round(img.width * state.scale);
-        const h = Math.round(img.height * state.scale);
-        canvas.width = w; canvas.height = h;
-        ctx.filter = `brightness(${state.brightness}) contrast(${state.contrast}) saturate(${state.saturation})`;
-        ctx.drawImage(img, 0, 0, w, h);
-        ctx.filter = 'none';
+$('locBtn').addEventListener('click',()=>{
+  if(!navigator.geolocation)return showE('Geolocation not supported by your browser.');
+  ldv(true);clrE();
+  navigator.geolocation.getCurrentPosition(async p=>{
+    try{
+      const{latitude:la,longitude:lo}=p.coords;
+      const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${la}&lon=${lo}&format=json`,{headers:{'Accept-Language':'en'}});
+      const d=await r.json();
+      GEO={lat:la,lon:lo,name:d.address.city||d.address.town||d.address.village||d.address.county||'Your Location',country:d.address.country||''};
+      const[wx,aq]=await Promise.all([fwx(la,lo),faq(la,lo)]);
+      RAW=wx;AQIR=aq;render(GEO,RAW,AQIR);
+    }catch(e){showE('Could not fetch weather for your location.');}
+    finally{ldv(false);}
+  },()=>{showE('Location access denied. Please search manually.');ldv(false);});
+});
 
-        const mime = fmt === 'jpeg' ? 'image/jpeg' : fmt === 'webp' ? 'image/webp' : 'image/png';
-        const ext = fmt === 'jpeg' ? 'jpg' : fmt;
-        const data = canvas.toDataURL(mime, state.quality);
+// AUTO-REFRESH every 10 min
+setInterval(()=>{if(GEO)load(GEO.name);},600000);
 
-        const a = document.createElement('a');
-        const baseName = (originalFile?.name || 'image').replace(/\.[^.]+$/, '');
-        a.download = `${baseName}_clone.${ext}`;
-        a.href = data;
-        a.click();
-        toast(`⬇ Downloading ${ext.toUpperCase()}…`);
-      };
-      img.src = originalDataURL;
-    }
-
-    /* ──────────────────────────────────────────
-       COMPARE SLIDER
-    ────────────────────────────────────────── */
-    function setComparePos(pct) {
-      comparePos = Math.max(2, Math.min(98, pct));
-      document.getElementById('compareAfter').style.clipPath = `inset(0 0 0 ${comparePos}%)`;
-      document.getElementById('compareDivider').style.left = comparePos + '%';
-    }
-
-    function startDrag(e) {
-      e.preventDefault();
-      isDragging = true;
-      document.addEventListener('mousemove', onDrag);
-      document.addEventListener('mouseup', stopDrag);
-    }
-
-    function startDragTouch(e) {
-      isDragging = true;
-      document.addEventListener('touchmove', onDragTouch, { passive: false });
-      document.addEventListener('touchend', stopDrag);
-    }
-
-    function onDrag(e) {
-      if (!isDragging) return;
-      const body = document.getElementById('compareBody');
-      const rect = body.getBoundingClientRect();
-      const pct = ((e.clientX - rect.left) / rect.width) * 100;
-      setComparePos(pct);
-    }
-
-    function onDragTouch(e) {
-      e.preventDefault();
-      if (!isDragging) return;
-      const body = document.getElementById('compareBody');
-      const rect = body.getBoundingClientRect();
-      const touch = e.touches[0];
-      const pct = ((touch.clientX - rect.left) / rect.width) * 100;
-      setComparePos(pct);
-    }
-
-    function stopDrag() {
-      isDragging = false;
-      document.removeEventListener('mousemove', onDrag);
-      document.removeEventListener('mouseup', stopDrag);
-      document.removeEventListener('touchmove', onDragTouch);
-      document.removeEventListener('touchend', stopDrag);
-    }
-
-    /* ──────────────────────────────────────────
-       CLEAR
-    ────────────────────────────────────────── */
-    function clearAll() {
-      originalFile = null;
-      originalDataURL = null;
-      clonedDataURL = null;
-
-      document.getElementById('fileInput').value = '';
-      document.getElementById('originalImg').src = '';
-      document.getElementById('clonedImg').src = '';
-      document.getElementById('controlsPanel').classList.remove('visible');
-      document.getElementById('previewGrid').classList.remove('visible');
-      document.getElementById('previewLabel').style.display = 'none';
-      document.getElementById('statusBar').classList.remove('visible');
-      document.getElementById('compareSection').classList.remove('visible');
-      document.getElementById('downloadRow').style.display = 'none';
-      resetControls();
-      toast('🗑️ Cleared');
-    }
-
-    /* ──────────────────────────────────────────
-       UTILS
-    ────────────────────────────────────────── */
-    function formatBytes(bytes) {
-      if (bytes < 1024) return bytes + ' B';
-      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-    }
-
-    function formatDataURLSize(dataURL) {
-      const bytes = Math.round((dataURL.length * 3) / 4);
-      return formatBytes(bytes);
-    }
-
-    /* ──────────────────────────────────────────
-       TOAST
-    ────────────────────────────────────────── */
-    let toastTimer;
-    function toast(msg, isErr = false) {
-      const el = document.getElementById('toast');
-      el.textContent = msg;
-      el.style.borderColor = isErr ? 'var(--danger)' : 'var(--border)';
-      el.classList.add('show');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
-    }
-  </script>
+load('London');
+</script>
 </body>
 </html>
