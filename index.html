@@ -3,529 +3,491 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PC Builder — Manik Roy</title>
+<title>World Map Explorer</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0f1117;--sur:#1a1d27;--bdr:#2a2e3e;--ac:#00e5ff;--ac2:#ff6b35;--ok:#00ff88;--wn:#ff6b35;--tx:#e8eaf0;--sub:#7a7f96;--r:10px;--sh:0 4px 24px rgba(0,0,0,.4)}
-[data-theme=light]{--bg:#f0f2f8;--sur:#fff;--bdr:#d8dce8;--ac:#0077cc;--ac2:#e8460a;--ok:#009944;--wn:#e8460a;--tx:#1a1d27;--sub:#5a6080;--sh:0 4px 24px rgba(0,0,0,.12)}
-[data-theme=oled]{--bg:#000;--sur:#080808;--bdr:#1c1c1c;--ac:#00ff88;--ac2:#ff3366;--ok:#00ff88;--wn:#ff3366;--tx:#fff;--sub:#555;--sh:0 4px 24px rgba(0,255,136,.07)}
-[data-theme=hc]{--bg:#000;--sur:#000;--bdr:#fff;--ac:#ff0;--ac2:#0ff;--ok:#0f0;--wn:#f00;--tx:#fff;--sub:#ccc;--sh:none}
-[data-theme=hc] *{outline:1px solid #fff!important}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;align-items:center;transition:background .3s,color .3s}
-header{width:100%;max-width:740px;padding:18px 14px 0;text-align:center}
-h1{font-family:'Space Mono',monospace;font-size:clamp(1.2rem,5vw,1.9rem);color:var(--ac);letter-spacing:2px;text-transform:uppercase}
-h1 span{color:var(--ac2)}
-.tagline{font-size:.72rem;color:var(--sub);margin-top:3px;letter-spacing:1px}
-.rate-bar{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-family:'Space Mono',monospace;font-size:.68rem}
-.rate-chip{padding:3px 10px;border-radius:12px;border:1px solid var(--bdr);background:var(--sur);color:var(--sub)}
-.rate-chip b{color:var(--ac)}
-.rate-dot{width:6px;height:6px;border-radius:50%;background:#aaa;animation:pulse 2s infinite}
-.rate-dot.live{background:var(--ok)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.ctrl-bar{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:10px 0 0;align-items:center}
-.tbtn{padding:4px 12px;border-radius:18px;border:1.5px solid var(--bdr);background:var(--sur);color:var(--tx);font-family:'Space Mono',monospace;font-size:.65rem;cursor:pointer;transition:all .2s;letter-spacing:.5px}
-.tbtn:hover,.tbtn.active{border-color:var(--ac);color:var(--ac);background:rgba(0,229,255,.06)}
-.cur-tog{display:flex;border-radius:18px;border:1.5px solid var(--ac);overflow:hidden;font-family:'Space Mono',monospace;font-size:.7rem}
-.cur-tog button{padding:4px 13px;border:none;background:transparent;color:var(--ac);cursor:pointer;font-family:inherit;font-size:inherit;font-weight:700;letter-spacing:.5px;transition:background .2s,color .2s}
-.cur-tog button.active{background:var(--ac);color:#000}
-main{width:100%;max-width:740px;padding:14px;flex:1;display:flex;flex-direction:column;gap:12px}
-.card{background:var(--sur);border:1.5px solid var(--bdr);border-radius:var(--r);padding:13px;box-shadow:var(--sh);transition:background .3s,border .3s}
-.ch{display:flex;align-items:center;gap:9px;margin-bottom:11px}
-.ico{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
-.ct{font-family:'Space Mono',monospace;font-size:.78rem;text-transform:uppercase;letter-spacing:1px;color:var(--ac)}
-.plist{display:flex;flex-direction:column;gap:10px}
-.prow{display:flex;flex-direction:column;gap:4px}
-.ptop{display:flex;gap:7px;align-items:center}
-.badge{font-family:'Space Mono',monospace;font-size:.64rem;padding:4px 8px;border-radius:6px;background:rgba(0,229,255,.07);color:var(--ac);border:1px solid rgba(0,229,255,.16);white-space:nowrap;min-width:90px;text-align:center;flex-shrink:0}
-select{flex:1;min-width:0;background:var(--bg);color:var(--tx);border:1.5px solid var(--bdr);border-radius:7px;padding:8px 10px;font-family:'Sora',sans-serif;font-size:.78rem;outline:none;transition:border .22s,box-shadow .22s;appearance:none;-webkit-appearance:none}
-select:focus{border-color:var(--ac);box-shadow:0 0 0 2px rgba(0,229,255,.1)}
-select.sok{border-color:var(--ok)!important;box-shadow:0 0 0 2px rgba(0,255,136,.1)!important}
-select.swn{border-color:var(--wn)!important;box-shadow:0 0 0 2px rgba(255,107,53,.12)!important}
-.phint{font-size:.68rem;padding:4px 9px;border-radius:5px;display:none;line-height:1.5}
-.phint.ok{display:block;color:var(--ok);background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.18)}
-.phint.warn{display:block;color:var(--wn);background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.22)}
-.phint.info{display:block;color:var(--sub);background:rgba(120,130,160,.05);border:1px solid var(--bdr)}
-.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.si{text-align:center;padding:11px 7px;border:1.5px solid var(--bdr);border-radius:8px;background:var(--bg)}
-.sl{font-size:.6rem;color:var(--sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
-.sv{font-family:'Space Mono',monospace;font-size:.95rem;color:var(--ac);font-weight:700}
-.sv.wn{color:var(--wn)}
-.bwrap{margin-top:9px}
-.bl{display:flex;justify-content:space-between;font-size:.68rem;color:var(--sub);margin-bottom:4px}
-.btrack{height:7px;border-radius:4px;background:var(--bdr);overflow:hidden}
-.bfill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--ac),var(--ac2));transition:width .5s cubic-bezier(.4,0,.2,1)}
-.bfill.over{background:linear-gradient(90deg,#ff3366,#ff6b35)}
-.cbox{padding:9px 13px;border-radius:8px;font-size:.75rem;line-height:1.8;border:1.5px solid var(--bdr);background:var(--bg);color:var(--sub);transition:all .3s}
-.cbox.ok{border-color:var(--ok);color:var(--ok);background:rgba(0,255,136,.04)}
-.cbox.warn{border-color:var(--wn);color:var(--wn);background:rgba(255,107,53,.04)}
-.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.tpl-card{padding:9px 11px;border:1.5px solid var(--bdr);border-radius:8px;cursor:pointer;transition:border .2s,background .2s;background:var(--bg)}
-.tpl-card:hover{border-color:var(--ac);background:rgba(0,229,255,.04)}
-.tpl-name{font-family:'Space Mono',monospace;font-size:.67rem;color:var(--ac);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
-.tpl-desc{font-size:.65rem;color:var(--sub);line-height:1.4;margin-bottom:5px}
-.tpl-price{font-family:'Space Mono',monospace;font-size:.75rem;color:var(--ac2);font-weight:700}
-.btnrow{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
-button.pri{padding:9px 20px;background:var(--ac);color:#000;border:none;border-radius:7px;font-family:'Space Mono',monospace;font-size:.75rem;font-weight:700;cursor:pointer;letter-spacing:1px;transition:opacity .2s,transform .1s;text-transform:uppercase}
-button.pri:active{transform:scale(.97);opacity:.85}
-button.sec{padding:9px 18px;background:transparent;color:var(--ac);border:1.5px solid var(--ac);border-radius:7px;font-family:'Space Mono',monospace;font-size:.75rem;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .2s}
-button.sec:hover{background:rgba(0,229,255,.06)}
-.slist{list-style:none;display:flex;flex-direction:column;gap:5px;max-height:130px;overflow-y:auto}
-.slist li{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;padding:6px 9px;border-radius:6px;background:var(--bg);border:1px solid var(--bdr);transition:border .2s}
-.slist li:hover{border-color:var(--ac)}
-.slist li span{cursor:pointer;flex:1}
-.dbtn{color:var(--ac2);background:none;border:none;cursor:pointer;font-size:.85rem;padding:0 3px}
-.enote{font-size:.72rem;color:var(--sub);text-align:center;padding:9px}
-footer{width:100%;max-width:740px;padding:16px;text-align:center;font-family:'Space Mono',monospace;font-size:.62rem;color:var(--sub);letter-spacing:1px;border-top:1px solid var(--bdr);margin-top:6px}
-footer a{color:var(--ac);text-decoration:none}
-@media(min-width:500px){.sgrid{grid-template-columns:repeat(4,1fr)}.tpl-grid{grid-template-columns:repeat(3,1fr)}}
+:root{--bg:#f0ede6;--surface:#fff;--text:#1a1a2e;--sub:#555;--accent:#e63946;--border:#ddd;--ctrl-bg:rgba(255,255,255,0.93);--shadow:0 4px 20px rgba(0,0,0,0.12);--mf:none}
+[data-theme=dark]{--bg:#0f1117;--surface:#1c1f2e;--text:#e8e6f0;--sub:#9a9ab0;--accent:#ff6b6b;--border:#2e3045;--ctrl-bg:rgba(28,31,46,0.96);--shadow:0 4px 20px rgba(0,0,0,0.5);--mf:brightness(.85) saturate(.9)}
+[data-theme=oled]{--bg:#000;--surface:#000;--text:#fff;--sub:#aaa;--accent:#00f5ff;--border:#111;--ctrl-bg:rgba(0,0,0,0.97);--shadow:0 4px 20px rgba(0,240,255,.1);--mf:brightness(.7) saturate(.7)}
+[data-theme=hc]{--bg:#000;--surface:#000;--text:#fff;--sub:#ff0;--accent:#0ff;--border:#fff;--ctrl-bg:#000;--shadow:0 0 0 2px #fff;--mf:contrast(1.3) saturate(1.5)}
+*{margin:0;padding:0;box-sizing:border-box;transition:background .3s,color .3s,border-color .3s}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;display:flex;flex-direction:column;align-items:center}
+header{width:100%;max-width:960px;padding:12px 16px 8px;text-align:center}
+h1{font-family:'Space Mono',monospace;font-size:clamp(1rem,3.5vw,1.5rem);letter-spacing:.04em;color:var(--accent);line-height:1.2}
+h1 span{color:var(--text);font-weight:400}
+.subtitle{font-size:.65rem;color:var(--sub);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.controls{width:100%;max-width:960px;padding:0 12px 8px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center}
+.sw{flex:1;min-width:160px;max-width:300px;position:relative}
+.sw input{width:100%;padding:8px 34px 8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--ctrl-bg);color:var(--text);font-family:'Sora',sans-serif;font-size:.8rem;outline:none}
+.sw input:focus{border-color:var(--accent)}
+.sw button{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--accent);font-size:.95rem}
+#suggestions{position:absolute;top:100%;left:0;right:0;background:var(--ctrl-bg);border:1.5px solid var(--accent);border-top:none;border-radius:0 0 8px 8px;z-index:9999;max-height:160px;overflow-y:auto;display:none}
+#suggestions div{padding:6px 12px;font-size:.75rem;cursor:pointer;color:var(--text)}
+#suggestions div:hover{background:var(--accent);color:#fff}
+.btn{padding:7px 11px;border-radius:8px;border:1.5px solid var(--border);background:var(--ctrl-bg);color:var(--text);font-family:'Space Mono',monospace;font-size:.68rem;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tdrow{display:flex;gap:5px;align-items:center}
+.td{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;transition:transform .2s}
+.td:hover{transform:scale(1.15)}
+.td.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+#mw{width:100%;max-width:960px;flex:1;min-height:0;padding:0 12px;display:flex;flex-direction:column;position:relative}
+#map{width:100%;flex:1;min-height:300px;border-radius:12px;overflow:hidden;border:1.5px solid var(--border);box-shadow:var(--shadow)}
+#map .leaflet-tile-pane{filter:var(--mf)}
+#mw.fs{position:fixed;top:0;left:0;width:100vw;max-width:100vw;height:100vh;z-index:10000;padding:0}
+#mw.fs #map{border-radius:0;height:100%;min-height:unset}
+#mbanner{display:none;width:100%;max-width:960px;margin:0 12px 4px;padding:6px 12px;background:var(--ctrl-bg);border:1.5px dashed var(--accent);border-radius:8px;font-size:.72rem;font-family:'Space Mono',monospace;color:var(--accent);text-align:center}
+.ibar{width:100%;max-width:960px;padding:5px 12px;display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.tag{font-size:.65rem;font-family:'Space Mono',monospace;padding:3px 8px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--sub)}
+.tag b{color:var(--accent)}
+#panel{display:none;width:100%;max-width:960px;margin:0 12px;padding:10px 14px;background:var(--ctrl-bg);border:1.5px solid var(--accent);border-radius:10px;box-shadow:var(--shadow)}
+#panel h3{font-family:'Space Mono',monospace;font-size:.85rem;color:var(--accent);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+#panel h3 button{background:none;border:none;color:var(--sub);cursor:pointer;font-size:.9rem}
+.facts{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.fact{font-size:.7rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--text)}
+.fact span{color:var(--sub)}
+.fact.cp{cursor:pointer}.fact.cp:hover{border-color:var(--accent);color:var(--accent)}
+#note-wrap{display:flex;gap:6px;margin-top:4px}
+#note-wrap input{flex:1;padding:5px 9px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:.72rem;outline:none}
+#note-wrap input:focus{border-color:var(--accent)}
+#note-wrap button{padding:5px 10px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.7rem;cursor:pointer}
+#pins-panel{display:none;width:100%;max-width:960px;margin:0 12px;padding:10px 14px;background:var(--ctrl-bg);border:1.5px solid var(--border);border-radius:10px;max-height:150px;overflow-y:auto}
+#pins-panel h4{font-family:'Space Mono',monospace;font-size:.75rem;color:var(--accent);margin-bottom:6px}
+.pin-item{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:.7rem}
+.pin-item span{flex:1;cursor:pointer;color:var(--text)}.pin-item span:hover{color:var(--accent)}
+.pin-item button{background:none;border:none;color:var(--sub);cursor:pointer}
+#toast{display:none;position:fixed;bottom:68px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:6px 18px;border-radius:20px;font-size:.73rem;font-family:'Space Mono',monospace;z-index:99999;pointer-events:none}
+footer{width:100%;text-align:center;padding:8px 8px 10px;font-size:.62rem;font-family:'Space Mono',monospace;color:var(--sub);letter-spacing:.07em;border-top:1px solid var(--border);margin-top:6px}
+footer b{color:var(--accent)}
+@media(min-width:600px){#map{min-height:400px}}
+@media(min-width:960px){#map{min-height:480px}}
 </style>
 </head>
 <body data-theme="dark">
+
 <header>
-  <h1>⚙ PC<span>Builder</span></h1>
-  <div class="tagline">Assemble · Estimate · Compare</div>
-  <div class="rate-bar">
-    <div class="rate-chip">1 USD = <b id="rate-val">84.00</b> INR</div>
-    <div class="rate-dot" id="rate-dot"></div>
-    <span id="rate-status" style="font-size:.62rem;color:var(--sub)">Fetching live rate…</span>
-  </div>
-  <div class="ctrl-bar">
-    <button class="tbtn active" onclick="setTheme('dark',this)">Dark</button>
-    <button class="tbtn" onclick="setTheme('light',this)">Light</button>
-    <button class="tbtn" onclick="setTheme('oled',this)">OLED</button>
-    <button class="tbtn" onclick="setTheme('hc',this)">HC</button>
-    <div class="cur-tog">
-      <button id="busd" onclick="setCur('usd')">$ USD</button>
-      <button id="binr" class="active" onclick="setCur('inr')">₹ INR</button>
-    </div>
-  </div>
+  <h1>🌍 WORLD MAP <span>EXPLORER</span></h1>
+  <div class="subtitle">Click · Search · Measure · Weather · Pins — Free, No API Key</div>
 </header>
-<main>
-  <!-- Components -->
-  <div class="card">
-    <div class="ch"><div class="ico">🧩</div><span class="ct">Select Components</span></div>
-    <div class="plist" id="plist"></div>
+
+<div class="controls">
+  <div class="sw">
+    <input id="search" type="text" placeholder="Search country or city…" autocomplete="off">
+    <button onclick="doSearch()">⌕</button>
+    <div id="suggestions"></div>
   </div>
-  <!-- Templates -->
-  <div class="card">
-    <div class="ch"><div class="ico">🏗</div><span class="ct">Pre-Built Templates</span></div>
-    <div class="tpl-grid" id="tpl-grid"></div>
+  <button class="btn" onclick="locateMe()">📍 Me</button>
+  <button class="btn active" id="btn-str" onclick="toggleLayer('str')">🗺 Street</button>
+  <button class="btn" id="btn-sat" onclick="toggleLayer('sat')">🛰 Sat</button>
+  <button class="btn" id="btn-topo" onclick="toggleLayer('topo')">🏔 Topo</button>
+  <button class="btn" id="btn-measure" onclick="toggleMeasure()">📏 Measure</button>
+  <button class="btn" id="btn-mini" onclick="toggleMini()">🗺 Mini</button>
+  <button class="btn" id="btn-fs" onclick="toggleFS()">⛶ Full</button>
+  <button class="btn" onclick="resetView()">🏠 Reset</button>
+  <button class="btn" id="btn-pins" onclick="togglePins()">📌 Pins</button>
+  <button class="btn" onclick="clearPins()">🗑 Clear</button>
+  <div class="tdrow">
+    <div class="td" id="td-light" style="background:#f0ede6" title="Light" onclick="setTheme('light')">☀</div>
+    <div class="td active" id="td-dark" style="background:#1c1f2e" title="Dark" onclick="setTheme('dark')">🌙</div>
+    <div class="td" id="td-oled" style="background:#000;color:#0ff" title="OLED" onclick="setTheme('oled')">⬛</div>
+    <div class="td" id="td-hc" style="background:#000;color:#ff0;border-color:#fff" title="HC" onclick="setTheme('hc')">⚡</div>
   </div>
-  <!-- Summary -->
-  <div class="card">
-    <div class="ch"><div class="ico">📊</div><span class="ct">Build Summary</span></div>
-    <div class="sgrid">
-      <div class="si"><div class="sl">Total Cost</div><div class="sv" id="sc">—</div></div>
-      <div class="si"><div class="sl">TDP Watts</div><div class="sv" id="st">0W</div></div>
-      <div class="si"><div class="sl">Parts Added</div><div class="sv" id="sp">0/8</div></div>
-      <div class="si"><div class="sl">PSU Status</div><div class="sv" id="ss">—</div></div>
-    </div>
-    <div class="bwrap">
-      <div class="bl"><span>Power Load</span><span id="bpct">0%</span></div>
-      <div class="btrack"><div class="bfill" id="bfill" style="width:0%"></div></div>
-    </div>
+</div>
+
+<div id="mbanner">📏 Measure: click two points to calculate distance. Click again to reset.</div>
+
+<div id="mw"><div id="map"></div></div>
+
+<div class="ibar">
+  <div class="tag">Zoom: <b id="zoom-val">2</b></div>
+  <div class="tag">Lat: <b id="lat-val">0.000</b></div>
+  <div class="tag">Lng: <b id="lng-val">0.000</b></div>
+  <div class="tag">Scale: <b id="scale-val">—</b></div>
+  <div class="tag">195 Countries</div>
+</div>
+
+<div id="panel">
+  <h3 id="pi-name">— <button onclick="document.getElementById('panel').style.display='none'">✕</button></h3>
+  <div class="facts" id="pi-facts"></div>
+  <div id="note-wrap">
+    <input id="note-in" type="text" placeholder="Add a note for this pin…">
+    <button onclick="savePin()">📌 Save Pin</button>
   </div>
-  <!-- Compat -->
-  <div class="card">
-    <div class="ch"><div class="ico">✅</div><span class="ct">Compatibility</span></div>
-    <div class="cbox" id="cbox">Select components to run compatibility check.</div>
-  </div>
-  <!-- Saves -->
-  <div class="card">
-    <div class="ch"><div class="ico">💾</div><span class="ct">Saved Builds</span></div>
-    <div class="btnrow" style="margin-bottom:11px">
-      <button class="pri" onclick="saveBuild()">💾 Save</button>
-      <button class="sec" onclick="resetBuild()">🔄 Reset</button>
-      <button class="sec" onclick="exportBuild()">📋 Export</button>
-    </div>
-    <ul class="slist" id="slist"></ul>
-    <div class="enote" id="enote">No saved builds yet.</div>
-  </div>
-</main>
-<footer>© <span id="yr"></span> Manik Roy. All Rights Reserved. | <a href="#">PC Builder</a></footer>
+</div>
+
+<div id="pins-panel">
+  <h4>📌 Saved Pins</h4>
+  <div id="pins-list"></div>
+</div>
+
+<div id="toast"></div>
+<footer>&copy; <b>Manik Roy</b> <span id="yr"></span> &mdash; All Rights Reserved</footer>
 
 <script>
 document.getElementById('yr').textContent = new Date().getFullYear();
 
-// ── LIVE EXCHANGE RATE ──────────────────────────────────────────
-let INR_RATE = 84;
-async function fetchRate() {
-  try {
-    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-    const d = await r.json();
-    INR_RATE = d.rates.INR || 84;
-    document.getElementById('rate-val').textContent = INR_RATE.toFixed(2);
-    document.getElementById('rate-dot').classList.add('live');
-    document.getElementById('rate-status').textContent = 'Live rate ✓';
-    document.getElementById('rate-status').style.color = 'var(--ok)';
-    rebuildOptions(); update();
-  } catch {
-    document.getElementById('rate-status').textContent = 'Using ₹84 (offline)';
-  }
+// ── Theme ─────────────────────────────────────────────
+function setTheme(t){
+  document.body.setAttribute('data-theme',t);
+  ['light','dark','oled','hc'].forEach(x=>document.getElementById('td-'+x).classList.toggle('active',x===t));
 }
-fetchRate();
-setInterval(fetchRate, 5 * 60 * 1000); // refresh every 5 min
 
-// ── CURRENCY ───────────────────────────────────────────────────
-let currency = 'inr';
-function setTheme(t,el){document.body.dataset.theme=t;document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));el.classList.add('active');}
-function setCur(c){currency=c;document.getElementById('busd').classList.toggle('active',c==='usd');document.getElementById('binr').classList.toggle('active',c==='inr');rebuildOptions();update();}
-function fmt(usd){if(currency==='inr'){const v=Math.round(usd*INR_RATE);return '₹'+v.toLocaleString('en-IN');}return '$'+usd.toLocaleString('en-US');}
-function fmtBoth(usd){return '₹'+Math.round(usd*INR_RATE).toLocaleString('en-IN')+' / $'+usd.toLocaleString();}
+// ── Load Leaflet dynamically ──────────────────────────
+(function(){
+  const lc=document.createElement('link');lc.rel='stylesheet';
+  lc.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(lc);
+  const ls=document.createElement('script');ls.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  ls.onload=initMap;ls.onerror=()=>{document.getElementById('map').textContent='⚠ Failed to load map library.';};
+  document.head.appendChild(ls);
+})();
 
-// ── PARTS DATA (prices in USD, ~INR equiv shown) ────────────────
-// Each part has 15 options (index 0 = None) + 15 real options
-const PARTS = [
- {id:'cpu',label:'CPU',icon:'🖥',options:[
-  {n:'None',p:0,tdp:0,sock:null},
-  {n:'Intel Celeron G6900',p:59,tdp:46,sock:'lga1700'},      // ~₹4950
-  {n:'Intel Pentium Gold G7400',p:69,tdp:46,sock:'lga1700'}, // ~₹5800
-  {n:'AMD Athlon 3000G',p:75,tdp:35,sock:'am4'},              // ~₹6300
-  {n:'Intel Core i3-12100',p:97,tdp:60,sock:'lga1700'},       // ~₹8150
-  {n:'Intel Core i3-13100',p:115,tdp:60,sock:'lga1700'},      // ~₹9660
-  {n:'AMD Ryzen 3 4100',p:79,tdp:65,sock:'am4'},              // ~₹6640
-  {n:'AMD Ryzen 5 5500',p:119,tdp:65,sock:'am4'},             // ~₹9996
-  {n:'AMD Ryzen 5 5600',p:139,tdp:65,sock:'am4'},             // ~₹11676
-  {n:'AMD Ryzen 5 5600X',p:159,tdp:65,sock:'am4'},            // ~₹13356
-  {n:'Intel Core i5-12400F',p:149,tdp:65,sock:'lga1700'},     // ~₹12516
-  {n:'Intel Core i5-13600K',p:249,tdp:125,sock:'lga1700'},    // ~₹20916
-  {n:'AMD Ryzen 7 5700X',p:189,tdp:65,sock:'am4'},            // ~₹15876
-  {n:'AMD Ryzen 7 7700X',p:299,tdp:105,sock:'am5'},           // ~₹25116
-  {n:'Intel Core i7-13700K',p:349,tdp:125,sock:'lga1700'},    // ~₹29316
-  {n:'AMD Ryzen 9 7950X',p:589,tdp:170,sock:'am5'}            // ~₹49476
- ]},
- {id:'mb',label:'Motherboard',icon:'🔌',options:[
-  {n:'None',p:0,tdp:0,sock:null,ddr:null},
-  {n:'H510M mATX (B460)',p:59,tdp:25,sock:'lga1700',ddr:'ddr4'},   // ~₹4956
-  {n:'B560M mATX DDR4',p:69,tdp:28,sock:'lga1700',ddr:'ddr4'},
-  {n:'A320M mATX DDR4',p:59,tdp:25,sock:'am4',ddr:'ddr4'},
-  {n:'B450M mATX DDR4',p:75,tdp:28,sock:'am4',ddr:'ddr4'},
-  {n:'B550M mATX DDR4',p:89,tdp:30,sock:'am4',ddr:'ddr4'},
-  {n:'B660M DDR4 mATX',p:109,tdp:30,sock:'lga1700',ddr:'ddr4'},
-  {n:'X470 ATX DDR4',p:99,tdp:35,sock:'am4',ddr:'ddr4'},
-  {n:'X570 ATX DDR4',p:149,tdp:40,sock:'am4',ddr:'ddr4'},
-  {n:'B650 mATX DDR5',p:149,tdp:35,sock:'am5',ddr:'ddr5'},
-  {n:'Z690 DDR4 ATX',p:179,tdp:40,sock:'lga1700',ddr:'ddr4'},
-  {n:'Z690 DDR5 ATX',p:199,tdp:40,sock:'lga1700',ddr:'ddr5'},
-  {n:'X570 ATX WiFi DDR4',p:199,tdp:42,sock:'am4',ddr:'ddr4'},
-  {n:'Z790 DDR5 ATX',p:249,tdp:42,sock:'lga1700',ddr:'ddr5'},
-  {n:'X670 ATX DDR5',p:269,tdp:45,sock:'am5',ddr:'ddr5'},
-  {n:'X670E ATX DDR5',p:349,tdp:48,sock:'am5',ddr:'ddr5'}
- ]},
- {id:'ram',label:'RAM',icon:'💾',options:[
-  {n:'None',p:0,tdp:0,gen:null},
-  {n:'4GB DDR4-2666',p:12,tdp:2,gen:'ddr4'},
-  {n:'8GB DDR4-2666',p:18,tdp:3,gen:'ddr4'},
-  {n:'8GB DDR4-3200',p:22,tdp:3,gen:'ddr4'},
-  {n:'16GB DDR4-2666',p:29,tdp:5,gen:'ddr4'},
-  {n:'16GB DDR4-3200',p:35,tdp:5,gen:'ddr4'},
-  {n:'16GB DDR4-3600',p:42,tdp:5,gen:'ddr4'},
-  {n:'32GB DDR4-3200',p:59,tdp:8,gen:'ddr4'},
-  {n:'32GB DDR4-3600',p:69,tdp:8,gen:'ddr4'},
-  {n:'16GB DDR5-4800',p:49,tdp:6,gen:'ddr5'},
-  {n:'16GB DDR5-5600',p:59,tdp:6,gen:'ddr5'},
-  {n:'32GB DDR5-5200',p:79,tdp:9,gen:'ddr5'},
-  {n:'32GB DDR5-6000',p:95,tdp:10,gen:'ddr5'},
-  {n:'64GB DDR4-3200',p:119,tdp:13,gen:'ddr4'},
-  {n:'64GB DDR5-5600',p:169,tdp:15,gen:'ddr5'},
-  {n:'128GB DDR5-4800',p:289,tdp:20,gen:'ddr5'}
- ]},
- {id:'gpu',label:'GPU',icon:'🎮',options:[
-  {n:'None / iGPU',p:0,tdp:0},
-  {n:'Intel UHD 730 (iGPU)',p:0,tdp:15},
-  {n:'AMD Radeon RX 550',p:69,tdp:50},
-  {n:'NVIDIA GT 1030',p:79,tdp:30},
-  {n:'NVIDIA GTX 1050 Ti',p:89,tdp:75},
-  {n:'NVIDIA GTX 1650',p:129,tdp:75},
-  {n:'NVIDIA GTX 1660',p:159,tdp:120},
-  {n:'NVIDIA GTX 1660 Super',p:179,tdp:125},
-  {n:'AMD RX 6600',p:189,tdp:132},
-  {n:'NVIDIA RTX 3060',p:249,tdp:170},
-  {n:'AMD RX 6700 XT',p:269,tdp:230},
-  {n:'NVIDIA RTX 3070',p:319,tdp:220},
-  {n:'NVIDIA RTX 4070',p:549,tdp:200},
-  {n:'NVIDIA RTX 4070 Ti',p:749,tdp:285},
-  {n:'AMD RX 7900 XTX',p:899,tdp:355},
-  {n:'NVIDIA RTX 4090',p:1599,tdp:450}
- ]},
- {id:'storage',label:'Storage',icon:'💿',options:[
-  {n:'None',p:0,tdp:0},
-  {n:'120GB SATA SSD',p:16,tdp:2},
-  {n:'240GB SATA SSD',p:22,tdp:2},
-  {n:'480GB SATA SSD',p:32,tdp:2},
-  {n:'500GB SATA SSD',p:38,tdp:2},
-  {n:'1TB SATA SSD',p:55,tdp:3},
-  {n:'2TB SATA SSD',p:89,tdp:3},
-  {n:'500GB NVMe Gen3',p:45,tdp:5},
-  {n:'1TB NVMe Gen3',p:59,tdp:5},
-  {n:'2TB NVMe Gen3',p:89,tdp:6},
-  {n:'500GB NVMe Gen4',p:59,tdp:6},
-  {n:'1TB NVMe Gen4',p:79,tdp:7},
-  {n:'2TB NVMe Gen4',p:129,tdp:8},
-  {n:'4TB HDD 5400rpm',p:55,tdp:8},
-  {n:'4TB HDD 7200rpm',p:69,tdp:10},
-  {n:'8TB HDD 7200rpm',p:139,tdp:12}
- ]},
- {id:'psu',label:'PSU',icon:'⚡',options:[
-  {n:'None',p:0,tdp:0,watts:0},
-  {n:'300W Generic',p:19,tdp:0,watts:300},
-  {n:'400W 80+ White',p:29,tdp:0,watts:400},
-  {n:'450W 80+ Bronze',p:35,tdp:0,watts:450},
-  {n:'500W 80+ Bronze',p:42,tdp:0,watts:500},
-  {n:'550W 80+ Bronze',p:49,tdp:0,watts:550},
-  {n:'600W 80+ Bronze',p:55,tdp:0,watts:600},
-  {n:'650W 80+ Gold',p:69,tdp:0,watts:650},
-  {n:'700W 80+ Gold',p:79,tdp:0,watts:700},
-  {n:'750W 80+ Gold',p:89,tdp:0,watts:750},
-  {n:'800W 80+ Gold',p:99,tdp:0,watts:800},
-  {n:'850W 80+ Platinum',p:119,tdp:0,watts:850},
-  {n:'900W 80+ Platinum',p:139,tdp:0,watts:900},
-  {n:'1000W 80+ Platinum',p:159,tdp:0,watts:1000},
-  {n:'1000W 80+ Titanium',p:189,tdp:0,watts:1000},
-  {n:'1200W 80+ Titanium',p:249,tdp:0,watts:1200}
- ]},
- {id:'case',label:'Case',icon:'🗄',options:[
-  {n:'None',p:0,tdp:0},
-  {n:'Generic mATX Mini',p:19,tdp:0},
-  {n:'Basic mATX Tower',p:29,tdp:0},
-  {n:'Budget ATX Mid Tower',p:39,tdp:0},
-  {n:'Ant Esports ICE-100',p:35,tdp:0},
-  {n:'Zebronics Zeb-Bijli',p:29,tdp:0},
-  {n:'Corsair 4000D Airflow',p:89,tdp:0},
-  {n:'NZXT H510',p:79,tdp:0},
-  {n:'Phanteks P400A',p:89,tdp:0},
-  {n:'Lian Li PC-O11 Dynamic',p:129,tdp:0},
-  {n:'Fractal Design Meshify C',p:99,tdp:0},
-  {n:'be quiet! Pure Base 500',p:89,tdp:0},
-  {n:'Cooler Master MasterBox',p:69,tdp:0},
-  {n:'NZXT H710i ATX',p:169,tdp:0},
-  {n:'Lian Li O11D XL',p:179,tdp:0},
-  {n:'Thermaltake Tower 900',p:299,tdp:0}
- ]},
- {id:'cooling',label:'Cooling',icon:'❄',options:[
-  {n:'None / Stock Cooler',p:0,tdp:0},
-  {n:'Intel Box Cooler',p:0,tdp:0},
-  {n:'AMD Wraith Stealth',p:0,tdp:0},
-  {n:'Deepcool GAMMAXX 400',p:19,tdp:0},
-  {n:'Cooler Master Hyper 212',p:29,tdp:0},
-  {n:'ID-Cooling SE-224-XT',p:25,tdp:0},
-  {n:'Noctua NH-U12S',p:65,tdp:0},
-  {n:'be quiet! Pure Rock 2',p:39,tdp:0},
-  {n:'Scythe Mugen 5',p:49,tdp:0},
-  {n:'Noctua NH-D15',p:89,tdp:0},
-  {n:'DeepCool AK620',p:59,tdp:0},
-  {n:'240mm AIO (Generic)',p:55,tdp:0},
-  {n:'Corsair H100i 240mm AIO',p:99,tdp:0},
-  {n:'NZXT Kraken 240 AIO',p:109,tdp:0},
-  {n:'Corsair H150i 360mm AIO',p:149,tdp:0},
-  {n:'NZXT Kraken Z73 360mm',p:199,tdp:0}
- ]}
-];
+let map,tiles,miniCtrl=null,curLayer='str',marker=null;
+let measuring=false,mMarkers=[],mLayers=[],mLine=null,mPopup=null;
+let currentLatLng=null;
 
-// ── 15 PRE-BUILT TEMPLATES (part indices into PARTS arrays) ────
-const TEMPLATES = [
- {name:'Basic Office',desc:'Web browsing, documents, basic tasks',
-  s:{cpu:1,mb:1,ram:2,gpu:1,storage:1,psu:3,case:1,cooling:1}},
- {name:'Office Pro',desc:'Daily office work, light multitasking',
-  s:{cpu:2,mb:2,ram:3,gpu:1,storage:3,psu:4,case:3,cooling:1}},
- {name:'Budget Home PC',desc:'Everyday use, YouTube, social media',
-  s:{cpu:4,mb:3,ram:4,gpu:1,storage:4,psu:4,case:4,cooling:3}},
- {name:'Student Build',desc:'Assignments, coding, light gaming',
-  s:{cpu:7,mb:4,ram:5,gpu:5,storage:7,psu:5,case:5,cooling:4}},
- {name:'Entry Gaming',desc:'1080p gaming at medium settings',
-  s:{cpu:8,mb:5,ram:5,gpu:6,storage:8,psu:6,case:6,cooling:4}},
- {name:'1080p Gamer',desc:'Smooth 1080p high-settings gaming',
-  s:{cpu:9,mb:6,ram:6,gpu:7,storage:8,psu:7,case:7,cooling:5}},
- {name:'Balanced 1080p',desc:'Great 1080p + content creation',
-  s:{cpu:10,mb:6,ram:6,gpu:8,storage:9,psu:7,case:8,cooling:6}},
- {name:'Mid-Range Ryzen',desc:'1080p–1440p gaming, streaming',
-  s:{cpu:12,mb:8,ram:7,gpu:9,storage:9,psu:8,case:9,cooling:7}},
- {name:'1440p Gamer',desc:'High-fps 1440p gaming powerhouse',
-  s:{cpu:11,mb:10,ram:8,gpu:10,storage:11,psu:9,case:10,cooling:10}},
- {name:'Creator Starter',desc:'Video editing, Photoshop, 3D basics',
-  s:{cpu:13,mb:11,ram:12,gpu:11,storage:11,psu:9,case:11,cooling:10}},
- {name:'Ryzen 7 Beast',desc:'4K gaming + heavy multitasking',
-  s:{cpu:13,mb:9,ram:11,gpu:12,storage:12,psu:10,case:12,cooling:11}},
- {name:'Intel Z790 Pro',desc:'High-end Intel 1440p/4K gaming',
-  s:{cpu:14,mb:12,ram:12,gpu:12,storage:12,psu:11,case:10,cooling:12}},
- {name:'Pro Workstation',desc:'3D rendering, VFX, ML training',
-  s:{cpu:15,mb:13,ram:14,gpu:14,storage:13,psu:13,case:13,cooling:14}},
- {name:'Extreme Gaming',desc:'4K/144Hz — no compromise build',
-  s:{cpu:14,mb:12,ram:13,gpu:14,storage:12,psu:13,case:14,cooling:14}},
- {name:'Ultimate Rig',desc:'Top-of-line: RTX 4090 + Ryzen 9',
-  s:{cpu:15,mb:15,ram:15,gpu:15,storage:15,psu:15,case:15,cooling:15}}
-];
+function initMap(){
+  map=L.map('map',{zoomControl:true,attributionControl:false}).setView([20,0],2);
+  tiles={
+    str:L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}),
+    sat:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}),
+    topo:L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17}) // ① Topo layer
+  };
+  tiles.str.addTo(map);
+  L.control.scale({position:'bottomleft',imperial:true}).addTo(map); // ② Scale bar
+  L.control.attribution({position:'bottomright',prefix:'<a href="https://leafletjs.com">Leaflet</a> | OSM | ESRI | OTM'}).addTo(map);
 
-// ── STATE ──────────────────────────────────────────────────────
-const sel = {};
-PARTS.forEach(p => sel[p.id] = 0);
-
-function getPart(id){const p=PARTS.find(x=>x.id===id);return p.options[sel[id]]||p.options[0];}
-function getTDP(){let t=0;PARTS.forEach(p=>{t+=getPart(p.id).tdp||0;});return t;}
-function getTplCost(tpl){let c=0;PARTS.forEach(p=>{const idx=tpl.s[p.id]||0;c+=p.options[idx]?.p||0;});return c;}
-
-// ── BUILD DOM ─────────────────────────────────────────────────
-function buildDOM(){
-  // Parts
-  const el=document.getElementById('plist');el.innerHTML='';
-  PARTS.forEach(p=>{
-    const row=document.createElement('div');row.className='prow';row.id='prow-'+p.id;
-    const top=document.createElement('div');top.className='ptop';
-    const badge=document.createElement('span');badge.className='badge';badge.textContent=p.icon+' '+p.label;
-    const s=document.createElement('select');s.id='sel-'+p.id;
-    fillOpts(s,p);s.value=sel[p.id];
-    s.onchange=()=>{sel[p.id]=+s.value;update();};
-    const hint=document.createElement('div');hint.className='phint';hint.id='hint-'+p.id;
-    top.appendChild(badge);top.appendChild(s);
-    row.appendChild(top);row.appendChild(hint);
-    el.appendChild(row);
+  map.on('moveend zoom',()=>{
+    const c=map.getCenter(),z=map.getZoom();
+    document.getElementById('zoom-val').textContent=z;
+    document.getElementById('lat-val').textContent=c.lat.toFixed(3);
+    document.getElementById('lng-val').textContent=c.lng.toFixed(3);
+    // ③ Human-readable scale tag
+    const mpp=40075016*Math.cos(c.lat*Math.PI/180)/Math.pow(2,z+8);
+    const km=(mpp*256/1000).toFixed(0);
+    document.getElementById('scale-val').textContent=km>1?km+' km/tile':Math.round(mpp*256)+' m/tile';
   });
-  // Templates
-  const tg=document.getElementById('tpl-grid');tg.innerHTML='';
-  TEMPLATES.forEach((t,i)=>{
-    const cost=getTplCost(t);
-    const card=document.createElement('div');card.className='tpl-card';
-    card.innerHTML=`<div class="tpl-name">${t.name}</div><div class="tpl-desc">${t.desc}</div><div class="tpl-price">${fmt(cost)}</div>`;
-    card.onclick=()=>loadTemplate(i);
-    card.id='tpl-'+i;
-    tg.appendChild(card);
+
+  map.on('click',handleMapClick);
+}
+
+// ── Click handler ─────────────────────────────────────
+async function handleMapClick(e){
+  const{lat,lng}=e.latlng;
+
+  // ④ Distance measure — draggable points, real-time update
+  if(measuring){
+    if(mMarkers.length>=2)return;
+    const icon=L.divIcon({className:'',html:'<div style="width:14px;height:14px;border-radius:50%;background:#f4a261;border:2.5px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.5);cursor:grab"></div>',iconSize:[14,14],iconAnchor:[7,7]});
+    const mk=L.marker([lat,lng],{icon,draggable:true,autoPan:true}).addTo(map);
+    mMarkers.push(mk);mLayers.push(mk);
+
+    const updateMeasure=()=>{
+      if(mMarkers.length<2)return;
+      const p0=mMarkers[0].getLatLng(),p1=mMarkers[1].getLatLng();
+      if(mLine){map.removeLayer(mLine);}
+      mLine=L.polyline([[p0.lat,p0.lng],[p1.lat,p1.lng]],{color:'#f4a261',weight:2.5,dashArray:'6 4'}).addTo(map);
+      const d=haversine([p0.lat,p0.lng],[p1.lat,p1.lng]);
+      const dStr=d<1?(d*1000).toFixed(0)+' m':d.toFixed(2)+' km';
+      const mid=L.latLng((p0.lat+p1.lat)/2,(p0.lng+p1.lng)/2);
+      const html=`📏 <b>${dStr}</b><br><span style="font-size:.68em;opacity:.75">Drag orange dots to adjust</span>`;
+      if(mPopup){mPopup.setLatLng(mid).setContent(html);}
+      else{mPopup=L.popup({closeButton:false,autoClose:false,closeOnClick:false}).setLatLng(mid).setContent(html).openOn(map);}
+    };
+
+    mk.on('drag dragend',updateMeasure);
+    if(mMarkers.length===2)updateMeasure();
+    return;
+  }
+
+  currentLatLng={lat,lng};
+  if(marker)map.removeLayer(marker);
+  marker=L.circleMarker([lat,lng],{radius:7,color:'#e63946',fillColor:'#e63946',fillOpacity:.85,weight:2}).addTo(map);
+
+  const panel=document.getElementById('panel');
+  panel.style.display='block';
+  document.getElementById('pi-name').innerHTML='Loading… <button onclick="document.getElementById(\'panel\').style.display=\'none\'">✕</button>';
+  document.getElementById('pi-facts').innerHTML='<div class="fact" style="color:var(--sub)">Fetching data…</div>';
+  document.getElementById('note-in').value='';
+
+  try{
+    // Reverse geocode
+    const rg=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+    const dg=await rg.json();
+    const a=dg.address||{};
+    const cc=(a.country_code||'').toUpperCase();
+    document.getElementById('pi-name').innerHTML=
+      `${flag(cc)} ${a.country||'Unknown'} <button onclick="document.getElementById('panel').style.display='none'">✕</button>`;
+
+    const facts=[
+      ['State',a.state||a.region||a.county||'—'],
+      ['City',a.city||a.town||a.village||'—'],
+      ['Postcode',a.postcode||'—'],
+      ['Code',cc||'—'],
+    ];
+
+    // ⑤ Copy-to-clipboard coords
+    facts.push(['📋 Coords',`${lat.toFixed(5)}, ${lng.toFixed(5)}`]);
+
+    // ⑥ Elevation – Open-Elevation (free, no key)
+    try{
+      const re=await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`);
+      const de=await re.json();
+      const el=de?.results?.[0]?.elevation;
+      facts.push(['🏔 Elevation',el!=null?el+' m':'—']);
+    }catch{facts.push(['🏔 Elevation','—']);}
+
+    // ⑦ Live weather – Open-Meteo (free, no key)
+    try{
+      const rw=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`);
+      const dw=await rw.json();const cw=dw?.current_weather;
+      if(cw){facts.push(['🌡 Temp',cw.temperature+'°C']);facts.push(['💨 Wind',cw.windspeed+' km/h']);}
+    }catch{}
+
+    // ⑧ Sunrise & Sunset – sunrise-sunset.org (free, no key)
+    try{
+      const rs=await fetch(`https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lng}&formatted=0`);
+      const ds=await rs.json();
+      if(ds.results){
+        const fmt=s=>new Date(s).toUTCString().slice(17,22)+' UTC';
+        facts.push(['🌅 Sunrise',fmt(ds.results.sunrise)]);
+        facts.push(['🌇 Sunset',fmt(ds.results.sunset)]);
+      }
+    }catch{}
+
+    // ⑨ Local time – timeapi.io (free, no key)
+    try{
+      const rt=await fetch(`https://timeapi.io/api/time/current/coordinate?latitude=${lat}&longitude=${lng}`);
+      const dt=await rt.json();
+      if(dt.time)facts.push(['🕐 Local Time',dt.time.slice(0,5)+' · '+dt.date]);
+    }catch{}
+
+    document.getElementById('pi-facts').innerHTML=facts.map(([k,v])=>{
+      const isCoord=k.includes('Coords');
+      return `<div class="fact${isCoord?' cp':''}" ${isCoord?`onclick="copyCoords(${lat},${lng})"title="Click to copy"`:''}>
+        <span>${k}:</span> ${v}</div>`;
+    }).join('');
+  }catch{
+    document.getElementById('pi-name').innerHTML=
+      'Error loading data <button onclick="document.getElementById(\'panel\').style.display=\'none\'">✕</button>';
+  }
+}
+
+function flag(cc){if(!cc||cc.length!==2)return'🌐';return String.fromCodePoint(...[...cc].map(c=>c.charCodeAt(0)+127397));}
+
+// ⑩ Copy coordinates to clipboard
+function copyCoords(lat,lng){
+  const txt=`${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  if(navigator.clipboard){navigator.clipboard.writeText(txt).then(()=>toast('📋 Copied!'));}
+  else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('📋 Copied!');}
+}
+
+// ④ Haversine formula
+function haversine([la1,ln1],[la2,ln2]){
+  const R=6371,r=x=>x*Math.PI/180,dLat=r(la2-la1),dLon=r(ln2-ln1);
+  const a=Math.sin(dLat/2)**2+Math.cos(r(la1))*Math.cos(r(la2))*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// ④ Measure toggle
+function toggleMeasure(){
+  measuring=!measuring;
+  document.getElementById('btn-measure').classList.toggle('active',measuring);
+  document.getElementById('mbanner').style.display=measuring?'block':'none';
+  if(!measuring){
+    mLayers.forEach(l=>map&&map.removeLayer(l));mLayers=[];mMarkers=[];
+    if(mLine){map&&map.removeLayer(mLine);mLine=null;}
+    if(mPopup){map&&map.closePopup(mPopup);mPopup=null;}
+  }
+}
+
+// ① Layer toggle
+function toggleLayer(l){
+  if(!map)return;
+  map.removeLayer(tiles[curLayer]);curLayer=l;tiles[curLayer].addTo(map);
+  ['str','sat','topo'].forEach(x=>document.getElementById('btn-'+x).classList.toggle('active',x===l));
+}
+
+// ⑪ Minimap overview
+function toggleMini(){
+  if(!map)return;
+  if(miniCtrl){map.removeControl(miniCtrl);miniCtrl=null;document.getElementById('btn-mini').classList.remove('active');return;}
+  const MiniControl=L.Control.extend({
+    onAdd:function(){
+      const wrap=L.DomUtil.create('div');
+      wrap.style.cssText='width:130px;height:90px;border:2px solid var(--accent);border-radius:6px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.5)';
+      const mm=L.map(wrap,{attributionControl:false,zoomControl:false,dragging:false,scrollWheelZoom:false,keyboard:false})
+        .setView(map.getCenter(),Math.max(map.getZoom()-4,1));
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mm);
+      const dot=L.circleMarker(map.getCenter(),{radius:4,color:'#e63946',fillColor:'#e63946',fillOpacity:1,weight:1.5}).addTo(mm);
+      map.on('moveend',()=>{mm.setView(map.getCenter(),Math.max(map.getZoom()-4,1));dot.setLatLng(map.getCenter());});
+      return wrap;
+    }
   });
+  miniCtrl=new MiniControl({position:'bottomleft'});miniCtrl.addTo(map);
+  document.getElementById('btn-mini').classList.add('active');
 }
 
-function fillOpts(s,p){
-  s.innerHTML='';
-  p.options.forEach((o,i)=>{
-    const opt=document.createElement('option');opt.value=i;
-    opt.textContent=o.p>0?o.n+' ('+fmt(o.p)+')':o.n;
-    s.appendChild(opt);
+// ⑫ Fullscreen toggle
+function toggleFS(){
+  const mw=document.getElementById('mw');
+  const on=mw.classList.toggle('fs');
+  document.body.style.overflow=on?'hidden':'';
+  document.getElementById('btn-fs').classList.toggle('active',on);
+  setTimeout(()=>map&&map.invalidateSize(),250);
+}
+
+// ⑬ Reset home view
+function resetView(){if(map)map.setView([20,0],2,{animate:true});}
+
+// ── Toast ─────────────────────────────────────────────
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';t.style.opacity='1';
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.style.display='none',400);},2200);
+}
+
+// ── Search + ⑭ Autocomplete suggestions ───────────────
+let acT=null;
+(function(){
+  const inp=document.getElementById('search'),sug=document.getElementById('suggestions');
+  inp.addEventListener('input',()=>{
+    clearTimeout(acT);const q=inp.value.trim();
+    if(q.length<3){sug.style.display='none';return;}
+    acT=setTimeout(async()=>{
+      try{
+        const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5`);
+        const d=await r.json();
+        if(!d.length){sug.style.display='none';return;}
+        sug.innerHTML=d.map(x=>`<div data-lat="${x.lat}" data-lon="${x.lon}" data-name="${x.display_name}">${x.display_name.slice(0,58)}${x.display_name.length>58?'…':''}</div>`).join('');
+        sug.style.display='block';
+        sug.querySelectorAll('div').forEach(el=>el.addEventListener('click',()=>{
+          inp.value=el.dataset.name.slice(0,58);sug.style.display='none';
+          flyTo(+el.dataset.lat,+el.dataset.lon,el.dataset.name);
+        }));
+      }catch{sug.style.display='none';}
+    },380);
   });
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){sug.style.display='none';doSearch();}});
+  document.addEventListener('click',e=>{if(!e.target.closest('.sw'))sug.style.display='none';});
+})();
+
+async function doSearch(){
+  if(!map)return;
+  const q=document.getElementById('search').value.trim();if(!q)return;
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`);
+    const d=await r.json();
+    if(d.length)flyTo(+d[0].lat,+d[0].lon,d[0].display_name);
+    else toast('Location not found.');
+  }catch{toast('Search failed.');}
+}
+function flyTo(lat,lon,name){
+  map.setView([lat,lon],7,{animate:true});
+  if(marker)map.removeLayer(marker);
+  marker=L.circleMarker([lat,lon],{radius:9,color:'#e63946',fillColor:'#e63946',fillOpacity:.85,weight:2}).addTo(map);
+  marker.bindPopup(name.slice(0,80)).openPopup();
 }
 
-function rebuildOptions(){
-  PARTS.forEach(p=>{const s=document.getElementById('sel-'+p.id);if(s){fillOpts(s,p);s.value=sel[p.id];}});
-  // Update template prices
-  TEMPLATES.forEach((t,i)=>{
-    const card=document.getElementById('tpl-'+i);
-    if(card){const pEl=card.querySelector('.tpl-price');if(pEl)pEl.textContent=fmt(getTplCost(t));}
-  });
+// ── Locate Me (GPS → 5-source IP fallback chain) ─────
+function locateMe(){
+  if(!map)return;
+  toast('📍 Detecting location…');
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      p=>{
+        const acc=p.coords.accuracy;
+        const accTxt=acc<50?'±'+acc.toFixed(0)+'m (GPS)':acc<500?'±'+acc.toFixed(0)+'m':acc<5000?'~'+(acc/1000).toFixed(1)+'km':'city-level';
+        placeMe(p.coords.latitude,p.coords.longitude,`📍 Your location <span style="font-size:.7em;opacity:.8">${accTxt}</span>`,acc<2000?11:8,'#00b4d8','#48cae4');
+      },
+      err=>{
+        // GPS denied or unavailable — try IP chain
+        locateByIP();
+      },
+      {enableHighAccuracy:true,timeout:8000,maximumAge:0}
+    );
+  }else locateByIP();
 }
 
-function loadTemplate(i){
-  const t=TEMPLATES[i];
-  PARTS.forEach(p=>{const idx=t.s[p.id]||0;sel[p.id]=idx;const s=document.getElementById('sel-'+p.id);if(s)s.value=idx;});
-  update();window.scrollTo({top:0,behavior:'smooth'});
+// 5-source IP geolocation fallback chain
+async function locateByIP(){
+  const sources=[
+    async()=>{
+      const r=await fetch('https://ipapi.co/json/');const d=await r.json();
+      if(d.latitude&&d.longitude)return{lat:d.latitude,lng:d.longitude,label:`📍 ~${d.city||''},  ${d.country_name||''} (IP · city-level)`};
+    },
+    async()=>{
+      const r=await fetch('https://freeipapi.com/api/json');const d=await r.json();
+      if(d.latitude&&d.longitude)return{lat:d.latitude,lng:d.longitude,label:`📍 ~${d.cityName||''}, ${d.countryName||''} (IP · city-level)`};
+    },
+    async()=>{
+      const r=await fetch('https://ip-api.com/json/?fields=lat,lon,city,country,status');const d=await r.json();
+      if(d.status==='success')return{lat:d.lat,lng:d.lon,label:`📍 ~${d.city||''}, ${d.country||''} (IP · city-level)`};
+    },
+    async()=>{
+      const r=await fetch('https://ipwho.is/');const d=await r.json();
+      if(d.success&&d.latitude)return{lat:d.latitude,lng:d.longitude,label:`📍 ~${d.city||''}, ${d.country||''} (IP · city-level)`};
+    },
+    async()=>{
+      const r=await fetch('https://ipinfo.io/json');const d=await r.json();
+      if(d.loc){const[la,lo]=d.loc.split(',');return{lat:+la,lng:+lo,label:`📍 ~${d.city||''}, ${d.country||''} (IP · city-level)`};}
+    }
+  ];
+  for(const src of sources){
+    try{
+      const res=await src();
+      if(res&&res.lat&&res.lng){
+        placeMe(res.lat,res.lng,res.label,8,'#f4a261','#ffd166');
+        toast('📍 IP location found (city-level accuracy)');
+        return;
+      }
+    }catch{}
+  }
+  toast('⚠ Could not detect location. Try searching by name.');
 }
 
-// ── COMPAT HINTS ──────────────────────────────────────────────
-function getHint(id){
-  const cpu=getPart('cpu'),mb=getPart('mb'),ram=getPart('ram'),psu=getPart('psu'),cool=getPart('cooling');
-  const tdp=getTDP(),psuW=psu.watts||0;
-  if(id==='cpu'){
-    if(!cpu.p)return null;
-    if(!mb.p)return{t:'info',m:'ℹ Select a motherboard to verify socket match.'};
-    return cpu.sock===mb.sock?{t:'ok',m:'✓ Socket '+cpu.sock.toUpperCase()+' matches motherboard.'}:{t:'warn',m:'⚠ Socket mismatch! CPU ('+cpu.sock.toUpperCase()+') ≠ MB ('+mb.sock.toUpperCase()+').'};
+function placeMe(lat,lng,label,zoom=9,color='#00b4d8',fill='#48cae4'){
+  map.setView([lat,lng],zoom,{animate:true});
+  if(marker)map.removeLayer(marker);
+  marker=L.circleMarker([lat,lng],{radius:11,color,fillColor:fill,fillOpacity:.9,weight:2.5}).addTo(map);
+  // Accuracy ring for GPS
+  if(color==='#00b4d8'){
+    const ring=L.circle([lat,lng],{radius:300,color,fillColor:fill,fillOpacity:.12,weight:1,dashArray:'4'}).addTo(map);
+    setTimeout(()=>map&&map.removeLayer(ring),8000);
   }
-  if(id==='mb'){
-    if(!mb.p)return null;
-    const msgs=[];
-    if(cpu.p){cpu.sock!==mb.sock?msgs.push('⚠ Socket mismatch with CPU.'):msgs.push('✓ Socket compatible with CPU.');}
-    if(ram.p&&mb.ddr){ram.gen!==mb.ddr?msgs.push('⚠ Board needs '+mb.ddr.toUpperCase()+', RAM is '+ram.gen.toUpperCase()+'.'):msgs.push('✓ '+ram.gen.toUpperCase()+' RAM matches board.');}
-    if(!msgs.length)return{t:'ok',m:'✓ Motherboard compatible with current selection.'};
-    return{t:msgs.some(m=>m.startsWith('⚠'))?'warn':'ok',m:msgs.join(' ')};
-  }
-  if(id==='ram'){
-    if(!ram.p)return null;
-    if(!mb.p)return{t:'info',m:'ℹ Select a motherboard to check DDR generation.'};
-    if(!mb.ddr)return null;
-    return ram.gen===mb.ddr?{t:'ok',m:'✓ '+ram.gen.toUpperCase()+' RAM matches board.'}:{t:'warn',m:'⚠ Board needs '+mb.ddr.toUpperCase()+', selected RAM is '+ram.gen.toUpperCase()+'.'};
-  }
-  if(id==='gpu'){
-    const gpu=getPart('gpu');if(!gpu.p)return null;
-    if(!psuW)return{t:'info',m:'ℹ Add a PSU to check power compatibility.'};
-    return tdp>psuW*.9?{t:'warn',m:'⚠ System draw ('+tdp+'W) may exceed PSU ('+psuW+'W).'}:{t:'ok',m:'✓ PSU handles GPU power ('+tdp+'W / '+psuW+'W).'};
-  }
-  if(id==='psu'){
-    if(!psuW)return null;
-    const pct=Math.round((tdp/psuW)*100);
-    if(!tdp)return{t:'info',m:'ℹ Add components to estimate power draw.'};
-    if(pct>90)return{t:'warn',m:'⚠ Load '+pct+'% — PSU may be underpowered.'};
-    return{t:'ok',m:'✓ Load at '+pct+'% — '+(pct>70?'acceptable.':'healthy headroom.')};
-  }
-  if(id==='cooling'){
-    if(!cool.p&&!cool.n.includes('AMD')&&!cool.n.includes('Intel'))return null;
-    if(!cpu.p)return null;
-    if((cool.n.includes('Stock')||cool.n.includes('None'))&&cpu.tdp>=125)return{t:'warn',m:'⚠ '+cpu.tdp+'W CPU needs aftermarket cooling.'};
-    if(cool.n.includes('Budget')&&cpu.tdp>=105)return{t:'warn',m:'⚠ Budget cooler may struggle with '+cpu.tdp+'W TDP.'};
-    if(cpu.p)return{t:'ok',m:'✓ Cooler adequate for CPU ('+cpu.tdp+'W TDP).'};
-  }
-  return null;
+  marker.bindPopup(label).openPopup();
 }
 
-// ── MAIN UPDATE ───────────────────────────────────────────────
-function update(){
-  let cost=0,tdp=0,count=0;
-  PARTS.forEach(p=>{const o=getPart(p.id);cost+=o.p;tdp+=o.tdp||0;if(o.p>0)count++;});
-  document.getElementById('sc').textContent=count>0?fmt(cost):'—';
-  document.getElementById('st').textContent=tdp+'W';
-  document.getElementById('sp').textContent=count+'/8';
-  const psuW=getPart('psu').watts||0;
-  const pct=psuW>0?Math.round((tdp/psuW)*100):0;
-  document.getElementById('bpct').textContent=pct+'%';
-  const bf=document.getElementById('bfill');
-  bf.style.width=Math.min(pct,100)+'%';bf.className='bfill'+(pct>90?' over':'');
-  const ss=document.getElementById('ss');
-  if(!psuW){ss.textContent='—';ss.className='sv';}
-  else if(pct>90){ss.textContent='⚠ Over';ss.className='sv wn';}
-  else{ss.textContent='✓ OK';ss.className='sv';}
-  PARTS.forEach(p=>{
-    const h=document.getElementById('hint-'+p.id);
-    const s=document.getElementById('sel-'+p.id);
-    s.classList.remove('sok','swn');
-    const r=getHint(p.id);
-    if(r){h.className='phint '+r.t;h.textContent=r.m;if(r.t==='ok')s.classList.add('sok');if(r.t==='warn')s.classList.add('swn');}
-    else{h.className='phint';}
-  });
-  const warns=[];
-  PARTS.forEach(p=>{const r=getHint(p.id);if(r&&r.t==='warn')warns.push('• '+r.m);});
-  const cb=document.getElementById('cbox');
-  if(!count){cb.className='cbox';cb.textContent='Select components to run compatibility check.';}
-  else if(warns.length){cb.className='cbox warn';cb.innerHTML=warns.join('<br>');}
-  else{cb.className='cbox ok';cb.textContent='✓ All selected components are compatible!';}
+// ⑮ Saved pins (localStorage)
+let pins=JSON.parse(localStorage.getItem('wme_pins')||'[]');
+function savePin(){
+  if(!currentLatLng){toast('Click a location first.');return;}
+  const note=document.getElementById('note-in').value.trim()||'Pin';
+  pins.push({lat:currentLatLng.lat,lng:currentLatLng.lng,note,ts:Date.now()});
+  localStorage.setItem('wme_pins',JSON.stringify(pins));
+  renderPins();toast('📌 Pin saved!');
 }
-
-// ── SAVES ────────────────────────────────────────────────────
-let saves=JSON.parse(localStorage.getItem('pcb2_saves')||'[]');
-function renderSaves(){
-  const ul=document.getElementById('slist');ul.innerHTML='';
-  document.getElementById('enote').style.display=saves.length?'none':'block';
-  saves.forEach((s,i)=>{
-    const li=document.createElement('li');
-    li.innerHTML=`<span onclick="loadBuild(${i})">🔧 ${s.name} — <b>${s.disp}</b></span><button class="dbtn" onclick="delBuild(${i})">🗑</button>`;
-    ul.appendChild(li);
-  });
+function renderPins(){
+  const el=document.getElementById('pins-list');
+  if(!pins.length){el.innerHTML='<div style="font-size:.7rem;color:var(--sub)">No saved pins yet.</div>';return;}
+  el.innerHTML=pins.map((p,i)=>`<div class="pin-item">
+    <span onclick="map.setView([${p.lat},${p.lng}],10,{animate:true})" title="Fly to">
+      📌 ${p.note} <span style="color:var(--sub);font-size:.62rem">(${(+p.lat).toFixed(3)}, ${(+p.lng).toFixed(3)})</span>
+    </span>
+    <button onclick="removePin(${i})" title="Remove">✕</button></div>`).join('');
 }
-function saveBuild(){
-  const name=prompt('Name this build:','My Build '+(saves.length+1));if(!name)return;
-  let cost=0;const snap={};
-  PARTS.forEach(p=>{cost+=getPart(p.id).p;snap[p.id]=sel[p.id];});
-  saves.push({name,disp:fmtBoth(cost),snap});
-  localStorage.setItem('pcb2_saves',JSON.stringify(saves));renderSaves();
+function removePin(i){pins.splice(i,1);localStorage.setItem('wme_pins',JSON.stringify(pins));renderPins();toast('Pin removed.');}
+function togglePins(){
+  const p=document.getElementById('pins-panel');
+  const show=p.style.display!=='block';
+  p.style.display=show?'block':'none';
+  document.getElementById('btn-pins').classList.toggle('active',show);
+  if(show)renderPins();
 }
-function loadBuild(i){
-  const s=saves[i];Object.keys(s.snap).forEach(k=>{sel[k]=s.snap[k];const el=document.getElementById('sel-'+k);if(el)el.value=s.snap[k];});update();
+function clearPins(){
+  if(!pins.length){toast('No pins to clear.');return;}
+  pins=[];localStorage.setItem('wme_pins','[]');renderPins();toast('🗑 Pins cleared.');
 }
-function delBuild(i){saves.splice(i,1);localStorage.setItem('pcb2_saves',JSON.stringify(saves));renderSaves();}
-function resetBuild(){PARTS.forEach(p=>{sel[p.id]=0;const el=document.getElementById('sel-'+p.id);if(el)el.value=0;});update();}
-function exportBuild(){
-  let txt='=== PC BUILD ===\n';
-  PARTS.forEach(p=>{const o=getPart(p.id);if(o.p>0)txt+=p.label+': '+o.n+' ('+fmtBoth(o.p)+')\n';});
-  let cost=0;PARTS.forEach(p=>{cost+=getPart(p.id).p;});
-  txt+='\nTotal: '+fmtBoth(cost)+'\n1 USD = ₹'+INR_RATE.toFixed(2)+' (live)\n© '+new Date().getFullYear()+' Manik Roy. All Rights Reserved.';
-  navigator.clipboard.writeText(txt).then(()=>alert('✓ Copied to clipboard!')).catch(()=>prompt('Copy this:',txt));
-}
-
-buildDOM();renderSaves();update();
+renderPins();
 </script>
 </body>
 </html>
