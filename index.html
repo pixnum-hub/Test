@@ -2,471 +2,325 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NetPulse — Deep Signal Analyzer</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>:root{--bg:#0a0f1e;--surface:#0d1526;--card:#111f38;--border:#1a3358;--accent:#00e5a0;--accent2:#00b4d8;--warn:#ffd700;--danger:#ff4d6d;--text:#e2e8f0;--muted:#4a6080;--r:12px;--mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif}body.light{--bg:#eef2f7;--surface:#fff;--card:#e4eaf4;--border:#b8cce0;--accent:#007a55;--accent2:#005f80;--warn:#b86a00;--danger:#b01030;--text:#0c1a2e;--muted:#5a7090}body.oled{--bg:#000;--surface:#080808;--card:#0e0e0e;--border:#1e1e1e;--accent:#00ff99;--accent2:#00ccff;--warn:#ffcc00;--danger:#ff2244;--text:#fff;--muted:#444}body.hc{--bg:#000;--surface:#000;--card:#000;--border:#fff;--accent:#ff0;--accent2:#0ff;--warn:#f80;--danger:#f00;--text:#fff;--muted:#999}*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;align-items:center}header{width:100%;max-width:500px;padding:16px 16px 0;display:flex;justify-content:space-between;align-items:center}.logo{font-family:var(--mono);font-weight:700;font-size:1rem;color:var(--accent)}.logo em{color:var(--muted);font-style:normal}.themes{display:flex;gap:5px}.th{border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:.6rem;font-family:var(--mono);padding:4px 7px;border-radius:5px;cursor:pointer;transition:.15s}.th.on,.th:hover{border-color:var(--accent);color:var(--accent)}main{width:100%;max-width:500px;padding:14px 14px 0;flex:1;display:flex;flex-direction:column;gap:12px}.hero{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;align-items:center;gap:12px}.hero-top{display:flex;align-items:center;gap:20px;width:100%}.radar{position:relative;width:110px;height:110px;flex-shrink:0}.rr{position:absolute;border-radius:50%;border:1px solid var(--accent);opacity:.12}.rr:nth-child(1){inset:0}.rr:nth-child(2){inset:18px}.rr:nth-child(3){inset:36px}.rr:nth-child(4){inset:52px}.rsweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 75%,rgba(0,229,160,.4) 100%);animation:sw 2.2s linear infinite}@keyframes sw{to{transform:rotate(360deg)}}.rdot{position:absolute;width:8px;height:8px;background:var(--accent);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 10px var(--accent),0 0 20px var(--accent)}.rblip{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:0;animation:blip 2.2s ease-out infinite}@keyframes blip{0%{opacity:1;transform:scale(.5)}100%{opacity:0;transform:scale(1.8)}}.hero-meta{flex:1;display:flex;flex-direction:column;gap:6px}.grade-ring{display:flex;align-items:center;gap:8px}.grade{font-family:var(--mono);font-size:2.2rem;font-weight:700;color:var(--accent);line-height:1}.grade-label{font-size:.65rem;color:var(--muted);line-height:1.4}.status-row{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:.78rem;font-weight:600}.sdot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:sp 1.3s ease infinite;flex-shrink:0}@keyframes sp{0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,.5)}60%{box-shadow:0 0 0 7px rgba(0,229,160,0)}}.sdot.off{background:var(--danger);animation:none}.bars{display:flex;align-items:flex-end;gap:3px;height:32px}.bar{width:8px;border-radius:2px 2px 0 0;background:var(--border);transition:.4s}.bar.g{background:var(--accent)}.bar.w{background:var(--warn)}.bar.d{background:var(--danger)}.bar:nth-child(1){height:20%}.bar:nth-child(2){height:40%}.bar:nth-child(3){height:58%}.bar:nth-child(4){height:76%}.bar:nth-child(5){height:100%}.scope-wrap{width:100%;background:var(--surface);border-radius:8px;overflow:hidden;border:1px solid var(--border)}canvas#scope{width:100%;height:60px;display:block}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px}.card.wide{grid-column:1/-1}.cl{font-size:.58rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px}.cv{font-family:var(--mono);font-size:.98rem;font-weight:600;color:var(--accent);word-break:break-all;line-height:1.2}.cv.w{color:var(--warn)}.cv.d{color:var(--danger)}.cv.m{color:var(--muted)}.cs{font-size:.65rem;color:var(--muted);margin-top:3px}.sec{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:2px 0;border-bottom:1px solid var(--border);margin-bottom:-2px}.lat-row{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}.lat-stat{text-align:center;flex:1;min-width:60px}.lat-num{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--accent)}.lat-num.w{color:var(--warn)}.lat-num.d{color:var(--danger)}.lat-lbl{font-size:.6rem;color:var(--muted);margin-top:2px}.chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}.chip{font-family:var(--mono);font-size:.65rem;padding:2px 6px;border-radius:4px;background:var(--surface)}.chip.g{color:var(--accent)}.chip.w{color:var(--warn)}.chip.d{color:var(--danger)}.spark{display:flex;align-items:flex-end;gap:2px;height:28px;margin-top:8px}.sb{flex:1;border-radius:2px 2px 0 0;min-width:5px;transition:.3s}.pbar-wrap{height:5px;background:var(--surface);border-radius:99px;overflow:hidden;margin-top:6px}.pbar{height:100%;border-radius:99px;transition:width .7s ease;background:linear-gradient(90deg,var(--accent2),var(--accent))}.pbar.w{background:linear-gradient(90deg,#c97000,var(--warn))}.pbar.d{background:linear-gradient(90deg,#a00,var(--danger))}.stab-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.stab-seg{flex:1;height:8px;border-radius:3px;background:var(--surface);min-width:14px;transition:.4s}.stab-seg.ok{background:var(--accent)}.stab-seg.warn{background:var(--warn)}.stab-seg.fail{background:var(--danger)}.ip-hero{display:flex;justify-content:space-between;align-items:flex-start}.info-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border);gap:8px}.info-row:last-child{border-bottom:none}.il{font-size:.65rem;color:var(--muted);white-space:nowrap;flex-shrink:0}.iv{font-family:var(--mono);font-size:.78rem;font-weight:600;color:var(--accent);text-align:right;word-break:break-all}.src-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.src-badge{display:flex;align-items:center;gap:5px;font-size:.65rem;color:var(--muted);font-family:var(--mono)}.src-dot{width:7px;height:7px;border-radius:50%;display:inline-block}.src-dot.ip{background:var(--warn)}.src-dot.gps{background:var(--accent)}.gps-btn{border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:.65rem;font-family:var(--mono);padding:4px 10px;border-radius:6px;cursor:pointer;transition:.15s}.gps-btn:hover{background:var(--accent);color:var(--bg)}.gps-btn:disabled{opacity:.35;cursor:default}.gps-status{font-size:.65rem;color:var(--muted);margin-bottom:6px;min-height:14px;font-family:var(--mono)}.gps-hl{color:var(--accent2)!important}.gps-hl.live{color:var(--accent)!important;text-shadow:0 0 8px var(--accent)}.tgt-row{display:flex;align-items:center;margin-bottom:8px}.tgt-row:last-child{margin-bottom:0}.tgt-name{font-family:var(--mono);color:var(--muted);font-size:.68rem;width:72px;flex-shrink:0}.tgt-ms{font-family:var(--mono);font-weight:600;font-size:.75rem;white-space:nowrap}.score-arc{display:flex;justify-content:center;padding:4px 0}canvas#arc{width:160px;height:90px}.rbtn{width:100%;padding:12px;background:transparent;border:1.5px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:.8rem;font-weight:600;border-radius:var(--r);cursor:pointer;transition:.2s;letter-spacing:.04em}.rbtn:hover{background:var(--accent);color:var(--bg)}.rbtn:disabled{opacity:.35;cursor:default}footer{width:100%;max-width:500px;padding:16px 14px 18px;text-align:center;font-size:.63rem;color:var(--muted);margin-top:auto}.blink{animation:bk .85s step-start infinite}@keyframes bk{50%{opacity:.15}}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpeedGuard – Speed Camera Detector</title>
+<meta name="theme-color" content="#0a0a0f">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap');
+  :root {
+    --bg: #0a0a0f; --surface: #12121a; --card: #1a1a28;
+    --border: #2a2a40; --accent: #00e5ff; --accent2: #ff3d71;
+    --text: #e8e8f0; --muted: #6b6b8a; --safe: #00e676; --warn: #ffab00; --danger: #ff3d71;
+    --radius: 16px; --glow: 0 0 20px rgba(0,229,255,0.3);
+  }
+  .light { --bg: #f0f4ff; --surface: #ffffff; --card: #e8eeff;
+    --border: #c8d0f0; --accent: #0057d8; --accent2: #e0003c;
+    --text: #0d0d2a; --muted: #5a6080; --safe: #00a040; --warn: #c07000; --danger: #e0003c;
+    --glow: 0 0 20px rgba(0,87,216,0.2); }
+  .oled { --bg: #000000; --surface: #050508; --card: #0a0a10;
+    --border: #1a1a28; --accent: #00ffff; --accent2: #ff2060;
+    --text: #ffffff; --muted: #505070; --safe: #00ff80; --warn: #ffcc00; --danger: #ff2060;
+    --glow: 0 0 24px rgba(0,255,255,0.35); }
+  .hc { --bg: #000000; --surface: #000000; --card: #000000;
+    --border: #ffffff; --accent: #ffff00; --accent2: #ff6600;
+    --text: #ffffff; --muted: #cccccc; --safe: #00ff00; --warn: #ff8800; --danger: #ff0000;
+    --glow: none; }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: 'Exo 2', sans-serif; background: var(--bg); color: var(--text);
+    display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+    transition: background .3s, color .3s; }
+
+  header { width: 100%; max-width: 480px; padding: 18px 20px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .logo { font-family: 'Orbitron', monospace; font-size: 1.5rem; font-weight: 900;
+    color: var(--accent); letter-spacing: 2px; text-shadow: var(--glow); }
+  .logo span { color: var(--accent2); }
+  .tagline { font-size: .75rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+
+  .theme-bar { display: flex; gap: 6px; }
+  .th-btn { padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted); font-size: .7rem; font-family: 'Exo 2', sans-serif;
+    cursor: pointer; transition: all .2s; letter-spacing: .5px; }
+  .th-btn.active { border-color: var(--accent); color: var(--accent); background: var(--card); box-shadow: var(--glow); }
+
+  main { flex: 1; width: 100%; max-width: 480px; padding: 10px 16px 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+  .speed-ring { position: relative; width: 200px; height: 200px; margin: 6px auto; }
+  .speed-ring svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--card); stroke-width: 10; }
+  .ring-fg { fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round;
+    stroke-dasharray: 565; stroke-dashoffset: 565; transition: stroke-dashoffset .5s, stroke .3s; }
+  .speed-center { position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; }
+  .speed-val { font-family: 'Orbitron', monospace; font-size: 2.8rem; font-weight: 900; line-height: 1; color: var(--text); }
+  .speed-unit { font-size: .7rem; color: var(--muted); letter-spacing: 2px; margin-top: 2px; }
+  .speed-label { font-size: .65rem; color: var(--muted); letter-spacing: 1px; margin-top: 4px; }
+
+  .status-card { width: 100%; border-radius: var(--radius); border: 1px solid var(--border);
+    background: var(--card); padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  .status-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+    background: var(--muted); transition: background .3s; box-shadow: 0 0 8px currentColor; }
+  .status-dot.active { background: var(--safe); animation: pulse 1.5s infinite; }
+  .status-dot.warn { background: var(--warn); animation: pulse .8s infinite; }
+  .status-dot.danger { background: var(--danger); animation: pulse .4s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+  .status-text { flex: 1; }
+  .status-title { font-size: .85rem; font-weight: 600; color: var(--text); }
+  .status-sub { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+
+  .alert-banner { width: 100%; border-radius: var(--radius); border: 2px solid var(--danger);
+    background: rgba(255,61,113,.1); padding: 12px 16px; text-align: center;
+    font-family: 'Orbitron', monospace; font-size: .8rem; color: var(--danger);
+    letter-spacing: 1px; display: none; animation: flashBorder 1s infinite; }
+  @keyframes flashBorder { 0%,100%{border-color:var(--danger)} 50%{border-color:transparent} }
+  .alert-banner.show { display: block; }
+
+  .info-grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .info-tile { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .info-tile .val { font-family: 'Orbitron', monospace; font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .info-tile .lbl { font-size: .65rem; color: var(--muted); letter-spacing: 1px; text-align: center; text-transform: uppercase; }
+
+  .camera-list { width: 100%; }
+  .list-title { font-size: .72rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; padding-left: 4px; }
+  .cam-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+  .cam-icon { font-size: 1.4rem; }
+  .cam-info { flex: 1; }
+  .cam-name { font-size: .82rem; font-weight: 600; color: var(--text); }
+  .cam-dist { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+  .cam-speed { font-family: 'Orbitron', monospace; font-size: .9rem; color: var(--warn); font-weight: 700; }
+
+  .controls { width: 100%; display: flex; gap: 10px; }
+  .btn { flex: 1; padding: 14px; border-radius: 12px; border: 1.5px solid var(--accent);
+    background: transparent; color: var(--accent); font-family: 'Orbitron', monospace;
+    font-size: .75rem; font-weight: 700; letter-spacing: 1px; cursor: pointer;
+    transition: all .2s; }
+  .btn:hover { background: var(--accent); color: var(--bg); box-shadow: var(--glow); }
+  .btn.danger { border-color: var(--danger); color: var(--danger); }
+  .btn.danger:hover { background: var(--danger); color: #fff; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .no-cameras { text-align: center; color: var(--muted); font-size: .8rem; padding: 16px 0; }
+
+  footer { width: 100%; max-width: 480px; text-align: center; padding: 14px 16px 20px;
+    border-top: 1px solid var(--border); color: var(--muted); font-size: .68rem;
+    line-height: 1.6; }
+  footer strong { color: var(--text); }
+</style>
 </head>
 <body>
+
 <header>
-  <div class="logo">Net<em>Pulse</em> <em style="font-size:.7rem;margin-left:4px;color:var(--accent);opacity:.5">DEEP</em></div>
-  <div class="themes">
-    <button class="th on" data-t="dark">Dark</button>
-    <button class="th" data-t="light">Light</button>
-    <button class="th" data-t="oled">OLED</button>
-    <button class="th" data-t="hc">HC</button>
+  <div class="logo">Speed<span>Guard</span></div>
+  <div class="tagline">Speed Camera Detector</div>
+  <div class="theme-bar">
+    <button class="th-btn active" onclick="setTheme('dark','this')">Dark</button>
+    <button class="th-btn" onclick="setTheme('light','this')">Light</button>
+    <button class="th-btn" onclick="setTheme('oled','this')">OLED</button>
+    <button class="th-btn" onclick="setTheme('hc','this')">HC</button>
   </div>
 </header>
+
 <main>
-  <div class="hero">
-    <div class="hero-top">
-      <div class="radar">
-        <div class="rr"></div><div class="rr"></div><div class="rr"></div><div class="rr"></div>
-        <div class="rsweep"></div>
-        <div class="rblip" id="rblip" style="top:28%;left:62%"></div>
-        <div class="rdot"></div>
-      </div>
-      <div class="hero-meta">
-        <div class="grade-ring">
-          <div class="grade" id="grade">—</div>
-          <div class="grade-label" id="gradeLabel">Signal<br>Grade</div>
-        </div>
-        <div class="status-row"><div class="sdot" id="sdot"></div><span id="stext">Initialising…</span></div>
-        <div class="bars" id="bars">
-          <div class="bar" id="b1"></div><div class="bar" id="b2"></div>
-          <div class="bar" id="b3"></div><div class="bar" id="b4"></div><div class="bar" id="b5"></div>
-        </div>
-      </div>
-    </div>
-    <div class="scope-wrap" style="width:100%"><canvas id="scope" height="60"></canvas></div>
-    <canvas id="arc" height="90"></canvas>
-  </div>
-  <div class="sec">Latency Analysis</div>
-  <div class="card wide">
-    <div class="lat-row">
-      <div class="lat-stat"><div class="lat-num" id="lCur">—</div><div class="lat-lbl">Current</div></div>
-      <div class="lat-stat"><div class="lat-num" id="lMin">—</div><div class="lat-lbl">Min</div></div>
-      <div class="lat-stat"><div class="lat-num" id="lMax">—</div><div class="lat-lbl">Max</div></div>
-      <div class="lat-stat"><div class="lat-num" id="lAvg">—</div><div class="lat-lbl">Avg</div></div>
-      <div class="lat-stat"><div class="lat-num" id="lJit">—</div><div class="lat-lbl">Jitter</div></div>
-      <div class="lat-stat"><div class="lat-num" id="lLoss">—</div><div class="lat-lbl">Loss%</div></div>
-    </div>
-    <div class="chips" id="chips"></div>
-    <div class="spark" id="spark"></div>
-  </div>
-  <div class="sec">Multi-Target Ping</div>
-  <div class="card wide" id="tgtCard">
-    <div class="blink" style="font-size:.7rem;color:var(--muted)">Probing targets…</div>
-  </div>
-  <div class="sec">Connection Vitals</div>
-  <div class="grid2">
-    <div class="card"><div class="cl">Type</div><div class="cv" id="cType">—</div><div class="cs" id="cEff">—</div></div>
-    <div class="card"><div class="cl">Downlink</div><div class="cv" id="cDl">—</div><div class="cs">Mbps est.</div></div>
-    <div class="card"><div class="cl">RTT (OS)</div><div class="cv" id="cRtt">—</div><div class="cs">ms browser</div></div>
-    <div class="card"><div class="cl">Save Data</div><div class="cv" id="cSave">—</div></div>
-    <div class="card wide">
-      <div class="cl">Speed Tier</div>
-      <div class="cv" id="cSpeed">—</div>
-      <div class="pbar-wrap"><div class="pbar" id="pSpeed"></div></div>
+  <div class="speed-ring" id="speedRing">
+    <svg viewBox="0 0 200 200">
+      <circle class="ring-bg" cx="100" cy="100" r="90"/>
+      <circle class="ring-fg" id="ringFg" cx="100" cy="100" r="90"/>
+    </svg>
+    <div class="speed-center">
+      <div class="speed-val" id="speedVal">0</div>
+      <div class="speed-unit">km/h</div>
+      <div class="speed-label" id="speedLabel">WAITING GPS</div>
     </div>
   </div>
-  <div class="sec">Signal Stability Index</div>
-  <div class="card wide">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-      <div class="cv" id="stabScore">—</div>
-      <div class="cs" id="stabLabel">Computing…</div>
-    </div>
-    <div class="stab-row" id="stabRow"></div>
-    <div class="cs" style="margin-top:8px" id="stabDesc">Each segment = one check. Green=stable · Yellow=variable · Red=spike</div>
-  </div>
-  <div class="sec">Network Identity</div>
-  <div class="card wide">
-    <div class="ip-hero">
-      <div>
-        <div class="cl">Public IP Address</div>
-        <div class="cv blink" id="ip" style="font-size:1.15rem">Fetching…</div>
-        <div class="cs" id="ipType">—</div>
-      </div>
-      <div style="text-align:right">
-        <span id="flag" style="font-size:2rem;line-height:1;display:block"></span>
-        <div class="cv" id="countryCode" style="font-size:.75rem;margin-top:2px">—</div>
-      </div>
+
+  <div class="alert-banner" id="alertBanner">⚠ SPEED CAMERA AHEAD ⚠</div>
+
+  <div class="status-card">
+    <div class="status-dot" id="statusDot"></div>
+    <div class="status-text">
+      <div class="status-title" id="statusTitle">Tap Start to Begin</div>
+      <div class="status-sub" id="statusSub">GPS location required</div>
     </div>
   </div>
-  <div class="sec">ISP &amp; Provider</div>
-  <div class="card wide">
-    <div class="info-row"><span class="il">ISP / Operator</span><span class="iv" id="isp">—</span></div>
-    <div class="info-row"><span class="il">Organization</span><span class="iv" id="org">—</span></div>
-    <div class="info-row"><span class="il">ASN Number</span><span class="iv" id="asn">—</span></div>
-    <div class="info-row"><span class="il">ASN Name</span><span class="iv" id="asnName">—</span></div>
-    <div class="info-row"><span class="il">Network Type</span><span class="iv" id="netType">—</span></div>
-    <div class="info-row"><span class="il">IP Version</span><span class="iv" id="ipVer">—</span></div>
+
+  <div class="info-grid">
+    <div class="info-tile"><div class="val" id="accVal">—</div><div class="lbl">Accuracy (m)</div></div>
+    <div class="info-tile"><div class="val" id="altVal">—</div><div class="lbl">Altitude (m)</div></div>
+    <div class="info-tile"><div class="val" id="nearVal">—</div><div class="lbl">Nearest Cam</div></div>
+    <div class="info-tile"><div class="val" id="camCount">0</div><div class="lbl">Cameras Found</div></div>
   </div>
-  <div class="sec">Geographic Location</div>
-  <div class="card wide">
-    <div class="src-bar">
-      <div class="src-badge" id="srcBadge"><span class="src-dot ip"></span>IP Estimate</div>
-      <button class="gps-btn" id="gpsBtn" onclick="fetchGPS()">📍 Use My GPS</button>
-    </div>
-    <div id="gpsStatus" class="gps-status"></div>
-    <div id="geoRows"></div>
+
+  <div class="controls">
+    <button class="btn" id="startBtn" onclick="startDetection()">▶ START</button>
+    <button class="btn danger" id="stopBtn" onclick="stopDetection()" disabled>■ STOP</button>
   </div>
-  <div class="sec">Session Stats</div>
-  <div class="grid3">
-    <div class="card"><div class="cl">Checks</div><div class="cv" id="sChecks">0</div></div>
-    <div class="card"><div class="cl">Online Since</div><div class="cv" id="sOnline" style="font-size:.75rem">—</div></div>
-    <div class="card"><div class="cl">Uptime</div><div class="cv" id="sUptime">—</div></div>
-    <div class="card"><div class="cl">Best Ping</div><div class="cv" id="sBest">—</div></div>
-    <div class="card"><div class="cl">Worst Ping</div><div class="cv d" id="sWorst">—</div></div>
-    <div class="card"><div class="cl">Avg Ping</div><div class="cv" id="sAvg">—</div></div>
+
+  <div class="camera-list">
+    <div class="list-title">Nearby Speed Cameras</div>
+    <div id="camList"><div class="no-cameras">No cameras detected yet</div></div>
   </div>
-  <button class="rbtn" id="rbtn" onclick="runCheck()">⟳ &nbsp;Deep Scan</button>
 </main>
-<footer>&copy; <span id="yr"></span> Manik Roy. All Rights Reserved. &nbsp;·&nbsp; NetPulse Deep Signal Analyzer</footer>
+
+<footer>
+  <strong>SpeedGuard – Speed Camera Detector</strong><br>
+  Uses OpenStreetMap Overpass API &amp; GPS<br>
+  &copy; <span id="yr"></span> Manik Roy. All Rights Reserved.
+</footer>
+
 <script>
-// BUG FIX 1: totalAttempts was used but never declared — added here
-let pings=[],stability=[],checks=0,onlineSince=null,ipData=null,totalAttempts=0;
-// BUG FIX 2: separate loss counter so it isn't affected by the pings[] cap of 30
-let lossAttempts=0,lossFailures=0;
-
-const GEO_FIELDS=[
-  ['country','Country'],['countryCodeFull','Country Code'],['continent','Continent'],
-  ['region','State / Province'],['regionCode','Region Code'],['district','District'],
-  ['city','City / Town'],['suburb','Suburb / Area'],['road','Road / Street'],
-  ['postal','📍 PIN / Postal'],['lat','Latitude'],['lon','Longitude'],
-  ['gpsAcc','GPS Accuracy'],['tz','Timezone'],['utcOff','UTC Offset'],
-  ['localTime','Local Time'],['calCode','Calling Code'],['currency','Currency'],['langs','Languages']
-];
-const geoData={};
-function renderGeoRows(){
-  const el=document.getElementById('geoRows');if(!el)return;
-  el.innerHTML=GEO_FIELDS.map(([id,label])=>{
-    const v=geoData[id]||'—';
-    const hi=id==='postal'?' gps-hl'+(geoData._gpsLive?' live':''):'';
-    return`<div class="info-row"><span class="il">${label}</span><span class="iv${hi}" id="${id}">${v}</span></div>`;
-  }).join('');
-}
-const TARGETS=[
-  {name:'Cloudflare',url:'https://1.1.1.1/cdn-cgi/trace'},
-  {name:'Google',url:'https://www.google.com/generate_204'},
-  {name:'Fastly CDN',url:'https://www.fastly.com/'},
-  {name:'ipapi',url:'https://ipapi.co/'},
-];
-const SCOPE_W=460,SCOPE_H=60;
-let scopeData=Array(SCOPE_W).fill(SCOPE_H/2);
-let scopeCtx,arcCtx;
-
-function setTheme(t){
-  document.body.className=t;
-  document.querySelectorAll('.th').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  localStorage.setItem('npt',t);
-  // BUG FIX 3: redraw canvases when theme changes so colours update
-  requestAnimationFrame(()=>{drawScope();drawArc(lastScore);});
-}
-document.querySelectorAll('.th').forEach(b=>b.onclick=()=>setTheme(b.dataset.t));
-
-// BUG FIX 3 (cont): track last score so theme-switch redraw is correct
-let lastScore=0;
-
-function setBars(lvl,q){
-  const cls=q==='g'?'g':q==='w'?'w':'d';
-  for(let i=1;i<=5;i++) document.getElementById('b'+i).className='bar'+(i<=lvl?' '+cls:'');}
-function calcGrade(avg,jitter,loss){
-  if(avg===0||avg===null) return{g:'—',c:'m',sc:0,lbl:'No Data'};
-  let sc=100;
-  sc-=Math.min(50,avg/4);
-  sc-=Math.min(25,jitter*1.5);
-  sc-=loss*5;
-  sc=Math.max(0,Math.round(sc));
-  const g=sc>=95?'A+':sc>=88?'A':sc>=78?'B+':sc>=68?'B':sc>=55?'C':sc>=40?'D':'F';
-  const c=sc>=68?'g':sc>=45?'w':'d';
-  const lbl=sc>=88?'Excellent':sc>=68?'Good':sc>=45?'Fair':sc>=25?'Poor':'Critical';
-  return{g,c,sc,lbl};}
-function initScope(){
-  const cv=document.getElementById('scope');
-  cv.width=SCOPE_W;cv.height=SCOPE_H;
-  scopeCtx=cv.getContext('2d');
-  drawScope();}
-function pushScope(ms){
-  const norm=SCOPE_H-Math.min(SCOPE_H-4,Math.max(4,(ms/600)*SCOPE_H));
-  scopeData.push(norm);if(scopeData.length>SCOPE_W)scopeData.shift();
-  drawScope();}
-function drawScope(){
-  if(!scopeCtx)return;
-  const cs=getComputedStyle(document.body);
-  const acc=cs.getPropertyValue('--accent').trim()||'#00e5a0';
-  const bg=cs.getPropertyValue('--surface').trim()||'#0d1526';
-  scopeCtx.fillStyle=bg;scopeCtx.fillRect(0,0,SCOPE_W,SCOPE_H);
-  scopeCtx.strokeStyle='rgba(100,160,120,.08)';scopeCtx.lineWidth=1;
-  for(let y=0;y<SCOPE_H;y+=SCOPE_H/4){scopeCtx.beginPath();scopeCtx.moveTo(0,y);scopeCtx.lineTo(SCOPE_W,y);scopeCtx.stroke();}
-  for(let x=0;x<SCOPE_W;x+=46){scopeCtx.beginPath();scopeCtx.moveTo(x,0);scopeCtx.lineTo(x,SCOPE_H);scopeCtx.stroke();}
-  scopeCtx.beginPath();scopeCtx.strokeStyle=acc;scopeCtx.lineWidth=1.5;scopeCtx.lineJoin='round';
-  scopeData.forEach((y,x)=>{x===0?scopeCtx.moveTo(x,y):scopeCtx.lineTo(x,y);});
-  scopeCtx.stroke();
-  const grad=scopeCtx.createLinearGradient(0,0,0,SCOPE_H);
-  grad.addColorStop(0,'rgba(0,229,160,.12)');grad.addColorStop(1,'rgba(0,229,160,0)');
-  scopeCtx.lineTo(SCOPE_W,SCOPE_H);scopeCtx.lineTo(0,SCOPE_H);scopeCtx.closePath();
-  scopeCtx.fillStyle=grad;scopeCtx.fill();}
-function initArc(){const cv=document.getElementById('arc');cv.width=160;cv.height=90;arcCtx=cv.getContext('2d');}
-function drawArc(score){
-  if(!arcCtx)return;
-  lastScore=score; // BUG FIX 3: persist for theme-switch redraw
-  const W=160,H=90,cx=80,cy=82,r=65;
-  const cs=getComputedStyle(document.body);
-  const acc=cs.getPropertyValue('--accent').trim()||'#00e5a0';
-  const warn=cs.getPropertyValue('--warn').trim()||'#ffd700';
-  const danger=cs.getPropertyValue('--danger').trim()||'#ff4d6d';
-  const border=cs.getPropertyValue('--border').trim()||'#1a3358';
-  const text=cs.getPropertyValue('--text').trim()||'#e2e8f0';
-  const muted=cs.getPropertyValue('--muted').trim()||'#4a6080';
-  arcCtx.clearRect(0,0,W,H);
-  arcCtx.beginPath();arcCtx.arc(cx,cy,r,Math.PI,0);
-  arcCtx.strokeStyle=border;arcCtx.lineWidth=10;arcCtx.lineCap='round';arcCtx.stroke();
-  const frac=Math.max(0,Math.min(1,score/100));
-  const col=score>=68?acc:score>=45?warn:danger;
-  if(frac>0){
-    arcCtx.beginPath();arcCtx.arc(cx,cy,r,Math.PI,Math.PI+(Math.PI*frac));
-    arcCtx.strokeStyle=col;arcCtx.lineWidth=10;arcCtx.lineCap='round';arcCtx.stroke();
+  // Theme
+  const themes = ['dark','light','oled','hc'];
+  const thMap = { dark:'', light:'light', oled:'oled', hc:'hc' };
+  function setTheme(t) {
+    document.body.className = thMap[t];
+    document.querySelectorAll('.th-btn').forEach((b,i) => b.classList.toggle('active', themes[i]===t));
   }
-  arcCtx.fillStyle=col;arcCtx.font='bold 22px JetBrains Mono,monospace';arcCtx.textAlign='center';
-  arcCtx.fillText(score>0?score+'':'—',cx,cy-6);
-  arcCtx.fillStyle=muted;arcCtx.font='10px Inter,sans-serif';
-  arcCtx.fillText('SIGNAL SCORE',cx,cy+10);
-  arcCtx.fillStyle=muted;arcCtx.font='9px JetBrains Mono,monospace';
-  arcCtx.textAlign='left';arcCtx.fillText('0',18,cy+18);
-  arcCtx.textAlign='right';arcCtx.fillText('100',142,cy+18);}
-function renderSpark(){
-  const el=document.getElementById('spark');
-  if(!pings.length){el.innerHTML='';return;}
-  const mx=Math.max(...pings,1);
-  el.innerHTML=pings.slice(-18).map(p=>{
-    const h=Math.max(8,Math.round((p/mx)*100));
-    const col=p<150?'var(--accent)':p<350?'var(--warn)':'var(--danger)';
-    return`<div class="sb" style="height:${h}%;background:${col}"></div>`;
-  }).join('');}
-function renderChips(){
-  document.getElementById('chips').innerHTML=pings.slice(-10).map(p=>{
-    const c=p<150?'g':p<350?'w':'d';
-    return`<span class="chip ${c}">${p}</span>`;
-  }).join('');}
-function avg(a){return a.length?Math.round(a.reduce((s,v)=>s+v,0)/a.length):0;}
-function jitter(a){
-  if(a.length<2)return 0;
-  const diffs=[];for(let i=1;i<a.length;i++)diffs.push(Math.abs(a[i]-a[i-1]));
-  return Math.round(avg(diffs));}
-// BUG FIX 2: loss() now uses dedicated counters instead of pings.length (which is capped at 30)
-function calcLoss(){
-  return lossAttempts>0?Math.round((lossFailures/lossAttempts)*100):0;}
-function colorClass(ms){return ms<150?'':ms<350?' w':' d';}
-function updateStability(ms){
-  const q=ms<150?'ok':ms<400?'warn':'fail';
-  stability.push(q);if(stability.length>20)stability.shift();
-  const ok=stability.filter(s=>s==='ok').length;
-  const sc=Math.round((ok/stability.length)*100);
-  document.getElementById('stabScore').textContent=sc+'%';
-  document.getElementById('stabScore').className='cv'+(sc>=70?'':sc>=40?' w':' d');
-  document.getElementById('stabLabel').textContent=sc>=80?'Very Stable':sc>=60?'Mostly Stable':sc>=40?'Variable':'Unstable';
-  document.getElementById('stabRow').innerHTML=stability.map(s=>
-    `<div class="stab-seg ${s}"></div>`).join('');}
-async function pingTarget(t){
-  const t0=performance.now();
-  try{
-    await fetch(t.url,{cache:'no-store',mode:'no-cors'});
-    return Math.round(performance.now()-t0);
-  }catch(e){
-    // BUG FIX 4: count fetch failures toward packet loss
-    lossFailures++;
-    return Math.round(performance.now()-t0);
-  }}
-async function probeTargets(){
-  const results=await Promise.all(TARGETS.map(async t=>({...t,ms:await pingTarget(t)})));
-  const card=document.getElementById('tgtCard');
-  // BUG FIX 5: tgt-row had no flex layout — bars/labels were overlapping
-  card.innerHTML=results.map(r=>{
-    const c=r.ms<150?'var(--accent)':r.ms<350?'var(--warn)':'var(--danger)';
-    const pct=Math.min(100,Math.round((r.ms/500)*100));
-    return`<div class="tgt-row">
-      <span class="tgt-name">${r.name}</span>
-      <div style="flex:1;margin:0 10px"><div class="pbar-wrap"><div class="pbar" style="width:${pct}%;background:${c};transition:width .6s"></div></div></div>
-      <span class="tgt-ms" style="color:${c}">${r.ms}ms</span>
-    </div>`;
-  }).join('');
-  return Math.min(...results.map(r=>r.ms));}
-function readConn(){
-  const nc=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
-  if(!nc)return null;
-  const type=(nc.type||'—').toUpperCase();
-  const eff=nc.effectiveType||'—';
-  const dl=nc.downlink;const rtt=nc.rtt;const sd=nc.saveData;
-  document.getElementById('cType').textContent=type;
-  document.getElementById('cEff').textContent='Effective: '+eff;
-  if(dl!==undefined){
-    document.getElementById('cDl').textContent=dl.toFixed(1);
-    document.getElementById('cDl').className='cv'+(dl>=5?'':dl>=1?' w':' d');
-    const tier=dl>=50?'🚀 Ultra (50+ Mbps)':dl>=25?'🚀 Fast (25+ Mbps)':dl>=10?'✅ Good (10+ Mbps)':dl>=4?'⚡ Decent (4+ Mbps)':dl>=1?'🐌 Slow (1+ Mbps)':'🔴 Very Slow';
-    const pct=Math.min(100,(dl/50)*100);
-    document.getElementById('cSpeed').textContent=tier;
-    document.getElementById('pSpeed').style.width=pct+'%';
+  document.querySelectorAll('.th-btn').forEach((b,i) => b.addEventListener('click', () => setTheme(themes[i])));
+
+  // Footer year
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  // State
+  let watchId = null, cameras = [], lastPos = null, alerting = false;
+  const RADIUS = 2000; // metres to search
+  const ALERT_DIST = 300; // metres for alert
+
+  // Haversine distance
+  function haversine(lat1,lon1,lat2,lon2) {
+    const R=6371000, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+    const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
   }
-  if(rtt!==undefined)document.getElementById('cRtt').textContent=rtt;
-  document.getElementById('cSave').textContent=sd?'⚠ Active':'Off';
-  return dl;}
-function set(id,val,fallback='—'){
-  const v=val||fallback;
-  if(GEO_FIELDS.some(f=>f[0]===id)){geoData[id]=v;renderGeoRows();}
-  else{const el=document.getElementById(id);if(el)el.textContent=v;}
-}
-async function fetchIP(){
-  try{
-    const r=await fetch('https://ipapi.co/json/',{cache:'no-store'});
-    const d=await r.json();ipData=d;
-    set('ip',d.ip);document.getElementById('ip').classList.remove('blink');
-    const isv6=d.ip&&d.ip.includes(':');
-    set('ipType',isv6?'IPv6 Address':'IPv4 Address');set('ipVer',isv6?'IPv6':'IPv4');
-    set('countryCode',d.country_code);
-    if(d.country_code){
-      const f=d.country_code.toUpperCase().split('').map(c=>String.fromCodePoint(0x1F1E6-65+c.charCodeAt(0))).join('');
-      document.getElementById('flag').textContent=f;
+
+  function fmtDist(m) { return m<1000 ? Math.round(m)+'m' : (m/1000).toFixed(1)+'km'; }
+
+  // Fetch cameras from Overpass API (free, no key)
+  async function fetchCameras(lat,lon) {
+    const query=`[out:json][timeout:10];(node["highway"="speed_camera"](around:${RADIUS},${lat},${lon});node["enforcement"="speed"](around:${RADIUS},${lat},${lon});node["man_made"="surveillance"]["surveillance:type"="camera"](around:${RADIUS},${lat},${lon}););out body;`;
+    const url=`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+    try {
+      const r=await fetch(url);
+      const j=await r.json();
+      cameras=(j.elements||[]).map(e=>({lat:e.lat,lon:e.lon,tags:e.tags||{}}));
+      document.getElementById('camCount').textContent=cameras.length;
+      updateCamList();
+    } catch(e) { setStatus('API error – retrying','warn'); }
+  }
+
+  function updateCamList() {
+    if(!lastPos||cameras.length===0){
+      document.getElementById('camList').innerHTML='<div class="no-cameras">No cameras in range</div>';
+      document.getElementById('nearVal').textContent='—';
+      return;
     }
-    const ispName=d.org?d.org.replace(/^AS\d+\s*/,''):'—';
-    set('isp',ispName);set('org',d.org);set('asn',d.asn);set('asnName',ispName.slice(0,32));
-    const ot=ispName.toLowerCase();
-    const netT=ot.includes('mobile')||ot.includes('cellular')||ot.includes('wireless')||ot.includes('4g')||ot.includes('lte')?'📱 Mobile/Cellular':ot.includes('fiber')||ot.includes('fibre')?'🔆 Fiber Optic':ot.includes('cable')?'📡 Cable':ot.includes('dsl')||ot.includes('adsl')?'📞 DSL':ot.includes('satellite')?'🛰 Satellite':'🌐 Broadband/Unknown';
-    set('netType',netT);set('country',d.country_name);
-    set('countryCodeFull',`${d.country_code||'—'} (${d.country_name||'—'})`);
-    const continents={AF:'Africa',AN:'Antarctica',AS:'Asia',EU:'Europe',NA:'North America',OC:'Oceania',SA:'South America'};
-    set('continent',d.continent_code?`${continents[d.continent_code]||d.continent_code} (${d.continent_code})`:'—');set('region',d.region);
-    set('regionCode',d.region_code);set('city',d.city);set('district',d.district||d.region||'—');set('suburb','— (GPS needed)');set('road','— (GPS needed)');set('gpsAcc','— (GPS needed)');
-    set('postal',d.postal);set('lat',d.latitude!=null?d.latitude.toFixed(4)+'°':'—');
-    set('lon',d.longitude!=null?d.longitude.toFixed(4)+'°':'—');set('tz',d.timezone);
-    set('utcOff',d.utc_offset?`UTC${d.utc_offset.replace(/(\d{2})$/,':$1')}`:'—');
-    try{
-      const lt=new Intl.DateTimeFormat('en-US',{timeZone:d.timezone,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());
-      set('localTime',lt);
-    }catch{set('localTime','—');}
-    set('calCode',d.country_calling_code?`+${d.country_calling_code.replace('+','')}`:d.country_code?'—':'—');
-    set('currency',d.currency?`${d.currency}${d.currency_name?' – '+d.currency_name:''}`:d.country_code?'—':'—');set('langs',d.languages||'—');
-  }catch(e){set('ip','Unavailable');document.getElementById('ip').classList.remove('blink');}
-}
-async function fetchGPS(){
-  const btn=document.getElementById('gpsBtn');
-  const status=document.getElementById('gpsStatus');
-  const badge=document.getElementById('srcBadge');
-  if(!navigator.geolocation){status.textContent='⚠ Geolocation not supported by browser';return;}
-  btn.disabled=true;btn.textContent='📡 Locating…';
-  status.textContent='Requesting GPS permission…';
-  navigator.geolocation.getCurrentPosition(async pos=>{
-    const {latitude:la,longitude:lo,accuracy:ac}=pos.coords;
-    set('lat',la.toFixed(6)+'°');set('lon',lo.toFixed(6)+'°');set('gpsAcc',ac?`±${Math.round(ac)}m`:'—');
-    status.textContent='📡 GPS acquired — fetching address via OpenStreetMap…';
-    try{
-      const url=`https://nominatim.openstreetmap.org/reverse?lat=${la}&lon=${lo}&format=json&addressdetails=1&zoom=18`;
-      const r=await fetch(url,{headers:{'Accept-Language':'en','User-Agent':'NetPulse-App/1.0'}});
-      const d=await r.json();
-      const a=d.address||{};
-      const pin=a.postcode||'—';
-      geoData._gpsLive=true;
-      set('postal',pin);
-      set('road',a.road||a.pedestrian||a.footway||a.path||'—');set('suburb',a.suburb||a.neighbourhood||a.quarter||a.hamlet||'—');
-      set('district',a.city_district||a.district||a.county||'—');set('city',a.city||a.town||a.village||a.municipality||'—');
-      set('region',a.state||a.province||'—');set('country',a.country||'—');
-      if(a.country_code){
-        const cc=a.country_code.toUpperCase();
-        set('countryCodeFull',`${cc} (${a.country||'—'})`);set('regionCode',cc);
-        const f=cc.split('').map(c=>String.fromCodePoint(0x1F1E6-65+c.charCodeAt(0))).join('');
-        document.getElementById('flag').textContent=f;
-        set('countryCode',cc);
-      }
-      badge.innerHTML=`<span class="src-dot gps"></span>GPS Verified`;
-      status.textContent=`✅ Real location from GPS · Accuracy ±${Math.round(ac)}m`;
-    }catch(e){status.textContent='⚠ Reverse geocoding failed — check connection';}
-    btn.disabled=false;btn.textContent='🔄 Refresh GPS';
-  },err=>{
-    const msgs={1:'Permission denied — please allow location access',2:'Position unavailable',3:'Request timed out'};
-    status.textContent='⚠ '+( msgs[err.code]||err.message);
-    btn.disabled=false;btn.textContent='📍 Use My GPS';
-  },{enableHighAccuracy:true,timeout:12000,maximumAge:0});
-}
-async function runCheck(){
-  const btn=document.getElementById('rbtn');
-  btn.disabled=true;btn.textContent='⟳  Deep Scanning…';
-  // BUG FIX 1: totalAttempts is now declared — increment it here
-  totalAttempts++;
-  lossAttempts++;
-  if(!navigator.onLine){
-    lossFailures++;
-    document.getElementById('sdot').classList.add('off');
-    document.getElementById('stext').textContent='🔴 OFFLINE';
-    // BUG FIX 6: gradeLabel used \n in textContent which doesn't render — use innerHTML
-    document.getElementById('grade').textContent='F';
-    document.getElementById('gradeLabel').innerHTML='No<br>Signal';
-    setBars(0,'d');drawArc(0);
-    btn.disabled=false;btn.textContent='⟳  Deep Scan';return;
+    const sorted=cameras.map(c=>({...c,dist:haversine(lastPos.lat,lastPos.lon,c.lat,c.lon)}))
+      .filter(c=>c.dist<RADIUS).sort((a,b)=>a.dist-b.dist).slice(0,5);
+    if(sorted.length===0){
+      document.getElementById('camList').innerHTML='<div class="no-cameras">None within range</div>';
+      document.getElementById('nearVal').textContent='—';
+      return;
+    }
+    document.getElementById('nearVal').textContent=fmtDist(sorted[0].dist);
+    const html=sorted.map(c=>{
+      const lim=c.tags['maxspeed']||c.tags['maxspeed:advisory']||'?';
+      const type=c.tags['enforcement']||c.tags['highway']||'Camera';
+      return `<div class="cam-item">
+        <div class="cam-icon">📷</div>
+        <div class="cam-info">
+          <div class="cam-name">${type.replace(/_/g,' ').replace(/\b\w/g,x=>x.toUpperCase())}</div>
+          <div class="cam-dist">${fmtDist(c.dist)} away</div>
+        </div>
+        <div class="cam-speed">${lim!='?'?lim+'km/h':''}</div>
+      </div>`;
+    }).join('');
+    document.getElementById('camList').innerHTML=html;
+    // Alert if nearest < ALERT_DIST
+    const nearDist=sorted[0].dist;
+    if(nearDist<ALERT_DIST && !alerting) {
+      alerting=true;
+      document.getElementById('alertBanner').classList.add('show');
+      document.getElementById('statusDot').className='status-dot danger';
+      setStatus('⚠ CAMERA IN '+fmtDist(nearDist),'danger');
+    } else if(nearDist>=ALERT_DIST) {
+      alerting=false;
+      document.getElementById('alertBanner').classList.remove('show');
+    }
   }
-  document.getElementById('sdot').classList.remove('off');
-  document.getElementById('stext').textContent='Probing…';
-  const dl=readConn();
-  const t0=performance.now();
-  const [_ip,bestTgt]=await Promise.all([
-    !ipData?fetchIP():Promise.resolve(),
-    probeTargets()
-  ]);
-  const ms=Math.round(performance.now()-t0);
-  pings.push(ms);if(pings.length>30)pings.shift();
-  pushScope(ms);
-  const mn=Math.min(...pings),mx=Math.max(...pings),av=avg(pings),jt=jitter(pings);
-  // BUG FIX 2: use dedicated loss counters instead of broken pings.length formula
-  const ls=calcLoss();
-  const grade=calcGrade(av,jt,ls);
-  const cc=(v)=>colorClass(v);
-  document.getElementById('lCur').textContent=ms+'ms';document.getElementById('lCur').className='lat-num'+cc(ms);
-  document.getElementById('lMin').textContent=mn+'ms';document.getElementById('lMin').className='lat-num'+cc(mn);
-  document.getElementById('lMax').textContent=mx+'ms';document.getElementById('lMax').className='lat-num'+colorClass(mx);
-  document.getElementById('lAvg').textContent=av+'ms';document.getElementById('lAvg').className='lat-num'+cc(av);
-  document.getElementById('lJit').textContent=jt+'ms';document.getElementById('lJit').className='lat-num'+(jt<30?'':jt<80?' w':' d');
-  document.getElementById('lLoss').textContent=ls+'%';document.getElementById('lLoss').className='lat-num'+(ls===0?'':ls<10?' w':' d');
-  renderChips();renderSpark();
-  updateStability(ms);
-  document.getElementById('grade').textContent=grade.g;
-  document.getElementById('grade').style.color=`var(--${grade.c==='g'?'accent':grade.c==='w'?'warn':'danger'})`;
-  // BUG FIX 6: use innerHTML so the line break renders
-  document.getElementById('gradeLabel').innerHTML=grade.lbl+'<br>Grade';
-  drawArc(grade.sc);
-  const lvl=grade.sc>=88?5:grade.sc>=70?4:grade.sc>=50?3:grade.sc>=30?2:1;
-  setBars(lvl, grade.c);
-  document.getElementById('stext').textContent=
-    ms<150?'🟢 Strong Signal':ms<300?'🟡 Good Signal':ms<500?'🟠 Fair Signal':'🔴 Weak Signal';
-  if(!onlineSince)onlineSince=new Date();
-  checks++;
-  document.getElementById('sChecks').textContent=checks;
-  document.getElementById('sOnline').textContent=onlineSince.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  const upt=Math.floor((Date.now()-onlineSince)/60000);
-  document.getElementById('sUptime').textContent=upt+'m';
-  document.getElementById('sBest').textContent=mn+'ms';
-  document.getElementById('sWorst').textContent=mx+'ms';
-  document.getElementById('sWorst').className='cv'+(mx>400?' d':mx>200?' w':'');
-  document.getElementById('sAvg').textContent=av+'ms';
-  btn.disabled=false;btn.textContent='⟳  Deep Scan';}
-document.getElementById('yr').textContent=new Date().getFullYear();
-const sv=localStorage.getItem('npt');
-setTheme(sv||'dark');
-initScope();initArc();drawArc(0);drawScope();
-window.addEventListener('online',()=>{onlineSince=new Date();runCheck();});
-window.addEventListener('offline',()=>{
-  document.getElementById('sdot').classList.add('off');
-  document.getElementById('stext').textContent='🔴 OFFLINE';
-  setBars(0,'d');stability.push('fail');updateStability(999);
-});
-const nc=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
-if(nc)nc.addEventListener('change',readConn);
-runCheck();
-setInterval(runCheck,30000);
-setInterval(()=>{
-  if(ipData&&ipData.timezone){
-    try{const lt=new Intl.DateTimeFormat('en-US',{timeZone:ipData.timezone,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());
-      geoData.localTime=lt;renderGeoRows();}catch{}
+
+  function setStatus(title,type='') {
+    document.getElementById('statusTitle').textContent=title;
+    const dot=document.getElementById('statusDot');
+    dot.className='status-dot'+(type?' '+type:'');
   }
-},1000);
+
+  function updateSpeed(speed,accuracy,altitude) {
+    const kmh=speed?Math.round(speed*3.6):0;
+    document.getElementById('speedVal').textContent=kmh;
+    document.getElementById('accVal').textContent=accuracy?Math.round(accuracy):'—';
+    document.getElementById('altVal').textContent=altitude?Math.round(altitude):'—';
+    // Ring (max 200 km/h)
+    const pct=Math.min(kmh/200,1);
+    const offset=565-(565*pct);
+    const ring=document.getElementById('ringFg');
+    ring.style.strokeDashoffset=offset;
+    ring.style.stroke=kmh>120?'var(--danger)':kmh>80?'var(--warn)':'var(--accent)';
+    document.getElementById('speedLabel').textContent=speed?'GPS ACTIVE':'NO MOVEMENT';
+  }
+
+  let fetchTimer=null;
+  function onPosition(pos) {
+    const {latitude:lat,longitude:lon,speed,accuracy,altitude}=pos.coords;
+    lastPos={lat,lon};
+    updateSpeed(speed,accuracy,altitude);
+    document.getElementById('statusSub').textContent=`${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    if(!alerting) setStatus('Monitoring Active','active');
+    updateCamList();
+    // Fetch cameras every 30s or on first fix
+    if(!fetchTimer) {
+      fetchCameras(lat,lon);
+      fetchTimer=setInterval(()=>{ if(lastPos) fetchCameras(lastPos.lat,lastPos.lon); },30000);
+    }
+  }
+
+  function onError(err) {
+    setStatus('GPS Error: '+err.message,'');
+    document.getElementById('statusSub').textContent='Check location permissions';
+  }
+
+  function startDetection() {
+    if(!navigator.geolocation){ alert('Geolocation not supported'); return; }
+    document.getElementById('startBtn').disabled=true;
+    document.getElementById('stopBtn').disabled=false;
+    setStatus('Acquiring GPS…','');
+    document.getElementById('statusDot').className='status-dot';
+    watchId=navigator.geolocation.watchPosition(onPosition,onError,
+      {enableHighAccuracy:true,timeout:15000,maximumAge:2000});
+  }
+
+  function stopDetection() {
+    if(watchId) navigator.geolocation.clearWatch(watchId);
+    if(fetchTimer) { clearInterval(fetchTimer); fetchTimer=null; }
+    watchId=null; lastPos=null; cameras=[];
+    document.getElementById('startBtn').disabled=false;
+    document.getElementById('stopBtn').disabled=true;
+    document.getElementById('speedVal').textContent='0';
+    document.getElementById('speedLabel').textContent='STOPPED';
+    document.getElementById('ringFg').style.strokeDashoffset=565;
+    document.getElementById('alertBanner').classList.remove('show');
+    document.getElementById('statusDot').className='status-dot';
+    document.getElementById('accVal').textContent='—';
+    document.getElementById('altVal').textContent='—';
+    document.getElementById('nearVal').textContent='—';
+    document.getElementById('camCount').textContent='0';
+    document.getElementById('camList').innerHTML='<div class="no-cameras">No cameras detected yet</div>';
+    setStatus('Detection Stopped','');
+    document.getElementById('statusSub').textContent='GPS location required';
+  }
 </script>
 </body>
 </html>
