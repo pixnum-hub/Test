@@ -76,6 +76,24 @@ textarea:focus, select:focus, input:focus{outline:2px solid var(--accent2); outl
 .checkfield{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--sub); cursor:pointer; margin-top:2px;}
 .checkfield input{width:16px; height:16px; accent-color:var(--accent);}
 
+.rangelabel{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;}
+.rangelabel span{font-size:13px; font-weight:700; color:var(--accent); min-width:18px; text-align:right;}
+input[type=range]{
+  width:100%; height:6px; border-radius:999px; background:var(--panel2); border:1px solid var(--line);
+  outline:none; -webkit-appearance:none; accent-color:var(--accent); cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+  background:var(--accent); border:2px solid var(--panel); cursor:pointer; box-shadow:0 0 0 1px var(--line);
+}
+input[type=range]::-moz-range-thumb{
+  width:18px; height:18px; border-radius:50%; background:var(--accent); border:2px solid var(--panel); cursor:pointer;
+}
+
+.previewhead{display:flex; justify-content:space-between; align-items:baseline; padding:0 3px;}
+.previewhead span:first-child{font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--sub);}
+.previewhint{font-size:11px; color:var(--sub); opacity:.75;}
+
 button.primary{
   width:100%; padding:14px; border-radius:12px; border:none; font-size:15px; font-weight:700;
   background:linear-gradient(100deg,var(--accent),var(--accent2)); color:#04131a; cursor:pointer;
@@ -238,16 +256,16 @@ footer strong{color:var(--text); font-weight:700;}
       </div>
     </div>
     <div class="field">
-      <label for="margin">Quiet zone margin</label>
-      <select id="margin">
-        <option value="1">Tight</option>
-        <option value="4" selected>Standard</option>
-        <option value="8">Wide</option>
-      </select>
+      <div class="rangelabel"><label for="margin" style="margin:0;">Quiet zone margin</label><span id="marginVal">4</span></div>
+      <input type="range" id="margin" min="0" max="10" step="1" value="4">
     </div>
     <button class="primary" id="genBtn">Generate QR Code</button>
   </div>
 
+  <div class="previewhead">
+    <span>Live Preview</span>
+    <span class="previewhint">Updates as you type</span>
+  </div>
   <div class="viewfinder">
     <span class="corner tl"></span><span class="corner tr"></span>
     <span class="corner bl"></span><span class="corner br"></span>
@@ -308,8 +326,26 @@ footer strong{color:var(--text); font-weight:700;}
         g.hidden = g.getAttribute("data-type-fields") !== currentType;
       });
       setStatus("");
+      autoPreview();
     });
   });
+
+  var marginEl = document.getElementById("margin");
+  var marginValEl = document.getElementById("marginVal");
+  marginEl.addEventListener("input", function(){
+    marginValEl.textContent = marginEl.value;
+  });
+
+  function debounce(fn, wait){
+    var t;
+    return function(){
+      clearTimeout(t);
+      t = setTimeout(fn, wait);
+    };
+  }
+  var autoPreview = debounce(function(){ generate(true); }, 500);
+  document.querySelector(".panel").addEventListener("input", autoPreview);
+  document.querySelector(".panel").addEventListener("change", autoPreview);
 
   var genBtn = document.getElementById("genBtn");
   var qrimg = document.getElementById("qrimg");
@@ -319,6 +355,15 @@ footer strong{color:var(--text); font-weight:700;}
   var downloadBtn = document.getElementById("downloadBtn");
   var copyBtn = document.getElementById("copyBtn");
   var currentUrl = "";
+  var genSeq = 0;
+
+  function resetPreview(){
+    qrimg.style.display = "none";
+    placeholder.style.display = "block";
+    downloadBtn.disabled = true;
+    copyBtn.disabled = true;
+    currentUrl = "";
+  }
 
   function hex(v){ return v.replace("#",""); }
   function val(id){ return document.getElementById(id).value.trim(); }
@@ -403,7 +448,8 @@ footer strong{color:var(--text); font-weight:700;}
     return [qrserver, quickchart];
   }
 
-  function tryLoad(urls, i){
+  function tryLoad(urls, i, myId){
+    if(myId !== genSeq) return;
     if(i >= urls.length){
       setStatus("Couldn't reach either QR service. Check your connection and try again.", true);
       genBtn.disabled = false;
@@ -413,10 +459,10 @@ footer strong{color:var(--text); font-weight:700;}
     var settled = false;
     var probe = new Image();
     var timer = setTimeout(function(){
-      if(!settled){ settled = true; tryLoad(urls, i + 1); }
+      if(!settled){ settled = true; tryLoad(urls, i + 1, myId); }
     }, 6000);
     probe.onload = function(){
-      if(settled) return;
+      if(settled || myId !== genSeq) return;
       settled = true; clearTimeout(timer);
       qrimg.src = url;
       qrimg.style.display = "block";
@@ -430,20 +476,25 @@ footer strong{color:var(--text); font-weight:700;}
     probe.onerror = function(){
       if(settled) return;
       settled = true; clearTimeout(timer);
-      tryLoad(urls, i + 1);
+      tryLoad(urls, i + 1, myId);
     };
     probe.src = url;
   }
 
-  function generate(){
+  function generate(silent){
     var payload = buildPayload();
-    if(payload.error){ setStatus(payload.error, true); return; }
+    if(payload.error){
+      if(silent){ setStatus(""); resetPreview(); }
+      else setStatus(payload.error, true);
+      return;
+    }
+    genSeq++;
     setStatus("Generating…");
     genBtn.disabled = true;
     scanline.classList.remove("active"); void scanline.offsetWidth; scanline.classList.add("active");
-    tryLoad(buildUrls(payload), 0);
+    tryLoad(buildUrls(payload), 0, genSeq);
   }
-  genBtn.addEventListener("click", generate);
+  genBtn.addEventListener("click", function(){ generate(false); });
 
   downloadBtn.addEventListener("click", function(){
     if(!currentUrl) return;
@@ -480,7 +531,7 @@ footer strong{color:var(--text); font-weight:700;}
   });
 
   dataEl.addEventListener("keydown", function(e){
-    if(e.key === "Enter" && (e.ctrlKey || e.metaKey)) generate();
+    if(e.key === "Enter" && (e.ctrlKey || e.metaKey)) generate(false);
   });
 
   if("serviceWorker" in navigator){
