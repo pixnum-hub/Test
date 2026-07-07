@@ -379,20 +379,21 @@ footer strong{color:var(--text); font-weight:700;}
       case "upi": {
         var id = val("upiId");
         if(!id) return { error: "Enter a UPI ID (VPA) first." };
-        var p = new URLSearchParams();
-        p.set("pa", id);
-        if(val("upiName")) p.set("pn", val("upiName"));
-        if(val("upiAmount")) p.set("am", val("upiAmount"));
-        p.set("cu", "INR");
-        if(val("upiNote")) p.set("tn", val("upiNote"));
-        return { text: "upi://pay?" + p.toString() };
+        var uName = val("upiName"), uAmt = val("upiAmount"), uNote = val("upiNote");
+        var text = "upi://pay?pa=" + id;
+        if(uName) text += "&pn=" + uName;
+        if(uAmt) text += "&am=" + uAmt;
+        text += "&cu=INR";
+        if(uNote) text += "&tn=" + uNote;
+        return { text: text };
       }
       case "email": {
         var to = val("emailTo");
         if(!to) return { error: "Enter an email address first." };
+        var subj = val("emailSubject"), body = val("emailBody");
         var q = [];
-        if(val("emailSubject")) q.push("subject=" + encodeURIComponent(val("emailSubject")));
-        if(val("emailBody")) q.push("body=" + encodeURIComponent(val("emailBody")));
+        if(subj) q.push("subject=" + subj);
+        if(body) q.push("body=" + body);
         return { text: "mailto:" + to + (q.length ? "?" + q.join("&") : "") };
       }
       case "phone": {
@@ -404,7 +405,7 @@ footer strong{color:var(--text); font-weight:700;}
         var snum = val("smsNum");
         if(!snum) return { error: "Enter a phone number first." };
         var msg = val("smsMsg");
-        return { text: "sms:" + snum + (msg ? "?body=" + encodeURIComponent(msg) : "") };
+        return { text: "sms:" + snum + (msg ? "?body=" + msg : "") };
       }
       case "wifi": {
         var ssid = val("wifiSsid");
