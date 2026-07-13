@@ -1,1158 +1,358 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>4K Camera — Manik Roy</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<title>LensCraft — Camera</title>
 <style>
-  :root{
-    --radius:18px;
-    --safe-t:env(safe-area-inset-top,0px);
-    --safe-b:env(safe-area-inset-bottom,0px);
-  }
-  [data-theme="dark"]{--bg:#0B0C0E;--fg:#EDEDED;--fg-dim:#9AA0A6;--accent:#FF8A3D;--panel:rgba(255,255,255,.07);--border:rgba(255,255,255,.18);}
-  [data-theme="light"]{--bg:#F5F3EF;--fg:#14161A;--fg-dim:#5B5F66;--accent:#C9601A;--panel:rgba(0,0,0,.05);--border:rgba(0,0,0,.16);}
-  [data-theme="oled"]{--bg:#000000;--fg:#FFFFFF;--fg-dim:#8A8A8A;--accent:#FF8A3D;--panel:rgba(255,255,255,.05);--border:rgba(255,255,255,.14);}
-  [data-theme="hc"]{--bg:#000000;--fg:#FFFFFF;--fg-dim:#FFEE00;--accent:#FFEE00;--panel:#000000;--border:#FFFFFF;}
+:root{
+  --bg:#0d0f12; --panel:#15181c; --panel2:#1b1f24; --text:#f0f2f4; --sub:#8a929c;
+  --accent:#4da3ff; --danger:#ff5252; --border:#252a30; --shutter:#ffffff;
+}
+[data-theme="light"]{
+  --bg:#f4f5f7; --panel:#ffffff; --panel2:#eceef1; --text:#14171a; --sub:#5b6570;
+  --accent:#2f7de1; --danger:#e0342b; --border:#dde1e6; --shutter:#14171a;
+}
+[data-theme="oled"]{
+  --bg:#000000; --panel:#000000; --panel2:#0a0a0a; --text:#ffffff; --sub:#7d7d7d;
+  --accent:#4da3ff; --danger:#ff5252; --border:#1a1a1a; --shutter:#ffffff;
+}
+[data-theme="hc"]{
+  --bg:#000000; --panel:#000000; --panel2:#000000; --text:#ffffff; --sub:#ffffff;
+  --accent:#ffe600; --danger:#ff3b3b; --border:#ffffff; --shutter:#ffe600;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;height:100%;background:#000;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:var(--text); font-variant-numeric:tabular-nums;
+  display:flex; justify-content:center; background:var(--bg);
+}
+.app{width:100%;max-width:480px;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);position:relative;}
 
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{height:100%;margin:0;}
-  body{
-    background:var(--bg); color:var(--fg);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    display:flex; flex-direction:column; min-height:100dvh;
-    transition:background .3s ease,color .3s ease;
-  }
-  .mono{font-family:"SFMono-Regular",Consolas,"Roboto Mono",monospace;}
+/* Top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;gap:6px;background:var(--panel);border-bottom:1px solid var(--border);z-index:5;}
+.topbar h1{font-size:15px;margin:0;font-weight:700;letter-spacing:.3px;}
+.iconbtn{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;}
+.iconbtn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.theme-row{display:flex;gap:5px;}
+.theme-row button{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);cursor:pointer;padding:0;}
+.theme-row button.on{border-color:var(--accent);}
+.t-dark{background:#111}.t-light{background:#f4f5f7}.t-oled{background:#000}.t-hc{background:#000;box-shadow:inset 0 0 0 2px #ffe600;}
 
-  .viewfinder{
-    position:relative; flex:1; overflow:hidden;
-    background:#000; border-radius:0 0 var(--radius) var(--radius);
-    margin:0; min-height:0;
-  }
-  video{
-    width:100%; height:100%; object-fit:cover; display:block;
-    transform:scaleX(var(--mirror,1));
-  }
+/* Viewfinder */
+.viewport{position:relative;flex:1;background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+video{width:100%;height:100%;object-fit:cover;}
+video.mirror{transform:scaleX(-1);}
+canvas.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;}
+.grid{position:absolute;inset:0;pointer-events:none;display:none;}
+.grid.on{display:block;}
+.grid::before,.grid::after{content:"";position:absolute;background:rgba(255,255,255,.4);}
+.grid-v1{position:absolute;left:33.33%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.4);}
+.grid-v2{position:absolute;left:66.66%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.4);}
+.grid-h1{position:absolute;top:33.33%;left:0;right:0;height:1px;background:rgba(255,255,255,.4);}
+.grid-h2{position:absolute;top:66.66%;left:0;right:0;height:1px;background:rgba(255,255,255,.4);}
+.timerNum{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:88px;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6);}
+.timerNum.show{display:flex;}
+.placeholder{color:var(--sub);font-size:14px;text-align:center;padding:0 20px;}
+.zoomWrap{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:70%;display:none;align-items:center;gap:8px;background:rgba(0,0,0,.4);padding:6px 12px;border-radius:20px;}
+.zoomWrap.on{display:flex;}
+.zoomWrap input{flex:1;accent-color:var(--accent);}
+.zoomWrap span{font-size:11px;color:#fff;min-width:30px;text-align:right;}
 
-  .bracket{position:absolute; width:26px; height:26px; border-color:var(--accent); opacity:.9; pointer-events:none;}
-  .tl{top:calc(14px + var(--safe-t)); left:14px; border-top:3px solid var(--accent); border-left:3px solid var(--accent);}
-  .tr{top:calc(14px + var(--safe-t)); right:14px; border-top:3px solid var(--accent); border-right:3px solid var(--accent);}
-  .bl{bottom:110px; left:14px; border-bottom:3px solid var(--accent); border-left:3px solid var(--accent);}
-  .br{bottom:110px; right:14px; border-bottom:3px solid var(--accent); border-right:3px solid var(--accent);}
+/* Filter strip */
+.filters{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;background:var(--panel);border-top:1px solid var(--border);}
+.filters::-webkit-scrollbar{display:none;}
+.fchip{flex:0 0 auto;padding:7px 13px;border-radius:16px;background:var(--panel2);border:1px solid var(--border);color:var(--sub);font-size:12px;cursor:pointer;white-space:nowrap;}
+.fchip.on{background:var(--accent);color:#fff;border-color:var(--accent);}
 
-  .overlay-top{
-    position:absolute; top:0; left:0; right:0;
-    padding:calc(14px + var(--safe-t)) 16px 10px;
-    display:flex; align-items:center; justify-content:space-between;
-    background:linear-gradient(rgba(0,0,0,.45),transparent);
-  }
-  #res{font-size:.78rem; letter-spacing:.06em; color:#fff; background:var(--panel); border:1px solid var(--border); padding:5px 10px; border-radius:999px;}
+/* Controls */
+.controls{background:var(--panel);padding:14px 16px 10px;border-top:1px solid var(--border);}
+.rowbtns{display:flex;justify-content:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.pill{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:14px;padding:7px 12px;font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:5px;}
+.pill.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.shutterRow{display:flex;align-items:center;justify-content:space-between;padding:0 10px;}
+.thumb{width:48px;height:48px;border-radius:10px;border:2px solid var(--border);background:var(--panel2) center/cover no-repeat;cursor:pointer;flex-shrink:0;}
+.shutterBtn{width:74px;height:74px;border-radius:50%;background:transparent;border:4px solid var(--shutter);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.shutterBtn::after{content:"";width:58px;height:58px;border-radius:50%;background:var(--shutter);}
+.shutterBtn:active::after{width:48px;height:48px;}
+.switchBtn{width:48px;height:48px;border-radius:50%;background:var(--panel2);border:1px solid var(--border);color:var(--text);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
 
-  .icon-group{display:flex; gap:8px;}
-  .icon-btn{
-    width:38px; height:38px; border-radius:50%; border:1px solid var(--border);
-    background:var(--panel); color:#fff; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
-  }
-  .icon-btn.active{background:var(--accent); border-color:var(--accent); color:#111;}
+/* Gallery modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:50;flex-direction:column;}
+.modal.on{display:flex;}
+.modal img{max-width:92%;max-height:74%;border-radius:8px;object-fit:contain;}
+.modalBar{display:flex;gap:12px;margin-top:16px;}
+.modalBar button{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:10px 18px;font-size:13px;cursor:pointer;}
+.modalBar button.close{background:var(--danger);color:#fff;border-color:var(--danger);}
+.count{position:absolute;top:12px;right:14px;color:#fff;font-size:12px;background:rgba(0,0,0,.5);padding:4px 9px;border-radius:10px;}
 
-  .zoom-row{
-    position:absolute; left:0; right:0; bottom:104px;
-    display:flex; align-items:center; justify-content:center; gap:8px; padding:0 24px;
-  }
-  .zoom-row.hidden{display:none;}
-  #zoomVal{font-size:.72rem; color:#fff; min-width:2.4em; text-align:center;}
-  #zoomSlider{flex:1; max-width:260px; accent-color:var(--accent);}
+/* Toast */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:9px 16px;border-radius:10px;font-size:12.5px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:60;}
+.toast.show{opacity:1;}
 
-  .focus-ring{
-    position:absolute; width:64px; height:64px; margin:-32px 0 0 -32px;
-    border:2px solid var(--accent); border-radius:50%; pointer-events:none;
-    opacity:0; transform:scale(1.3);
-  }
-  .focus-ring.go{animation:focusPulse .6s ease-out;}
-  @keyframes focusPulse{0%{opacity:1; transform:scale(1.3);}70%{opacity:1; transform:scale(1);}100%{opacity:0; transform:scale(1);}}
-
-  #countdown{
-    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
-    font-size:5rem; font-weight:700; color:#fff; background:rgba(0,0,0,.35); pointer-events:none;
-  }
-  #countdown.show{display:flex;}
-
-  .grid-overlay{
-    position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .2s;
-    background-image:linear-gradient(to right, rgba(255,255,255,.45) 1px, transparent 1px),
-                      linear-gradient(to bottom, rgba(255,255,255,.45) 1px, transparent 1px);
-    background-size:33.333% 33.333%;
-  }
-  .grid-overlay.show{opacity:1;}
-
-  .crop-mask{
-    position:absolute; pointer-events:none; box-shadow:0 0 0 9999px rgba(0,0,0,.6);
-    display:none; border:1px solid rgba(255,255,255,.5);
-  }
-  .crop-mask.show{display:block;}
-
-  #level{
-    position:absolute; top:50%; left:15%; right:15%; height:2px; pointer-events:none;
-    background:rgba(255,255,255,.5); transform-origin:center; display:none;
-  }
-  #level.show{display:block;}
-  #level::before{content:''; position:absolute; left:50%; top:-3px; width:8px; height:8px; margin-left:-4px; border-radius:50%; background:var(--fg-dim);}
-  #level.level-ok{background:var(--accent);}
-  #level.level-ok::before{background:var(--accent);}
-
-  #histogram{
-    position:absolute; width:120px; height:56px; background:rgba(0,0,0,.4);
-    border:1px solid var(--border); border-radius:8px; display:none;
-    top:calc(60px + var(--safe-t)); right:16px;
-  }
-  #histogram.show{display:block;}
-
-  .settings-btn{margin-left:0;}
-  #settingsPanel{
-    position:absolute; left:0; right:0; bottom:0; max-height:72%; overflow-y:auto;
-    background:var(--bg); border-top:1px solid var(--border); border-radius:16px 16px 0 0;
-    transform:translateY(100%); transition:transform .3s ease; z-index:30; padding-bottom:12px;
-  }
-  #settingsPanel.open{transform:translateY(0);}
-  .settings-head{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border);}
-  .settings-head h2{font-size:.9rem; margin:0; color:var(--fg);}
-  .setting-row{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:12px 16px; border-bottom:1px solid var(--border); font-size:.82rem; color:var(--fg); gap:12px;
-  }
-  .setting-row input[type="range"]{flex:1; accent-color:var(--accent);}
-  .segmented{display:flex; gap:6px; flex-wrap:wrap;}
-  .segmented button{
-    padding:5px 10px; border-radius:8px; border:1px solid var(--border);
-    background:transparent; color:var(--fg); font-size:.72rem; cursor:pointer;
-  }
-  .segmented button.active{background:var(--accent); border-color:var(--accent); color:#111;}
-  .switch{
-    width:42px; height:24px; border-radius:999px; border:1px solid var(--border);
-    background:var(--panel); position:relative; cursor:pointer; flex-shrink:0;
-  }
-  .switch::after{content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:var(--fg-dim); transition:transform .2s;}
-  .switch.on{background:var(--accent); border-color:var(--accent);}
-  .switch.on::after{transform:translateX(18px); background:#111;}
-
-  .overlay-bottom{
-    position:absolute; left:0; right:0; bottom:0;
-    padding:14px 20px calc(20px + var(--safe-b));
-    display:flex; align-items:center; justify-content:space-between;
-    background:linear-gradient(transparent,rgba(0,0,0,.55));
-    z-index:5;
-  }
-  .side-btn{
-    width:46px; height:46px; border-radius:50%; border:1px solid var(--border);
-    background:var(--panel); color:#fff; font-size:1.2rem; cursor:pointer;
-  }
-  #captureBtn{
-    width:76px; height:76px; border-radius:50%; background:#fff;
-    border:5px solid var(--accent); cursor:pointer; box-shadow:0 0 0 3px rgba(255,255,255,.15);
-    transition:transform .12s ease;
-  }
-  #captureBtn:active{transform:scale(.9);}
-  .hidden{display:none;}
-
-  #flash{
-    position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none;
-  }
-  #flash.go{animation:flash .35s ease-out;}
-  @keyframes flash{0%{opacity:.85;}100%{opacity:0;}}
-
-  #status{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    text-align:center; padding:24px; font-size:.9rem; color:var(--fg-dim); display:none;
-  }
-  #status.show{display:flex;}
-
-  #peakCanvas{position:absolute; inset:0; pointer-events:none; opacity:0; mix-blend-mode:screen;}
-  #peakCanvas.show{opacity:1;}
-  #zebraCanvas{position:absolute; inset:0; pointer-events:none; opacity:0; mix-blend-mode:screen;}
-  #zebraCanvas.show{opacity:1;}
-
-  #lockBadge{
-    font-size:.72rem; color:#111; background:var(--accent); border-radius:999px;
-    padding:5px 10px; font-weight:700; letter-spacing:.04em;
-  }
-
-  #captureBtn.rec{border-color:#E5484D; animation:recPulse 1.1s ease-in-out infinite;}
-  @keyframes recPulse{0%,100%{box-shadow:0 0 0 3px rgba(229,72,77,.25);}50%{box-shadow:0 0 0 9px rgba(229,72,77,.08);}}
-
-  .mode-label{
-    position:absolute; left:0; right:0; bottom:100px; text-align:center;
-    font-size:.72rem; letter-spacing:.08em; color:var(--accent); pointer-events:none; text-transform:uppercase;
-  }
-
-  footer{
-    text-align:center; padding:12px 16px calc(12px + var(--safe-b));
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-    font-size:.75rem; color:var(--fg-dim); border-top:1px solid var(--border);
-  }
-  footer strong{color:var(--fg); font-weight:600;}
-
-  @media(min-width:720px){
-    body{align-items:center;}
-    .viewfinder{max-width:900px; width:100%; margin:16px auto 0; border-radius:var(--radius); aspect-ratio:16/9;}
-    footer{max-width:900px;}
-  }
+footer{text-align:center;padding:10px 8px 14px;font-size:11px;color:var(--sub);background:var(--panel);line-height:1.5;}
 </style>
 </head>
 <body>
+<div class="app" data-theme="dark" id="app">
 
-  <section class="viewfinder">
+  <div class="topbar">
+    <h1>📷 LensCraft</h1>
+    <div class="theme-row" id="themeRow">
+      <button class="t-dark on" data-th="dark" title="Dark"></button>
+      <button class="t-light" data-th="light" title="Light"></button>
+      <button class="t-oled" data-th="oled" title="OLED"></button>
+      <button class="t-hc" data-th="hc" title="High Contrast"></button>
+    </div>
+  </div>
+
+  <div class="viewport" id="viewport">
     <video id="video" autoplay playsinline muted></video>
-    <div class="bracket tl"></div>
-    <div class="bracket tr"></div>
-    <div class="bracket bl"></div>
-    <div class="bracket br"></div>
-
-    <div class="overlay-top">
-      <span id="res" class="mono">— × —</span>
-      <span id="lockBadge" class="mono hidden">🔒 AE/AF</span>
-      <div class="icon-group">
-        <button id="flashBtn" class="icon-btn hidden" aria-label="Toggle flash">⚡</button>
-        <button id="soundBtn" class="icon-btn" aria-label="Toggle shutter sound">🔊</button>
-        <button id="themeBtn" class="icon-btn" aria-label="Toggle theme">◐</button>
-        <button id="gearBtn" class="icon-btn settings-btn" aria-label="Open settings">⚙</button>
-      </div>
+    <div class="placeholder" id="placeholder">Tap "Start Camera" below to begin. Camera access needed — works fully offline, no keys or accounts required.</div>
+    <div class="grid" id="grid"><div class="grid-v1"></div><div class="grid-v2"></div><div class="grid-h1"></div><div class="grid-h2"></div></div>
+    <div class="timerNum" id="timerNum"></div>
+    <canvas class="flash" id="flashCanvas"></canvas>
+    <div class="count" id="shotCount" style="display:none">0 shots</div>
+    <div class="zoomWrap" id="zoomWrap">
+      <span>1.0×</span><input type="range" id="zoomRange" min="1" max="5" step="0.1" value="1"><span id="zoomVal">1.0×</span>
     </div>
+  </div>
 
-    <div class="grid-overlay" id="gridOverlay"></div>
-    <div class="crop-mask" id="cropMask"></div>
-    <div id="level"></div>
-    <canvas id="histogram"></canvas>
-    <canvas id="peakCanvas"></canvas>
-    <canvas id="zebraCanvas"></canvas>
-    <div class="mode-label" id="modeLabel"></div>
+  <div class="filters" id="filters">
+    <div class="fchip on" data-f="none">Normal</div>
+    <div class="fchip" data-f="grayscale(1)">B&W</div>
+    <div class="fchip" data-f="sepia(.8)">Sepia</div>
+    <div class="fchip" data-f="contrast(1.3) saturate(1.4)">Vivid</div>
+    <div class="fchip" data-f="brightness(1.15) contrast(.95) saturate(.85)">Soft</div>
+    <div class="fchip" data-f="invert(1)">Invert</div>
+    <div class="fchip" data-f="grayscale(.3) contrast(1.2) brightness(.9)">Noir</div>
+    <div class="fchip" data-f="hue-rotate(200deg) saturate(1.5)">Cool</div>
+    <div class="fchip" data-f="hue-rotate(-25deg) saturate(1.3) brightness(1.05)">Warm</div>
+    <div class="fchip" data-f="contrast(1.1) brightness(1.05) saturate(1.2) drop-shadow(0 0 0 transparent)">Film</div>
+  </div>
 
-    <svg width="0" height="0" style="position:absolute">
-      <filter id="wbFilter" color-interpolation-filters="sRGB">
-        <feColorMatrix id="wbMatrix" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"/>
-      </filter>
-    </svg>
-
-    <div class="zoom-row hidden" id="zoomRow">
-      <input type="range" id="zoomSlider" min="1" max="1" step="0.1" value="1">
-      <span id="zoomVal" class="mono">1.0x</span>
+  <div class="controls">
+    <div class="rowbtns">
+      <button class="pill" id="startBtn">▶ Start Camera</button>
+      <button class="pill" id="gridBtn">▦ Grid</button>
+      <button class="pill" id="flashBtn">⚡ Flash</button>
+      <button class="pill" id="timerBtn">⏱ Off</button>
+      <button class="pill" id="zoomBtn">🔍 Zoom</button>
+      <button class="pill" id="ratioBtn">16:9</button>
     </div>
-
-    <div class="overlay-bottom">
-      <button id="switchBtn" class="side-btn" aria-label="Switch camera">⟲</button>
-      <button id="captureBtn" aria-label="Capture photo"></button>
-      <button id="timerBtn" class="side-btn mono" aria-label="Toggle self-timer">0s</button>
+    <div class="shutterRow">
+      <div class="thumb" id="thumb"></div>
+      <div class="shutterBtn" id="shutterBtn"></div>
+      <div class="switchBtn" id="switchBtn">⟲</div>
     </div>
+  </div>
 
-    <div class="focus-ring" id="focusRing"></div>
-    <div id="countdown" class="mono"></div>
-    <div id="flash"></div>
-    <div id="status"></div>
+  <footer>© Manik Roy <span id="year"></span>. All Rights Reserved.</footer>
 
-    <div id="settingsPanel">
-      <div class="settings-head"><h2>Settings</h2><button id="closeSettings" class="icon-btn" aria-label="Close settings">✕</button></div>
-      <div class="setting-row"><span>Grid overlay</span><div class="switch" id="gridSwitch"></div></div>
-      <div class="setting-row"><span>Level indicator</span><div class="switch" id="levelSwitch"></div></div>
-      <div class="setting-row"><span>Live histogram</span><div class="switch" id="histSwitch"></div></div>
-      <div class="setting-row hidden" id="mirrorRow"><span>Mirror selfie</span><div class="switch" id="mirrorSwitch"></div></div>
-      <div class="setting-row"><span>Aspect ratio</span>
-        <div class="segmented" id="ratioGroup">
-          <button data-ratio="full" class="active">Full</button>
-          <button data-ratio="16:9">16:9</button>
-          <button data-ratio="4:3">4:3</button>
-          <button data-ratio="1:1">1:1</button>
-        </div>
-      </div>
-      <div class="setting-row"><span>Resolution</span>
-        <div class="segmented" id="resGroup">
-          <button data-res="4k" class="active">4K</button>
-          <button data-res="1080">1080p</button>
-          <button data-res="720">720p</button>
-        </div>
-      </div>
-      <div class="setting-row hidden" id="exposureRow"><span>Exposure</span><input type="range" id="exposureSlider"></div>
-      <div class="setting-row"><span>Backlight compensation</span><div class="switch" id="backlightSwitch"></div></div>
-      <div class="setting-row"><span>Exposure warning (zebras)</span><div class="switch" id="zebraSwitch"></div></div>
-      <div class="setting-row"><span>Metering</span>
-        <div class="segmented" id="meterGroup">
-          <button data-meter="matrix" class="active">Matrix</button>
-          <button data-meter="center">Center</button>
-          <button data-meter="spot">Spot</button>
-        </div>
-      </div>
-      <div class="setting-row" id="hdrRow"><span>HDR look</span><div class="switch" id="hdrSwitch"></div></div>
-
-      <div class="settings-head"><h2>Pro Controls</h2></div>
-      <div class="setting-row"><span>Capture mode</span>
-        <div class="segmented" id="modeGroup">
-          <button data-mode="photo" class="active">Photo</button>
-          <button data-mode="burst">Burst</button>
-          <button data-mode="night">Night</button>
-          <button data-mode="pano">Pano</button>
-          <button data-mode="bracket">Bracket</button>
-        </div>
-      </div>
-      <div class="setting-row hidden" id="burstCountRow"><span>Burst count</span>
-        <div class="segmented" id="burstGroup">
-          <button data-n="3">3</button>
-          <button data-n="5" class="active">5</button>
-          <button data-n="10">10</button>
-        </div>
-      </div>
-      <div class="setting-row"><span>File format</span>
-        <div class="segmented" id="formatGroup">
-          <button data-fmt="png" class="active">PNG (lossless)</button>
-          <button data-fmt="jpeg">JPEG (smaller)</button>
-        </div>
-      </div>
-      <div class="setting-row"><span>Focus peaking</span><div class="switch" id="peakSwitch"></div></div>
-      <div class="setting-row"><span>Macro assist</span><div class="switch" id="macroSwitch"></div></div>
-      <div class="setting-row hidden" id="focusDistRow"><span>Focus distance</span><input type="range" id="focusDistSlider"></div>
-      <div class="setting-row"><span>Continuous AF</span><div class="switch on" id="afModeSwitch"></div></div>
-      <div class="setting-row"><span>Tap white balance</span><div class="switch" id="tapWbSwitch"></div></div>
-      <div class="setting-row hidden" id="isoRow"><span>ISO</span><input type="range" id="isoSlider"></div>
-      <div class="setting-row hidden" id="shutterRow"><span>Shutter</span><input type="range" id="shutterSlider"></div>
-      <div class="setting-row hidden" id="kelvinRow"><span>White balance (K)</span><input type="range" id="kelvinSlider"></div>
+  <div class="modal" id="modal">
+    <img id="modalImg" src="" alt="Captured photo">
+    <div class="modalBar">
+      <button id="dlBtn">⬇ Download</button>
+      <button id="shareBtn">↗ Share</button>
+      <button class="close" id="closeModal">Close</button>
     </div>
-  </section>
-
-  <footer>
-    <p>© Manik Roy <span id="year"></span>. All Rights Reserved.</p>
-  </footer>
-
-  <canvas id="canvas" hidden></canvas>
-  <a id="downloadLink" class="hidden" download></a>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
 
 <script>
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  const resEl = document.getElementById('res');
-  const statusEl = document.getElementById('status');
-  const themeBtn = document.getElementById('themeBtn');
-  const switchBtn = document.getElementById('switchBtn');
-  const captureBtn = document.getElementById('captureBtn');
-  const flashEl = document.getElementById('flash');
-  const downloadLink = document.getElementById('downloadLink');
-  const flashBtn = document.getElementById('flashBtn');
-  const soundBtn = document.getElementById('soundBtn');
-  const timerBtn = document.getElementById('timerBtn');
-  const zoomRow = document.getElementById('zoomRow');
-  const zoomSlider = document.getElementById('zoomSlider');
-  const zoomVal = document.getElementById('zoomVal');
-  const focusRing = document.getElementById('focusRing');
-  const countdownEl = document.getElementById('countdown');
-  const viewfinder = document.querySelector('.viewfinder');
-  const gearBtn = document.getElementById('gearBtn');
-  const closeSettings = document.getElementById('closeSettings');
-  const settingsPanel = document.getElementById('settingsPanel');
-  const gridOverlay = document.getElementById('gridOverlay');
-  const gridSwitch = document.getElementById('gridSwitch');
-  const levelEl = document.getElementById('level');
-  const levelSwitch = document.getElementById('levelSwitch');
-  const histCanvas = document.getElementById('histogram');
-  const histSwitch = document.getElementById('histSwitch');
-  const mirrorRow = document.getElementById('mirrorRow');
-  const mirrorSwitch = document.getElementById('mirrorSwitch');
-  const cropMask = document.getElementById('cropMask');
-  const ratioGroup = document.getElementById('ratioGroup');
-  const resGroup = document.getElementById('resGroup');
-  const exposureRow = document.getElementById('exposureRow');
-  const exposureSlider = document.getElementById('exposureSlider');
-  const hdrRow = document.getElementById('hdrRow');
-  const hdrSwitch = document.getElementById('hdrSwitch');
-  const modeGroup = document.getElementById('modeGroup');
-  const burstCountRow = document.getElementById('burstCountRow');
-  const burstGroup = document.getElementById('burstGroup');
-  const formatGroup = document.getElementById('formatGroup');
-  const peakSwitch = document.getElementById('peakSwitch');
-  const peakCanvas = document.getElementById('peakCanvas');
-  const macroSwitch = document.getElementById('macroSwitch');
-  const tapWbSwitch = document.getElementById('tapWbSwitch');
-  const isoRow = document.getElementById('isoRow');
-  const isoSlider = document.getElementById('isoSlider');
-  const shutterRow = document.getElementById('shutterRow');
-  const shutterSlider = document.getElementById('shutterSlider');
-  const kelvinRow = document.getElementById('kelvinRow');
-  const kelvinSlider = document.getElementById('kelvinSlider');
-  const modeLabel = document.getElementById('modeLabel');
-  const wbMatrix = document.getElementById('wbMatrix');
-  const backlightSwitch = document.getElementById('backlightSwitch');
-  const zebraSwitch = document.getElementById('zebraSwitch');
-  const zebraCanvas = document.getElementById('zebraCanvas');
-  const meterGroup = document.getElementById('meterGroup');
-  const focusDistRow = document.getElementById('focusDistRow');
-  const focusDistSlider = document.getElementById('focusDistSlider');
-  const afModeSwitch = document.getElementById('afModeSwitch');
-  const lockBadge = document.getElementById('lockBadge');
+document.getElementById('year').textContent = new Date().getFullYear();
 
-  document.getElementById('year').textContent = new Date().getFullYear();
+// ---------- Theme ----------
+const app = document.getElementById('app');
+document.getElementById('themeRow').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  const th = b.dataset.th;
+  app.setAttribute('data-theme', th);
+  document.querySelectorAll('.theme-row button').forEach(x=>x.classList.toggle('on', x===b));
+  localStorage.setItem('lc_theme', th);
+});
+(function(){
+  const saved = localStorage.getItem('lc_theme');
+  if(saved){ app.setAttribute('data-theme', saved);
+    document.querySelectorAll('.theme-row button').forEach(x=>x.classList.toggle('on', x.dataset.th===saved)); }
+})();
 
-  const themes = [
-    {id:'dark', icon:'◐'},
-    {id:'light', icon:'☀'},
-    {id:'oled', icon:'●'},
-    {id:'hc', icon:'◆'}
-  ];
-  let themeIdx = 0;
-  themeBtn.addEventListener('click', () => {
-    themeIdx = (themeIdx + 1) % themes.length;
-    document.documentElement.dataset.theme = themes[themeIdx].id;
-    themeBtn.textContent = themes[themeIdx].icon;
-  });
+// ---------- State ----------
+let stream=null, currentFacing='environment', track=null, capabilities=null;
+let currentFilter='none', gridOn=false, timerSec=0, mirrored=false, shots=0;
+const video=document.getElementById('video'), placeholder=document.getElementById('placeholder');
+const toastEl=document.getElementById('toast');
+function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toastEl.classList.remove('show'),1800); }
 
-  let stream = null;
-  let facing = 'environment';
-  let track = null;
-  let torchOn = false;
-  let soundOn = true;
-  let timerSecs = 0;
-  let currentRatio = 'full';
-  let currentRes = '4k';
-  let mirrorSave = false;
-  let histLoop = null;
-  let captureMode = 'photo';
-  let burstCount = 5;
-  let captureFormat = 'png';
-  let peakLoop = null;
-  let macroOn = false;
-  let macroZoomApplied = false;
-  let tapWbOn = false;
-  let panoActive = false;
-  let panoTimer = null;
-  let panoCanvas = null, panoCtx = null, panoX = 0;
-  let aeafLocked = false;
-  let meteringMode = 'matrix';
-  let backlightOn = false;
-  let zebraLoop = null;
-  let continuousAF = true;
-
-  const resPresets = {'4k':{w:3840,h:2160}, '1080':{w:1920,h:1080}, '720':{w:1280,h:720}};
-
-  gearBtn.addEventListener('click', () => settingsPanel.classList.add('open'));
-  closeSettings.addEventListener('click', () => settingsPanel.classList.remove('open'));
-
-  function toggleSwitch(el, on){ el.classList.toggle('on', on); }
-
-  gridSwitch.addEventListener('click', () => {
-    const on = !gridSwitch.classList.contains('on');
-    toggleSwitch(gridSwitch, on);
-    gridOverlay.classList.toggle('show', on);
-  });
-
-  levelSwitch.addEventListener('click', async () => {
-    const on = !levelSwitch.classList.contains('on');
-    if(on && typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission){
-      try{ await DeviceOrientationEvent.requestPermission(); }catch(e){}
-    }
-    toggleSwitch(levelSwitch, on);
-    levelEl.classList.toggle('show', on);
-  });
-
-  window.addEventListener('deviceorientation', (e) => {
-    if(!levelEl.classList.contains('show') || e.gamma === null) return;
-    const angle = Math.max(-45, Math.min(45, e.gamma));
-    levelEl.style.transform = 'rotate(' + (-angle) + 'deg)';
-    levelEl.classList.toggle('level-ok', Math.abs(angle) < 1.5);
-  });
-
-  histSwitch.addEventListener('click', () => {
-    const on = !histSwitch.classList.contains('on');
-    toggleSwitch(histSwitch, on);
-    histCanvas.classList.toggle('show', on);
-    if(on) startHistogram(); else stopHistogram();
-  });
-
-  function startHistogram(){
-    histCanvas.width = 120; histCanvas.height = 56;
-    const hctx = histCanvas.getContext('2d');
-    const sample = document.createElement('canvas');
-    sample.width = 64; sample.height = 36;
-    const sctx = sample.getContext('2d');
-    function draw(){
-      if(video.videoWidth){
-        sctx.drawImage(video, 0, 0, sample.width, sample.height);
-        const data = sctx.getImageData(0, 0, sample.width, sample.height).data;
-        const bins = new Array(32).fill(0);
-        for(let i = 0; i < data.length; i += 4){
-          const lum = (data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114) / 255;
-          bins[Math.min(31, Math.floor(lum * 32))]++;
-        }
-        const maxBin = Math.max(...bins, 1);
-        hctx.clearRect(0, 0, 120, 56);
-        bins.forEach((v, i) => {
-          const h = (v / maxBin) * 52;
-          hctx.fillStyle = '#FF8A3D';
-          hctx.fillRect(i * 3.75, 56 - h, 3, h);
-        });
-      }
-      histLoop = requestAnimationFrame(draw);
-    }
-    draw();
+// ---------- Camera start/stop ----------
+async function startCamera(facing){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    toast('Camera API not supported on this browser'); return;
   }
-  function stopHistogram(){ if(histLoop) cancelAnimationFrame(histLoop); histLoop = null; }
-
-  mirrorSwitch.addEventListener('click', () => {
-    mirrorSave = !mirrorSave;
-    toggleSwitch(mirrorSwitch, mirrorSave);
-  });
-
-  function coverFit(srcW, srcH, ratio){
-    const srcRatio = srcW / srcH;
-    let w, h;
-    if(srcRatio > ratio){ h = srcH; w = srcH * ratio; }
-    else { w = srcW; h = srcW / ratio; }
-    return {x:(srcW - w) / 2, y:(srcH - h) / 2, w, h};
+  try{
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+    const constraints = { video:{ facingMode:{ideal:facing}, width:{ideal:1920}, height:{ideal:1080} }, audio:false };
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = stream;
+    track = stream.getVideoTracks()[0];
+    capabilities = track.getCapabilities ? track.getCapabilities() : {};
+    currentFacing = facing;
+    mirrored = facing==='user';
+    video.classList.toggle('mirror', mirrored);
+    placeholder.style.display='none';
+    document.getElementById('startBtn').textContent='⏹ Stop';
+    document.getElementById('shotCount').style.display='block';
+    setupZoom();
+    setupFlashAvailability();
+  }catch(err){
+    toast('Camera access denied or unavailable');
   }
-  const ratioValues = {'16:9':16/9, '4:3':4/3, '1:1':1};
+}
+function stopCamera(){
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  stream=null; video.srcObject=null;
+  placeholder.style.display='flex';
+  document.getElementById('startBtn').textContent='▶ Start Camera';
+}
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  if(stream) stopCamera(); else startCamera(currentFacing);
+});
+document.getElementById('switchBtn').addEventListener('click', ()=>{
+  if(!stream){ toast('Start the camera first'); return; }
+  startCamera(currentFacing==='environment' ? 'user' : 'environment');
+});
 
-  function updateCropMask(){
-    if(currentRatio === 'full'){ cropMask.classList.remove('show'); return; }
-    const rect = viewfinder.getBoundingClientRect();
-    const fit = coverFit(rect.width, rect.height, ratioValues[currentRatio]);
-    cropMask.style.left = fit.x + 'px';
-    cropMask.style.top = fit.y + 'px';
-    cropMask.style.width = fit.w + 'px';
-    cropMask.style.height = fit.h + 'px';
-    cropMask.classList.add('show');
+// ---------- Grid ----------
+document.getElementById('gridBtn').addEventListener('click', function(){
+  gridOn=!gridOn;
+  document.getElementById('grid').classList.toggle('on', gridOn);
+  this.classList.toggle('active', gridOn);
+});
+
+// ---------- Flash / torch ----------
+function setupFlashAvailability(){
+  const flashBtn=document.getElementById('flashBtn');
+  if(capabilities && capabilities.torch){ flashBtn.style.opacity=1; }
+  else{ flashBtn.style.opacity=.5; }
+}
+let torchOn=false;
+document.getElementById('flashBtn').addEventListener('click', async function(){
+  if(!track || !capabilities || !capabilities.torch){ toast('Torch not supported on this device'); return; }
+  torchOn=!torchOn;
+  try{ await track.applyConstraints({advanced:[{torch:torchOn}]}); this.classList.toggle('active', torchOn); }
+  catch(e){ toast('Could not toggle torch'); }
+});
+
+// ---------- Timer ----------
+const timerOpts=[0,3,10]; let timerIdx=0;
+document.getElementById('timerBtn').addEventListener('click', function(){
+  timerIdx=(timerIdx+1)%timerOpts.length; timerSec=timerOpts[timerIdx];
+  this.textContent = timerSec===0 ? '⏱ Off' : '⏱ '+timerSec+'s';
+  this.classList.toggle('active', timerSec!==0);
+});
+
+// ---------- Zoom ----------
+function setupZoom(){
+  const zoomBtn=document.getElementById('zoomBtn');
+  if(capabilities && capabilities.zoom){ zoomBtn.style.opacity=1; }
+  else{ zoomBtn.style.opacity=.5; }
+}
+document.getElementById('zoomBtn').addEventListener('click', function(){
+  const wrap=document.getElementById('zoomWrap');
+  if(!capabilities || !capabilities.zoom){ toast('Zoom not supported on this device'); return; }
+  wrap.classList.toggle('on');
+  this.classList.toggle('active', wrap.classList.contains('on'));
+  const range=document.getElementById('zoomRange');
+  range.min=capabilities.zoom.min; range.max=capabilities.zoom.max; range.step=capabilities.zoom.step||0.1;
+});
+document.getElementById('zoomRange').addEventListener('input', async function(){
+  document.getElementById('zoomVal').textContent=parseFloat(this.value).toFixed(1)+'×';
+  if(track) try{ await track.applyConstraints({advanced:[{zoom:parseFloat(this.value)}]}); }catch(e){}
+});
+
+// ---------- Aspect ratio ----------
+const ratios=['16:9','1:1','4:3']; let ratioIdx=0;
+document.getElementById('ratioBtn').addEventListener('click', function(){
+  ratioIdx=(ratioIdx+1)%ratios.length;
+  this.textContent=ratios[ratioIdx];
+  const vp=document.getElementById('viewport');
+  vp.style.aspectRatio = ratios[ratioIdx]==='16:9' ? '' : ratios[ratioIdx].replace(':','/');
+});
+
+// ---------- Filters ----------
+document.getElementById('filters').addEventListener('click', e=>{
+  const c=e.target.closest('.fchip'); if(!c) return;
+  document.querySelectorAll('.fchip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on');
+  currentFilter = c.dataset.f;
+  video.style.filter = currentFilter==='none' ? '' : currentFilter;
+});
+
+// ---------- Capture ----------
+let lastPhoto=null;
+async function doCapture(){
+  if(!stream){ toast('Start the camera first'); return; }
+  const w=video.videoWidth, h=video.videoHeight;
+  const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+  const ctx=canvas.getContext('2d');
+  ctx.filter = currentFilter==='none' ? 'none' : currentFilter;
+  if(mirrored){ ctx.translate(w,0); ctx.scale(-1,1); }
+  ctx.drawImage(video,0,0,w,h);
+  const dataUrl=canvas.toDataURL('image/jpeg',0.92);
+  lastPhoto=dataUrl;
+  shots++; document.getElementById('shotCount').textContent=shots+' shot'+(shots===1?'':'s');
+  document.getElementById('thumb').style.backgroundImage=`url(${dataUrl})`;
+  flashEffect();
+}
+function flashEffect(){
+  const fc=document.getElementById('flashCanvas');
+  fc.style.transition='none'; fc.style.opacity=1;
+  requestAnimationFrame(()=>{ fc.style.transition='opacity .3s'; fc.style.opacity=0; });
+}
+document.getElementById('shutterBtn').addEventListener('click', async ()=>{
+  if(timerSec>0){
+    const tEl=document.getElementById('timerNum'); tEl.classList.add('show');
+    for(let i=timerSec;i>0;i--){ tEl.textContent=i; await new Promise(r=>setTimeout(r,1000)); }
+    tEl.classList.remove('show');
   }
-  window.addEventListener('resize', updateCropMask);
+  doCapture();
+});
 
-  ratioGroup.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...ratioGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentRatio = btn.dataset.ratio;
-    updateCropMask();
+// ---------- Gallery modal ----------
+document.getElementById('thumb').addEventListener('click', ()=>{
+  if(!lastPhoto){ toast('No photo captured yet'); return; }
+  document.getElementById('modalImg').src=lastPhoto;
+  document.getElementById('modal').classList.add('on');
+});
+document.getElementById('closeModal').addEventListener('click', ()=> document.getElementById('modal').classList.remove('on'));
+document.getElementById('dlBtn').addEventListener('click', ()=>{
+  const a=document.createElement('a'); a.href=lastPhoto; a.download='lenscraft_'+Date.now()+'.jpg'; a.click();
+  toast('Photo saved');
+});
+document.getElementById('shareBtn').addEventListener('click', async ()=>{
+  try{
+    const res=await fetch(lastPhoto); const blob=await res.blob();
+    const file=new File([blob],'lenscraft.jpg',{type:'image/jpeg'});
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:'LensCraft Photo'});
+    } else { toast('Sharing not supported — use Download instead'); }
+  }catch(e){ toast('Share failed'); }
+});
+
+// ---------- Keyboard (desktop testing) ----------
+document.addEventListener('keydown', e=>{ if(e.code==='Space'){ e.preventDefault(); document.getElementById('shutterBtn').click(); } });
+
+// ---------- Service worker guard (skip in sandboxed preview) ----------
+if('serviceWorker' in navigator && !location.hostname.includes('claudeusercontent.com') && window.top===window){
+  window.addEventListener('load', ()=>{
+    const swCode = `self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',e=>{});`;
+    const blob = new Blob([swCode], {type:'application/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
   });
-
-  resGroup.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...resGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentRes = btn.dataset.res;
-    startCamera(facing);
-  });
-
-  exposureSlider.addEventListener('input', async () => {
-    if(!track) return;
-    try{ await track.applyConstraints({advanced:[{exposureCompensation:Number(exposureSlider.value)}]}); }catch(e){}
-  });
-
-  isoSlider.addEventListener('input', async () => {
-    if(!track) return;
-    try{ await track.applyConstraints({advanced:[{iso:Number(isoSlider.value)}]}); }catch(e){}
-  });
-
-  shutterSlider.addEventListener('input', async () => {
-    if(!track) return;
-    try{ await track.applyConstraints({advanced:[{exposureMode:'manual', exposureTime:Number(shutterSlider.value)}]}); }catch(e){}
-  });
-
-  kelvinSlider.addEventListener('input', async () => {
-    if(!track) return;
-    try{ await track.applyConstraints({advanced:[{whiteBalanceMode:'manual', colorTemperature:Number(kelvinSlider.value)}]}); }catch(e){}
-  });
-
-  focusDistSlider.addEventListener('input', async () => {
-    if(!track) return;
-    try{ await track.applyConstraints({advanced:[{focusMode:'manual', focusDistance:Number(focusDistSlider.value)}]}); }catch(e){}
-  });
-
-  afModeSwitch.addEventListener('click', async () => {
-    continuousAF = !continuousAF;
-    toggleSwitch(afModeSwitch, continuousAF);
-    if(!track || aeafLocked) return;
-    try{ await track.applyConstraints({advanced:[{focusMode: continuousAF ? 'continuous' : 'manual'}]}); }catch(e){}
-  });
-
-  meterGroup.addEventListener('click', async (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...meterGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    meteringMode = btn.dataset.meter;
-    if(meteringMode === 'center' && track){
-      try{ await track.applyConstraints({advanced:[{pointsOfInterest:[{x:0.5, y:0.5}]}]}); }catch(e){}
-    }
-  });
-
-  backlightSwitch.addEventListener('click', async () => {
-    backlightOn = !backlightOn;
-    toggleSwitch(backlightSwitch, backlightOn);
-    if(!track) return;
-    const caps = track.getCapabilities ? track.getCapabilities() : {};
-    if(caps.exposureCompensation){
-      const boosted = backlightOn
-        ? Math.min(caps.exposureCompensation.max, Number(exposureSlider.value || 0) + 1)
-        : Math.max(caps.exposureCompensation.min, Number(exposureSlider.value || 0) - 1);
-      exposureSlider.value = boosted;
-      try{ await track.applyConstraints({advanced:[{exposureCompensation:boosted}]}); }catch(e){}
-    }
-  });
-
-  zebraSwitch.addEventListener('click', () => {
-    const on = !zebraSwitch.classList.contains('on');
-    toggleSwitch(zebraSwitch, on);
-    zebraCanvas.classList.toggle('show', on);
-    if(on) startZebra(); else stopZebra();
-  });
-
-  function startZebra(){
-    const w = 160, h = 90;
-    const sample = document.createElement('canvas');
-    sample.width = w; sample.height = h;
-    const sctx = sample.getContext('2d', {willReadFrequently:true});
-    function draw(){
-      if(video.videoWidth){
-        const rect = viewfinder.getBoundingClientRect();
-        zebraCanvas.width = w; zebraCanvas.height = h;
-        zebraCanvas.style.width = rect.width + 'px';
-        zebraCanvas.style.height = rect.height + 'px';
-        sctx.drawImage(video, 0, 0, w, h);
-        const d = sctx.getImageData(0, 0, w, h).data;
-        const zctx = zebraCanvas.getContext('2d');
-        zctx.clearRect(0, 0, w, h);
-        zctx.fillStyle = '#FF3B3B';
-        for(let i = 0; i < d.length; i += 4){
-          const lum = (d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114);
-          if(lum > 244){
-            const px = (i / 4) % w, py = Math.floor((i / 4) / w);
-            if((px + py) % 4 < 2) zctx.fillRect(px, py, 1, 1);
-          }
-        }
-      }
-      zebraLoop = requestAnimationFrame(draw);
-    }
-    draw();
-  }
-  function stopZebra(){ if(zebraLoop) cancelAnimationFrame(zebraLoop); zebraLoop = null; }
-
-  async function toggleAeAfLock(x, y){
-    if(!track) return;
-    aeafLocked = !aeafLocked;
-    lockBadge.classList.toggle('hidden', !aeafLocked);
-    if(navigator.vibrate) navigator.vibrate(30);
-    if(aeafLocked){
-      const s = track.getSettings ? track.getSettings() : {};
-      const advanced = {focusMode:'manual'};
-      if(s.focusDistance !== undefined) advanced.focusDistance = s.focusDistance;
-      if(s.exposureTime !== undefined){ advanced.exposureMode = 'manual'; advanced.exposureTime = s.exposureTime; }
-      if(s.iso !== undefined) advanced.iso = s.iso;
-      try{ await track.applyConstraints({advanced:[advanced]}); }catch(e){}
-    }else{
-      try{
-        await track.applyConstraints({advanced:[{
-          focusMode: continuousAF ? 'continuous' : 'manual',
-          exposureMode:'continuous'
-        }]});
-      }catch(e){}
-    }
-  }
-
-  hdrSwitch.addEventListener('click', async () => {
-    const on = !hdrSwitch.classList.contains('on');
-    toggleSwitch(hdrSwitch, on);
-    if(track){ try{ await track.applyConstraints({advanced:[{hdr:on}]}); }catch(e){} }
-  });
-
-  async function startCamera(mode){
-    if(stream) stream.getTracks().forEach(t => t.stop());
-    statusEl.classList.remove('show');
-    const preset = resPresets[currentRes];
-    const constraints = {
-      audio:false,
-      video:{
-        facingMode:{ideal:mode},
-        width:{ideal:preset.w},
-        height:{ideal:preset.h}
-      }
-    };
-    try{
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      video.srcObject = stream;
-      video.style.setProperty('--mirror', mode === 'user' ? -1 : 1);
-      track = stream.getVideoTracks()[0];
-      video.onloadedmetadata = () => {
-        resEl.textContent = video.videoWidth + ' × ' + video.videoHeight;
-        updateCropMask();
-      };
-      setupCapabilities();
-    }catch(err){
-      statusEl.textContent = 'Camera unavailable: ' + (err.message || err.name || 'permission denied. Please allow camera access.');
-      statusEl.classList.add('show');
-    }
-  }
-
-  function setupCapabilities(){
-    torchOn = false;
-    flashBtn.classList.add('hidden');
-    flashBtn.classList.remove('active');
-    zoomRow.classList.add('hidden');
-    exposureRow.classList.add('hidden');
-    isoRow.classList.add('hidden');
-    shutterRow.classList.add('hidden');
-    kelvinRow.classList.add('hidden');
-    focusDistRow.classList.add('hidden');
-    mirrorRow.classList.toggle('hidden', facing !== 'user');
-    aeafLocked = false;
-    lockBadge.classList.add('hidden');
-    if(!track || !track.getCapabilities) return;
-    const caps = track.getCapabilities();
-    if(caps.torch){ flashBtn.classList.remove('hidden'); }
-    if(caps.zoom){
-      zoomRow.classList.remove('hidden');
-      zoomSlider.min = caps.zoom.min;
-      zoomSlider.max = caps.zoom.max;
-      zoomSlider.step = caps.zoom.step || 0.1;
-      zoomSlider.value = caps.zoom.min;
-      zoomVal.textContent = Number(caps.zoom.min).toFixed(1) + 'x';
-    }
-    if(caps.exposureCompensation){
-      exposureRow.classList.remove('hidden');
-      exposureSlider.min = caps.exposureCompensation.min;
-      exposureSlider.max = caps.exposureCompensation.max;
-      exposureSlider.step = caps.exposureCompensation.step || 0.1;
-      exposureSlider.value = 0;
-    }
-    if(caps.iso){
-      isoRow.classList.remove('hidden');
-      isoSlider.min = caps.iso.min; isoSlider.max = caps.iso.max;
-      isoSlider.step = caps.iso.step || 1; isoSlider.value = caps.iso.min;
-    }
-    if(caps.exposureTime){
-      shutterRow.classList.remove('hidden');
-      shutterSlider.min = caps.exposureTime.min; shutterSlider.max = caps.exposureTime.max;
-      shutterSlider.step = caps.exposureTime.step || 1; shutterSlider.value = caps.exposureTime.min;
-    }
-    if(caps.colorTemperature){
-      kelvinRow.classList.remove('hidden');
-      kelvinSlider.min = caps.colorTemperature.min; kelvinSlider.max = caps.colorTemperature.max;
-      kelvinSlider.step = caps.colorTemperature.step || 50;
-      kelvinSlider.value = Math.round((caps.colorTemperature.min + caps.colorTemperature.max) / 2);
-    }
-    if(caps.focusDistance){
-      focusDistRow.classList.remove('hidden');
-      focusDistSlider.min = caps.focusDistance.min; focusDistSlider.max = caps.focusDistance.max;
-      focusDistSlider.step = caps.focusDistance.step || 0.01;
-      focusDistSlider.value = caps.focusDistance.max;
-    }
-    if(caps.focusMode && caps.focusMode.includes('continuous')){
-      try{ track.applyConstraints({advanced:[{focusMode: continuousAF ? 'continuous' : 'manual'}]}); }catch(e){}
-    }
-  }
-
-  function beep(){
-    if(!soundOn) return;
-    try{
-      const ctxA = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctxA.createOscillator();
-      const gain = ctxA.createGain();
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(.25, ctxA.currentTime);
-      gain.gain.exponentialRampToValueAtTime(.001, ctxA.currentTime + .15);
-      osc.connect(gain).connect(ctxA.destination);
-      osc.start();
-      osc.stop(ctxA.currentTime + .15);
-    }catch(e){}
-  }
-
-  flashBtn.addEventListener('click', async () => {
-    if(!track) return;
-    torchOn = !torchOn;
-    try{ await track.applyConstraints({advanced:[{torch:torchOn}]}); }catch(e){}
-    flashBtn.classList.toggle('active', torchOn);
-  });
-
-  soundBtn.addEventListener('click', () => {
-    soundOn = !soundOn;
-    soundBtn.textContent = soundOn ? '🔊' : '🔇';
-    soundBtn.classList.toggle('active', !soundOn);
-  });
-
-  const timerOptions = [0, 3, 10];
-  let timerIdx = 0;
-  timerBtn.addEventListener('click', () => {
-    timerIdx = (timerIdx + 1) % timerOptions.length;
-    timerSecs = timerOptions[timerIdx];
-    timerBtn.textContent = timerSecs + 's';
-    timerBtn.classList.toggle('active', timerSecs > 0);
-  });
-
-  zoomSlider.addEventListener('input', async () => {
-    zoomVal.textContent = Number(zoomSlider.value).toFixed(1) + 'x';
-    if(!track) return;
-    try{ await track.applyConstraints({advanced:[{zoom:Number(zoomSlider.value)}]}); }catch(e){}
-  });
-
-  let wbFactors = {r:1, g:1, b:1};
-  const sampleCanvas = document.createElement('canvas');
-  sampleCanvas.width = 1; sampleCanvas.height = 1;
-  const sampleCtx = sampleCanvas.getContext('2d', {willReadFrequently:true});
-
-  let pressTimer = null;
-  let pressMoved = false;
-  let suppressClick = false;
-  let pressStart = {x:0, y:0};
-
-  viewfinder.addEventListener('pointerdown', (e) => {
-    if(e.target.closest('button, input')) return;
-    pressMoved = false;
-    pressStart = {x:e.clientX, y:e.clientY};
-    pressTimer = setTimeout(() => {
-      const rect = viewfinder.getBoundingClientRect();
-      toggleAeAfLock((e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height);
-      suppressClick = true;
-    }, 550);
-  });
-  viewfinder.addEventListener('pointermove', (e) => {
-    if(!pressTimer) return;
-    if(Math.hypot(e.clientX - pressStart.x, e.clientY - pressStart.y) > 12){
-      pressMoved = true;
-      clearTimeout(pressTimer);
-    }
-  });
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev =>
-    viewfinder.addEventListener(ev, () => { clearTimeout(pressTimer); })
-  );
-
-  viewfinder.addEventListener('click', async (e) => {
-    if(e.target.closest('button, input')) return;
-    if(suppressClick){ suppressClick = false; return; }
-    if(aeafLocked) return;
-    const rect = viewfinder.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    focusRing.style.left = (e.clientX - rect.left) + 'px';
-    focusRing.style.top = (e.clientY - rect.top) + 'px';
-    focusRing.classList.remove('go'); void focusRing.offsetWidth; focusRing.classList.add('go');
-    if(track && track.getCapabilities){
-      const caps = track.getCapabilities();
-      const advanced = {};
-      if(caps.focusMode){
-        advanced.focusMode = continuousAF ? 'continuous' : 'manual';
-        advanced.pointsOfInterest = [{x, y}];
-      }
-      if(meteringMode === 'spot' && caps.exposureCompensation !== undefined){
-        advanced.pointsOfInterest = [{x, y}];
-      }
-      if(Object.keys(advanced).length){
-        try{ await track.applyConstraints({advanced:[advanced]}); }catch(err){}
-      }
-    }
-    if(tapWbOn && video.videoWidth){
-      sampleCtx.drawImage(video, x * video.videoWidth, y * video.videoHeight, 1, 1, 0, 0, 1, 1);
-      const [r, g, b] = sampleCtx.getImageData(0, 0, 1, 1).data;
-      const gray = (r + g + b) / 3 || 1;
-      wbFactors = {
-        r: Math.max(0.5, Math.min(2, gray / (r || 1))),
-        g: Math.max(0.5, Math.min(2, gray / (g || 1))),
-        b: Math.max(0.5, Math.min(2, gray / (b || 1)))
-      };
-      wbMatrix.setAttribute('values',
-        `${wbFactors.r} 0 0 0 0  0 ${wbFactors.g} 0 0 0  0 0 ${wbFactors.b} 0 0  0 0 0 1 0`);
-    }
-  });
-
-  tapWbSwitch.addEventListener('click', () => {
-    tapWbOn = !tapWbOn;
-    toggleSwitch(tapWbSwitch, tapWbOn);
-    video.style.filter = tapWbOn ? 'url(#wbFilter)' : 'none';
-    if(!tapWbOn){
-      wbFactors = {r:1, g:1, b:1};
-      wbMatrix.setAttribute('values', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0');
-    }
-  });
-
-  macroSwitch.addEventListener('click', async () => {
-    macroOn = !macroOn;
-    toggleSwitch(macroSwitch, macroOn);
-    if(!track || !track.getCapabilities) return;
-    const caps = track.getCapabilities();
-    if(caps.focusDistance){
-      try{
-        await track.applyConstraints({advanced:[{focusMode:'manual',
-          focusDistance: macroOn ? caps.focusDistance.min : caps.focusDistance.max}]});
-      }catch(e){}
-    }else if(caps.zoom){
-      if(macroOn && Number(zoomSlider.value) <= caps.zoom.min + 0.01){
-        const macroZoom = Math.min(caps.zoom.max, caps.zoom.min + (caps.zoom.max - caps.zoom.min) * 0.25);
-        zoomSlider.value = macroZoom;
-        zoomVal.textContent = macroZoom.toFixed(1) + 'x';
-        try{ await track.applyConstraints({advanced:[{zoom:macroZoom}]}); }catch(e){}
-        macroZoomApplied = true;
-      }else if(!macroOn && macroZoomApplied){
-        zoomSlider.value = caps.zoom.min;
-        zoomVal.textContent = caps.zoom.min.toFixed(1) + 'x';
-        try{ await track.applyConstraints({advanced:[{zoom:caps.zoom.min}]}); }catch(e){}
-        macroZoomApplied = false;
-      }
-    }
-  });
-
-  peakSwitch.addEventListener('click', () => {
-    const on = !peakSwitch.classList.contains('on');
-    toggleSwitch(peakSwitch, on);
-    peakCanvas.classList.toggle('show', on);
-    if(on) startPeaking(); else stopPeaking();
-  });
-
-  function startPeaking(){
-    const w = 160, h = 90;
-    const sample = document.createElement('canvas');
-    sample.width = w; sample.height = h;
-    const sctx = sample.getContext('2d', {willReadFrequently:true});
-    function draw(){
-      if(video.videoWidth){
-        const rect = viewfinder.getBoundingClientRect();
-        peakCanvas.width = w; peakCanvas.height = h;
-        peakCanvas.style.width = rect.width + 'px';
-        peakCanvas.style.height = rect.height + 'px';
-        sctx.drawImage(video, 0, 0, w, h);
-        const d = sctx.getImageData(0, 0, w, h).data;
-        const pctx = peakCanvas.getContext('2d');
-        pctx.clearRect(0, 0, w, h);
-        pctx.fillStyle = '#39FF6A';
-        for(let y = 1; y < h - 1; y++){
-          for(let x = 1; x < w - 1; x++){
-            const i = (y * w + x) * 4;
-            const l = d[i] + d[i+1] + d[i+2];
-            const iR = (y * w + (x + 1)) * 4;
-            const iD = ((y + 1) * w + x) * 4;
-            const lR = d[iR] + d[iR+1] + d[iR+2];
-            const lD = d[iD] + d[iD+1] + d[iD+2];
-            if(Math.abs(l - lR) + Math.abs(l - lD) > 90) pctx.fillRect(x, y, 1, 1);
-          }
-        }
-      }
-      peakLoop = requestAnimationFrame(draw);
-    }
-    draw();
-  }
-  function stopPeaking(){ if(peakLoop) cancelAnimationFrame(peakLoop); peakLoop = null; }
-
-  modeGroup.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...modeGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    captureMode = btn.dataset.mode;
-    burstCountRow.classList.toggle('hidden', captureMode !== 'burst');
-    modeLabel.textContent = captureMode === 'photo' ? '' : captureMode.toUpperCase() + (captureMode === 'burst' ? ' ' + burstCount : '');
-  });
-
-  burstGroup.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...burstGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    burstCount = Number(btn.dataset.n);
-    modeLabel.textContent = 'BURST ' + burstCount;
-  });
-
-  formatGroup.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...formatGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    captureFormat = btn.dataset.fmt;
-  });
-
-  switchBtn.addEventListener('click', () => {
-    facing = facing === 'environment' ? 'user' : 'environment';
-    startCamera(facing);
-  });
-
-  function applyWbCorrection(ctx, w, h){
-    if(!tapWbOn || (wbFactors.r === 1 && wbFactors.g === 1 && wbFactors.b === 1)) return;
-    const img = ctx.getImageData(0, 0, w, h);
-    const d = img.data;
-    for(let i = 0; i < d.length; i += 4){
-      d[i] = Math.min(255, d[i] * wbFactors.r);
-      d[i+1] = Math.min(255, d[i+1] * wbFactors.g);
-      d[i+2] = Math.min(255, d[i+2] * wbFactors.b);
-    }
-    ctx.putImageData(img, 0, 0);
-  }
-
-  function exportCanvas(cnv, prefix){
-    const mime = captureFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
-    const quality = captureFormat === 'jpeg' ? 0.92 : 1;
-    cnv.toBlob(blob => {
-      const url = URL.createObjectURL(blob);
-      downloadLink.href = url;
-      downloadLink.download = prefix + '-' + Date.now() + '.' + (captureFormat === 'jpeg' ? 'jpg' : 'png');
-      downloadLink.click();
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-    }, mime, quality);
-  }
-
-  function frameToCanvas(cnv, sourceEl, extraFilter){
-    let sx = 0, sy = 0, sw = video.videoWidth, sh = video.videoHeight;
-    if(currentRatio !== 'full'){
-      const fit = coverFit(video.videoWidth, video.videoHeight, ratioValues[currentRatio]);
-      sx = fit.x; sy = fit.y; sw = fit.w; sh = fit.h;
-    }
-    cnv.width = Math.round(sw);
-    cnv.height = Math.round(sh);
-    const ctx = cnv.getContext('2d');
-    const hdr = hdrSwitch.classList.contains('on') ? 'contrast(1.12) saturate(1.2) brightness(1.03)' : '';
-    const bl = backlightOn ? 'brightness(1.15)' : '';
-    ctx.filter = [hdr, bl, extraFilter || ''].filter(Boolean).join(' ') || 'none';
-    const shouldFlip = facing === 'user' && !mirrorSave;
-    if(shouldFlip){ ctx.translate(cnv.width, 0); ctx.scale(-1, 1); }
-    ctx.drawImage(sourceEl, sx, sy, sw, sh, 0, 0, cnv.width, cnv.height);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    applyWbCorrection(ctx, cnv.width, cnv.height);
-    return ctx;
-  }
-
-  function takePhoto(){
-    if(!video.videoWidth) return;
-    beep();
-    flashEl.classList.remove('go'); void flashEl.offsetWidth; flashEl.classList.add('go');
-    frameToCanvas(canvas, video);
-    exportCanvas(canvas, 'capture');
-  }
-
-  function burstCapture(){
-    if(!video.videoWidth) return;
-    let shots = 0;
-    const shoot = () => {
-      beep();
-      flashEl.classList.remove('go'); void flashEl.offsetWidth; flashEl.classList.add('go');
-      const c = document.createElement('canvas');
-      frameToCanvas(c, video);
-      exportCanvas(c, 'burst' + (shots + 1));
-      shots++;
-      if(shots < burstCount) setTimeout(shoot, 220);
-    };
-    shoot();
-  }
-
-  function nightCapture(){
-    if(!video.videoWidth) return;
-    beep();
-    flashEl.classList.remove('go'); void flashEl.offsetWidth; flashEl.classList.add('go');
-    const frames = 5;
-    let sx = 0, sy = 0, sw = video.videoWidth, sh = video.videoHeight;
-    if(currentRatio !== 'full'){
-      const fit = coverFit(video.videoWidth, video.videoHeight, ratioValues[currentRatio]);
-      sx = fit.x; sy = fit.y; sw = fit.w; sh = fit.h;
-    }
-    canvas.width = Math.round(sw); canvas.height = Math.round(sh);
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const shouldFlip = facing === 'user' && !mirrorSave;
-    let n = 0;
-    const stack = () => {
-      ctx.save();
-      ctx.globalAlpha = 1 / frames;
-      if(shouldFlip){ ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
-      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-      ctx.restore();
-      n++;
-      if(n < frames) setTimeout(stack, 110);
-      else{
-        applyWbCorrection(ctx, canvas.width, canvas.height);
-        exportCanvas(canvas, 'night');
-      }
-    };
-    stack();
-  }
-
-  function panoStart(){
-    panoActive = true;
-    captureBtn.classList.add('rec');
-    modeLabel.textContent = 'PANO — REC (tap to stop)';
-    panoCanvas = document.createElement('canvas');
-    panoCanvas.height = video.videoHeight;
-    panoCanvas.width = 0;
-    panoCtx = panoCanvas.getContext('2d');
-    panoX = 0;
-    const stripW = 24;
-    panoTimer = setInterval(() => {
-      if(!video.videoWidth) return;
-      const oldW = panoCanvas.width;
-      const oldData = oldW > 0 ? panoCtx.getImageData(0, 0, oldW, panoCanvas.height) : null;
-      panoCanvas.width = panoX + stripW;
-      if(oldData) panoCtx.putImageData(oldData, 0, 0);
-      const cx = (video.videoWidth - stripW) / 2;
-      panoCtx.drawImage(video, cx, 0, stripW, video.videoHeight, panoX, 0, stripW, panoCanvas.height);
-      panoX += stripW;
-    }, 60);
-    setTimeout(() => { if(panoActive) panoStop(); }, 10000);
-  }
-
-  function panoStop(){
-    panoActive = false;
-    captureBtn.classList.remove('rec');
-    modeLabel.textContent = 'PANO';
-    clearInterval(panoTimer);
-    if(panoCanvas && panoCanvas.width > 0){
-      applyWbCorrection(panoCtx, panoCanvas.width, panoCanvas.height);
-      exportCanvas(panoCanvas, 'pano');
-    }
-  }
-
-  function bracketCapture(){
-    if(!video.videoWidth) return;
-    const caps = track && track.getCapabilities ? track.getCapabilities() : {};
-    const hasEV = !!caps.exposureCompensation;
-    const baseEV = hasEV ? Number(exposureSlider.value || 0) : 0;
-    const steps = hasEV
-      ? [Math.max(caps.exposureCompensation.min, baseEV - 1), baseEV, Math.min(caps.exposureCompensation.max, baseEV + 1)]
-      : [null, null, null];
-    const softFilters = ['brightness(0.72)', '', 'brightness(1.35)'];
-    let i = 0;
-    const shootNext = async () => {
-      if(hasEV && track){
-        try{ await track.applyConstraints({advanced:[{exposureCompensation:steps[i]}]}); }catch(e){}
-        await new Promise(r => setTimeout(r, 260));
-      }
-      beep();
-      flashEl.classList.remove('go'); void flashEl.offsetWidth; flashEl.classList.add('go');
-      const c = document.createElement('canvas');
-      frameToCanvas(c, video, hasEV ? '' : softFilters[i]);
-      exportCanvas(c, 'bracket' + (i - 1) + 'ev');
-      i++;
-      if(i < 3) setTimeout(shootNext, 220);
-      else if(hasEV && track){ try{ track.applyConstraints({advanced:[{exposureCompensation:baseEV}]}); }catch(e){} }
-    };
-    shootNext();
-  }
-
-  captureBtn.addEventListener('click', () => {
-    if(!video.videoWidth) return;
-    if(captureMode === 'pano'){
-      panoActive ? panoStop() : panoStart();
-      return;
-    }
-    if(countdownEl.classList.contains('show')) return;
-    const fire = () => {
-      if(captureMode === 'burst') burstCapture();
-      else if(captureMode === 'night') nightCapture();
-      else if(captureMode === 'bracket') bracketCapture();
-      else takePhoto();
-    };
-    if(timerSecs === 0){ fire(); return; }
-    let n = timerSecs;
-    countdownEl.textContent = n;
-    countdownEl.classList.add('show');
-    const tick = setInterval(() => {
-      n--;
-      if(n <= 0){
-        clearInterval(tick);
-        countdownEl.classList.remove('show');
-        fire();
-      }else{
-        countdownEl.textContent = n;
-      }
-    }, 1000);
-  });
-
-  startCamera(facing);
+}
 </script>
 </body>
 </html>
