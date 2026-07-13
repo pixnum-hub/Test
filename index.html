@@ -56,10 +56,20 @@ canvas.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:
 .timerNum{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:88px;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6);}
 .timerNum.show{display:flex;}
 .placeholder{color:var(--sub);font-size:14px;text-align:center;padding:0 20px;}
-.zoomWrap{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:70%;display:none;align-items:center;gap:8px;background:rgba(0,0,0,.4);padding:6px 12px;border-radius:20px;}
-.zoomWrap.on{display:flex;}
-.zoomWrap input{flex:1;accent-color:var(--accent);}
-.zoomWrap span{font-size:11px;color:#fff;min-width:30px;text-align:right;}
+.sliderWrap{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:70%;display:none;align-items:center;gap:8px;background:rgba(0,0,0,.4);padding:6px 12px;border-radius:20px;}
+.sliderWrap.on{display:flex;}
+.sliderWrap input{flex:1;accent-color:var(--accent);}
+.sliderWrap span{font-size:11px;color:#fff;min-width:30px;text-align:right;}
+.recBadge{position:absolute;top:12px;left:14px;display:none;align-items:center;gap:6px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;padding:5px 10px;border-radius:12px;}
+.recBadge.on{display:flex;}
+.recDot{width:9px;height:9px;border-radius:50%;background:#ff3b3b;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.modeToggle{display:flex;justify-content:center;gap:6px;margin-bottom:12px;}
+.modeToggle button{background:var(--panel2);border:1px solid var(--border);color:var(--sub);border-radius:14px;padding:6px 16px;font-size:12px;cursor:pointer;}
+.modeToggle button.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+.shutterBtn.recording{border-color:var(--danger);}
+.shutterBtn.recording::after{border-radius:6px;background:var(--danger);width:30px;height:30px;}
+.modal video{max-width:92%;max-height:74%;border-radius:8px;}
 
 /* Filter strip */
 .filters{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;background:var(--panel);border-top:1px solid var(--border);}
@@ -115,8 +125,12 @@ footer{text-align:center;padding:10px 8px 14px;font-size:11px;color:var(--sub);b
     <div class="timerNum" id="timerNum"></div>
     <canvas class="flash" id="flashCanvas"></canvas>
     <div class="count" id="shotCount" style="display:none">0 shots</div>
-    <div class="zoomWrap" id="zoomWrap">
+    <div class="recBadge" id="recBadge"><div class="recDot"></div><span id="recTime">00:00</span></div>
+    <div class="sliderWrap" id="zoomWrap">
       <span>1.0×</span><input type="range" id="zoomRange" min="1" max="5" step="0.1" value="1"><span id="zoomVal">1.0×</span>
+    </div>
+    <div class="sliderWrap" id="expWrap">
+      <span>☀</span><input type="range" id="expRange" min="-3" max="3" step="0.5" value="0"><span id="expVal">0</span>
     </div>
   </div>
 
@@ -134,6 +148,10 @@ footer{text-align:center;padding:10px 8px 14px;font-size:11px;color:var(--sub);b
   </div>
 
   <div class="controls">
+    <div class="modeToggle" id="modeToggle">
+      <button class="on" data-mode="photo">📷 Photo</button>
+      <button data-mode="video">🎥 Video</button>
+    </div>
     <div class="rowbtns">
       <button class="pill" id="startBtn">▶ Start Camera</button>
       <button class="pill" id="gridBtn">▦ Grid</button>
@@ -141,6 +159,8 @@ footer{text-align:center;padding:10px 8px 14px;font-size:11px;color:var(--sub);b
       <button class="pill" id="timerBtn">⏱ Off</button>
       <button class="pill" id="zoomBtn">🔍 Zoom</button>
       <button class="pill" id="ratioBtn">16:9</button>
+      <button class="pill" id="expBtn">☀ Exposure</button>
+      <button class="pill" id="geoBtn">📍 Geotag</button>
     </div>
     <div class="shutterRow">
       <div class="thumb" id="thumb"></div>
@@ -153,6 +173,7 @@ footer{text-align:center;padding:10px 8px 14px;font-size:11px;color:var(--sub);b
 
   <div class="modal" id="modal">
     <img id="modalImg" src="" alt="Captured photo">
+    <video id="modalVideo" controls playsinline style="display:none"></video>
     <div class="modalBar">
       <button id="dlBtn">⬇ Download</button>
       <button id="shareBtn">↗ Share</button>
@@ -183,6 +204,8 @@ document.getElementById('themeRow').addEventListener('click', e=>{
 // ---------- State ----------
 let stream=null, currentFacing='environment', track=null, capabilities=null;
 let currentFilter='none', gridOn=false, timerSec=0, mirrored=false, shots=0;
+let geotagOn=false, lastCoords=null, mode='photo', mediaRecorder=null, recChunks=[], recStart=0, recInterval=null;
+let lastMedia=null, lastMediaType='image';
 const video=document.getElementById('video'), placeholder=document.getElementById('placeholder');
 const toastEl=document.getElementById('toast');
 function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toastEl.classList.remove('show'),1800); }
@@ -206,6 +229,7 @@ async function startCamera(facing){
     document.getElementById('startBtn').textContent='⏹ Stop';
     document.getElementById('shotCount').style.display='block';
     setupZoom();
+    setupExposure();
     setupFlashAvailability();
   }catch(err){
     toast('Camera access denied or unavailable');
@@ -263,6 +287,8 @@ function setupZoom(){
 document.getElementById('zoomBtn').addEventListener('click', function(){
   const wrap=document.getElementById('zoomWrap');
   if(!capabilities || !capabilities.zoom){ toast('Zoom not supported on this device'); return; }
+  document.getElementById('expWrap').classList.remove('on');
+  document.getElementById('expBtn').classList.remove('active');
   wrap.classList.toggle('on');
   this.classList.toggle('active', wrap.classList.contains('on'));
   const range=document.getElementById('zoomRange');
@@ -271,6 +297,39 @@ document.getElementById('zoomBtn').addEventListener('click', function(){
 document.getElementById('zoomRange').addEventListener('input', async function(){
   document.getElementById('zoomVal').textContent=parseFloat(this.value).toFixed(1)+'×';
   if(track) try{ await track.applyConstraints({advanced:[{zoom:parseFloat(this.value)}]}); }catch(e){}
+});
+
+// ---------- Exposure ----------
+function setupExposure(){
+  const expBtn=document.getElementById('expBtn');
+  expBtn.style.opacity = (capabilities && capabilities.exposureCompensation) ? 1 : .5;
+}
+document.getElementById('expBtn').addEventListener('click', function(){
+  const wrap=document.getElementById('expWrap');
+  if(!capabilities || !capabilities.exposureCompensation){ toast('Manual exposure not supported on this device'); return; }
+  document.getElementById('zoomWrap').classList.remove('on');
+  document.getElementById('zoomBtn').classList.remove('active');
+  wrap.classList.toggle('on');
+  this.classList.toggle('active', wrap.classList.contains('on'));
+  const range=document.getElementById('expRange'), ec=capabilities.exposureCompensation;
+  range.min=ec.min; range.max=ec.max; range.step=ec.step||0.5;
+});
+document.getElementById('expRange').addEventListener('input', async function(){
+  document.getElementById('expVal').textContent=parseFloat(this.value).toFixed(1);
+  if(track) try{ await track.applyConstraints({advanced:[{exposureCompensation:parseFloat(this.value)}]}); }catch(e){}
+});
+
+// ---------- Geotag ----------
+document.getElementById('geoBtn').addEventListener('click', function(){
+  geotagOn=!geotagOn;
+  this.classList.toggle('active', geotagOn);
+  if(geotagOn && navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos=>{ lastCoords={lat:pos.coords.latitude, lon:pos.coords.longitude}; toast('Location acquired for stamping'); },
+      ()=>{ lastCoords=null; toast('Location unavailable — stamping date/time only'); },
+      {timeout:8000}
+    );
+  } else if(!geotagOn){ lastCoords=null; }
 });
 
 // ---------- Aspect ratio ----------
@@ -301,10 +360,25 @@ async function doCapture(){
   ctx.filter = currentFilter==='none' ? 'none' : currentFilter;
   if(mirrored){ ctx.translate(w,0); ctx.scale(-1,1); }
   ctx.drawImage(video,0,0,w,h);
+  ctx.setTransform(1,0,0,1,0,0); ctx.filter='none';
+  if(geotagOn){
+    const stampLines=[ new Date().toLocaleString() ];
+    stampLines.push(lastCoords ? `${lastCoords.lat.toFixed(5)}, ${lastCoords.lon.toFixed(5)}` : 'Location unavailable');
+    const fs=Math.max(16, Math.round(w*0.018));
+    ctx.font=`600 ${fs}px -apple-system,Arial,sans-serif`;
+    ctx.textBaseline='bottom';
+    const padding=fs*0.7, lh=fs*1.3;
+    const boxH=lh*stampLines.length+padding;
+    ctx.fillStyle='rgba(0,0,0,.45)';
+    ctx.fillRect(0,h-boxH,w,boxH);
+    ctx.fillStyle='#fff';
+    stampLines.forEach((line,i)=>{ ctx.fillText(line, padding*0.7, h-padding*0.5-(stampLines.length-1-i)*lh); });
+  }
   const dataUrl=canvas.toDataURL('image/jpeg',0.92);
-  lastPhoto=dataUrl;
+  lastPhoto=dataUrl; lastMedia=dataUrl; lastMediaType='image';
   shots++; document.getElementById('shotCount').textContent=shots+' shot'+(shots===1?'':'s');
-  document.getElementById('thumb').style.backgroundImage=`url(${dataUrl})`;
+  const thumbEl=document.getElementById('thumb');
+  thumbEl.style.backgroundImage=`url(${dataUrl})`; thumbEl.textContent='';
   flashEffect();
 }
 function flashEffect(){
@@ -313,6 +387,7 @@ function flashEffect(){
   requestAnimationFrame(()=>{ fc.style.transition='opacity .3s'; fc.style.opacity=0; });
 }
 document.getElementById('shutterBtn').addEventListener('click', async ()=>{
+  if(mode==='video'){ toggleRecording(); return; }
   if(timerSec>0){
     const tEl=document.getElementById('timerNum'); tEl.classList.add('show');
     for(let i=timerSec;i>0;i--){ tEl.textContent=i; await new Promise(r=>setTimeout(r,1000)); }
@@ -321,23 +396,78 @@ document.getElementById('shutterBtn').addEventListener('click', async ()=>{
   doCapture();
 });
 
+// ---------- Mode toggle ----------
+document.getElementById('modeToggle').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  mode=b.dataset.mode;
+  document.querySelectorAll('#modeToggle button').forEach(x=>x.classList.toggle('on', x===b));
+  if(mediaRecorder && mediaRecorder.state==='recording') toggleRecording();
+});
+
+// ---------- Video recording ----------
+function toggleRecording(){
+  if(!stream){ toast('Start the camera first'); return; }
+  if(mediaRecorder && mediaRecorder.state==='recording'){ mediaRecorder.stop(); return; }
+  if(!window.MediaRecorder){ toast('Video recording not supported on this browser'); return; }
+  recChunks=[];
+  let mime='video/webm';
+  if(MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) mime='video/webm;codecs=vp9';
+  else if(MediaRecorder.isTypeSupported('video/mp4')) mime='video/mp4';
+  try{
+    mediaRecorder = new MediaRecorder(stream, {mimeType:mime});
+  }catch(e){ toast('Could not start recording'); return; }
+  mediaRecorder.ondataavailable = e=>{ if(e.data.size>0) recChunks.push(e.data); };
+  mediaRecorder.onstop = ()=>{
+    const blob=new Blob(recChunks, {type: mime.split(';')[0]});
+    lastMedia=URL.createObjectURL(blob); lastMediaType='video';
+    document.getElementById('shutterBtn').classList.remove('recording');
+    document.getElementById('recBadge').classList.remove('on');
+    clearInterval(recInterval);
+    document.getElementById('thumb').style.backgroundImage='';
+    document.getElementById('thumb').textContent='🎬';
+    document.getElementById('thumb').style.display='flex';
+    document.getElementById('thumb').style.alignItems='center';
+    document.getElementById('thumb').style.justifyContent='center';
+    toast('Video recorded — tap thumbnail to view');
+  };
+  mediaRecorder.start();
+  document.getElementById('shutterBtn').classList.add('recording');
+  document.getElementById('recBadge').classList.add('on');
+  recStart=Date.now();
+  recInterval=setInterval(()=>{
+    const s=Math.floor((Date.now()-recStart)/1000);
+    document.getElementById('recTime').textContent = String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  },250);
+}
+
 // ---------- Gallery modal ----------
 document.getElementById('thumb').addEventListener('click', ()=>{
-  if(!lastPhoto){ toast('No photo captured yet'); return; }
-  document.getElementById('modalImg').src=lastPhoto;
+  if(!lastMedia){ toast('No photo or video captured yet'); return; }
+  const img=document.getElementById('modalImg'), vid=document.getElementById('modalVideo');
+  if(lastMediaType==='video'){
+    vid.src=lastMedia; vid.style.display='block'; img.style.display='none';
+  } else {
+    img.src=lastMedia; img.style.display='block'; vid.style.display='none'; vid.pause();
+  }
   document.getElementById('modal').classList.add('on');
 });
-document.getElementById('closeModal').addEventListener('click', ()=> document.getElementById('modal').classList.remove('on'));
+document.getElementById('closeModal').addEventListener('click', ()=>{
+  document.getElementById('modal').classList.remove('on');
+  document.getElementById('modalVideo').pause();
+});
 document.getElementById('dlBtn').addEventListener('click', ()=>{
-  const a=document.createElement('a'); a.href=lastPhoto; a.download='lenscraft_'+Date.now()+'.jpg'; a.click();
-  toast('Photo saved');
+  const a=document.createElement('a'); a.href=lastMedia;
+  a.download = 'lenscraft_'+Date.now()+(lastMediaType==='video' ? '.webm' : '.jpg');
+  a.click();
+  toast((lastMediaType==='video'?'Video':'Photo')+' saved');
 });
 document.getElementById('shareBtn').addEventListener('click', async ()=>{
   try{
-    const res=await fetch(lastPhoto); const blob=await res.blob();
-    const file=new File([blob],'lenscraft.jpg',{type:'image/jpeg'});
+    const res=await fetch(lastMedia); const blob=await res.blob();
+    const ext = lastMediaType==='video' ? 'webm' : 'jpg', type = lastMediaType==='video' ? 'video/webm' : 'image/jpeg';
+    const file=new File([blob],'lenscraft.'+ext,{type});
     if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({files:[file], title:'LensCraft Photo'});
+      await navigator.share({files:[file], title:'LensCraft'});
     } else { toast('Sharing not supported — use Download instead'); }
   }catch(e){ toast('Share failed'); }
 });
