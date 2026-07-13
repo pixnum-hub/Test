@@ -55,6 +55,9 @@ canvas.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:
 .grid-h2{position:absolute;top:66.66%;left:0;right:0;height:1px;background:rgba(255,255,255,.4);}
 .timerNum{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:88px;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6);}
 .timerNum.show{display:flex;}
+.reticle{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border:2px solid #fff;border-radius:6px;opacity:0;pointer-events:none;box-shadow:0 0 0 2000px rgba(0,0,0,0);}
+.reticle.show{animation:focusPulse .7s ease-out;}
+@keyframes focusPulse{0%{opacity:1;transform:scale(1.3);border-color:#ffe600;}60%{opacity:1;transform:scale(1);border-color:#fff;}100%{opacity:0;transform:scale(1);}}
 .placeholder{color:var(--sub);font-size:14px;text-align:center;padding:0 20px;}
 .sliderWrap{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:70%;display:none;align-items:center;gap:8px;background:rgba(0,0,0,.4);padding:6px 12px;border-radius:20px;}
 .sliderWrap.on{display:flex;}
@@ -123,6 +126,7 @@ footer{text-align:center;padding:10px 8px 14px;font-size:11px;color:var(--sub);b
     <div class="placeholder" id="placeholder">Tap "Start Camera" below to begin. Camera access needed — works fully offline, no keys or accounts required.</div>
     <div class="grid" id="grid"><div class="grid-v1"></div><div class="grid-v2"></div><div class="grid-h1"></div><div class="grid-h2"></div></div>
     <div class="timerNum" id="timerNum"></div>
+    <div class="reticle" id="reticle"></div>
     <canvas class="flash" id="flashCanvas"></canvas>
     <div class="count" id="shotCount" style="display:none">0 shots</div>
     <div class="recBadge" id="recBadge"><div class="recDot"></div><span id="recTime">00:00</span></div>
@@ -217,7 +221,7 @@ async function startCamera(facing){
   }
   try{
     if(stream) stream.getTracks().forEach(t=>t.stop());
-    const constraints = { video:{ facingMode:{ideal:facing}, width:{ideal:1920}, height:{ideal:1080} }, audio:false };
+    const constraints = { video:{ facingMode:{ideal:facing}, width:{ideal:1920}, height:{ideal:1080}, focusMode:{ideal:'continuous'} }, audio:false };
     stream = await navigator.mediaDevices.getUserMedia(constraints);
     video.srcObject = stream;
     track = stream.getVideoTracks()[0];
@@ -228,6 +232,7 @@ async function startCamera(facing){
     placeholder.style.display='none';
     document.getElementById('startBtn').textContent='⏹ Stop';
     document.getElementById('shotCount').style.display='block';
+    await enableContinuousFocus();
     setupZoom();
     setupExposure();
     setupFlashAvailability();
@@ -248,6 +253,56 @@ document.getElementById('switchBtn').addEventListener('click', ()=>{
   if(!stream){ toast('Start the camera first'); return; }
   startCamera(currentFacing==='environment' ? 'user' : 'environment');
 });
+
+// ---------- Autofocus ----------
+async function enableContinuousFocus(){
+  if(!track || !capabilities || !capabilities.focusMode) return;
+  if(capabilities.focusMode.includes('continuous')){
+    try{ await track.applyConstraints({advanced:[{focusMode:'continuous'}]}); }catch(e){}
+  }
+}
+async function focusAt(xRatio, yRatio){
+  if(!track || !capabilities) return;
+  try{
+    if(capabilities.focusMode && capabilities.focusMode.includes('single-shot') && capabilities.pointsOfInterest){
+      await track.applyConstraints({advanced:[{pointsOfInterest:[{x:xRatio,y:yRatio}], focusMode:'single-shot'}]});
+      setTimeout(enableContinuousFocus, 1800);
+    } else if(capabilities.focusMode && capabilities.focusMode.includes('continuous')){
+      await track.applyConstraints({advanced:[{focusMode:'continuous'}]});
+    }
+  }catch(e){}
+}
+const viewport=document.getElementById('viewport'), reticle=document.getElementById('reticle');
+viewport.addEventListener('click', e=>{
+  if(!stream || e.target.closest('.sliderWrap')) return;
+  const rect=viewport.getBoundingClientRect();
+  const xr=(e.clientX-rect.left)/rect.width, yr=(e.clientY-rect.top)/rect.height;
+  reticle.style.left=(e.clientX-rect.left)+'px'; reticle.style.top=(e.clientY-rect.top)+'px';
+  reticle.classList.remove('show'); void reticle.offsetWidth; reticle.classList.add('show');
+  focusAt(xr, yr);
+});
+
+// ---------- Pinch to zoom ----------
+let pinchStartDist=0, pinchStartZoom=1;
+viewport.addEventListener('touchstart', e=>{
+  if(e.touches.length===2 && capabilities && capabilities.zoom){
+    pinchStartDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    pinchStartZoom=parseFloat(document.getElementById('zoomRange').value)||1;
+  }
+}, {passive:true});
+viewport.addEventListener('touchmove', e=>{
+  if(e.touches.length===2 && capabilities && capabilities.zoom && pinchStartDist>0){
+    const dist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    const zc=capabilities.zoom;
+    let z=pinchStartZoom*(dist/pinchStartDist);
+    z=Math.min(zc.max, Math.max(zc.min, z));
+    const range=document.getElementById('zoomRange');
+    range.min=zc.min; range.max=zc.max; range.step=zc.step||0.1; range.value=z;
+    document.getElementById('zoomVal').textContent=z.toFixed(1)+'×';
+    track.applyConstraints({advanced:[{zoom:z}]}).catch(()=>{});
+  }
+}, {passive:true});
+viewport.addEventListener('touchend', e=>{ if(e.touches.length<2) pinchStartDist=0; }, {passive:true});
 
 // ---------- Grid ----------
 document.getElementById('gridBtn').addEventListener('click', function(){
