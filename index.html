@@ -123,7 +123,7 @@ footer{text-align:center;padding:10px 8px 14px;font-size:11px;color:var(--sub);b
 
   <div class="viewport" id="viewport">
     <video id="video" autoplay playsinline muted></video>
-    <div class="placeholder" id="placeholder">Tap "Start Camera" below to begin. Camera access needed — works fully offline, no keys or accounts required.</div>
+    <div class="placeholder" id="placeholder">Requesting camera access…</div>
     <div class="grid" id="grid"><div class="grid-v1"></div><div class="grid-v2"></div><div class="grid-h1"></div><div class="grid-h2"></div></div>
     <div class="timerNum" id="timerNum"></div>
     <div class="reticle" id="reticle"></div>
@@ -221,7 +221,7 @@ async function startCamera(facing){
   }
   try{
     if(stream) stream.getTracks().forEach(t=>t.stop());
-    const constraints = { video:{ facingMode:{ideal:facing}, width:{ideal:1920}, height:{ideal:1080}, focusMode:{ideal:'continuous'} }, audio:false };
+    const constraints = { video:{ facingMode:{ideal:facing}, width:{ideal:1920}, height:{ideal:1080} }, audio:false };
     stream = await navigator.mediaDevices.getUserMedia(constraints);
     video.srcObject = stream;
     track = stream.getVideoTracks()[0];
@@ -232,17 +232,21 @@ async function startCamera(facing){
     placeholder.style.display='none';
     document.getElementById('startBtn').textContent='⏹ Stop';
     document.getElementById('shotCount').style.display='block';
+    currentZoom=1;
     await enableContinuousFocus();
     setupZoom();
     setupExposure();
     setupFlashAvailability();
   }catch(err){
+    placeholder.textContent = 'Camera access denied or unavailable. Tap "Start Camera" below to try again.';
+    placeholder.style.display='flex';
     toast('Camera access denied or unavailable');
   }
 }
 function stopCamera(){
   if(stream) stream.getTracks().forEach(t=>t.stop());
   stream=null; video.srcObject=null;
+  placeholder.textContent = 'Camera stopped. Tap "Start Camera" below to resume.';
   placeholder.style.display='flex';
   document.getElementById('startBtn').textContent='▶ Start Camera';
 }
@@ -255,26 +259,31 @@ document.getElementById('switchBtn').addEventListener('click', ()=>{
 });
 
 // ---------- Autofocus ----------
+let currentZoom=1, pinchGuardUntil=0;
 async function enableContinuousFocus(){
   if(!track || !capabilities || !capabilities.focusMode) return;
   if(capabilities.focusMode.includes('continuous')){
-    try{ await track.applyConstraints({advanced:[{focusMode:'continuous'}]}); }catch(e){}
+    const c={focusMode:'continuous'};
+    if(capabilities.zoom) c.zoom=currentZoom;
+    try{ await track.applyConstraints({advanced:[c]}); }catch(e){}
   }
 }
 async function focusAt(xRatio, yRatio){
   if(!track || !capabilities) return;
   try{
     if(capabilities.focusMode && capabilities.focusMode.includes('single-shot') && capabilities.pointsOfInterest){
-      await track.applyConstraints({advanced:[{pointsOfInterest:[{x:xRatio,y:yRatio}], focusMode:'single-shot'}]});
+      const c={pointsOfInterest:[{x:xRatio,y:yRatio}], focusMode:'single-shot'};
+      if(capabilities.zoom) c.zoom=currentZoom;
+      await track.applyConstraints({advanced:[c]});
       setTimeout(enableContinuousFocus, 1800);
     } else if(capabilities.focusMode && capabilities.focusMode.includes('continuous')){
-      await track.applyConstraints({advanced:[{focusMode:'continuous'}]});
+      await enableContinuousFocus();
     }
   }catch(e){}
 }
 const viewport=document.getElementById('viewport'), reticle=document.getElementById('reticle');
 viewport.addEventListener('click', e=>{
-  if(!stream || e.target.closest('.sliderWrap')) return;
+  if(!stream || e.target.closest('.sliderWrap') || Date.now()<pinchGuardUntil) return;
   const rect=viewport.getBoundingClientRect();
   const xr=(e.clientX-rect.left)/rect.width, yr=(e.clientY-rect.top)/rect.height;
   reticle.style.left=(e.clientX-rect.left)+'px'; reticle.style.top=(e.clientY-rect.top)+'px';
@@ -287,22 +296,28 @@ let pinchStartDist=0, pinchStartZoom=1;
 viewport.addEventListener('touchstart', e=>{
   if(e.touches.length===2 && capabilities && capabilities.zoom){
     pinchStartDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-    pinchStartZoom=parseFloat(document.getElementById('zoomRange').value)||1;
+    pinchStartZoom=currentZoom;
+    pinchGuardUntil=Date.now()+800;
   }
 }, {passive:true});
 viewport.addEventListener('touchmove', e=>{
   if(e.touches.length===2 && capabilities && capabilities.zoom && pinchStartDist>0){
+    pinchGuardUntil=Date.now()+800;
     const dist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
     const zc=capabilities.zoom;
     let z=pinchStartZoom*(dist/pinchStartDist);
     z=Math.min(zc.max, Math.max(zc.min, z));
+    currentZoom=z;
     const range=document.getElementById('zoomRange');
     range.min=zc.min; range.max=zc.max; range.step=zc.step||0.1; range.value=z;
     document.getElementById('zoomVal').textContent=z.toFixed(1)+'×';
     track.applyConstraints({advanced:[{zoom:z}]}).catch(()=>{});
   }
 }, {passive:true});
-viewport.addEventListener('touchend', e=>{ if(e.touches.length<2) pinchStartDist=0; }, {passive:true});
+viewport.addEventListener('touchend', e=>{
+  if(e.touches.length<2) pinchStartDist=0;
+  pinchGuardUntil=Date.now()+400;
+}, {passive:true});
 
 // ---------- Grid ----------
 document.getElementById('gridBtn').addEventListener('click', function(){
@@ -350,8 +365,9 @@ document.getElementById('zoomBtn').addEventListener('click', function(){
   range.min=capabilities.zoom.min; range.max=capabilities.zoom.max; range.step=capabilities.zoom.step||0.1;
 });
 document.getElementById('zoomRange').addEventListener('input', async function(){
-  document.getElementById('zoomVal').textContent=parseFloat(this.value).toFixed(1)+'×';
-  if(track) try{ await track.applyConstraints({advanced:[{zoom:parseFloat(this.value)}]}); }catch(e){}
+  currentZoom=parseFloat(this.value);
+  document.getElementById('zoomVal').textContent=currentZoom.toFixed(1)+'×';
+  if(track) try{ await track.applyConstraints({advanced:[{zoom:currentZoom}]}); }catch(e){}
 });
 
 // ---------- Exposure ----------
@@ -465,15 +481,21 @@ function toggleRecording(){
   if(mediaRecorder && mediaRecorder.state==='recording'){ mediaRecorder.stop(); return; }
   if(!window.MediaRecorder){ toast('Video recording not supported on this browser'); return; }
   recChunks=[];
-  let mime='video/webm';
-  if(MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) mime='video/webm;codecs=vp9';
-  else if(MediaRecorder.isTypeSupported('video/mp4')) mime='video/mp4';
+  let mime='';
+  if(MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) mime='video/webm;codecs=vp9';
+  else if(MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/webm')) mime='video/webm';
+  else if(MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/mp4')) mime='video/mp4';
   try{
-    mediaRecorder = new MediaRecorder(stream, {mimeType:mime});
-  }catch(e){ toast('Could not start recording'); return; }
+    mediaRecorder = mime ? new MediaRecorder(stream, {mimeType:mime}) : new MediaRecorder(stream);
+  }catch(e){
+    try{ mediaRecorder = new MediaRecorder(stream); }
+    catch(e2){ toast('Video recording not supported on this device'); return; }
+  }
   mediaRecorder.ondataavailable = e=>{ if(e.data.size>0) recChunks.push(e.data); };
+  mediaRecorder.onerror = ()=>{ toast('Recording error — stopped'); };
   mediaRecorder.onstop = ()=>{
-    const blob=new Blob(recChunks, {type: mime.split(';')[0]});
+    const outType = mediaRecorder.mimeType || mime || 'video/webm';
+    const blob=new Blob(recChunks, {type: outType.split(';')[0]});
     lastMedia=URL.createObjectURL(blob); lastMediaType='video';
     document.getElementById('shutterBtn').classList.remove('recording');
     document.getElementById('recBadge').classList.remove('on');
@@ -485,7 +507,8 @@ function toggleRecording(){
     document.getElementById('thumb').style.justifyContent='center';
     toast('Video recorded — tap thumbnail to view');
   };
-  mediaRecorder.start();
+  try{ mediaRecorder.start(); }
+  catch(e){ toast('Could not start recording'); return; }
   document.getElementById('shutterBtn').classList.add('recording');
   document.getElementById('recBadge').classList.add('on');
   recStart=Date.now();
@@ -529,6 +552,9 @@ document.getElementById('shareBtn').addEventListener('click', async ()=>{
 
 // ---------- Keyboard (desktop testing) ----------
 document.addEventListener('keydown', e=>{ if(e.code==='Space'){ e.preventDefault(); document.getElementById('shutterBtn').click(); } });
+
+// ---------- Auto-start camera on load ----------
+startCamera(currentFacing);
 
 // ---------- Service worker guard (skip in sandboxed preview) ----------
 if('serviceWorker' in navigator && !location.hostname.includes('claudeusercontent.com') && window.top===window){
