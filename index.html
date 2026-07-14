@@ -134,6 +134,15 @@
   .reticle.show{display:flex;}
   .reticle.ae-point{border-color:#FFEE00; color:#FFEE00;}
   .reticle.af-point{border-color:var(--accent); color:var(--accent);}
+
+  #steadyBadge{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(0,0,0,.6); color:#FFEE00; border:1px solid #FFEE00;
+    padding:8px 16px; border-radius:999px; font-size:.78rem; letter-spacing:.06em;
+    z-index:8; pointer-events:none; animation:steadyPulse 1s ease-in-out infinite;
+  }
+  #steadyBadge.hidden{display:none;}
+  @keyframes steadyPulse{0%,100%{opacity:.7;}50%{opacity:1;}}
   .segmented{display:flex; gap:6px; flex-wrap:wrap;}
   .segmented button{
     padding:5px 10px; border-radius:8px; border:1px solid var(--border);
@@ -259,6 +268,7 @@
     <div class="focus-ring" id="focusRing"></div>
     <div class="reticle ae-point" id="aePoint">AE</div>
     <div class="reticle af-point" id="afPoint">AF</div>
+    <div id="steadyBadge" class="mono hidden">HOLD STEADY</div>
     <div id="countdown" class="mono"></div>
     <div id="flash"></div>
     <div id="status"></div>
@@ -284,6 +294,8 @@
           <button data-res="720">720p</button>
         </div>
       </div>
+      <div class="setting-row hidden" id="stabRow"><span>Image stabilizer</span><div class="switch" id="stabSwitch"></div></div>
+      <div class="setting-row hidden" id="shakeProofRow"><span>Shake-proof capture</span><div class="switch" id="shakeProofSwitch"></div></div>
       <div class="setting-row"><span>Manual mode</span><div class="switch on" id="manualModeSwitch"></div></div>
       <div class="setting-row hidden manual-block" id="exposureRow"><span>Exposure</span><input type="range" id="exposureSlider"></div>
       <div class="setting-row manual-block"><span>Backlight compensation</span><div class="switch" id="backlightSwitch"></div></div>
@@ -416,6 +428,11 @@
   const dualPointSwitch = document.getElementById('dualPointSwitch');
   const aePoint = document.getElementById('aePoint');
   const afPoint = document.getElementById('afPoint');
+  const stabRow = document.getElementById('stabRow');
+  const stabSwitch = document.getElementById('stabSwitch');
+  const shakeProofRow = document.getElementById('shakeProofRow');
+  const shakeProofSwitch = document.getElementById('shakeProofSwitch');
+  const steadyBadge = document.getElementById('steadyBadge');
 
   document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -462,6 +479,11 @@
   let manualModeOn = true;
   let dualPointsOn = false;
   let draggingPoint = null;
+  let stabilizerOn = false;
+  let shakeProofOn = false;
+  let shakeMagnitude = 0;
+  let motionSmoothed = {x:0, y:0};
+  let stabOffset = {x:0, y:0};
 
   const resPresets = {'4k':{w:3840,h:2160}, '1080':{w:1920,h:1080}, '720':{w:1280,h:720}};
 
@@ -491,6 +513,73 @@
     levelEl.style.transform = 'rotate(' + (-angle) + 'deg)';
     levelEl.classList.toggle('level-ok', Math.abs(angle) < 1.5);
   });
+
+  if(window.DeviceMotionEvent){
+    stabRow.classList.remove('hidden');
+    shakeProofRow.classList.remove('hidden');
+  }
+
+  async function requestMotionPermission(){
+    if(typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function'){
+      try{ await DeviceMotionEvent.requestPermission(); }catch(e){}
+    }
+  }
+
+  stabSwitch.addEventListener('click', async () => {
+    stabilizerOn = !stabilizerOn;
+    toggleSwitch(stabSwitch, stabilizerOn);
+    if(stabilizerOn){
+      await requestMotionPermission();
+    }else{
+      stabOffset = {x:0, y:0};
+      video.style.transform = '';
+    }
+  });
+
+  shakeProofSwitch.addEventListener('click', async () => {
+    shakeProofOn = !shakeProofOn;
+    toggleSwitch(shakeProofSwitch, shakeProofOn);
+    if(shakeProofOn) await requestMotionPermission();
+    else steadyBadge.classList.add('hidden');
+  });
+
+  window.addEventListener('devicemotion', (e) => {
+    if(!stabilizerOn && !shakeProofOn) return;
+    const acc = e.accelerationIncludingGravity || e.acceleration;
+    if(!acc) return;
+    const ax = acc.x || 0, ay = acc.y || 0;
+    const alpha = 0.85;
+    motionSmoothed.x = alpha * motionSmoothed.x + (1 - alpha) * ax;
+    motionSmoothed.y = alpha * motionSmoothed.y + (1 - alpha) * ay;
+    const jitterX = ax - motionSmoothed.x;
+    const jitterY = ay - motionSmoothed.y;
+    shakeMagnitude = Math.hypot(jitterX, jitterY);
+    if(stabilizerOn){
+      const targetX = Math.max(-12, Math.min(12, -jitterX * 5));
+      const targetY = Math.max(-12, Math.min(12, -jitterY * 5));
+      stabOffset.x += (targetX - stabOffset.x) * 0.25;
+      stabOffset.y += (targetY - stabOffset.y) * 0.25;
+      video.style.transform = 'scaleX(var(--mirror,1)) translate(' +
+        stabOffset.x.toFixed(1) + 'px, ' + stabOffset.y.toFixed(1) + 'px) scale(1.05)';
+    }
+  });
+
+  function waitForSteady(threshold, timeoutMs){
+    return new Promise((resolve) => {
+      if(!shakeProofOn || shakeMagnitude < threshold){ resolve(); return; }
+      steadyBadge.classList.remove('hidden');
+      const start = performance.now();
+      const check = () => {
+        if(shakeMagnitude < threshold || performance.now() - start > timeoutMs){
+          steadyBadge.classList.add('hidden');
+          resolve();
+        }else{
+          requestAnimationFrame(check);
+        }
+      };
+      check();
+    });
+  }
 
   histSwitch.addEventListener('click', () => {
     const on = !histSwitch.classList.contains('on');
@@ -1269,7 +1358,8 @@
       return;
     }
     if(countdownEl.classList.contains('show')) return;
-    const fire = () => {
+    const fire = async () => {
+      await waitForSteady(0.7, 2500);
       if(captureMode === 'burst') burstCapture();
       else if(captureMode === 'night') nightCapture();
       else if(captureMode === 'bracket') bracketCapture();
