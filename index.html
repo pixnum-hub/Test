@@ -3,1385 +3,798 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>4K Camera — Manik Roy</title>
+<title>APERIO — 4K Field Camera</title>
 <style>
-  :root{
-    --radius:18px;
-    --safe-t:env(safe-area-inset-top,0px);
-    --safe-b:env(safe-area-inset-bottom,0px);
-  }
-  [data-theme="dark"]{--bg:#0B0C0E;--fg:#EDEDED;--fg-dim:#9AA0A6;--accent:#FF8A3D;--panel:rgba(255,255,255,.07);--border:rgba(255,255,255,.18);}
-  [data-theme="light"]{--bg:#F5F3EF;--fg:#14161A;--fg-dim:#5B5F66;--accent:#C9601A;--panel:rgba(0,0,0,.05);--border:rgba(0,0,0,.16);}
-  [data-theme="oled"]{--bg:#000000;--fg:#FFFFFF;--fg-dim:#8A8A8A;--accent:#FF8A3D;--panel:rgba(255,255,255,.05);--border:rgba(255,255,255,.14);}
-  [data-theme="hc"]{--bg:#000000;--fg:#FFFFFF;--fg-dim:#FFEE00;--accent:#FFEE00;--panel:#000000;--border:#FFFFFF;}
+:root{
+  --bg:#121316; --surface:#1b1d21; --surface2:#232529; --line:#33363c; --text:#f1efe9; --muted:#8b8e94;
+  --accent:#c9a227; --accent-ink:#12100a; --danger:#c0453b;
+  --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --font-mono:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --safe-t:env(safe-area-inset-top); --safe-b:env(safe-area-inset-bottom);
+}
+[data-theme="light"]{--bg:#eeece5; --surface:#ffffff; --surface2:#f2f0ea; --line:#d4d0c6; --text:#1c1b18; --muted:#68655d; --accent:#a8791c; --accent-ink:#fff;}
+[data-theme="oled"]{--bg:#000; --surface:#000; --surface2:#0a0a0a; --line:#1f1f1f; --text:#eaeaea; --muted:#7a7a7a; --accent:#c9a227; --accent-ink:#000;}
+[data-theme="hc"]{--bg:#000; --surface:#000; --surface2:#000; --line:#fff; --text:#fff; --muted:#fff; --accent:#ffe600; --accent-ink:#000;}
+[data-theme="hc"] *{text-shadow:none !important;}
 
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{height:100%;margin:0;}
-  body{
-    background:var(--bg); color:var(--fg);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    display:flex; flex-direction:column; min-height:100dvh;
-    transition:background .3s ease,color .3s ease;
-  }
-  .mono{font-family:"SFMono-Regular",Consolas,"Roboto Mono",monospace;}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; height:100%; background:var(--bg); color:var(--text); font-family:var(--font-ui);}
+body{display:flex; flex-direction:column; min-height:100dvh; overflow-x:hidden;}
+button{font-family:inherit; color:inherit;}
 
-  .viewfinder{
-    position:relative; flex:1; overflow:hidden;
-    background:#000; border-radius:0 0 var(--radius) var(--radius);
-    margin:0; min-height:0;
-  }
-  video{
-    width:100%; height:100%; object-fit:cover; display:block;
-    transform:scaleX(var(--mirror,1));
-  }
+.brand{display:flex; align-items:center; justify-content:space-between; padding:calc(var(--safe-t) + 12px) 16px 8px;}
+.brand-mark{font-family:var(--font-mono); font-size:20px; letter-spacing:.12em;}
+.brand-mark b{color:var(--accent);}
+.readout{font-family:var(--font-mono); font-size:11px; color:var(--muted); letter-spacing:.05em; text-align:right;}
 
-  .bracket{position:absolute; width:26px; height:26px; border-color:var(--accent); opacity:.9; pointer-events:none;}
-  .tl{top:calc(14px + var(--safe-t)); left:14px; border-top:3px solid var(--accent); border-left:3px solid var(--accent);}
-  .tr{top:calc(14px + var(--safe-t)); right:14px; border-top:3px solid var(--accent); border-right:3px solid var(--accent);}
-  .bl{bottom:110px; left:14px; border-bottom:3px solid var(--accent); border-left:3px solid var(--accent);}
-  .br{bottom:110px; right:14px; border-bottom:3px solid var(--accent); border-right:3px solid var(--accent);}
+.stage{flex:1; position:relative; margin:4px 12px; border-radius:2px; overflow:hidden; background:#000; border:1px solid var(--line); min-height:0;}
+video{width:100%; height:100%; object-fit:cover; display:block; background:#000; transform-origin:center; transition:transform .15s ease, filter .1s linear;}
+canvas{display:none;}
 
-  .overlay-top{
-    position:absolute; top:0; left:0; right:0;
-    padding:calc(14px + var(--safe-t)) 16px 10px;
-    display:flex; align-items:center; justify-content:space-between;
-    background:linear-gradient(rgba(0,0,0,.45),transparent);
-  }
-  #res{font-size:.78rem; letter-spacing:.06em; color:#fff; background:var(--panel); border:1px solid var(--border); padding:5px 10px; border-radius:999px;}
+.bracket{position:absolute; width:22px; height:22px; border-color:var(--accent); opacity:.85; pointer-events:none;}
+.bracket.tl{top:10px; left:10px; border-top:2px solid; border-left:2px solid;}
+.bracket.tr{top:10px; right:10px; border-top:2px solid; border-right:2px solid;}
+.bracket.bl{bottom:10px; left:10px; border-bottom:2px solid; border-left:2px solid;}
+.bracket.br{bottom:10px; right:10px; border-bottom:2px solid; border-right:2px solid;}
 
-  .icon-group{display:flex; gap:8px;}
-  .icon-btn{
-    width:38px; height:38px; border-radius:50%; border:1px solid var(--border);
-    background:var(--panel); color:#fff; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
-  }
-  .icon-btn.active{background:var(--accent); border-color:var(--accent); color:#111;}
+.grid{position:absolute; inset:0; width:100%; height:100%; display:none; pointer-events:none;}
+.grid.on{display:block;}
+.grid line{stroke:rgba(255,255,255,.4); stroke-width:.4;}
+.grid path{stroke:rgba(255,255,255,.45); stroke-width:.4; fill:none;}
 
-  .zoom-row{
-    position:absolute; left:0; right:0; bottom:104px;
-    display:flex; align-items:center; justify-content:center; gap:8px; padding:0 24px;
-  }
-  .zoom-row.hidden{display:none;}
-  #zoomVal{font-size:.72rem; color:#fff; min-width:2.4em; text-align:center;}
-  #zoomSlider{flex:1; max-width:260px; accent-color:var(--accent);}
+.gauge{position:absolute; top:38px; left:50%; transform:translateX(-50%); width:140px; height:5px; border-radius:4px; background:rgba(255,255,255,.2); overflow:hidden; z-index:2; display:none;}
+.gauge.on{display:block;}
+.gauge i{display:block; height:100%; width:20%; background:var(--danger); transition:width .15s, background .15s;}
 
-  .focus-ring{
-    position:absolute; width:64px; height:64px; margin:-32px 0 0 -32px;
-    border:2px solid var(--accent); border-radius:50%; pointer-events:none;
-    opacity:0; transform:scale(1.3);
-  }
-  .focus-ring.go{animation:focusPulse .6s ease-out;}
-  @keyframes focusPulse{0%{opacity:1; transform:scale(1.3);}70%{opacity:1; transform:scale(1);}100%{opacity:0; transform:scale(1);}}
+.horizon{position:absolute; inset:0; display:none; align-items:center; justify-content:center; pointer-events:none; z-index:2;}
+.horizon.on{display:flex;}
+.horizon .bar{width:56%; height:2px; background:rgba(255,255,255,.55); position:relative; transition:background .15s;}
+.horizon .bar::before{content:""; position:absolute; left:50%; top:-5px; width:2px; height:12px; background:inherit; transform:translateX(-50%);}
+.horizon.level .bar{background:var(--accent);}
 
-  #countdown{
-    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
-    font-size:5rem; font-weight:700; color:#fff; background:rgba(0,0,0,.35); pointer-events:none;
-  }
-  #countdown.show{display:flex;}
+.toast{position:absolute; left:50%; bottom:14px; transform:translate(-50%,8px); background:rgba(0,0,0,.7); color:#fff; font-family:var(--font-mono); font-size:11px; padding:6px 14px; border-radius:20px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:5; max-width:88%; text-align:center;}
+.toast.on{opacity:1; transform:translate(-50%,0);}
 
-  .grid-overlay{
-    position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .2s;
-    background-image:linear-gradient(to right, rgba(255,255,255,.45) 1px, transparent 1px),
-                      linear-gradient(to bottom, rgba(255,255,255,.45) 1px, transparent 1px);
-    background-size:33.333% 33.333%;
-  }
-  .grid-overlay.show{opacity:1;}
+.sparkline{width:100%; height:40px; display:block; background:var(--surface2); border-radius:6px;}
+.weather-out{font-size:12px; color:var(--text); margin-top:6px; min-height:16px;}
+.smallbtn{padding:8px 12px; border:1px solid var(--line); background:var(--surface2); border-radius:8px; font-size:12px; cursor:pointer;}
 
-  .crop-mask{
-    position:absolute; pointer-events:none; box-shadow:0 0 0 9999px rgba(0,0,0,.6);
-    display:none; border:1px solid rgba(255,255,255,.5);
-  }
-  .crop-mask.show{display:block;}
+.hud{position:absolute; top:10px; left:50%; transform:translateX(-50%); font-family:var(--font-mono); font-size:11px; color:var(--accent); background:rgba(0,0,0,.35); padding:3px 10px; border-radius:20px; letter-spacing:.08em; z-index:2;}
+.flash{position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:3;}
+.flash.go{animation:flashpop .35s ease-out;}
+@keyframes flashpop{0%{opacity:.9;}100%{opacity:0;}}
+.msg{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:24px; font-size:14px; color:var(--muted); font-family:var(--font-mono); background:rgba(0,0,0,.5); z-index:2;}
+.countdown{position:absolute; inset:0; display:none; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:88px; color:#fff; background:rgba(0,0,0,.25); z-index:4;}
+.countdown.on{display:flex;}
 
-  #level{
-    position:absolute; top:50%; left:15%; right:15%; height:2px; pointer-events:none;
-    background:rgba(255,255,255,.5); transform-origin:center; display:none;
-  }
-  #level.show{display:block;}
-  #level::before{content:''; position:absolute; left:50%; top:-3px; width:8px; height:8px; margin-left:-4px; border-radius:50%; background:var(--fg-dim);}
-  #level.level-ok{background:var(--accent);}
-  #level.level-ok::before{background:var(--accent);}
+.zoombar{display:flex; align-items:center; gap:8px; padding:2px 22px; font-family:var(--font-mono); font-size:11px; color:var(--muted);}
+.zoombar input[type=range]{flex:1;}
 
-  #histogram{
-    position:absolute; width:120px; height:56px; background:rgba(0,0,0,.4);
-    border:1px solid var(--border); border-radius:8px; display:none;
-    top:calc(60px + var(--safe-t)); right:16px;
-  }
-  #histogram.show{display:block;}
+.controls{display:flex; align-items:center; justify-content:space-between; padding:6px 22px calc(var(--safe-b) + 12px); gap:10px;}
+.side-btn{width:44px; height:44px; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--text); display:flex; align-items:center; justify-content:center; font-size:17px; cursor:pointer;}
+.side-btn.active{border-color:var(--accent); color:var(--accent);}
+.side-btn:active{transform:scale(.92);}
+.group{display:flex; gap:8px;}
 
-  .settings-btn{margin-left:0;}
-  #settingsPanel{
-    position:absolute; left:0; right:0; bottom:0; max-height:78%; overflow-y:auto;
-    -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
-    background:var(--bg); border-top:1px solid var(--border); border-radius:16px 16px 0 0;
-    transform:translateY(100%); transition:transform .3s ease; z-index:30; padding-bottom:12px;
-  }
-  #settingsPanel.open{transform:translateY(0);}
-  .settings-head{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border);}
-  .settings-head h2{font-size:.9rem; margin:0; color:var(--fg);}
-  .setting-row{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:12px 16px; border-bottom:1px solid var(--border); font-size:.82rem; color:var(--fg); gap:12px;
-  }
-  .manual-off .manual-block{display:none !important;}
-  .setting-row input[type="range"]{flex:1; accent-color:var(--accent);}
+.shutter{width:70px; height:70px; border-radius:50%; position:relative; cursor:pointer; border:3px solid var(--accent);
+  background:conic-gradient(var(--accent) 0 25%, transparent 0 50%, var(--accent) 0 75%, transparent 0), var(--surface);
+  display:flex; align-items:center; justify-content:center; padding:0; flex:none;}
+.shutter::after{content:""; width:50px; height:50px; border-radius:50%; background:var(--surface); border:1px solid var(--line);}
+.shutter.snap{animation:iris .28s ease;}
+@keyframes iris{0%{transform:scale(1);}45%{transform:scale(.8);}100%{transform:scale(1);}}
 
-  .reticle{
-    position:absolute; width:56px; height:56px; margin:-28px 0 0 -28px;
-    border-radius:50%; border:2px solid; display:none; align-items:center; justify-content:center;
-    font-size:.65rem; font-weight:700; letter-spacing:.05em; color:#fff; touch-action:none; cursor:grab;
-    background:rgba(0,0,0,.25);
-  }
-  .reticle.show{display:flex;}
-  .reticle.ae-point{border-color:#FFEE00; color:#FFEE00;}
-  .reticle.af-point{border-color:var(--accent); color:var(--accent);}
+.theme-dial{display:flex; gap:4px; background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:3px; margin:0 16px 8px; align-self:center;}
+.theme-dial button{width:30px; height:30px; border-radius:50%; border:none; background:transparent; color:var(--muted); font-family:var(--font-mono); font-size:10px; cursor:pointer;}
+.theme-dial button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); font-weight:700;}
 
-  #steadyBadge{
-    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    background:rgba(0,0,0,.6); color:#FFEE00; border:1px solid #FFEE00;
-    padding:8px 16px; border-radius:999px; font-size:.78rem; letter-spacing:.06em;
-    z-index:8; pointer-events:none; animation:steadyPulse 1s ease-in-out infinite;
-  }
-  #steadyBadge.hidden{display:none;}
-  @keyframes steadyPulse{0%,100%{opacity:.7;}50%{opacity:1;}}
-  .segmented{display:flex; gap:6px; flex-wrap:wrap;}
-  .segmented button{
-    padding:5px 10px; border-radius:8px; border:1px solid var(--border);
-    background:transparent; color:var(--fg); font-size:.72rem; cursor:pointer;
-  }
-  .segmented button.active{background:var(--accent); border-color:var(--accent); color:#111;}
-  .switch{
-    width:42px; height:24px; border-radius:999px; border:1px solid var(--border);
-    background:var(--panel); position:relative; cursor:pointer; flex-shrink:0;
-  }
-  .switch::after{content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:var(--fg-dim); transition:transform .2s;}
-  .switch.on{background:var(--accent); border-color:var(--accent);}
-  .switch.on::after{transform:translateX(18px); background:#111;}
+.filmstrip{display:flex; gap:8px; overflow-x:auto; padding:8px 16px; border-top:1px solid var(--line);}
+.filmstrip img{height:52px; width:52px; object-fit:cover; border-radius:3px; border:1px solid var(--line); cursor:pointer; flex:none;}
 
-  .overlay-bottom{
-    position:absolute; left:0; right:0; bottom:0;
-    padding:14px 20px calc(20px + var(--safe-b));
-    display:flex; align-items:center; justify-content:space-between;
-    background:linear-gradient(transparent,rgba(0,0,0,.55));
-    z-index:5;
-  }
-  .side-btn{
-    width:46px; height:46px; border-radius:50%; border:1px solid var(--border);
-    background:var(--panel); color:#fff; font-size:1.2rem; cursor:pointer;
-  }
-  #captureBtn{
-    width:76px; height:76px; border-radius:50%; background:#fff;
-    border:5px solid var(--accent); cursor:pointer; box-shadow:0 0 0 3px rgba(255,255,255,.15);
-    transition:transform .12s ease;
-  }
-  #captureBtn:active{transform:scale(.9);}
-  .hidden{display:none;}
+.sheet{position:fixed; left:0; right:0; bottom:0; background:var(--surface); border-top:1px solid var(--line); border-radius:14px 14px 0 0;
+  transform:translateY(100%); transition:transform .25s ease; z-index:10; max-height:78dvh; overflow-y:auto; padding:14px 18px calc(var(--safe-b) + 18px);}
+.sheet.open{transform:translateY(0);}
+.sheet h3{font-family:var(--font-mono); font-size:12px; letter-spacing:.1em; color:var(--muted); margin:14px 0 6px;}
+.sheet h3:first-child{margin-top:0;}
+.sheet-head{display:flex; justify-content:space-between; align-items:center;}
+.sheet-head b{font-size:14px;}
+.sheet-head button{background:none; border:none; font-size:20px; cursor:pointer;}
+.row{display:flex; align-items:center; justify-content:space-between; padding:8px 0; gap:12px;}
+.row label{font-size:13px;}
+.row input[type=range]{flex:1; max-width:60%;}
+.seg{display:flex; gap:6px;}
+.seg button{flex:1; padding:8px 4px; border:1px solid var(--line); background:var(--surface2); border-radius:8px; font-size:12px; cursor:pointer;}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700;}
+.switch{width:40px; height:24px; border-radius:20px; background:var(--line); position:relative; border:none; cursor:pointer; flex:none;}
+.switch::after{content:""; position:absolute; width:18px; height:18px; border-radius:50%; background:#fff; top:3px; left:3px; transition:left .15s ease;}
+.switch[aria-pressed="true"]{background:var(--accent);}
+.switch[aria-pressed="true"]::after{left:19px;}
+.switch:disabled{opacity:.35; cursor:not-allowed;}
+.resetbtn{width:100%; margin-top:16px; padding:10px; border:1px solid var(--line); background:var(--surface2); border-radius:8px; cursor:pointer; font-size:12px;}
+.note{font-size:11px; color:var(--muted); line-height:1.5; margin:2px 0 0;}
+.seg button[data-v="raw"][aria-pressed="true"]{background:var(--danger); border-color:var(--danger); color:#fff;}
+.seg.small{gap:4px;}
+.seg.small button{padding:5px 10px; font-size:11px; flex:none;}
+.mrow{padding:6px 0;}
+.mrow .row{padding:4px 0;}
+.subrow{display:flex; align-items:center; gap:10px; padding:2px 0 6px;}
+.subrow input[type=range]{flex:1;}
+.mval{font-family:var(--font-mono); font-size:11px; color:var(--muted); min-width:60px; text-align:right; flex:none;}
+.mempty{font-size:12px; color:var(--muted); padding:4px 0;}
 
-  #flash{
-    position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none;
-  }
-  #flash.go{animation:flash .35s ease-out;}
-  @keyframes flash{0%{opacity:.85;}100%{opacity:0;}}
+.overlay{position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9; display:none;}
+.overlay.on{display:block;}
 
-  #status{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    text-align:center; padding:24px; font-size:.9rem; color:var(--fg-dim); display:none;
-  }
-  #status.show{display:flex;}
+.viewer{position:fixed; inset:0; background:#000; z-index:11; display:none; flex-direction:column;}
+.viewer.on{display:flex;}
+.viewer img{flex:1; width:100%; object-fit:contain; min-height:0;}
+.viewer-bar{display:flex; justify-content:space-between; padding:calc(var(--safe-t) + 10px) 18px 18px;}
+.viewer-bar button{background:var(--surface); border:1px solid var(--line); color:var(--text); border-radius:8px; padding:10px 16px; font-size:13px; cursor:pointer;}
 
-  #peakCanvas{position:absolute; inset:0; pointer-events:none; opacity:0; mix-blend-mode:screen;}
-  #peakCanvas.show{opacity:1;}
-  #zebraCanvas{position:absolute; inset:0; pointer-events:none; opacity:0; mix-blend-mode:screen;}
-  #zebraCanvas.show{opacity:1;}
+a.dl{display:none;}
 
-  #lockBadge{
-    font-size:.72rem; color:#111; background:var(--accent); border-radius:999px;
-    padding:5px 10px; font-weight:700; letter-spacing:.04em;
-  }
+footer{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; text-align:center; padding:10px 16px calc(var(--safe-b) + 10px); border-top:1px solid var(--line); font-family:var(--font-mono); font-size:11px; color:var(--muted);}
+footer strong{color:var(--text); font-weight:600;}
 
-  #captureBtn.rec{border-color:#E5484D; animation:recPulse 1.1s ease-in-out infinite;}
-  @keyframes recPulse{0%,100%{box-shadow:0 0 0 3px rgba(229,72,77,.25);}50%{box-shadow:0 0 0 9px rgba(229,72,77,.08);}}
-
-  .mode-label{
-    position:absolute; left:0; right:0; bottom:100px; text-align:center;
-    font-size:.72rem; letter-spacing:.08em; color:var(--accent); pointer-events:none; text-transform:uppercase;
-  }
-
-  footer{
-    text-align:center; padding:12px 16px calc(12px + var(--safe-b));
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-    font-size:.75rem; color:var(--fg-dim); border-top:1px solid var(--border);
-  }
-  footer strong{color:var(--fg); font-weight:600;}
-
-  @media(min-width:720px){
-    body{align-items:center;}
-    .viewfinder{max-width:900px; width:100%; margin:16px auto 0; border-radius:var(--radius); aspect-ratio:16/9;}
-    footer{max-width:900px;}
-  }
+@media (min-width:720px){
+  .stage{margin:8px auto; max-width:920px; width:100%; aspect-ratio:16/9;}
+  body{align-items:center;}
+  .brand,.controls,footer,.zoombar,.filmstrip{width:100%; max-width:920px; margin-left:auto; margin-right:auto;}
+  .sheet{max-width:480px; left:auto; right:16px; bottom:16px; border-radius:14px;}
+}
 </style>
 </head>
 <body>
 
-  <section class="viewfinder">
-    <video id="video" autoplay playsinline muted></video>
-    <div class="bracket tl"></div>
-    <div class="bracket tr"></div>
-    <div class="bracket bl"></div>
-    <div class="bracket br"></div>
+<div class="brand">
+  <div class="brand-mark"><b>◎</b> APERIO</div>
+  <div class="readout" id="resReadout">— × —</div>
+</div>
 
-    <div class="overlay-top">
-      <span id="res" class="mono">— × —</span>
-      <span id="lockBadge" class="mono hidden">🔒 AE/AF</span>
-      <div class="icon-group">
-        <button id="flashBtn" class="icon-btn hidden" aria-label="Toggle flash">⚡</button>
-        <button id="soundBtn" class="icon-btn" aria-label="Toggle shutter sound">🔊</button>
-        <button id="themeBtn" class="icon-btn" aria-label="Toggle theme">◐</button>
-        <button id="gearBtn" class="icon-btn settings-btn" aria-label="Open settings">⚙</button>
-      </div>
+<div class="stage" id="stage">
+  <video id="video" playsinline autoplay muted></video>
+  <canvas id="canvas"></canvas>
+  <svg class="grid" id="grid" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+  <div class="horizon" id="horizon"><div class="bar"></div></div>
+  <div class="bracket tl"></div><div class="bracket tr"></div>
+  <div class="bracket bl"></div><div class="bracket br"></div>
+  <div class="hud" id="hud">STANDBY</div>
+  <div class="gauge" id="gauge"><i></i></div>
+  <div class="countdown" id="countdown">3</div>
+  <div class="flash" id="flash"></div>
+  <div class="msg" id="msg" hidden></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<div class="zoombar">
+  <span>1×</span>
+  <input type="range" id="zoomSlider" min="1" max="4" step="0.1" value="1">
+  <span id="zoomVal">1.0×</span>
+</div>
+
+<div class="controls">
+  <div class="group">
+    <button class="side-btn" id="flipBtn" title="Switch camera" aria-label="Switch camera">⟲</button>
+    <button class="side-btn" id="torchBtn" title="Flash / torch" aria-label="Toggle flash" hidden>⚡</button>
+  </div>
+  <button class="shutter" id="shutterBtn" aria-label="Capture photo"></button>
+  <div class="group">
+    <button class="side-btn" id="settingsBtn" title="Image settings" aria-label="Open settings">⚙</button>
+    <button class="side-btn" id="fullscreenBtn" title="Fullscreen" aria-label="Toggle fullscreen">⤢</button>
+  </div>
+</div>
+
+<div class="theme-dial" id="themeDial">
+  <button data-t="dark" aria-pressed="true">D</button>
+  <button data-t="light" aria-pressed="false">L</button>
+  <button data-t="oled" aria-pressed="false">O</button>
+  <button data-t="hc" aria-pressed="false">HC</button>
+</div>
+
+<div class="filmstrip" id="filmstrip" hidden></div>
+
+<a class="dl" id="dlLink" download></a>
+
+<footer>
+  <div>© <strong>Manik Roy</strong> <span id="yr">2026</span>. All Rights Reserved.</div>
+</footer>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="sheet" id="settingsSheet">
+  <div class="sheet-head"><b>Image Settings</b><button id="closeSettings" aria-label="Close">✕</button></div>
+
+  <h3>Capture</h3>
+  <div class="row"><label>Resolution</label>
+    <div class="seg" id="resSeg">
+      <button data-v="auto" aria-pressed="true">Auto 4K</button>
+      <button data-v="1080">1080p</button>
+      <button data-v="720">720p</button>
     </div>
-
-    <div class="grid-overlay" id="gridOverlay"></div>
-    <div class="crop-mask" id="cropMask"></div>
-    <div id="level"></div>
-    <canvas id="histogram"></canvas>
-    <canvas id="peakCanvas"></canvas>
-    <canvas id="zebraCanvas"></canvas>
-    <div class="mode-label" id="modeLabel"></div>
-
-    <svg width="0" height="0" style="position:absolute">
-      <filter id="wbFilter" color-interpolation-filters="sRGB">
-        <feColorMatrix id="wbMatrix" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"/>
-      </filter>
-    </svg>
-
-    <div class="zoom-row hidden" id="zoomRow">
-      <input type="range" id="zoomSlider" min="1" max="1" step="0.1" value="1">
-      <span id="zoomVal" class="mono">1.0x</span>
+  </div>
+  <div class="row"><label>Aspect ratio</label>
+    <div class="seg" id="aspectSeg">
+      <button data-v="16:9" aria-pressed="true">16:9</button>
+      <button data-v="4:3">4:3</button>
+      <button data-v="1:1">1:1</button>
     </div>
-
-    <div class="overlay-bottom">
-      <button id="switchBtn" class="side-btn" aria-label="Switch camera">⟲</button>
-      <button id="captureBtn" aria-label="Capture photo"></button>
-      <button id="timerBtn" class="side-btn mono" aria-label="Toggle self-timer">0s</button>
+  </div>
+  <div class="row"><label>Self-timer</label>
+    <div class="seg" id="timerSeg">
+      <button data-v="0" aria-pressed="true">Off</button>
+      <button data-v="3">3s</button>
+      <button data-v="10">10s</button>
     </div>
+  </div>
 
-    <div class="focus-ring" id="focusRing"></div>
-    <div class="reticle ae-point" id="aePoint">AE</div>
-    <div class="reticle af-point" id="afPoint">AF</div>
-    <div id="steadyBadge" class="mono hidden">HOLD STEADY</div>
-    <div id="countdown" class="mono"></div>
-    <div id="flash"></div>
-    <div id="status"></div>
+  <h3>Adjustments</h3>
+  <div class="row"><label>Brightness</label><input type="range" id="brightness" min="-50" max="50" value="0"></div>
+  <div class="row"><label>Contrast</label><input type="range" id="contrast" min="-50" max="50" value="0"></div>
+  <div class="row"><label>Saturation</label><input type="range" id="saturation" min="-50" max="50" value="0"></div>
 
-    <div id="settingsPanel">
-      <div class="settings-head"><h2>Settings</h2><button id="closeSettings" class="icon-btn" aria-label="Close settings">✕</button></div>
-      <div class="setting-row"><span>Grid overlay</span><div class="switch" id="gridSwitch"></div></div>
-      <div class="setting-row"><span>Level indicator</span><div class="switch" id="levelSwitch"></div></div>
-      <div class="setting-row"><span>Live histogram</span><div class="switch" id="histSwitch"></div></div>
-      <div class="setting-row hidden" id="mirrorRow"><span>Mirror selfie</span><div class="switch" id="mirrorSwitch"></div></div>
-      <div class="setting-row"><span>Aspect ratio</span>
-        <div class="segmented" id="ratioGroup">
-          <button data-ratio="full" class="active">Full</button>
-          <button data-ratio="16:9">16:9</button>
-          <button data-ratio="4:3">4:3</button>
-          <button data-ratio="1:1">1:1</button>
-        </div>
-      </div>
-      <div class="setting-row"><span>Resolution</span>
-        <div class="segmented" id="resGroup">
-          <button data-res="4k" class="active">4K</button>
-          <button data-res="1080">1080p</button>
-          <button data-res="720">720p</button>
-        </div>
-      </div>
-      <div class="setting-row hidden" id="stabRow"><span>Image stabilizer</span><div class="switch" id="stabSwitch"></div></div>
-      <div class="setting-row hidden" id="shakeProofRow"><span>Shake-proof capture</span><div class="switch" id="shakeProofSwitch"></div></div>
-      <div class="setting-row"><span>Manual mode</span><div class="switch on" id="manualModeSwitch"></div></div>
-      <div class="setting-row hidden manual-block" id="exposureRow"><span>Exposure</span><input type="range" id="exposureSlider"></div>
-      <div class="setting-row manual-block"><span>Backlight compensation</span><div class="switch" id="backlightSwitch"></div></div>
-      <div class="setting-row manual-block"><span>Exposure warning (zebras)</span><div class="switch" id="zebraSwitch"></div></div>
-      <div class="setting-row manual-block"><span>Metering</span>
-        <div class="segmented" id="meterGroup">
-          <button data-meter="matrix" class="active">Matrix</button>
-          <button data-meter="center">Center</button>
-          <button data-meter="spot">Spot</button>
-        </div>
-      </div>
-      <div class="setting-row manual-block"><span>WB preset</span>
-        <div class="segmented" id="wbPresetGroup">
-          <button data-wb="auto" class="active">Auto</button>
-          <button data-wb="daylight">Day</button>
-          <button data-wb="cloudy">Cloud</button>
-          <button data-wb="tungsten">Tungsten</button>
-          <button data-wb="fluorescent">Fluor.</button>
-        </div>
-      </div>
-      <div class="setting-row manual-block"><span>Saturation</span><input type="range" id="saturationSlider" min="0" max="2" step="0.05" value="1"></div>
-      <div class="setting-row manual-block"><span>Dual AE/AF points</span><div class="switch" id="dualPointSwitch"></div></div>
-      <div class="setting-row" id="hdrRow"><span>HDR look</span><div class="switch" id="hdrSwitch"></div></div>
+  <h3>Manual</h3>
+  <div id="manualControls"></div>
+  <p class="note">Manual focus, shutter, ISO and white balance use an experimental browser API found mainly on Android Chrome with compatible hardware. Units vary by device; iOS and most desktop browsers won't expose any of these, in which case only Auto is available.</p>
 
-      <div class="settings-head"><h2>Pro Controls</h2></div>
-      <div class="setting-row"><span>Capture mode</span>
-        <div class="segmented" id="modeGroup">
-          <button data-mode="photo" class="active">Photo</button>
-          <button data-mode="burst">Burst</button>
-          <button data-mode="night">Night</button>
-          <button data-mode="pano">Pano</button>
-          <button data-mode="bracket">Bracket</button>
-        </div>
-      </div>
-      <div class="setting-row hidden" id="burstCountRow"><span>Burst count</span>
-        <div class="segmented" id="burstGroup">
-          <button data-n="3">3</button>
-          <button data-n="5" class="active">5</button>
-          <button data-n="10">10</button>
-        </div>
-      </div>
-      <div class="setting-row"><span>File format</span>
-        <div class="segmented" id="formatGroup">
-          <button data-fmt="png" class="active">PNG (lossless)</button>
-          <button data-fmt="jpeg">JPEG (smaller)</button>
-        </div>
-      </div>
-      <div class="setting-row"><span>Focus peaking</span><div class="switch" id="peakSwitch"></div></div>
-      <div class="setting-row"><span>Macro assist</span><div class="switch" id="macroSwitch"></div></div>
-      <div class="setting-row hidden manual-block" id="focusDistRow"><span>Focus distance</span><input type="range" id="focusDistSlider"></div>
-      <div class="setting-row"><span>Continuous AF</span><div class="switch on" id="afModeSwitch"></div></div>
-      <div class="setting-row"><span>Tap white balance</span><div class="switch" id="tapWbSwitch"></div></div>
-      <div class="setting-row hidden manual-block" id="isoRow"><span>ISO</span><input type="range" id="isoSlider"></div>
-      <div class="setting-row hidden manual-block" id="shutterRow"><span>Shutter</span><input type="range" id="shutterSlider"></div>
-      <div class="setting-row hidden manual-block" id="kelvinRow"><span>White balance (K)</span><input type="range" id="kelvinSlider"></div>
+  <h3>Smart Capture</h3>
+  <div class="row"><label>Steadiness lock</label><button class="switch" id="steadySwitch" aria-pressed="false"></button></div>
+  <div class="row"><label>Sound trigger</label>
+    <div class="seg small" id="soundTrigSeg">
+      <button data-v="off" aria-pressed="true">Off</button><button data-v="low">Low</button><button data-v="med">Med</button><button data-v="high">High</button>
     </div>
-  </section>
+  </div>
+  <div class="row"><label>Gesture (wave) trigger</label><button class="switch" id="gestureSwitch" aria-pressed="false"></button></div>
+  <div class="row"><label>Horizon level</label><button class="switch" id="horizonSwitch" aria-pressed="false"></button></div>
+  <div class="row"><label>Battery-aware throttle</label><button class="switch" id="batterySwitch" aria-pressed="true"></button></div>
+  <p class="note" id="smartNote">Steadiness and horizon use the device's motion sensors; sound trigger needs microphone access; gesture trigger watches the camera frame for movement. iOS asks for a one-time motion/mic permission on first use, and unsupported sensors leave a control disabled.</p>
 
-  <footer>
-    <p>© Manik Roy <span id="year"></span>. All Rights Reserved.</p>
-  </footer>
+  <h3>Light diary</h3>
+  <canvas class="sparkline" id="sparkline" width="300" height="40"></canvas>
+  <p class="note">Ambient brightness across this session — a quick read on how your exposure has drifted.</p>
 
-  <canvas id="canvas" hidden></canvas>
-  <a id="downloadLink" class="hidden" download></a>
+  <h3>Weather</h3>
+  <button class="smallbtn" id="weatherBtn">🌤 Check local light</button>
+  <div class="weather-out" id="weatherOut"></div>
+
+  <h3>Output</h3>
+  <div class="row"><label>Format</label>
+    <div class="seg" id="formatSeg">
+      <button data-v="jpeg" aria-pressed="true">JPEG</button>
+      <button data-v="webp">WEBP</button>
+      <button data-v="png">PNG</button>
+      <button data-v="raw">RAW</button>
+    </div>
+  </div>
+  <div class="row" id="qualityRow"><label>Quality</label><input type="range" id="quality" min="0.4" max="1" step="0.05" value="0.92"></div>
+  <p class="note" id="formatNote" hidden>RAW here means uncompressed raw pixel data (.raw), not sensor DNG/CR2 — browsers can't access true camera-sensor RAW. Every pixel is saved exactly as captured, with no compression.</p>
+
+  <h3>Toggles</h3>
+  <div class="row"><label>Grid style</label>
+    <div class="seg small" id="gridSeg">
+      <button data-v="off" aria-pressed="true">Off</button><button data-v="thirds">Thirds</button><button data-v="spiral">Spiral</button><button data-v="diagonal">Diag</button><button data-v="cross">Cross</button>
+    </div>
+  </div>
+  <div class="row"><label>Mirror preview</label><button class="switch" id="mirrorSwitch" aria-pressed="false"></button></div>
+  <div class="row"><label>Timestamp stamp</label><button class="switch" id="stampSwitch" aria-pressed="false"></button></div>
+  <div class="row"><label>Shutter sound</label><button class="switch" id="soundSwitch" aria-pressed="true"></button></div>
+  <div class="row"><label>Haptic feedback</label><button class="switch" id="hapticSwitch" aria-pressed="true"></button></div>
+
+  <button class="resetbtn" id="resetBtn">Reset adjustments</button>
+</div>
+
+<div class="viewer" id="viewer">
+  <div class="viewer-bar">
+    <button id="viewerClose">✕ Close</button>
+    <button id="viewerDelete">🗑 Delete</button>
+    <button id="viewerSave">⬇ Save</button>
+  </div>
+  <img id="viewerImg" alt="Captured photo">
+</div>
 
 <script>
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  const resEl = document.getElementById('res');
-  const statusEl = document.getElementById('status');
-  const themeBtn = document.getElementById('themeBtn');
-  const switchBtn = document.getElementById('switchBtn');
-  const captureBtn = document.getElementById('captureBtn');
-  const flashEl = document.getElementById('flash');
-  const downloadLink = document.getElementById('downloadLink');
-  const flashBtn = document.getElementById('flashBtn');
-  const soundBtn = document.getElementById('soundBtn');
-  const timerBtn = document.getElementById('timerBtn');
-  const zoomRow = document.getElementById('zoomRow');
-  const zoomSlider = document.getElementById('zoomSlider');
-  const zoomVal = document.getElementById('zoomVal');
-  const focusRing = document.getElementById('focusRing');
-  const countdownEl = document.getElementById('countdown');
-  const viewfinder = document.querySelector('.viewfinder');
-  const gearBtn = document.getElementById('gearBtn');
-  const closeSettings = document.getElementById('closeSettings');
-  const settingsPanel = document.getElementById('settingsPanel');
-  const gridOverlay = document.getElementById('gridOverlay');
-  const gridSwitch = document.getElementById('gridSwitch');
-  const levelEl = document.getElementById('level');
-  const levelSwitch = document.getElementById('levelSwitch');
-  const histCanvas = document.getElementById('histogram');
-  const histSwitch = document.getElementById('histSwitch');
-  const mirrorRow = document.getElementById('mirrorRow');
-  const mirrorSwitch = document.getElementById('mirrorSwitch');
-  const cropMask = document.getElementById('cropMask');
-  const ratioGroup = document.getElementById('ratioGroup');
-  const resGroup = document.getElementById('resGroup');
-  const exposureRow = document.getElementById('exposureRow');
-  const exposureSlider = document.getElementById('exposureSlider');
-  const hdrRow = document.getElementById('hdrRow');
-  const hdrSwitch = document.getElementById('hdrSwitch');
-  const modeGroup = document.getElementById('modeGroup');
-  const burstCountRow = document.getElementById('burstCountRow');
-  const burstGroup = document.getElementById('burstGroup');
-  const formatGroup = document.getElementById('formatGroup');
-  const peakSwitch = document.getElementById('peakSwitch');
-  const peakCanvas = document.getElementById('peakCanvas');
-  const macroSwitch = document.getElementById('macroSwitch');
-  const tapWbSwitch = document.getElementById('tapWbSwitch');
-  const isoRow = document.getElementById('isoRow');
-  const isoSlider = document.getElementById('isoSlider');
-  const shutterRow = document.getElementById('shutterRow');
-  const shutterSlider = document.getElementById('shutterSlider');
-  const kelvinRow = document.getElementById('kelvinRow');
-  const kelvinSlider = document.getElementById('kelvinSlider');
-  const modeLabel = document.getElementById('modeLabel');
-  const wbMatrix = document.getElementById('wbMatrix');
-  const backlightSwitch = document.getElementById('backlightSwitch');
-  const zebraSwitch = document.getElementById('zebraSwitch');
-  const zebraCanvas = document.getElementById('zebraCanvas');
-  const meterGroup = document.getElementById('meterGroup');
-  const focusDistRow = document.getElementById('focusDistRow');
-  const focusDistSlider = document.getElementById('focusDistSlider');
-  const afModeSwitch = document.getElementById('afModeSwitch');
-  const lockBadge = document.getElementById('lockBadge');
-  const manualModeSwitch = document.getElementById('manualModeSwitch');
-  const wbPresetGroup = document.getElementById('wbPresetGroup');
-  const saturationSlider = document.getElementById('saturationSlider');
-  const dualPointSwitch = document.getElementById('dualPointSwitch');
-  const aePoint = document.getElementById('aePoint');
-  const afPoint = document.getElementById('afPoint');
-  const stabRow = document.getElementById('stabRow');
-  const stabSwitch = document.getElementById('stabSwitch');
-  const shakeProofRow = document.getElementById('shakeProofRow');
-  const shakeProofSwitch = document.getElementById('shakeProofSwitch');
-  const steadyBadge = document.getElementById('steadyBadge');
+const $=id=>document.getElementById(id);
+const video=$('video'),canvas=$('canvas'),resReadout=$('resReadout'),hud=$('hud'),
+flash=$('flash'),msg=$('msg'),countdown=$('countdown'),shutterBtn=$('shutterBtn'),
+flipBtn=$('flipBtn'),torchBtn=$('torchBtn'),settingsBtn=$('settingsBtn'),fullscreenBtn=$('fullscreenBtn'),
+dlLink=$('dlLink'),themeDial=$('themeDial'),grid=$('grid'),zoomSlider=$('zoomSlider'),zoomVal=$('zoomVal'),
+overlay=$('overlay'),settingsSheet=$('settingsSheet'),closeSettings=$('closeSettings'),
+filmstrip=$('filmstrip'),viewer=$('viewer'),viewerImg=$('viewerImg'),viewerClose=$('viewerClose'),
+viewerDelete=$('viewerDelete'),viewerSave=$('viewerSave'),stage=$('stage'),
+gauge=$('gauge'),horizon=$('horizon'),toast=$('toast'),spark=$('sparkline');
 
-  document.getElementById('year').textContent = new Date().getFullYear();
+$('yr').textContent=new Date().getFullYear();
 
-  const themes = [
-    {id:'dark', icon:'◐'},
-    {id:'light', icon:'☀'},
-    {id:'oled', icon:'●'},
-    {id:'hc', icon:'◆'}
-  ];
-  let themeIdx = 0;
-  themeBtn.addEventListener('click', () => {
-    themeIdx = (themeIdx + 1) % themes.length;
-    document.documentElement.dataset.theme = themes[themeIdx].id;
-    themeBtn.textContent = themes[themeIdx].icon;
-  });
+let facingMode='environment', stream=null, torchOn=false, torchSupported=false;
+let gallery=[]; // {url, blob, name}
+let activeViewIndex=-1;
+let lastTrack=null, lastCaps=null;
+let motionActive=false, shakeScore=0, steadyWaiting=false, steadyGoodSince=0;
+let lightSamples=[];
+let soundCtx=null, soundStream=null, soundRAF=null, soundLastFire=0;
+let gestureTimer=null, gesturePrevFrame=null, gestureLastFire=0;
+let batteryObj=null, batteryThrottled=false;
+let toastTimer=null;
 
-  let stream = null;
-  let facing = 'environment';
-  let track = null;
-  let torchOn = false;
-  let soundOn = true;
-  let timerSecs = 0;
-  let currentRatio = 'full';
-  let currentRes = '4k';
-  let mirrorSave = false;
-  let histLoop = null;
-  let captureMode = 'photo';
-  let burstCount = 5;
-  let captureFormat = 'png';
-  let peakLoop = null;
-  let macroOn = false;
-  let macroZoomApplied = false;
-  let tapWbOn = false;
-  let panoActive = false;
-  let panoTimer = null;
-  let panoCanvas = null, panoCtx = null, panoX = 0;
-  let aeafLocked = false;
-  let meteringMode = 'matrix';
-  let backlightOn = false;
-  let zebraLoop = null;
-  let continuousAF = true;
-  let saturationVal = 1;
-  let wbPresetOn = false;
-  let manualModeOn = true;
-  let dualPointsOn = false;
-  let draggingPoint = null;
-  let stabilizerOn = false;
-  let shakeProofOn = false;
-  let shakeMagnitude = 0;
-  let motionSmoothed = {x:0, y:0};
-  let stabOffset = {x:0, y:0};
+const settings={resolution:'auto', aspect:'16:9', timer:0, format:'jpeg', quality:0.92,
+  brightness:0, contrast:0, saturation:0, gridStyle:'off', mirror:false, stamp:false, sound:true, haptic:true, zoom:1,
+  steady:false, soundTrig:'off', gesture:false, batteryThrottle:true};
 
-  const resPresets = {'4k':{w:3840,h:2160}, '1080':{w:1920,h:1080}, '720':{w:1280,h:720}};
+const RES_LADDER={
+  auto:[{width:{ideal:3840},height:{ideal:2160}},{width:{ideal:1920},height:{ideal:1080}},{width:{ideal:1280},height:{ideal:720}}],
+  '1080':[{width:{ideal:1920},height:{ideal:1080}}],
+  '720':[{width:{ideal:1280},height:{ideal:720}}]
+};
 
-  gearBtn.addEventListener('click', () => settingsPanel.classList.add('open'));
-  closeSettings.addEventListener('click', () => settingsPanel.classList.remove('open'));
+function showMsg(t){msg.hidden=false; msg.textContent=t;}
+function hideMsg(){msg.hidden=true;}
 
-  function toggleSwitch(el, on){ el.classList.toggle('on', on); }
-
-  gridSwitch.addEventListener('click', () => {
-    const on = !gridSwitch.classList.contains('on');
-    toggleSwitch(gridSwitch, on);
-    gridOverlay.classList.toggle('show', on);
-  });
-
-  levelSwitch.addEventListener('click', async () => {
-    const on = !levelSwitch.classList.contains('on');
-    if(on && typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission){
-      try{ await DeviceOrientationEvent.requestPermission(); }catch(e){}
-    }
-    toggleSwitch(levelSwitch, on);
-    levelEl.classList.toggle('show', on);
-  });
-
-  window.addEventListener('deviceorientation', (e) => {
-    if(!levelEl.classList.contains('show') || e.gamma === null) return;
-    const angle = Math.max(-45, Math.min(45, e.gamma));
-    levelEl.style.transform = 'rotate(' + (-angle) + 'deg)';
-    levelEl.classList.toggle('level-ok', Math.abs(angle) < 1.5);
-  });
-
-  if(window.DeviceMotionEvent){
-    stabRow.classList.remove('hidden');
-    shakeProofRow.classList.remove('hidden');
-  }
-
-  async function requestMotionPermission(){
-    if(typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function'){
-      try{ await DeviceMotionEvent.requestPermission(); }catch(e){}
-    }
-  }
-
-  stabSwitch.addEventListener('click', async () => {
-    stabilizerOn = !stabilizerOn;
-    toggleSwitch(stabSwitch, stabilizerOn);
-    if(stabilizerOn){
-      await requestMotionPermission();
-    }else{
-      stabOffset = {x:0, y:0};
-      video.style.transform = '';
-    }
-  });
-
-  shakeProofSwitch.addEventListener('click', async () => {
-    shakeProofOn = !shakeProofOn;
-    toggleSwitch(shakeProofSwitch, shakeProofOn);
-    if(shakeProofOn) await requestMotionPermission();
-    else steadyBadge.classList.add('hidden');
-  });
-
-  window.addEventListener('devicemotion', (e) => {
-    if(!stabilizerOn && !shakeProofOn) return;
-    const acc = e.accelerationIncludingGravity || e.acceleration;
-    if(!acc) return;
-    const ax = acc.x || 0, ay = acc.y || 0;
-    const alpha = 0.85;
-    motionSmoothed.x = alpha * motionSmoothed.x + (1 - alpha) * ax;
-    motionSmoothed.y = alpha * motionSmoothed.y + (1 - alpha) * ay;
-    const jitterX = ax - motionSmoothed.x;
-    const jitterY = ay - motionSmoothed.y;
-    shakeMagnitude = Math.hypot(jitterX, jitterY);
-    if(stabilizerOn){
-      const targetX = Math.max(-12, Math.min(12, -jitterX * 5));
-      const targetY = Math.max(-12, Math.min(12, -jitterY * 5));
-      stabOffset.x += (targetX - stabOffset.x) * 0.25;
-      stabOffset.y += (targetY - stabOffset.y) * 0.25;
-      video.style.transform = 'scaleX(var(--mirror,1)) translate(' +
-        stabOffset.x.toFixed(1) + 'px, ' + stabOffset.y.toFixed(1) + 'px) scale(1.05)';
-    }
-  });
-
-  function waitForSteady(threshold, timeoutMs){
-    return new Promise((resolve) => {
-      if(!shakeProofOn || shakeMagnitude < threshold){ resolve(); return; }
-      steadyBadge.classList.remove('hidden');
-      const start = performance.now();
-      const check = () => {
-        if(shakeMagnitude < threshold || performance.now() - start > timeoutMs){
-          steadyBadge.classList.add('hidden');
-          resolve();
-        }else{
-          requestAnimationFrame(check);
-        }
-      };
-      check();
-    });
-  }
-
-  histSwitch.addEventListener('click', () => {
-    const on = !histSwitch.classList.contains('on');
-    toggleSwitch(histSwitch, on);
-    histCanvas.classList.toggle('show', on);
-    if(on) startHistogram(); else stopHistogram();
-  });
-
-  function startHistogram(){
-    histCanvas.width = 120; histCanvas.height = 56;
-    const hctx = histCanvas.getContext('2d');
-    const sample = document.createElement('canvas');
-    sample.width = 64; sample.height = 36;
-    const sctx = sample.getContext('2d');
-    function draw(){
-      if(video.videoWidth){
-        sctx.drawImage(video, 0, 0, sample.width, sample.height);
-        const data = sctx.getImageData(0, 0, sample.width, sample.height).data;
-        const bins = new Array(32).fill(0);
-        for(let i = 0; i < data.length; i += 4){
-          const lum = (data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114) / 255;
-          bins[Math.min(31, Math.floor(lum * 32))]++;
-        }
-        const maxBin = Math.max(...bins, 1);
-        hctx.clearRect(0, 0, 120, 56);
-        bins.forEach((v, i) => {
-          const h = (v / maxBin) * 52;
-          hctx.fillStyle = '#FF8A3D';
-          hctx.fillRect(i * 3.75, 56 - h, 3, h);
-        });
-      }
-      histLoop = requestAnimationFrame(draw);
-    }
-    draw();
-  }
-  function stopHistogram(){ if(histLoop) cancelAnimationFrame(histLoop); histLoop = null; }
-
-  mirrorSwitch.addEventListener('click', () => {
-    mirrorSave = !mirrorSave;
-    toggleSwitch(mirrorSwitch, mirrorSave);
-  });
-
-  function coverFit(srcW, srcH, ratio){
-    const srcRatio = srcW / srcH;
-    let w, h;
-    if(srcRatio > ratio){ h = srcH; w = srcH * ratio; }
-    else { w = srcW; h = srcW / ratio; }
-    return {x:(srcW - w) / 2, y:(srcH - h) / 2, w, h};
-  }
-  const ratioValues = {'16:9':16/9, '4:3':4/3, '1:1':1};
-
-  function updateCropMask(){
-    if(currentRatio === 'full'){ cropMask.classList.remove('show'); return; }
-    const rect = viewfinder.getBoundingClientRect();
-    const fit = coverFit(rect.width, rect.height, ratioValues[currentRatio]);
-    cropMask.style.left = fit.x + 'px';
-    cropMask.style.top = fit.y + 'px';
-    cropMask.style.width = fit.w + 'px';
-    cropMask.style.height = fit.h + 'px';
-    cropMask.classList.add('show');
-  }
-  window.addEventListener('resize', updateCropMask);
-
-  ratioGroup.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...ratioGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentRatio = btn.dataset.ratio;
-    updateCropMask();
-  });
-
-  resGroup.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...resGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentRes = btn.dataset.res;
-    startCamera(facing);
-  });
-
-  exposureSlider.addEventListener('input', async () => {
-    if(!track) return;
-    try{ await track.applyConstraints({advanced:[{exposureCompensation:Number(exposureSlider.value)}]}); }catch(e){}
-  });
-
-  isoSlider.addEventListener('input', async () => {
-    if(!track) return;
-    try{ await track.applyConstraints({advanced:[{iso:Number(isoSlider.value)}]}); }catch(e){}
-  });
-
-  shutterSlider.addEventListener('input', async () => {
-    if(!track) return;
-    try{ await track.applyConstraints({advanced:[{exposureMode:'manual', exposureTime:Number(shutterSlider.value)}]}); }catch(e){}
-  });
-
-  kelvinSlider.addEventListener('input', async () => {
-    if(!track) return;
-    try{ await track.applyConstraints({advanced:[{whiteBalanceMode:'manual', colorTemperature:Number(kelvinSlider.value)}]}); }catch(e){}
-  });
-
-  focusDistSlider.addEventListener('input', async () => {
-    if(!track) return;
-    try{ await track.applyConstraints({advanced:[{focusMode:'manual', focusDistance:Number(focusDistSlider.value)}]}); }catch(e){}
-  });
-
-  afModeSwitch.addEventListener('click', async () => {
-    continuousAF = !continuousAF;
-    toggleSwitch(afModeSwitch, continuousAF);
-    if(!track || aeafLocked) return;
-    try{ await track.applyConstraints({advanced:[{focusMode: continuousAF ? 'continuous' : 'manual'}]}); }catch(e){}
-  });
-
-  meterGroup.addEventListener('click', async (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...meterGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    meteringMode = btn.dataset.meter;
-    if(meteringMode === 'center' && track){
-      try{ await track.applyConstraints({advanced:[{pointsOfInterest:[{x:0.5, y:0.5}]}]}); }catch(e){}
-    }
-  });
-
-  backlightSwitch.addEventListener('click', async () => {
-    backlightOn = !backlightOn;
-    toggleSwitch(backlightSwitch, backlightOn);
-    if(!track) return;
-    const caps = track.getCapabilities ? track.getCapabilities() : {};
-    if(caps.exposureCompensation){
-      const boosted = backlightOn
-        ? Math.min(caps.exposureCompensation.max, Number(exposureSlider.value || 0) + 1)
-        : Math.max(caps.exposureCompensation.min, Number(exposureSlider.value || 0) - 1);
-      exposureSlider.value = boosted;
-      try{ await track.applyConstraints({advanced:[{exposureCompensation:boosted}]}); }catch(e){}
-    }
-  });
-
-  zebraSwitch.addEventListener('click', () => {
-    const on = !zebraSwitch.classList.contains('on');
-    toggleSwitch(zebraSwitch, on);
-    zebraCanvas.classList.toggle('show', on);
-    if(on) startZebra(); else stopZebra();
-  });
-
-  function startZebra(){
-    const w = 160, h = 90;
-    const sample = document.createElement('canvas');
-    sample.width = w; sample.height = h;
-    const sctx = sample.getContext('2d', {willReadFrequently:true});
-    function draw(){
-      if(video.videoWidth){
-        const rect = viewfinder.getBoundingClientRect();
-        zebraCanvas.width = w; zebraCanvas.height = h;
-        zebraCanvas.style.width = rect.width + 'px';
-        zebraCanvas.style.height = rect.height + 'px';
-        sctx.drawImage(video, 0, 0, w, h);
-        const d = sctx.getImageData(0, 0, w, h).data;
-        const zctx = zebraCanvas.getContext('2d');
-        zctx.clearRect(0, 0, w, h);
-        zctx.fillStyle = '#FF3B3B';
-        for(let i = 0; i < d.length; i += 4){
-          const lum = (d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114);
-          if(lum > 244){
-            const px = (i / 4) % w, py = Math.floor((i / 4) / w);
-            if((px + py) % 4 < 2) zctx.fillRect(px, py, 1, 1);
-          }
-        }
-      }
-      zebraLoop = requestAnimationFrame(draw);
-    }
-    draw();
-  }
-  function stopZebra(){ if(zebraLoop) cancelAnimationFrame(zebraLoop); zebraLoop = null; }
-
-  async function toggleAeAfLock(x, y){
-    if(!track) return;
-    aeafLocked = !aeafLocked;
-    lockBadge.classList.toggle('hidden', !aeafLocked);
-    if(navigator.vibrate) navigator.vibrate(30);
-    if(aeafLocked){
-      const s = track.getSettings ? track.getSettings() : {};
-      const advanced = {focusMode:'manual'};
-      if(s.focusDistance !== undefined) advanced.focusDistance = s.focusDistance;
-      if(s.exposureTime !== undefined){ advanced.exposureMode = 'manual'; advanced.exposureTime = s.exposureTime; }
-      if(s.iso !== undefined) advanced.iso = s.iso;
-      try{ await track.applyConstraints({advanced:[advanced]}); }catch(e){}
-    }else{
-      try{
-        await track.applyConstraints({advanced:[{
-          focusMode: continuousAF ? 'continuous' : 'manual',
-          exposureMode:'continuous'
-        }]});
-      }catch(e){}
-    }
-  }
-
-  hdrSwitch.addEventListener('click', async () => {
-    const on = !hdrSwitch.classList.contains('on');
-    toggleSwitch(hdrSwitch, on);
-    if(track){ try{ await track.applyConstraints({advanced:[{hdr:on}]}); }catch(e){} }
-  });
-
-  async function startCamera(mode){
-    if(stream) stream.getTracks().forEach(t => t.stop());
-    statusEl.classList.remove('show');
-    const preset = resPresets[currentRes];
-    const constraints = {
-      audio:false,
-      video:{
-        facingMode:{ideal:mode},
-        width:{ideal:preset.w},
-        height:{ideal:preset.h}
-      }
-    };
+async function startCamera(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){showMsg('This browser has no camera access. Try Chrome or Safari over HTTPS.'); return;}
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  hud.textContent='INITIALIZING…'; hideMsg();
+  const ladder=RES_LADDER[settings.resolution]||RES_LADDER.auto;
+  for(const size of ladder){
     try{
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      video.srcObject = stream;
-      video.style.setProperty('--mirror', mode === 'user' ? -1 : 1);
-      track = stream.getVideoTracks()[0];
-      video.onloadedmetadata = () => {
-        resEl.textContent = video.videoWidth + ' × ' + video.videoHeight;
-        updateCropMask();
-      };
-      setupCapabilities();
-    }catch(err){
-      statusEl.textContent = 'Camera unavailable: ' + (err.message || err.name || 'permission denied. Please allow camera access.');
-      statusEl.classList.add('show');
-    }
-  }
-
-  function setupCapabilities(){
-    torchOn = false;
-    flashBtn.classList.add('hidden');
-    flashBtn.classList.remove('active');
-    zoomRow.classList.add('hidden');
-    exposureRow.classList.add('hidden');
-    isoRow.classList.add('hidden');
-    shutterRow.classList.add('hidden');
-    kelvinRow.classList.add('hidden');
-    focusDistRow.classList.add('hidden');
-    mirrorRow.classList.toggle('hidden', facing !== 'user');
-    aeafLocked = false;
-    lockBadge.classList.add('hidden');
-    if(!track || !track.getCapabilities) return;
-    const caps = track.getCapabilities();
-    if(caps.torch){ flashBtn.classList.remove('hidden'); }
-    if(caps.zoom){
-      zoomRow.classList.remove('hidden');
-      zoomSlider.min = caps.zoom.min;
-      zoomSlider.max = caps.zoom.max;
-      zoomSlider.step = caps.zoom.step || 0.1;
-      zoomSlider.value = caps.zoom.min;
-      zoomVal.textContent = Number(caps.zoom.min).toFixed(1) + 'x';
-    }
-    if(caps.exposureCompensation){
-      exposureRow.classList.remove('hidden');
-      exposureSlider.min = caps.exposureCompensation.min;
-      exposureSlider.max = caps.exposureCompensation.max;
-      exposureSlider.step = caps.exposureCompensation.step || 0.1;
-      exposureSlider.value = 0;
-    }
-    if(caps.iso){
-      isoRow.classList.remove('hidden');
-      isoSlider.min = caps.iso.min; isoSlider.max = caps.iso.max;
-      isoSlider.step = caps.iso.step || 1; isoSlider.value = caps.iso.min;
-    }
-    if(caps.exposureTime){
-      shutterRow.classList.remove('hidden');
-      shutterSlider.min = caps.exposureTime.min; shutterSlider.max = caps.exposureTime.max;
-      shutterSlider.step = caps.exposureTime.step || 1; shutterSlider.value = caps.exposureTime.min;
-    }
-    if(caps.colorTemperature){
-      kelvinRow.classList.remove('hidden');
-      kelvinSlider.min = caps.colorTemperature.min; kelvinSlider.max = caps.colorTemperature.max;
-      kelvinSlider.step = caps.colorTemperature.step || 50;
-      kelvinSlider.value = Math.round((caps.colorTemperature.min + caps.colorTemperature.max) / 2);
-    }
-    if(caps.focusDistance){
-      focusDistRow.classList.remove('hidden');
-      focusDistSlider.min = caps.focusDistance.min; focusDistSlider.max = caps.focusDistance.max;
-      focusDistSlider.step = caps.focusDistance.step || 0.01;
-      focusDistSlider.value = caps.focusDistance.max;
-    }
-    if(caps.focusMode && caps.focusMode.includes('continuous')){
-      try{ track.applyConstraints({advanced:[{focusMode: continuousAF ? 'continuous' : 'manual'}]}); }catch(e){}
-    }
-  }
-
-  function beep(){
-    if(!soundOn) return;
-    try{
-      const ctxA = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctxA.createOscillator();
-      const gain = ctxA.createGain();
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(.25, ctxA.currentTime);
-      gain.gain.exponentialRampToValueAtTime(.001, ctxA.currentTime + .15);
-      osc.connect(gain).connect(ctxA.destination);
-      osc.start();
-      osc.stop(ctxA.currentTime + .15);
-    }catch(e){}
-  }
-
-  flashBtn.addEventListener('click', async () => {
-    if(!track) return;
-    torchOn = !torchOn;
-    try{ await track.applyConstraints({advanced:[{torch:torchOn}]}); }catch(e){}
-    flashBtn.classList.toggle('active', torchOn);
-  });
-
-  soundBtn.addEventListener('click', () => {
-    soundOn = !soundOn;
-    soundBtn.textContent = soundOn ? '🔊' : '🔇';
-    soundBtn.classList.toggle('active', !soundOn);
-  });
-
-  const timerOptions = [0, 3, 10];
-  let timerIdx = 0;
-  timerBtn.addEventListener('click', () => {
-    timerIdx = (timerIdx + 1) % timerOptions.length;
-    timerSecs = timerOptions[timerIdx];
-    timerBtn.textContent = timerSecs + 's';
-    timerBtn.classList.toggle('active', timerSecs > 0);
-  });
-
-  zoomSlider.addEventListener('input', async () => {
-    zoomVal.textContent = Number(zoomSlider.value).toFixed(1) + 'x';
-    if(!track) return;
-    try{ await track.applyConstraints({advanced:[{zoom:Number(zoomSlider.value)}]}); }catch(e){}
-  });
-
-  let wbFactors = {r:1, g:1, b:1};
-  const sampleCanvas = document.createElement('canvas');
-  sampleCanvas.width = 1; sampleCanvas.height = 1;
-  const sampleCtx = sampleCanvas.getContext('2d', {willReadFrequently:true});
-
-  let pressTimer = null;
-  let pressMoved = false;
-  let suppressClick = false;
-  let pressStart = {x:0, y:0};
-
-  viewfinder.addEventListener('pointerdown', (e) => {
-    if(e.target.closest('button, input, .reticle')) return;
-    pressMoved = false;
-    pressStart = {x:e.clientX, y:e.clientY};
-    pressTimer = setTimeout(() => {
-      const rect = viewfinder.getBoundingClientRect();
-      toggleAeAfLock((e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height);
-      suppressClick = true;
-    }, 550);
-  });
-  viewfinder.addEventListener('pointermove', (e) => {
-    if(!pressTimer) return;
-    if(Math.hypot(e.clientX - pressStart.x, e.clientY - pressStart.y) > 12){
-      pressMoved = true;
-      clearTimeout(pressTimer);
-    }
-  });
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev =>
-    viewfinder.addEventListener(ev, () => { clearTimeout(pressTimer); })
-  );
-
-  viewfinder.addEventListener('click', async (e) => {
-    if(e.target.closest('button, input, .reticle')) return;
-    if(suppressClick){ suppressClick = false; return; }
-    if(aeafLocked) return;
-    const rect = viewfinder.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    focusRing.style.left = (e.clientX - rect.left) + 'px';
-    focusRing.style.top = (e.clientY - rect.top) + 'px';
-    focusRing.classList.remove('go'); void focusRing.offsetWidth; focusRing.classList.add('go');
-    if(track && track.getCapabilities){
-      const caps = track.getCapabilities();
-      const advanced = {};
-      if(caps.focusMode){
-        advanced.focusMode = continuousAF ? 'continuous' : 'manual';
-        advanced.pointsOfInterest = [{x, y}];
-      }
-      if(meteringMode === 'spot' && caps.exposureCompensation !== undefined){
-        advanced.pointsOfInterest = [{x, y}];
-      }
-      if(Object.keys(advanced).length){
-        try{ await track.applyConstraints({advanced:[advanced]}); }catch(err){}
-      }
-    }
-    if(tapWbOn && video.videoWidth){
-      sampleCtx.drawImage(video, x * video.videoWidth, y * video.videoHeight, 1, 1, 0, 0, 1, 1);
-      const [r, g, b] = sampleCtx.getImageData(0, 0, 1, 1).data;
-      const gray = (r + g + b) / 3 || 1;
-      wbFactors = {
-        r: Math.max(0.5, Math.min(2, gray / (r || 1))),
-        g: Math.max(0.5, Math.min(2, gray / (g || 1))),
-        b: Math.max(0.5, Math.min(2, gray / (b || 1)))
-      };
-      wbMatrix.setAttribute('values',
-        `${wbFactors.r} 0 0 0 0  0 ${wbFactors.g} 0 0 0  0 0 ${wbFactors.b} 0 0  0 0 0 1 0`);
-    }
-  });
-
-  function updateVideoFilter(){
-    const wbActive = tapWbOn || wbPresetOn;
-    const sat = saturationVal !== 1 ? 'saturate(' + saturationVal + ')' : '';
-    video.style.filter = [wbActive ? 'url(#wbFilter)' : '', sat].filter(Boolean).join(' ') || 'none';
-  }
-
-  tapWbSwitch.addEventListener('click', () => {
-    tapWbOn = !tapWbOn;
-    toggleSwitch(tapWbSwitch, tapWbOn);
-    if(!tapWbOn){
-      wbFactors = {r:1, g:1, b:1};
-      wbMatrix.setAttribute('values', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0');
-    }
-    updateVideoFilter();
-  });
-
-  saturationSlider.addEventListener('input', () => {
-    saturationVal = Number(saturationSlider.value);
-    updateVideoFilter();
-  });
-
-  const wbPresetTints = {
-    auto: {r:1, g:1, b:1},
-    daylight: {r:1, g:1, b:1},
-    cloudy: {r:1.08, g:1, b:0.92},
-    tungsten: {r:0.82, g:0.95, b:1.25},
-    fluorescent: {r:0.95, g:1.05, b:1.1}
-  };
-  const wbPresetKelvin = {auto:null, daylight:5500, cloudy:6500, tungsten:3200, fluorescent:4200};
-
-  wbPresetGroup.addEventListener('click', async (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...wbPresetGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const preset = btn.dataset.wb;
-    wbPresetOn = preset !== 'auto';
-    const caps = track && track.getCapabilities ? track.getCapabilities() : {};
-    if(caps.colorTemperature && wbPresetKelvin[preset] !== null){
-      try{
-        await track.applyConstraints({advanced:[{whiteBalanceMode:'manual', colorTemperature:wbPresetKelvin[preset]}]});
-        kelvinSlider.value = wbPresetKelvin[preset];
-      }catch(err){}
-      wbFactors = {r:1, g:1, b:1};
-      wbMatrix.setAttribute('values', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0');
-    }else{
-      wbFactors = wbPresetTints[preset];
-      wbMatrix.setAttribute('values',
-        `${wbFactors.r} 0 0 0 0  0 ${wbFactors.g} 0 0 0  0 0 ${wbFactors.b} 0 0  0 0 0 1 0`);
-      if(preset === 'auto' && caps.whiteBalanceMode && track){
-        try{ await track.applyConstraints({advanced:[{whiteBalanceMode:'continuous'}]}); }catch(err){}
-      }
-    }
-    updateVideoFilter();
-  });
-
-  manualModeSwitch.addEventListener('click', () => {
-    manualModeOn = !manualModeOn;
-    toggleSwitch(manualModeSwitch, manualModeOn);
-    settingsPanel.classList.toggle('manual-off', !manualModeOn);
-  });
-
-  function placeReticle(el, nx, ny){
-    el.style.left = (nx * 100) + '%';
-    el.style.top = (ny * 100) + '%';
-    el.dataset.nx = nx; el.dataset.ny = ny;
-  }
-
-  dualPointSwitch.addEventListener('click', () => {
-    dualPointsOn = !dualPointsOn;
-    toggleSwitch(dualPointSwitch, dualPointsOn);
-    aePoint.classList.toggle('show', dualPointsOn);
-    afPoint.classList.toggle('show', dualPointsOn);
-    if(dualPointsOn){
-      placeReticle(aePoint, 0.35, 0.5);
-      placeReticle(afPoint, 0.65, 0.5);
-    }
-  });
-
-  async function sendPointConstraint(el, x, y){
-    if(!track || !track.getCapabilities) return;
-    const caps = track.getCapabilities();
-    if(!caps.pointsOfInterest && !caps.focusMode) return;
-    const advanced = {pointsOfInterest:[{x, y}]};
-    if(el === afPoint && caps.focusMode) advanced.focusMode = continuousAF ? 'continuous' : 'manual';
-    if(el === aePoint && caps.exposureCompensation !== undefined) advanced.exposureMode = 'continuous';
-    try{ await track.applyConstraints({advanced:[advanced]}); }catch(err){}
-  }
-
-  [aePoint, afPoint].forEach((el) => {
-    el.addEventListener('pointerdown', (e) => {
-      e.stopPropagation();
-      draggingPoint = el;
-      el.setPointerCapture(e.pointerId);
-    });
-    el.addEventListener('pointermove', (e) => {
-      if(draggingPoint !== el) return;
-      e.stopPropagation();
-      const rect = viewfinder.getBoundingClientRect();
-      const nx = Math.max(0.03, Math.min(0.97, (e.clientX - rect.left) / rect.width));
-      const ny = Math.max(0.03, Math.min(0.97, (e.clientY - rect.top) / rect.height));
-      placeReticle(el, nx, ny);
-    });
-    el.addEventListener('pointerup', (e) => {
-      if(draggingPoint !== el) return;
-      e.stopPropagation();
-      draggingPoint = null;
-      sendPointConstraint(el, Number(el.dataset.nx), Number(el.dataset.ny));
-    });
-  });
-
-  macroSwitch.addEventListener('click', async () => {
-    macroOn = !macroOn;
-    toggleSwitch(macroSwitch, macroOn);
-    if(!track || !track.getCapabilities) return;
-    const caps = track.getCapabilities();
-    if(caps.focusDistance){
-      try{
-        await track.applyConstraints({advanced:[{focusMode:'manual',
-          focusDistance: macroOn ? caps.focusDistance.min : caps.focusDistance.max}]});
-      }catch(e){}
-    }else if(caps.zoom){
-      if(macroOn && Number(zoomSlider.value) <= caps.zoom.min + 0.01){
-        const macroZoom = Math.min(caps.zoom.max, caps.zoom.min + (caps.zoom.max - caps.zoom.min) * 0.25);
-        zoomSlider.value = macroZoom;
-        zoomVal.textContent = macroZoom.toFixed(1) + 'x';
-        try{ await track.applyConstraints({advanced:[{zoom:macroZoom}]}); }catch(e){}
-        macroZoomApplied = true;
-      }else if(!macroOn && macroZoomApplied){
-        zoomSlider.value = caps.zoom.min;
-        zoomVal.textContent = caps.zoom.min.toFixed(1) + 'x';
-        try{ await track.applyConstraints({advanced:[{zoom:caps.zoom.min}]}); }catch(e){}
-        macroZoomApplied = false;
-      }
-    }
-  });
-
-  peakSwitch.addEventListener('click', () => {
-    const on = !peakSwitch.classList.contains('on');
-    toggleSwitch(peakSwitch, on);
-    peakCanvas.classList.toggle('show', on);
-    if(on) startPeaking(); else stopPeaking();
-  });
-
-  function startPeaking(){
-    const w = 160, h = 90;
-    const sample = document.createElement('canvas');
-    sample.width = w; sample.height = h;
-    const sctx = sample.getContext('2d', {willReadFrequently:true});
-    function draw(){
-      if(video.videoWidth){
-        const rect = viewfinder.getBoundingClientRect();
-        peakCanvas.width = w; peakCanvas.height = h;
-        peakCanvas.style.width = rect.width + 'px';
-        peakCanvas.style.height = rect.height + 'px';
-        sctx.drawImage(video, 0, 0, w, h);
-        const d = sctx.getImageData(0, 0, w, h).data;
-        const pctx = peakCanvas.getContext('2d');
-        pctx.clearRect(0, 0, w, h);
-        pctx.fillStyle = '#39FF6A';
-        for(let y = 1; y < h - 1; y++){
-          for(let x = 1; x < w - 1; x++){
-            const i = (y * w + x) * 4;
-            const l = d[i] + d[i+1] + d[i+2];
-            const iR = (y * w + (x + 1)) * 4;
-            const iD = ((y + 1) * w + x) * 4;
-            const lR = d[iR] + d[iR+1] + d[iR+2];
-            const lD = d[iD] + d[iD+1] + d[iD+2];
-            if(Math.abs(l - lR) + Math.abs(l - lD) > 90) pctx.fillRect(x, y, 1, 1);
-          }
-        }
-      }
-      peakLoop = requestAnimationFrame(draw);
-    }
-    draw();
-  }
-  function stopPeaking(){ if(peakLoop) cancelAnimationFrame(peakLoop); peakLoop = null; }
-
-  modeGroup.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...modeGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    captureMode = btn.dataset.mode;
-    burstCountRow.classList.toggle('hidden', captureMode !== 'burst');
-    modeLabel.textContent = captureMode === 'photo' ? '' : captureMode.toUpperCase() + (captureMode === 'burst' ? ' ' + burstCount : '');
-  });
-
-  burstGroup.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...burstGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    burstCount = Number(btn.dataset.n);
-    modeLabel.textContent = 'BURST ' + burstCount;
-  });
-
-  formatGroup.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    [...formatGroup.children].forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    captureFormat = btn.dataset.fmt;
-  });
-
-  switchBtn.addEventListener('click', () => {
-    facing = facing === 'environment' ? 'user' : 'environment';
-    startCamera(facing);
-  });
-
-  function applyWbCorrection(ctx, w, h){
-    if(!(tapWbOn || wbPresetOn) || (wbFactors.r === 1 && wbFactors.g === 1 && wbFactors.b === 1)) return;
-    const img = ctx.getImageData(0, 0, w, h);
-    const d = img.data;
-    for(let i = 0; i < d.length; i += 4){
-      d[i] = Math.min(255, d[i] * wbFactors.r);
-      d[i+1] = Math.min(255, d[i+1] * wbFactors.g);
-      d[i+2] = Math.min(255, d[i+2] * wbFactors.b);
-    }
-    ctx.putImageData(img, 0, 0);
-  }
-
-  function exportCanvas(cnv, prefix){
-    const mime = captureFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
-    const quality = captureFormat === 'jpeg' ? 0.92 : 1;
-    cnv.toBlob(blob => {
-      const url = URL.createObjectURL(blob);
-      downloadLink.href = url;
-      downloadLink.download = prefix + '-' + Date.now() + '.' + (captureFormat === 'jpeg' ? 'jpg' : 'png');
-      downloadLink.click();
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-    }, mime, quality);
-  }
-
-  function frameToCanvas(cnv, sourceEl, extraFilter){
-    let sx = 0, sy = 0, sw = video.videoWidth, sh = video.videoHeight;
-    if(currentRatio !== 'full'){
-      const fit = coverFit(video.videoWidth, video.videoHeight, ratioValues[currentRatio]);
-      sx = fit.x; sy = fit.y; sw = fit.w; sh = fit.h;
-    }
-    cnv.width = Math.round(sw);
-    cnv.height = Math.round(sh);
-    const ctx = cnv.getContext('2d');
-    const hdr = hdrSwitch.classList.contains('on') ? 'contrast(1.12) saturate(1.2) brightness(1.03)' : '';
-    const bl = backlightOn ? 'brightness(1.15)' : '';
-    const sat = saturationVal !== 1 ? 'saturate(' + saturationVal + ')' : '';
-    ctx.filter = [hdr, bl, sat, extraFilter || ''].filter(Boolean).join(' ') || 'none';
-    const shouldFlip = facing === 'user' && !mirrorSave;
-    if(shouldFlip){ ctx.translate(cnv.width, 0); ctx.scale(-1, 1); }
-    ctx.drawImage(sourceEl, sx, sy, sw, sh, 0, 0, cnv.width, cnv.height);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    applyWbCorrection(ctx, cnv.width, cnv.height);
-    return ctx;
-  }
-
-  function takePhoto(){
-    if(!video.videoWidth) return;
-    beep();
-    flashEl.classList.remove('go'); void flashEl.offsetWidth; flashEl.classList.add('go');
-    frameToCanvas(canvas, video);
-    exportCanvas(canvas, 'capture');
-  }
-
-  function burstCapture(){
-    if(!video.videoWidth) return;
-    let shots = 0;
-    const shoot = () => {
-      beep();
-      flashEl.classList.remove('go'); void flashEl.offsetWidth; flashEl.classList.add('go');
-      const c = document.createElement('canvas');
-      frameToCanvas(c, video);
-      exportCanvas(c, 'burst' + (shots + 1));
-      shots++;
-      if(shots < burstCount) setTimeout(shoot, 220);
-    };
-    shoot();
-  }
-
-  function nightCapture(){
-    if(!video.videoWidth) return;
-    beep();
-    flashEl.classList.remove('go'); void flashEl.offsetWidth; flashEl.classList.add('go');
-    const frames = 5;
-    let sx = 0, sy = 0, sw = video.videoWidth, sh = video.videoHeight;
-    if(currentRatio !== 'full'){
-      const fit = coverFit(video.videoWidth, video.videoHeight, ratioValues[currentRatio]);
-      sx = fit.x; sy = fit.y; sw = fit.w; sh = fit.h;
-    }
-    canvas.width = Math.round(sw); canvas.height = Math.round(sh);
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const shouldFlip = facing === 'user' && !mirrorSave;
-    let n = 0;
-    const stack = () => {
-      ctx.save();
-      ctx.globalAlpha = 1 / frames;
-      if(shouldFlip){ ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
-      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-      ctx.restore();
-      n++;
-      if(n < frames) setTimeout(stack, 110);
-      else{
-        applyWbCorrection(ctx, canvas.width, canvas.height);
-        exportCanvas(canvas, 'night');
-      }
-    };
-    stack();
-  }
-
-  function panoStart(){
-    panoActive = true;
-    captureBtn.classList.add('rec');
-    modeLabel.textContent = 'PANO — REC (tap to stop)';
-    panoCanvas = document.createElement('canvas');
-    panoCanvas.height = video.videoHeight;
-    panoCanvas.width = 0;
-    panoCtx = panoCanvas.getContext('2d');
-    panoX = 0;
-    const stripW = 24;
-    panoTimer = setInterval(() => {
-      if(!video.videoWidth) return;
-      const oldW = panoCanvas.width;
-      const oldData = oldW > 0 ? panoCtx.getImageData(0, 0, oldW, panoCanvas.height) : null;
-      panoCanvas.width = panoX + stripW;
-      if(oldData) panoCtx.putImageData(oldData, 0, 0);
-      const cx = (video.videoWidth - stripW) / 2;
-      panoCtx.drawImage(video, cx, 0, stripW, video.videoHeight, panoX, 0, stripW, panoCanvas.height);
-      panoX += stripW;
-    }, 60);
-    setTimeout(() => { if(panoActive) panoStop(); }, 10000);
-  }
-
-  function panoStop(){
-    panoActive = false;
-    captureBtn.classList.remove('rec');
-    modeLabel.textContent = 'PANO';
-    clearInterval(panoTimer);
-    if(panoCanvas && panoCanvas.width > 0){
-      applyWbCorrection(panoCtx, panoCanvas.width, panoCanvas.height);
-      exportCanvas(panoCanvas, 'pano');
-    }
-  }
-
-  function bracketCapture(){
-    if(!video.videoWidth) return;
-    const caps = track && track.getCapabilities ? track.getCapabilities() : {};
-    const hasEV = !!caps.exposureCompensation;
-    const baseEV = hasEV ? Number(exposureSlider.value || 0) : 0;
-    const steps = hasEV
-      ? [Math.max(caps.exposureCompensation.min, baseEV - 1), baseEV, Math.min(caps.exposureCompensation.max, baseEV + 1)]
-      : [null, null, null];
-    const softFilters = ['brightness(0.72)', '', 'brightness(1.35)'];
-    let i = 0;
-    const shootNext = async () => {
-      if(hasEV && track){
-        try{ await track.applyConstraints({advanced:[{exposureCompensation:steps[i]}]}); }catch(e){}
-        await new Promise(r => setTimeout(r, 260));
-      }
-      beep();
-      flashEl.classList.remove('go'); void flashEl.offsetWidth; flashEl.classList.add('go');
-      const c = document.createElement('canvas');
-      frameToCanvas(c, video, hasEV ? '' : softFilters[i]);
-      exportCanvas(c, 'bracket' + (i - 1) + 'ev');
-      i++;
-      if(i < 3) setTimeout(shootNext, 220);
-      else if(hasEV && track){ try{ track.applyConstraints({advanced:[{exposureCompensation:baseEV}]}); }catch(e){} }
-    };
-    shootNext();
-  }
-
-  captureBtn.addEventListener('click', () => {
-    if(!video.videoWidth) return;
-    if(captureMode === 'pano'){
-      panoActive ? panoStop() : panoStart();
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facingMode}, ...size}, audio:false});
+      video.srcObject=stream; await video.play();
+      const track=stream.getVideoTracks()[0], s=track.getSettings();
+      resReadout.textContent=`${s.width||'—'} × ${s.height||'—'}`;
+      hud.textContent=(s.width>=3800)?'4K READY':'READY';
+      const caps=track.getCapabilities ? track.getCapabilities() : {};
+      torchSupported=!!caps.torch; torchBtn.hidden=!torchSupported; torchOn=false;
+      torchBtn.classList.remove('active');
+      lastTrack=track; lastCaps=caps;
+      buildManualControls(track, caps);
       return;
-    }
-    if(countdownEl.classList.contains('show')) return;
-    const fire = async () => {
-      await waitForSteady(0.7, 2500);
-      if(captureMode === 'burst') burstCapture();
-      else if(captureMode === 'night') nightCapture();
-      else if(captureMode === 'bracket') bracketCapture();
-      else takePhoto();
-    };
-    if(timerSecs === 0){ fire(); return; }
-    let n = timerSecs;
-    countdownEl.textContent = n;
-    countdownEl.classList.add('show');
-    const tick = setInterval(() => {
-      n--;
-      if(n <= 0){
-        clearInterval(tick);
-        countdownEl.classList.remove('show');
-        fire();
-      }else{
-        countdownEl.textContent = n;
-      }
-    }, 1000);
-  });
+    }catch(err){/* try next */}
+  }
+  showMsg('Could not reach the camera. Check permissions and try again.');
+  hud.textContent='NO SIGNAL';
+}
 
-  startCamera(facing);
+function buildManualControls(track, caps){
+  const wrap=$('manualControls'); wrap.innerHTML=''; let any=false;
+
+  async function set(props){ try{ await track.applyConstraints({advanced:[props]}); }catch(e){} }
+
+  function modeBlock(title, modeKey, sliders){
+    const modes=caps[modeKey];
+    if(!modes || !modes.includes('manual')) return;
+    const usable=sliders.filter(s=>s.key in caps);
+    if(!usable.length) return;
+    any=true;
+    const box=document.createElement('div'); box.className='mrow';
+    box.innerHTML=`<div class="row"><label>${title}</label><div class="seg small"><button data-m="continuous" aria-pressed="true">Auto</button><button data-m="manual">Manual</button></div></div>`;
+    const subs=document.createElement('div'); subs.hidden=true;
+    usable.forEach(s=>{
+      const c=caps[s.key];
+      const row=document.createElement('div'); row.className='subrow';
+      row.innerHTML=`<span style="font-size:11px;color:var(--muted);min-width:52px;">${s.label}</span><input type="range" min="${c.min}" max="${c.max}" step="${c.step||1}" value="${c.min}"><span class="mval"></span>`;
+      const input=row.querySelector('input'), val=row.querySelector('.mval');
+      val.textContent=s.fmt(input.value);
+      input.addEventListener('input', ()=>{ val.textContent=s.fmt(input.value); set({[s.key]:parseFloat(input.value)}); });
+      subs.appendChild(row);
+    });
+    box.appendChild(subs);
+    box.querySelector('.seg').addEventListener('click', e=>{
+      const btn=e.target.closest('button'); if(!btn) return;
+      [...btn.parentElement.children].forEach(b=>b.setAttribute('aria-pressed', b===btn));
+      subs.hidden = btn.dataset.m!=='manual';
+      set({[modeKey]:btn.dataset.m});
+    });
+    wrap.appendChild(box);
+  }
+
+  modeBlock('Focus', 'focusMode', [{key:'focusDistance', label:'Distance', fmt:v=>v}]);
+  modeBlock('Exposure', 'exposureMode', [
+    {key:'exposureTime', label:'Shutter', fmt:v=>{const s=v/10000; return s<1?`1/${Math.round(1/s)}s`:`${s.toFixed(2)}s`;}},
+    {key:'iso', label:'ISO', fmt:v=>`ISO ${Math.round(v)}`}
+  ]);
+  modeBlock('White balance', 'whiteBalanceMode', [{key:'colorTemperature', label:'Kelvin', fmt:v=>`${Math.round(v)}K`}]);
+
+  if(caps.exposureCompensation){
+    any=true;
+    const c=caps.exposureCompensation;
+    const row=document.createElement('div'); row.className='mrow';
+    row.innerHTML=`<div class="row"><label>Exposure comp.</label></div><div class="subrow"><input type="range" min="${c.min}" max="${c.max}" step="${c.step||0.1}" value="0"><span class="mval">0 EV</span></div>`;
+    const input=row.querySelector('input'), val=row.querySelector('.mval');
+    input.addEventListener('input', ()=>{ const v=parseFloat(input.value); val.textContent=`${v>0?'+':''}${v.toFixed(1)} EV`; set({exposureCompensation:v}); });
+    wrap.appendChild(row);
+  }
+
+  if(!any){ wrap.innerHTML='<p class="mempty">This camera/browser only exposes automatic focus, exposure and white balance — no manual overrides available here.</p>'; }
+}
+
+function showToast(text, ms=2200){
+  toast.textContent=text; toast.classList.add('on');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>toast.classList.remove('on'), ms);
+}
+
+function renderGrid(){
+  const st=settings.gridStyle;
+  grid.classList.toggle('on', st!=='off');
+  const paths={
+    thirds:'<line x1="33.33" y1="0" x2="33.33" y2="100"/><line x1="66.66" y1="0" x2="66.66" y2="100"/><line x1="0" y1="33.33" x2="100" y2="33.33"/><line x1="0" y1="66.66" x2="100" y2="66.66"/>',
+    cross:'<line x1="50" y1="0" x2="50" y2="100"/><line x1="0" y1="50" x2="100" y2="50"/>',
+    diagonal:'<line x1="0" y1="0" x2="100" y2="100"/><line x1="100" y1="0" x2="0" y2="100"/>',
+    spiral:'<path d="M100,0 A100,100 0 0,1 38.2,100 A61.8,61.8 0 0,1 0,38.2 A38.2,38.2 0 0,1 23.6,0.3 A23.6,23.6 0 0,1 38,14 A14,14 0 0,1 24.4,23.6"/>'
+  };
+  grid.innerHTML = paths[st] || '';
+}
+
+// --- Steadiness (devicemotion) ---
+async function ensureMotionPermission(){
+  if(typeof DeviceMotionEvent==='undefined') return false;
+  if(typeof DeviceMotionEvent.requestPermission==='function'){
+    try{ return (await DeviceMotionEvent.requestPermission())==='granted'; }catch(e){ return false; }
+  }
+  return true;
+}
+function onDeviceMotion(e){
+  const a=(e.acceleration && e.acceleration.x!==null) ? e.acceleration : e.accelerationIncludingGravity;
+  if(!a) return;
+  const mag=Math.sqrt((a.x||0)**2+(a.y||0)**2+(a.z||0)**2);
+  shakeScore = shakeScore*0.8 + Math.min(mag,20)*0.2;
+  const pct=Math.min(100, shakeScore/12*100);
+  const bar=gauge.querySelector('i');
+  bar.style.width=pct+'%';
+  bar.style.background = pct<30?'var(--accent)':pct<65?'#e0a83d':'var(--danger)';
+  if(steadyWaiting){
+    if(pct<30){
+      if(!steadyGoodSince) steadyGoodSince=Date.now();
+      if(Date.now()-steadyGoodSince>400){ steadyWaiting=false; steadyGoodSince=0; hud.textContent='READY'; finishArmedCapture(); }
+    } else steadyGoodSince=0;
+  }
+}
+$('steadySwitch').addEventListener('click', async ()=>{
+  const el=$('steadySwitch'); const turningOn=el.getAttribute('aria-pressed')!=='true';
+  if(turningOn){
+    const ok=await ensureMotionPermission();
+    if(!ok){ showToast('Motion sensor unavailable or permission denied.'); return; }
+    motionActive=true; window.addEventListener('devicemotion', onDeviceMotion);
+    gauge.classList.add('on'); settings.steady=true; el.setAttribute('aria-pressed','true');
+  }else{
+    motionActive=false; window.removeEventListener('devicemotion', onDeviceMotion);
+    gauge.classList.remove('on'); settings.steady=false; el.setAttribute('aria-pressed','false');
+  }
+});
+if(typeof DeviceMotionEvent==='undefined') $('steadySwitch').disabled=true;
+
+// --- Horizon level (deviceorientation) ---
+async function ensureOrientationPermission(){
+  if(typeof DeviceOrientationEvent==='undefined') return false;
+  if(typeof DeviceOrientationEvent.requestPermission==='function'){
+    try{ return (await DeviceOrientationEvent.requestPermission())==='granted'; }catch(e){ return false; }
+  }
+  return true;
+}
+function onDeviceOrientation(e){
+  const gamma=e.gamma||0;
+  const bar=horizon.querySelector('.bar');
+  bar.style.transform=`rotate(${Math.max(-45,Math.min(45,gamma))}deg)`;
+  horizon.classList.toggle('level', Math.abs(gamma)<1.5);
+}
+$('horizonSwitch').addEventListener('click', async ()=>{
+  const el=$('horizonSwitch'); const turningOn=el.getAttribute('aria-pressed')!=='true';
+  if(turningOn){
+    const ok=await ensureOrientationPermission();
+    if(!ok){ showToast('Orientation sensor unavailable or permission denied.'); return; }
+    window.addEventListener('deviceorientation', onDeviceOrientation);
+    horizon.classList.add('on'); el.setAttribute('aria-pressed','true');
+  }else{
+    window.removeEventListener('deviceorientation', onDeviceOrientation);
+    horizon.classList.remove('on'); el.setAttribute('aria-pressed','false');
+  }
+});
+if(typeof DeviceOrientationEvent==='undefined') $('horizonSwitch').disabled=true;
+
+// --- Battery-aware throttle ---
+if(navigator.getBattery){
+  navigator.getBattery().then(b=>{
+    batteryObj=b;
+    const check=()=>{
+      if(settings.batteryThrottle && !b.charging && b.level<0.15 && !batteryThrottled && settings.resolution!=='720'){
+        batteryThrottled=true;
+        document.querySelector('#resSeg [data-v="720"]').click();
+        showToast('Low battery — stepped down to 720p to save the shot.');
+      }
+      if(b.level>0.25 || b.charging) batteryThrottled=false;
+    };
+    b.addEventListener('levelchange', check); b.addEventListener('chargingchange', check);
+  }).catch(()=>{ $('batterySwitch').disabled=true; });
+}else{ $('batterySwitch').disabled=true; }
+
+// --- Ambient light diary ---
+const liteCanvas=document.createElement('canvas'); liteCanvas.width=16; liteCanvas.height=9;
+const liteCtx=liteCanvas.getContext('2d');
+function sampleLight(){
+  if(!video.videoWidth) return;
+  liteCtx.drawImage(video,0,0,16,9);
+  const d=liteCtx.getImageData(0,0,16,9).data;
+  let sum=0; for(let i=0;i<d.length;i+=4) sum += 0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+  lightSamples.push(sum/(d.length/4)); if(lightSamples.length>120) lightSamples.shift();
+  drawSparkline();
+}
+function drawSparkline(){
+  const ctx2=spark.getContext('2d'), w=spark.width, h=spark.height;
+  ctx2.clearRect(0,0,w,h);
+  if(lightSamples.length<2) return;
+  ctx2.beginPath();
+  lightSamples.forEach((v,i)=>{
+    const x=i/(lightSamples.length-1)*w, y=h-(v/255)*h;
+    i===0?ctx2.moveTo(x,y):ctx2.lineTo(x,y);
+  });
+  ctx2.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent');
+  ctx2.lineWidth=1.5; ctx2.stroke();
+}
+setInterval(sampleLight, 1500);
+
+// --- Weather-aware white balance nudge (Open-Meteo — free, no key) ---
+$('weatherBtn').addEventListener('click', ()=>{
+  const out=$('weatherOut');
+  if(!navigator.geolocation){ out.textContent='Geolocation unavailable in this browser.'; return; }
+  out.textContent='Locating…';
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const {latitude,longitude}=pos.coords;
+    try{
+      const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=cloud_cover&daily=sunset&timezone=auto`);
+      const j=await res.json();
+      const cloud=j.current.cloud_cover;
+      const nearSunset=Math.abs(Date.now()-new Date(j.daily.sunset[0]).getTime())<45*60*1000;
+      let kelvin,label;
+      if(nearSunset){kelvin=3200; label='Golden hour light';}
+      else if(cloud>70){kelvin=7500; label='Overcast sky';}
+      else if(cloud>30){kelvin=6500; label='Partly cloudy';}
+      else {kelvin=5500; label='Clear daylight';}
+      out.innerHTML=`${label}, ${cloud}% cloud — try white balance near <b>${kelvin}K</b>. <button class="smallbtn" id="applyWB" style="margin-top:6px;">Apply</button>`;
+      $('applyWB').addEventListener('click', async ()=>{
+        if(!lastTrack || !lastCaps || !lastCaps.colorTemperature){ showToast('Manual white balance not supported on this camera.'); return; }
+        try{ await lastTrack.applyConstraints({advanced:[{whiteBalanceMode:'manual'},{colorTemperature:kelvin}]}); showToast('White balance applied.'); }
+        catch(e){ showToast('Could not apply — try Manual white balance above instead.'); }
+      });
+    }catch(e){ out.textContent='Could not reach the weather service.'; }
+  }, ()=>{ out.textContent='Location permission denied.'; });
+});
+
+// --- Sound-triggered shutter ---
+async function startSoundTrigger(level){
+  try{ soundStream=await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch(e){ showToast('Microphone permission denied.'); return; }
+  soundCtx=new (window.AudioContext||window.webkitAudioContext)();
+  const src=soundCtx.createMediaStreamSource(soundStream);
+  const analyser=soundCtx.createAnalyser(); analyser.fftSize=512;
+  src.connect(analyser);
+  const data=new Uint8Array(analyser.frequencyBinCount);
+  const thresh = level==='high'?0.12:level==='med'?0.22:0.35;
+  (function loop(){
+    analyser.getByteTimeDomainData(data);
+    let peak=0; for(let i=0;i<data.length;i++) peak=Math.max(peak, Math.abs(data[i]-128)/128);
+    if(peak>thresh && Date.now()-soundLastFire>1500){ soundLastFire=Date.now(); startCaptureFlow(); showToast('Sound trigger fired'); }
+    soundRAF=requestAnimationFrame(loop);
+  })();
+}
+function stopSoundTrigger(){
+  if(soundRAF) cancelAnimationFrame(soundRAF); soundRAF=null;
+  if(soundStream) soundStream.getTracks().forEach(t=>t.stop()); soundStream=null;
+  if(soundCtx) soundCtx.close(); soundCtx=null;
+}
+
+// --- Gesture (wave) trigger via frame differencing ---
+const gestCanvas=document.createElement('canvas'); gestCanvas.width=40; gestCanvas.height=30;
+const gestCtx=gestCanvas.getContext('2d');
+function gestureTick(){
+  if(!video.videoWidth) return;
+  gestCtx.drawImage(video,0,0,40,30);
+  const frame=gestCtx.getImageData(0,0,40,30).data;
+  if(gesturePrevFrame){
+    let diff=0; for(let i=0;i<frame.length;i+=4) diff+=Math.abs(frame[i]-gesturePrevFrame[i]);
+    if(diff/(40*30)>28 && Date.now()-gestureLastFire>2000){ gestureLastFire=Date.now(); startCaptureFlow(); showToast('Gesture detected'); }
+  }
+  gesturePrevFrame=frame;
+}
+
+function updatePreview(){
+  const b=100+settings.brightness, c=100+settings.contrast, s=100+settings.saturation;
+  video.style.filter=`brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+  const mirror=settings.mirror?-1:1;
+  video.style.transform=`scaleX(${mirror}) scale(${settings.zoom})`;
+}
+
+function cropRect(vw,vh){
+  let tw=vw, th=vh;
+  if(settings.aspect==='1:1'){tw=th=Math.min(vw,vh);}
+  else if(settings.aspect==='4:3'){ if(vw/vh>4/3){tw=vh*4/3; th=vh;} else {th=vw*3/4; tw=vw;} }
+  else { if(vw/vh>16/9){tw=vh*16/9; th=vh;} else {th=vw*9/16; tw=vw;} }
+  const cw=tw/settings.zoom, ch=th/settings.zoom;
+  return {cw, ch, sx:(vw-cw)/2, sy:(vh-ch)/2};
+}
+
+function beep(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.frequency.value=880; o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(.15, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.12);
+    o.start(); o.stop(ctx.currentTime+.13);
+  }catch(e){}
+}
+
+function doCapture(){
+  const vw=video.videoWidth, vh=video.videoHeight;
+  if(!vw||!vh) return;
+  const {cw,ch,sx,sy}=cropRect(vw,vh);
+  canvas.width=cw; canvas.height=ch;
+  const ctx=canvas.getContext('2d');
+  ctx.save();
+  if(settings.mirror){ctx.translate(cw,0); ctx.scale(-1,1);}
+  ctx.filter=`brightness(${100+settings.brightness}%) contrast(${100+settings.contrast}%) saturate(${100+settings.saturation}%)`;
+  ctx.drawImage(video, sx, sy, cw, ch, 0, 0, cw, ch);
+  ctx.restore();
+  if(settings.stamp){
+    const label=new Date().toLocaleString();
+    ctx.font=`${Math.max(14,cw*0.02)}px ${getComputedStyle(document.body).fontFamily}`;
+    const pad=10, h=Math.max(24,cw*0.035);
+    ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(0,ch-h,cw,h);
+    ctx.fillStyle='#fff'; ctx.textBaseline='middle';
+    ctx.fillText(label, pad, ch-h/2);
+  }
+  shutterBtn.classList.remove('snap'); void shutterBtn.offsetWidth; shutterBtn.classList.add('snap');
+  flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+  if(settings.sound) beep();
+  if(settings.haptic && navigator.vibrate) navigator.vibrate(40);
+
+  const previewUrl=canvas.toDataURL('image/jpeg', 0.85); // thumbnail/viewer only — raw binaries can't render as <img>
+
+  function finalize(blob, ext){
+    const url=URL.createObjectURL(blob);
+    const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+    const name=`APERIO_${stamp}.${ext}`;
+    gallery.unshift({url, previewUrl, name});
+    renderFilmstrip();
+    dlLink.href=url; dlLink.download=name; dlLink.click();
+  }
+
+  if(settings.format==='raw'){
+    const imgData=ctx.getImageData(0,0,cw,ch);
+    const header=new ArrayBuffer(16), dv=new DataView(header);
+    dv.setUint32(0,0x52415746,false); dv.setUint32(4,cw,true); dv.setUint32(8,ch,true); dv.setUint32(12,4,true); // 'RAWF', width, height, channels(RGBA)
+    const blob=new Blob([header, imgData.data.buffer], {type:'application/octet-stream'});
+    finalize(blob, 'raw');
+  }else{
+    const mime=settings.format==='png'?'image/png':settings.format==='webp'?'image/webp':'image/jpeg';
+    canvas.toBlob(b=>finalize(b, settings.format), mime, settings.format==='png'?undefined:settings.quality);
+  }
+}
+
+function armTimerCountdown(t){
+  let n=t; countdown.textContent=n; countdown.classList.add('on');
+  const iv=setInterval(()=>{
+    n--;
+    if(n<=0){clearInterval(iv); countdown.classList.remove('on'); doCapture();}
+    else countdown.textContent=n;
+  },1000);
+}
+function finishArmedCapture(){ settings.timer ? armTimerCountdown(settings.timer) : doCapture(); }
+function startCaptureFlow(){
+  if(!stream) return;
+  if(settings.steady && motionActive){
+    steadyWaiting=true; steadyGoodSince=0; hud.textContent='STEADYING…'; showToast('Hold steady…');
+    setTimeout(()=>{ if(steadyWaiting){ steadyWaiting=false; hud.textContent='READY'; finishArmedCapture(); } }, 4000);
+    return;
+  }
+  finishArmedCapture();
+}
+shutterBtn.addEventListener('click', startCaptureFlow);
+window.addEventListener('keydown', e=>{ if(e.code==='Space'){e.preventDefault(); startCaptureFlow();} });
+
+flipBtn.addEventListener('click', ()=>{facingMode=facingMode==='environment'?'user':'environment'; startCamera();});
+
+torchBtn.addEventListener('click', async ()=>{
+  if(!torchSupported||!stream) return;
+  torchOn=!torchOn;
+  try{ await stream.getVideoTracks()[0].applyConstraints({advanced:[{torch:torchOn}]}); torchBtn.classList.toggle('active', torchOn); }catch(e){}
+});
+
+fullscreenBtn.addEventListener('click', ()=>{
+  if(!document.fullscreenElement) stage.requestFullscreen?.(); else document.exitFullscreen?.();
+});
+
+zoomSlider.addEventListener('input', ()=>{ settings.zoom=parseFloat(zoomSlider.value); zoomVal.textContent=settings.zoom.toFixed(1)+'×'; updatePreview(); });
+
+themeDial.addEventListener('click', e=>{
+  const btn=e.target.closest('button[data-t]'); if(!btn) return;
+  document.documentElement.setAttribute('data-theme', btn.dataset.t);
+  [...themeDial.querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed', b===btn));
+});
+
+function openSheet(){settingsSheet.classList.add('open'); overlay.classList.add('on');}
+function closeSheet(){settingsSheet.classList.remove('open'); overlay.classList.remove('on');}
+settingsBtn.addEventListener('click', openSheet);
+closeSettings.addEventListener('click', closeSheet);
+overlay.addEventListener('click', ()=>{closeSheet(); closeViewer();});
+
+function bindSeg(id, key, onChange){
+  document.getElementById(id).addEventListener('click', e=>{
+    const btn=e.target.closest('button[data-v]'); if(!btn) return;
+    settings[key]=btn.dataset.v;
+    [...btn.parentElement.querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed', b===btn));
+    if(onChange) onChange();
+  });
+}
+bindSeg('resSeg','resolution', startCamera);
+bindSeg('aspectSeg','aspect');
+bindSeg('timerSeg','timer');
+bindSeg('formatSeg','format', updateFormatUI);
+
+function updateFormatUI(){
+  const lossless = settings.format==='png' || settings.format==='raw';
+  $('quality').disabled = lossless;
+  $('qualityRow').style.opacity = lossless ? .4 : 1;
+  $('formatNote').hidden = settings.format!=='raw';
+}
+updateFormatUI();
+
+$('brightness').addEventListener('input', e=>{settings.brightness=+e.target.value; updatePreview();});
+$('contrast').addEventListener('input', e=>{settings.contrast=+e.target.value; updatePreview();});
+$('saturation').addEventListener('input', e=>{settings.saturation=+e.target.value; updatePreview();});
+$('quality').addEventListener('input', e=>{settings.quality=+e.target.value;});
+
+function bindSwitch(id,key,cb){
+  const el=document.getElementById(id);
+  el.addEventListener('click', ()=>{
+    settings[key]=!settings[key];
+    el.setAttribute('aria-pressed', settings[key]);
+    if(cb) cb();
+  });
+}
+bindSwitch('mirrorSwitch','mirror', updatePreview);
+bindSwitch('stampSwitch','stamp');
+bindSwitch('soundSwitch','sound');
+bindSwitch('hapticSwitch','haptic');
+bindSwitch('gestureSwitch','gesture', ()=>{
+  if(settings.gesture){ gestureTimer=setInterval(gestureTick,150); showToast('Wave at the camera to capture'); }
+  else{ clearInterval(gestureTimer); gestureTimer=null; gesturePrevFrame=null; }
+});
+bindSwitch('batterySwitch','batteryThrottle');
+bindSeg('gridSeg','gridStyle', renderGrid);
+bindSeg('soundTrigSeg','soundTrig', ()=>{ stopSoundTrigger(); if(settings.soundTrig!=='off') startSoundTrigger(settings.soundTrig); });
+
+$('resetBtn').addEventListener('click', ()=>{
+  settings.brightness=0; settings.contrast=0; settings.saturation=0;
+  ['brightness','contrast','saturation'].forEach(id=>$(id).value=0);
+  updatePreview();
+});
+
+function renderFilmstrip(){
+  filmstrip.hidden=gallery.length===0;
+  filmstrip.innerHTML='';
+  gallery.forEach((item,i)=>{
+    const img=document.createElement('img');
+    img.src=item.previewUrl; img.alt='Captured photo thumbnail';
+    img.addEventListener('click', ()=>openViewer(i));
+    filmstrip.appendChild(img);
+  });
+}
+function openViewer(i){activeViewIndex=i; viewerImg.src=gallery[i].previewUrl; viewer.classList.add('on');}
+function closeViewer(){viewer.classList.remove('on'); activeViewIndex=-1;}
+viewerClose.addEventListener('click', closeViewer);
+viewerSave.addEventListener('click', ()=>{
+  if(activeViewIndex<0) return;
+  const item=gallery[activeViewIndex];
+  dlLink.href=item.url; dlLink.download=item.name; dlLink.click();
+});
+viewerDelete.addEventListener('click', ()=>{
+  if(activeViewIndex<0) return;
+  URL.revokeObjectURL(gallery[activeViewIndex].url);
+  gallery.splice(activeViewIndex,1);
+  renderFilmstrip(); closeViewer();
+});
+
+video.addEventListener('loadedmetadata', ()=>{resReadout.textContent=`${video.videoWidth} × ${video.videoHeight}`;});
+
+updatePreview();
+renderGrid();
+startCamera();
 </script>
 </body>
 </html>
