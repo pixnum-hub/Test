@@ -52,6 +52,10 @@ main{flex:1;}
 .metric{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;}
 .metric b{display:block;font-size:1.05rem;}
 .metric span{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.detailgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 16px;}
+.detailgrid div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;}
+.detailgrid b{display:block;font-size:.95rem;}
+.detailgrid span{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;}
 h2.section{font-size:.95rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 0 10px;font-family:var(--ff-body);font-weight:700;}
 .forecast{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;}
 .day{flex:0 0 84px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 8px;text-align:center;}
@@ -73,12 +77,15 @@ h2.section{font-size:.95rem;text-transform:uppercase;letter-spacing:.06em;color:
 .npkout{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
 .npkout div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 8px;text-align:center;}
 .npkout b{font-family:var(--ff-display);font-size:1.4rem;display:block;}
-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:.88rem;}
-th,td{padding:10px;text-align:left;border-bottom:1px solid var(--line);}
-th{color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase;}
+.resultline{margin-top:8px;font-size:.9rem;}
+.resultline b{color:var(--green);font-family:var(--ff-display);font-size:1.05rem;}
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:.85rem;}
+th,td{padding:9px;text-align:left;border-bottom:1px solid var(--line);}
+th{color:var(--muted);font-weight:600;font-size:.72rem;text-transform:uppercase;}
 tr:last-child td{border-bottom:none;}
 .note{color:var(--muted);font-size:.78rem;margin-top:8px;}
 .scheme b{font-family:var(--ff-body);}
+.sharefield{margin-bottom:10px;}
 .tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:10;}
 .tabbar button{background:none;border:none;color:var(--muted);font-size:.68rem;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 6px;}
 .tabbar button .ic{font-size:1.15rem;}
@@ -134,6 +141,21 @@ footer strong{color:var(--text);}
         <div class="metric"><b id="mWind">--</b><span>Wind</span></div>
         <div class="metric"><b id="mRain">--%</b><span>Rain chance</span></div>
       </div>
+
+      <h2 class="section">📊 Extended conditions</h2>
+      <div class="detailgrid">
+        <div><b id="eFeels">--</b><span>Feels like</span></div>
+        <div><b id="eGust">--</b><span>Wind gusts</span></div>
+        <div><b id="eCloud">--</b><span>Cloud cover</span></div>
+        <div><b id="ePress">--</b><span>Pressure</span></div>
+        <div><b id="eUv">--</b><span>UV index</span></div>
+        <div><b id="eDir">--</b><span>Wind direction</span></div>
+        <div><b id="eSunrise">--</b><span>Sunrise</span></div>
+        <div><b id="eSunset">--</b><span>Sunset</span></div>
+        <div><b id="eRainSum">--</b><span>Rain today</span></div>
+        <div><b id="eEt0">--</b><span>Evapotranspiration</span></div>
+      </div>
+
       <h2 class="section">🌾 Field advisory</h2>
       <div class="tips" id="tips"></div>
       <h2 class="section">5-Day outlook</h2>
@@ -154,20 +176,77 @@ footer strong{color:var(--text);}
 
   <!-- CALCULATOR TAB -->
   <section class="panel" id="tab-calc">
-    <h2 class="section">🧮 Fertilizer calculator</h2>
+    <h2 class="section">📐 Field size (used by tools below)</h2>
     <div class="grid2">
       <div class="field"><label>Land area</label><input id="areaInput" type="number" min="0" step="0.1" value="1"></div>
       <div class="field"><label>Unit</label><select id="areaUnit"><option value="acre">Acre</option><option value="hectare">Hectare</option></select></div>
     </div>
-    <button class="btn" id="calcBtn" style="width:100%;">Calculate NPK dose</button>
-    <div class="npkout" id="npkOut">
-      <div><b id="outN">--</b>kg N</div>
-      <div><b id="outP">--</b>kg P</div>
-      <div><b id="outK">--</b>kg K</div>
+
+    <h2 class="section">🧮 Fertilizer calculator</h2>
+    <div class="card">
+      <button class="btn" id="calcBtn" style="width:100%;">Calculate NPK dose</button>
+      <div class="npkout" id="npkOut">
+        <div><b id="outN">--</b>kg N</div>
+        <div><b id="outP">--</b>kg P</div>
+        <div><b id="outK">--</b>kg K</div>
+      </div>
+      <p class="note">Indicative standard dosage per selected crop — adjust per soil test results.</p>
     </div>
-    <p class="note">Indicative standard dosage per selected crop — adjust per soil test results.</p>
+
     <h2 class="section">💧 Irrigation guide</h2>
     <div class="cards" id="irriGuide"></div>
+
+    <h2 class="section">🌰 Seed rate</h2>
+    <div class="card"><button class="btn" id="seedBtn" style="width:100%;">Calculate seed needed</button>
+      <div class="resultline" id="seedOut">Seed needed: <b>--</b></div></div>
+
+    <h2 class="section">🌿 Plant population</h2>
+    <div class="card"><button class="btn" id="popBtn" style="width:100%;">Estimate plant count</button>
+      <div class="resultline" id="popOut">Estimated plants: <b>--</b></div>
+      <p class="note" id="popSpacing"></p></div>
+
+    <h2 class="section">💦 Irrigation water requirement</h2>
+    <div class="card"><button class="btn" id="waterBtn" style="width:100%;">Estimate water needed</button>
+      <div class="resultline" id="waterOut">Water per irrigation: <b>--</b></div>
+      <p class="note" id="waterSrc"></p></div>
+
+    <h2 class="section">📈 Farm economics (yield · revenue · cost · profit)</h2>
+    <div class="card"><button class="btn" id="econBtn" style="width:100%;">Estimate economics</button>
+      <div class="npkout" id="econOut">
+        <div><b id="outYield">--</b>Yield (qtl)</div>
+        <div><b id="outRevenue">--</b>Revenue</div>
+        <div><b id="outCost">--</b>Cost</div>
+      </div>
+      <div class="resultline" id="profitOut">Estimated profit: <b>--</b></div>
+      <p class="note">Based on reference yield/cost figures — actuals vary with inputs, market and season.</p></div>
+
+    <h2 class="section">🐄 Organic manure (FYM/compost)</h2>
+    <div class="card"><button class="btn" id="manureBtn" style="width:100%;">Estimate manure needed</button>
+      <div class="resultline" id="manureOut">FYM/compost needed: <b>--</b></div></div>
+
+    <h2 class="section">🧴 Pesticide spray dilution</h2>
+    <div class="card">
+      <div class="grid2">
+        <div class="field"><label>Sprayer tank size (L)</label><input id="tankInput" type="number" min="0" step="0.5" value="15"></div>
+        <div class="field"><label>Dose (ml per litre)</label><input id="doseInput" type="number" min="0" step="0.1" value="2"></div>
+      </div>
+      <button class="btn" id="pestBtn" style="width:100%;">Calculate</button>
+      <div class="resultline" id="pestOut1">Product per tank: <b>--</b></div>
+      <div class="resultline" id="pestOut2">Tank-fills for your field: <b>--</b></div>
+      <div class="resultline" id="pestOut3">Total product for field: <b>--</b></div>
+      <p class="note">Assumes ~200 L spray solution per acre — always follow the product label rate.</p>
+    </div>
+
+    <h2 class="section">📏 Area unit converter</h2>
+    <div class="card">
+      <div class="grid2">
+        <div class="field"><label>Value</label><input id="convInput" type="number" min="0" step="0.1" value="1"></div>
+        <div class="field"><label>From</label><select id="convUnit"><option value="acre">Acre</option><option value="hectare">Hectare</option><option value="bigha">Bigha (approx.)</option><option value="sqft">Sq. feet</option><option value="sqm">Sq. metres</option></select></div>
+      </div>
+      <button class="btn" id="convBtn" style="width:100%;">Convert</button>
+      <div id="convOut" class="detailgrid" style="margin-top:10px;"></div>
+      <p class="note">Bigha varies by region (UP standard used here) — confirm local measure before relying on it.</p>
+    </div>
   </section>
 
   <!-- PRICES TAB -->
@@ -239,39 +318,50 @@ document.getElementById('currBtn').addEventListener('click', ()=>{
 });
 const c2f = c => Math.round(c*9/5+32);
 const k2mph = k => Math.round(k*0.621371);
+function money(v){ const rate = currency==='INR' ? 1 : 0.012; const sym = currency==='INR' ? '₹' : '$'; return sym + Math.round(v*rate).toLocaleString(); }
 
-/* ---------- crop data ---------- */
+/* ---------- crop data (20 crops) ---------- */
 const CROPS = [
- {k:'rice',n:'Rice',ic:'🌾',water:'High',frost:false,season:'Kharif',sow:'June – July',harv:'October – November',npk:[50,25,25],price:2183,unit:'quintal',
-  pests:[{n:'Stem borer',s:'Dead hearts in young plants, white empty ears later',r:'Use resistant variety; apply neem-based spray at early infestation'},
-         {n:'Blast disease',s:'Diamond-shaped grey lesions on leaves',r:'Avoid excess nitrogen; apply recommended fungicide'}]},
- {k:'wheat',n:'Wheat',ic:'🌾',water:'Medium',frost:true,season:'Rabi',sow:'October – December',harv:'March – April',npk:[60,30,20],price:2275,unit:'quintal',
-  pests:[{n:'Aphids',s:'Curled yellow leaves, sticky honeydew residue',r:'Spray neem oil or insecticidal soap early'},
-         {n:'Yellow rust',s:'Orange-yellow pustules in stripes on leaves',r:'Use rust-resistant variety; fungicide if severe'}]},
- {k:'maize',n:'Maize',ic:'🌽',water:'Medium',frost:true,season:'Kharif/Rabi',sow:'June – July',harv:'September – October',npk:[80,40,20],price:2090,unit:'quintal',
-  pests:[{n:'Fall armyworm',s:'Ragged holes and sawdust-like frass in leaf whorl',r:'Handpick larvae; apply biopesticide spray'},
-         {n:'Stalk rot',s:'Wilting with soft, rotten stalk base',r:'Improve field drainage; avoid waterlogging'}]},
- {k:'cotton',n:'Cotton',ic:'🌱',water:'High',frost:false,season:'Kharif',sow:'April – June',harv:'October – January',npk:[40,20,20],price:7121,unit:'quintal',
-  pests:[{n:'Bollworm',s:'Holes in bolls and damaged flower buds',r:'Use pheromone traps; Bt-based spray'},
-         {n:'Whitefly',s:'Yellowing leaves with sooty black mould',r:'Yellow sticky traps; neem oil spray'}]},
- {k:'potato',n:'Potato',ic:'🥔',water:'Medium',frost:true,season:'Rabi',sow:'October – November',harv:'January – February',npk:[60,40,40],price:1200,unit:'quintal',
-  pests:[{n:'Late blight',s:'Dark water-soaked spots on leaves',r:'Fungicide spray; avoid overhead irrigation'},
-         {n:'Tuber moth',s:'Tunnels in leaves and stored tubers',r:'Earth up soil over tubers; remove crop debris'}]},
- {k:'tomato',n:'Tomato',ic:'🍅',water:'Medium',frost:true,season:'Year-round (season-dependent)',sow:'Varies by region',harv:'60–80 days after transplant',npk:[50,25,25],price:1500,unit:'quintal',
-  pests:[{n:'Fruit borer',s:'Round holes bored into fruit',r:'Pheromone traps; neem-based spray'},
-         {n:'Leaf curl virus',s:'Upward curling and yellowing of leaves',r:'Control whitefly vector; remove infected plants'}]},
- {k:'sugarcane',n:'Sugarcane',ic:'🎋',water:'High',frost:false,season:'Perennial',sow:'February – March',harv:'December – March (next yr)',npk:[100,50,50],price:340,unit:'quintal',
-  pests:[{n:'Early shoot borer',s:'Dead heart in young cane shoots',r:'Remove and destroy affected shoots promptly'},
-         {n:'Red rot',s:'Reddened internal tissue with alcohol-like smell',r:'Use disease-free setts and resistant variety'}]},
- {k:'soybean',n:'Soybean',ic:'🌱',water:'Medium',frost:false,season:'Kharif',sow:'June – July',harv:'October',npk:[20,40,20],price:4600,unit:'quintal',
-  pests:[{n:'Girdle beetle',s:'Girdling ring on stem, plant wilts',r:'Destroy old stubble; sow at the recommended time'},
-         {n:'Yellow mosaic virus',s:'Yellow-green mosaic pattern on leaves',r:'Control whitefly vector; use resistant varieties'}]},
- {k:'onion',n:'Onion',ic:'🧅',water:'Medium',frost:false,season:'Rabi',sow:'November – December',harv:'March – April',npk:[60,30,30],price:1500,unit:'quintal',
-  pests:[{n:'Thrips',s:'Silvery streaks and curling on leaves',r:'Blue sticky traps; neem oil spray'},
-         {n:'Purple blotch',s:'Purple-brown patches on leaves',r:'Fungicide spray; rotate crops each season'}]},
- {k:'chickpea',n:'Chickpea',ic:'🫘',water:'Low',frost:false,season:'Rabi',sow:'October – November',harv:'February – March',npk:[20,40,20],price:5335,unit:'quintal',
-  pests:[{n:'Pod borer',s:'Round holes bored into pods',r:'Pheromone traps; neem-based spray'},
-         {n:'Wilt',s:'Sudden drooping and drying of whole plant',r:'Use wilt-resistant variety; treat seed before sowing'}]}
+ {k:'rice',n:'Rice',ic:'🌾',water:'High',frost:false,season:'Kharif',sow:'June – July',harv:'October – November',npk:[50,25,25],price:2183,unit:'quintal',seed:20,sp:[20,15],yld:25,cost:25000,
+  pests:[{n:'Stem borer',s:'Dead hearts in young plants, white empty ears later',r:'Use resistant variety; neem-based spray at early infestation'},{n:'Blast disease',s:'Diamond-shaped grey lesions on leaves',r:'Avoid excess nitrogen; apply recommended fungicide'}]},
+ {k:'wheat',n:'Wheat',ic:'🌾',water:'Medium',frost:true,season:'Rabi',sow:'October – December',harv:'March – April',npk:[60,30,20],price:2275,unit:'quintal',seed:40,sp:[20,5],yld:18,cost:20000,
+  pests:[{n:'Aphids',s:'Curled yellow leaves, sticky honeydew residue',r:'Spray neem oil or insecticidal soap early'},{n:'Yellow rust',s:'Orange-yellow pustules in stripes on leaves',r:'Use rust-resistant variety; fungicide if severe'}]},
+ {k:'maize',n:'Maize',ic:'🌽',water:'Medium',frost:true,season:'Kharif/Rabi',sow:'June – July',harv:'September – October',npk:[80,40,20],price:2090,unit:'quintal',seed:8,sp:[60,20],yld:20,cost:18000,
+  pests:[{n:'Fall armyworm',s:'Ragged holes and sawdust-like frass in leaf whorl',r:'Handpick larvae; apply biopesticide spray'},{n:'Stalk rot',s:'Wilting with soft, rotten stalk base',r:'Improve field drainage; avoid waterlogging'}]},
+ {k:'cotton',n:'Cotton',ic:'🌱',water:'High',frost:false,season:'Kharif',sow:'April – June',harv:'October – January',npk:[40,20,20],price:7121,unit:'quintal',seed:2,sp:[90,60],yld:8,cost:30000,
+  pests:[{n:'Bollworm',s:'Holes in bolls and damaged flower buds',r:'Use pheromone traps; Bt-based spray'},{n:'Whitefly',s:'Yellowing leaves with sooty black mould',r:'Yellow sticky traps; neem oil spray'}]},
+ {k:'potato',n:'Potato',ic:'🥔',water:'Medium',frost:true,season:'Rabi',sow:'October – November',harv:'January – February',npk:[60,40,40],price:1200,unit:'quintal',seed:800,sp:[60,20],yld:80,cost:40000,
+  pests:[{n:'Late blight',s:'Dark water-soaked spots on leaves',r:'Fungicide spray; avoid overhead irrigation'},{n:'Tuber moth',s:'Tunnels in leaves and stored tubers',r:'Earth up soil over tubers; remove crop debris'}]},
+ {k:'tomato',n:'Tomato',ic:'🍅',water:'Medium',frost:true,season:'Year-round (season-dependent)',sow:'Varies by region',harv:'60–80 days after transplant',npk:[50,25,25],price:1500,unit:'quintal',seed:0.1,sp:[90,45],yld:100,cost:45000,
+  pests:[{n:'Fruit borer',s:'Round holes bored into fruit',r:'Pheromone traps; neem-based spray'},{n:'Leaf curl virus',s:'Upward curling and yellowing of leaves',r:'Control whitefly vector; remove infected plants'}]},
+ {k:'sugarcane',n:'Sugarcane',ic:'🎋',water:'High',frost:false,season:'Perennial',sow:'February – March',harv:'December – March (next yr)',npk:[100,50,50],price:340,unit:'quintal',seed:4000,sp:[90,30],yld:350,cost:50000,
+  pests:[{n:'Early shoot borer',s:'Dead heart in young cane shoots',r:'Remove and destroy affected shoots promptly'},{n:'Red rot',s:'Reddened internal tissue with alcohol-like smell',r:'Use disease-free setts and resistant variety'}]},
+ {k:'soybean',n:'Soybean',ic:'🌱',water:'Medium',frost:false,season:'Kharif',sow:'June – July',harv:'October',npk:[20,40,20],price:4600,unit:'quintal',seed:30,sp:[45,5],yld:10,cost:15000,
+  pests:[{n:'Girdle beetle',s:'Girdling ring on stem, plant wilts',r:'Destroy old stubble; sow at the recommended time'},{n:'Yellow mosaic virus',s:'Yellow-green mosaic pattern on leaves',r:'Control whitefly vector; use resistant varieties'}]},
+ {k:'onion',n:'Onion',ic:'🧅',water:'Medium',frost:false,season:'Rabi',sow:'November – December',harv:'March – April',npk:[60,30,30],price:1500,unit:'quintal',seed:4,sp:[15,10],yld:80,cost:35000,
+  pests:[{n:'Thrips',s:'Silvery streaks and curling on leaves',r:'Blue sticky traps; neem oil spray'},{n:'Purple blotch',s:'Purple-brown patches on leaves',r:'Fungicide spray; rotate crops each season'}]},
+ {k:'chickpea',n:'Chickpea',ic:'🫘',water:'Low',frost:false,season:'Rabi',sow:'October – November',harv:'February – March',npk:[20,40,20],price:5335,unit:'quintal',seed:40,sp:[30,10],yld:8,cost:14000,
+  pests:[{n:'Pod borer',s:'Round holes bored into pods',r:'Pheromone traps; neem-based spray'},{n:'Wilt',s:'Sudden drooping and drying of whole plant',r:'Use wilt-resistant variety; treat seed before sowing'}]},
+ {k:'groundnut',n:'Groundnut',ic:'🥜',water:'Low',frost:false,season:'Kharif',sow:'June – July',harv:'October – November',npk:[20,40,0],price:6377,unit:'quintal',seed:40,sp:[30,10],yld:8,cost:18000,
+  pests:[{n:'Leaf spot',s:'Dark circular spots on leaves',r:'Fungicide spray; rotate crops'},{n:'Aphids',s:'Curled leaves, sticky residue',r:'Neem oil spray'}]},
+ {k:'mustard',n:'Mustard',ic:'🌼',water:'Low',frost:true,season:'Rabi',sow:'October – November',harv:'February – March',npk:[40,20,20],price:5650,unit:'quintal',seed:2,sp:[30,10],yld:6,cost:10000,
+  pests:[{n:'Mustard aphid',s:'Clustered aphids on flowering shoots',r:'Neem oil spray at early sign'},{n:'Painted bug',s:'Holes in leaves, stunted plants',r:'Timely sowing; insecticide if severe'}]},
+ {k:'barley',n:'Barley',ic:'🌾',water:'Low',frost:true,season:'Rabi',sow:'November',harv:'March – April',npk:[40,20,10],price:1850,unit:'quintal',seed:40,sp:[20,4],yld:16,cost:12000,
+  pests:[{n:'Aphids',s:'Yellowing leaves, sticky residue',r:'Neem oil spray'},{n:'Yellow rust',s:'Orange pustules on leaves',r:'Resistant variety; fungicide'}]},
+ {k:'sunflower',n:'Sunflower',ic:'🌻',water:'Medium',frost:false,season:'Kharif/Rabi',sow:'June–July or Jan–Feb',harv:'90–100 days after sowing',npk:[40,30,20],price:6760,unit:'quintal',seed:2,sp:[60,30],yld:8,cost:16000,
+  pests:[{n:'Head borer',s:'Holes bored into flower head',r:'Pheromone traps'},{n:'Leaf blight',s:'Brown spots spreading on leaves',r:'Fungicide spray'}]},
+ {k:'sesame',n:'Sesame',ic:'🌰',water:'Low',frost:false,season:'Kharif',sow:'June – July',harv:'September – October',npk:[20,20,0],price:8635,unit:'quintal',seed:1.5,sp:[30,10],yld:3,cost:9000,
+  pests:[{n:'Phyllody',s:'Leaf-like sterile flowers',r:'Remove infected plants; control leafhopper vector'},{n:'Leaf webber',s:'Webbed, folded leaves',r:'Neem oil spray'}]},
+ {k:'turmeric',n:'Turmeric',ic:'🫚',water:'High',frost:false,season:'Kharif (long duration)',sow:'April – May',harv:'January – March',npk:[60,30,60],price:15000,unit:'quintal',seed:800,sp:[30,25],yld:80,cost:60000,
+  pests:[{n:'Rhizome rot',s:'Soft, rotten rhizomes with wilting',r:'Well-drained soil; avoid waterlogging'},{n:'Leaf spot',s:'Brown spots on leaves',r:'Fungicide spray'}]},
+ {k:'cabbage',n:'Cabbage',ic:'🥬',water:'Medium',frost:true,season:'Rabi',sow:'September – October',harv:'December – January',npk:[50,25,25],price:1200,unit:'quintal',seed:0.15,sp:[45,45],yld:120,cost:30000,
+  pests:[{n:'Diamondback moth',s:'Holes and shot-holes in leaves',r:'Bt spray; pheromone traps'},{n:'Aphids',s:'Curled, sticky leaves',r:'Neem oil spray'}]},
+ {k:'peas',n:'Peas',ic:'🫛',water:'Medium',frost:true,season:'Rabi',sow:'October – November',harv:'January – February',npk:[20,40,20],price:4000,unit:'quintal',seed:30,sp:[30,7],yld:15,cost:15000,
+  pests:[{n:'Pod borer',s:'Holes bored into pods',r:'Neem spray; pheromone traps'},{n:'Powdery mildew',s:'White powdery coating on leaves',r:'Sulfur-based fungicide spray'}]},
+ {k:'brinjal',n:'Brinjal',ic:'🍆',water:'Medium',frost:true,season:'Kharif/Rabi',sow:'Varies by region',harv:'60–70 days after transplant',npk:[50,25,25],price:1500,unit:'quintal',seed:0.15,sp:[75,60],yld:100,cost:35000,
+  pests:[{n:'Fruit & shoot borer',s:'Holes in fruit and wilted shoot tips',r:'Remove affected parts; pheromone traps'},{n:'Aphids',s:'Curled, sticky leaves',r:'Neem oil spray'}]},
+ {k:'okra',n:'Okra',ic:'🌿',water:'Medium',frost:false,season:'Kharif/Summer',sow:'Feb–Mar or June–July',harv:'45–50 days after sowing',npk:[40,20,20],price:2000,unit:'quintal',seed:5,sp:[45,30],yld:40,cost:20000,
+  pests:[{n:'Fruit borer',s:'Holes bored into young pods',r:'Neem-based spray'},{n:'Yellow vein mosaic',s:'Yellow veins on leaves',r:'Control whitefly vector; resistant variety'}]}
 ];
 const cropSelect = document.getElementById('cropSelect');
 CROPS.forEach(c=>{ const o=document.createElement('option'); o.value=c.k; o.textContent=`${c.ic} ${c.n}`; cropSelect.appendChild(o); });
@@ -300,10 +390,8 @@ function renderCropTab(){
 
 /* ---------- prices ---------- */
 function renderPrices(){
-  const rate = currency==='INR' ? 1 : 0.012; // rough indicative INR->USD
-  const sym = currency==='INR' ? '₹' : '$';
   const tbody = document.querySelector('#priceTable tbody');
-  tbody.innerHTML = CROPS.map(c=>`<tr><td>${c.ic} ${c.n}</td><td>${sym}${Math.round(c.price*rate).toLocaleString()}</td><td>per ${c.unit}</td></tr>`).join('');
+  tbody.innerHTML = CROPS.map(c=>`<tr><td>${c.ic} ${c.n}</td><td>${money(c.price)}</td><td>per ${c.unit}</td></tr>`).join('');
 }
 
 /* ---------- schemes ---------- */
@@ -317,14 +405,92 @@ const SCHEMES = [
 document.getElementById('schemeList').innerHTML = SCHEMES.map(s=>`<div class="card scheme">
   <b>${s.n}</b><div class="sym">${s.d}</div><a href="${s.u}" target="_blank" rel="noopener">Official site ↗</a></div>`).join('');
 
+/* ---------- shared calculator helpers ---------- */
+function getAreaAcres(){
+  let v = parseFloat(document.getElementById('areaInput').value) || 0;
+  if(document.getElementById('areaUnit').value === 'hectare') v = v * 2.47105;
+  return v;
+}
+
 /* ---------- fertilizer calculator ---------- */
 document.getElementById('calcBtn').addEventListener('click', ()=>{
-  const c = currentCrop();
-  let area = parseFloat(document.getElementById('areaInput').value) || 0;
-  if(document.getElementById('areaUnit').value === 'hectare') area = area * 2.47105;
+  const c = currentCrop(), area = getAreaAcres();
   document.getElementById('outN').textContent = Math.round(c.npk[0]*area);
   document.getElementById('outP').textContent = Math.round(c.npk[1]*area);
   document.getElementById('outK').textContent = Math.round(c.npk[2]*area);
+});
+
+/* ---------- 1. seed rate ---------- */
+document.getElementById('seedBtn').addEventListener('click', ()=>{
+  const c = currentCrop(), area = getAreaAcres();
+  const kg = c.seed*area;
+  document.getElementById('seedOut').innerHTML = `Seed needed: <b>${kg<1?kg.toFixed(2):Math.round(kg).toLocaleString()} kg</b>`;
+});
+
+/* ---------- 2. plant population ---------- */
+document.getElementById('popBtn').addEventListener('click', ()=>{
+  const c = currentCrop(), area = getAreaAcres();
+  const sqm = area*4046.86;
+  const perPlant = (c.sp[0]/100)*(c.sp[1]/100);
+  const pop = Math.round(sqm/perPlant);
+  document.getElementById('popOut').innerHTML = `Estimated plants: <b>${pop.toLocaleString()}</b>`;
+  document.getElementById('popSpacing').textContent = `Based on recommended spacing ${c.sp[0]}cm × ${c.sp[1]}cm for ${c.n}.`;
+});
+
+/* ---------- 3. irrigation water requirement ---------- */
+document.getElementById('waterBtn').addEventListener('click', ()=>{
+  const area = getAreaAcres();
+  const sqm = area*4046.86;
+  const et0 = lastData?.daily?.et0_fao_evapotranspiration?.[0];
+  const mm = et0 ?? 5;
+  const liters = Math.round(mm*sqm);
+  document.getElementById('waterOut').innerHTML = `Water per irrigation: <b>${liters.toLocaleString()} L</b> (~${(liters/1000).toFixed(1)} m³)`;
+  document.getElementById('waterSrc').textContent = et0 ? `Based on today's evapotranspiration (${mm.toFixed(1)} mm) from the Weather tab.` : 'No live weather loaded yet — using a default estimate of 5 mm/day. Load weather for an accurate figure.';
+});
+
+/* ---------- 4-7. farm economics ---------- */
+document.getElementById('econBtn').addEventListener('click', ()=>{
+  const c = currentCrop(), area = getAreaAcres();
+  const yieldQtl = c.yld*area;
+  const revenue = yieldQtl*c.price;
+  const cost = c.cost*area;
+  const profit = revenue-cost;
+  document.getElementById('outYield').textContent = yieldQtl.toFixed(1);
+  document.getElementById('outRevenue').textContent = money(revenue);
+  document.getElementById('outCost').textContent = money(cost);
+  document.getElementById('profitOut').innerHTML = `Estimated profit: <b style="color:${profit>=0?'var(--green)':'var(--bad)'}">${money(profit)}</b>`;
+});
+
+/* ---------- 8. organic manure ---------- */
+document.getElementById('manureBtn').addEventListener('click', ()=>{
+  const c = currentCrop(), area = getAreaAcres();
+  const rate = c.water==='High' ? 8 : c.water==='Medium' ? 5 : 3;
+  document.getElementById('manureOut').innerHTML = `FYM/compost needed: <b>${(rate*area).toFixed(1)} tonnes</b> <span class="note">(~${rate} t/acre for ${c.water.toLowerCase()}-water crops)</span>`;
+});
+
+/* ---------- 9. pesticide dilution ---------- */
+document.getElementById('pestBtn').addEventListener('click', ()=>{
+  const tank = parseFloat(document.getElementById('tankInput').value)||0;
+  const dose = parseFloat(document.getElementById('doseInput').value)||0;
+  const area = getAreaAcres();
+  const perTankMl = tank*dose;
+  const totalSprayL = area*200;
+  const tanks = tank ? totalSprayL/tank : 0;
+  const totalProductMl = totalSprayL*dose;
+  document.getElementById('pestOut1').innerHTML = `Product per tank: <b>${perTankMl.toFixed(0)} ml</b>`;
+  document.getElementById('pestOut2').innerHTML = `Tank-fills for your field: <b>${tanks.toFixed(1)}</b>`;
+  document.getElementById('pestOut3').innerHTML = `Total product for field: <b>${totalProductMl>=1000 ? (totalProductMl/1000).toFixed(2)+' L' : totalProductMl.toFixed(0)+' ml'}</b>`;
+});
+
+/* ---------- 10. area unit converter ---------- */
+const AREA_UNITS = {acre:1, hectare:0.404686, bigha:1.6, sqft:43560, sqm:4046.86};
+const AREA_LABELS = {acre:'Acre', hectare:'Hectare', bigha:'Bigha (approx.)', sqft:'Sq. feet', sqm:'Sq. metres'};
+document.getElementById('convBtn').addEventListener('click', ()=>{
+  const val = parseFloat(document.getElementById('convInput').value)||0;
+  const from = document.getElementById('convUnit').value;
+  const acres = val/AREA_UNITS[from];
+  document.getElementById('convOut').innerHTML = Object.keys(AREA_UNITS).map(u=>
+    `<div><b>${(acres*AREA_UNITS[u]).toLocaleString(undefined,{maximumFractionDigits:2})}</b><span>${AREA_LABELS[u]}</span></div>`).join('');
 });
 
 /* ---------- weather code map ---------- */
@@ -335,6 +501,8 @@ function wInfo(code){
     80:['🌧️','Rain showers'],81:['🌧️','Heavy showers'],82:['⛈️','Violent showers'],95:['⛈️','Thunderstorm'],96:['⛈️','Thunderstorm & hail'],99:['⛈️','Severe thunderstorm']};
   return m[code] || ['🌡️','—'];
 }
+function degToCompass(d){ const dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']; return dirs[Math.round(d/22.5)%16]; }
+function fmtTime(iso){ return iso ? new Date(iso).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '--'; }
 
 /* ---------- advisory (crop-aware) ---------- */
 function buildTips(cur, today, crop){
@@ -372,6 +540,17 @@ function render(place, cur, daily, ts){
   document.getElementById('mRain').textContent = (daily.precipitation_probability_max[0] ?? 0) + '%';
   document.getElementById('updated').textContent = 'Updated ' + new Date(lastData.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 
+  document.getElementById('eFeels').textContent = (unit==='metric' ? Math.round(cur.apparent_temperature)+'°C' : c2f(cur.apparent_temperature)+'°F');
+  document.getElementById('eGust').textContent = unit==='metric' ? Math.round(cur.wind_gusts_10m)+' km/h' : k2mph(cur.wind_gusts_10m)+' mph';
+  document.getElementById('eCloud').textContent = (cur.cloud_cover ?? '--') + '%';
+  document.getElementById('ePress').textContent = Math.round(cur.surface_pressure ?? 0) + ' hPa';
+  document.getElementById('eUv').textContent = (daily.uv_index_max?.[0] ?? '--');
+  document.getElementById('eDir').textContent = daily.wind_direction_10m_dominant ? degToCompass(daily.wind_direction_10m_dominant[0]) : '--';
+  document.getElementById('eSunrise').textContent = fmtTime(daily.sunrise?.[0]);
+  document.getElementById('eSunset').textContent = fmtTime(daily.sunset?.[0]);
+  document.getElementById('eRainSum').textContent = (daily.precipitation_sum?.[0] ?? 0) + ' mm';
+  document.getElementById('eEt0').textContent = (daily.et0_fao_evapotranspiration?.[0]?.toFixed(1) ?? '--') + ' mm';
+
   const crop = currentCrop();
   const today = {precipitation_probability_max: daily.precipitation_probability_max[0], temperature_2m_max: daily.temperature_2m_max[0],
     temperature_2m_min: daily.temperature_2m_min[0], wind_speed_10m_max: daily.wind_speed_10m_max[0]};
@@ -393,7 +572,10 @@ async function fetchWeather(lat, lon, place){
   document.getElementById('status').textContent = 'Fetching weather…';
   document.getElementById('result').classList.add('hidden');
   try{
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=5`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`+
+      `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,apparent_temperature,wind_gusts_10m,cloud_cover,surface_pressure`+
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset,precipitation_sum,et0_fao_evapotranspiration,wind_direction_10m_dominant`+
+      `&timezone=auto&forecast_days=5`;
     const res = await fetch(url);
     if(!res.ok) throw new Error('weather fetch failed');
     const data = await res.json();
