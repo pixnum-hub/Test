@@ -1,262 +1,441 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bus Speedometer</title>
+<title>Field Almanac — Farm Weather & Advisory</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#0B0E14; --panel:#121722; --panel-2:#171D2B; --text:#EAEEF6; --dim:#8B93A7;
-    --accent:#FFC531; --accent-ink:#1A1400; --danger:#FF5A52; --track:#232B3D; --ring:#00000000;
-    --border:transparent; --shadow:0 20px 60px -20px rgba(0,0,0,.6);
-  }
-  html[data-theme="light"]{
-    --bg:#EDF0F5; --panel:#FFFFFF; --panel-2:#F4F6FA; --text:#151A24; --dim:#5B6472;
-    --accent:#B9790A; --accent-ink:#FFF7E6; --danger:#C6303A; --track:#DCE1EA;
-    --border:transparent; --shadow:0 16px 40px -18px rgba(20,25,40,.25);
-  }
-  html[data-theme="oled"]{
-    --bg:#000000; --panel:#050505; --panel-2:#0A0A0A; --text:#FFFFFF; --dim:#8A8A8A;
-    --accent:#FFC531; --accent-ink:#1A1400; --danger:#FF5A52; --track:#161616;
-    --border:transparent; --shadow:none;
-  }
-  html[data-theme="hc"]{
-    --bg:#000000; --panel:#000000; --panel-2:#000000; --text:#FFFFFF; --dim:#FFFFFF;
-    --accent:#FFFF00; --accent-ink:#000000; --danger:#FF3B3B; --track:#555555;
-    --border:#FFFFFF; --shadow:none;
-  }
-  *{box-sizing:border-box;}
-  body{margin:0;}
-  body,button{font-family:'Inter',system-ui,sans-serif;}
-  .num{font-family:'JetBrains Mono',monospace;}
-  .dial{font-family:'Rajdhani',sans-serif;}
-  body{
-    background:var(--bg); color:var(--text); min-height:100dvh;
-    display:flex; justify-content:center; padding:max(18px,env(safe-area-inset-top)) 16px 20px;
-    transition:background .25s ease,color .25s ease;
-  }
-  .app{width:100%; max-width:420px; display:flex; flex-direction:column; gap:18px;}
-  header{display:flex; align-items:center; justify-content:space-between; gap:10px;}
-  .eyebrow{font-size:.72rem; font-weight:700; letter-spacing:.14em; color:var(--dim); text-transform:uppercase;}
-  .eyebrow b{color:var(--text);}
-  .theme-toggle{display:flex; gap:6px; background:var(--panel); border:1px solid var(--border); padding:4px; border-radius:12px; box-shadow:var(--shadow);}
-  .theme-toggle button{
-    width:30px; height:30px; border-radius:8px; border:1px solid var(--border); background:transparent;
-    color:var(--dim); font-size:.68rem; font-weight:700; cursor:pointer; letter-spacing:.02em;
-  }
-  .theme-toggle button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
-  .theme-toggle button:focus-visible, button:focus-visible, .stat:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
-
-  .panel{background:var(--panel); border:1px solid var(--border); border-radius:24px; box-shadow:var(--shadow); padding:22px 18px;}
-  .gauge-card{display:flex; flex-direction:column; align-items:center; gap:14px;}
-  .gauge{position:relative; width:clamp(230px,72vw,300px); aspect-ratio:1/1;}
-  .tick{position:absolute; top:50%; left:50%; width:4px; height:13px; margin:-2px 0 0 -2px; border-radius:2px; background:var(--track); transition:background .18s ease;}
-  .tick.on{background:var(--accent);}
-  .tick.danger{background:var(--danger);}
-  .readout{position:absolute; inset:20%; border-radius:50%; background:var(--panel-2); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; border:1px solid var(--border);}
-  #speed{font-size:clamp(3rem,15vw,3.8rem); font-weight:700; line-height:1; color:var(--text); transition:color .18s ease;}
-  #speed.danger{color:var(--danger);}
-  .unit{font-size:.85rem; font-weight:600; letter-spacing:.08em; color:var(--dim); margin-top:2px;}
-  .status{display:flex; align-items:center; gap:8px; font-size:.78rem; color:var(--dim); font-weight:600;}
-  .dot{width:8px; height:8px; border-radius:50%; background:var(--dim);}
-  .dot.locked{background:#3ECF8E; box-shadow:0 0 0 4px rgba(62,207,142,.18);}
-  .dot.weak{background:var(--accent); box-shadow:0 0 0 4px rgba(255,197,49,.18);}
-  .dot.err{background:var(--danger); box-shadow:0 0 0 4px rgba(255,90,82,.18);}
-  @media (prefers-reduced-motion:no-preference){ .dot.locked{animation:pulse 1.6s ease-in-out infinite;} }
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
-
-  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
-  .stat{background:var(--panel); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:12px 8px; text-align:center;}
-  .stat .lbl{font-size:.62rem; font-weight:700; letter-spacing:.1em; color:var(--dim); text-transform:uppercase;}
-  .stat .val{font-size:1.25rem; font-weight:700; margin-top:4px;}
-
-  .controls{display:flex; gap:10px;}
-  .btn{flex:1; padding:14px 10px; border-radius:14px; border:1px solid var(--border); font-weight:700; font-size:.85rem; letter-spacing:.04em; cursor:pointer; box-shadow:var(--shadow);}
-  .btn-primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
-  .btn-primary.active{background:var(--danger); border-color:var(--danger); color:#fff;}
-  .btn-ghost{background:var(--panel); color:var(--text);}
-  .btn-unit{flex:0 0 auto; width:64px;}
-
-  footer{margin-top:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:2px; color:var(--dim); font-size:.72rem; line-height:1.5;}
-  footer strong{color:var(--text);}
+:root{--radius:14px;--ff-display:'Fraunces',serif;--ff-body:'Inter',sans-serif;}
+html[data-theme="light"]{--bg:#F6F1E4;--bg-alt:#EDE5D2;--surface:#FFFDF8;--text:#2A2318;--muted:#6B6152;--line:#DCD2BA;--green:#3F6B3B;--green-ink:#F4F8F0;--gold:#B9862B;--bad:#B5442E;}
+html[data-theme="dark"]{--bg:#1B1F17;--bg-alt:#232920;--surface:#252B20;--text:#EDE8D8;--muted:#A6A290;--line:#3A4232;--green:#7FB06B;--green-ink:#12190F;--gold:#E0B25C;--bad:#E38268;}
+html[data-theme="oled"]{--bg:#000;--bg-alt:#0A0A0A;--surface:#0D0D0D;--text:#F0F0EA;--muted:#8C8C86;--line:#242424;--green:#66C24C;--green-ink:#000;--gold:#E8B84B;--bad:#FF7A5C;}
+html[data-theme="hc"]{--bg:#000;--bg-alt:#000;--surface:#000;--text:#FFF;--muted:#FFF;--line:#FFF;--green:#00FF6A;--green-ink:#000;--gold:#FFD400;--bad:#FF3B3B;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--ff-body);transition:background .25s,color .25s;min-height:100vh;display:flex;flex-direction:column;padding-bottom:66px;}
+h1,h2,h3{font-family:var(--ff-display);margin:0;}
+button,input,select{font-family:inherit;}
+a{color:var(--green);}
+.wrap{max-width:640px;margin:0 auto;padding:0 18px;width:100%;}
+header{border-bottom:1px solid var(--line);padding:14px 0;}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.brand h1{font-size:1.3rem;font-weight:700;letter-spacing:-.01em;}
+.brand h1 span{color:var(--green);}
+.hdrbtns{display:flex;gap:8px;align-items:center;}
+.themebar{display:flex;gap:6px;background:var(--bg-alt);padding:4px;border-radius:999px;border:1px solid var(--line);}
+.themebar button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text);opacity:.55;}
+.themebar button[aria-pressed="true"]{opacity:1;border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset;}
+.unitbtn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:6px 10px;font-size:.78rem;font-weight:600;cursor:pointer;}
+.tag{margin-top:6px;color:var(--muted);font-size:.82rem;}
+.cropbar{display:flex;gap:8px;align-items:center;margin:14px 0;}
+.cropbar select{flex:1;padding:11px 12px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:.92rem;}
+.offline{background:var(--gold);color:#1A1400;font-size:.8rem;text-align:center;padding:6px;border-radius:10px;margin-bottom:10px;}
+main{flex:1;}
+.wrap>.panel{display:none;}
+.wrap>.panel.active{display:block;}
+.search{display:flex;gap:8px;margin:6px 0 8px;}
+.search input{flex:1;padding:12px 14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:1rem;}
+.search input:focus{outline:2px solid var(--green);outline-offset:1px;}
+.btn{padding:12px 16px;border-radius:var(--radius);border:1px solid var(--green);background:var(--green);color:var(--green-ink);font-weight:600;cursor:pointer;white-space:nowrap;font-size:.92rem;}
+.locbtn{width:100%;margin-bottom:10px;background:transparent;color:var(--muted);border:1px dashed var(--line);border-radius:var(--radius);padding:10px;cursor:pointer;font-size:.85rem;}
+.locbtn:hover{color:var(--green);border-color:var(--green);}
+.status{text-align:center;color:var(--muted);padding:24px 0;font-size:.9rem;}
+.hidden{display:none !important;}
+.now{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;margin:14px 0;display:flex;align-items:center;gap:16px;}
+.now .icon{font-size:3rem;line-height:1;}
+.now .temp{font-family:var(--ff-display);font-size:2.6rem;font-weight:600;}
+.now .place{font-weight:600;font-size:.95rem;}
+.now .desc{color:var(--muted);font-size:.88rem;}
+.updated{color:var(--muted);font-size:.72rem;margin-top:2px;}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 16px;}
+.metric{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;}
+.metric b{display:block;font-size:1.05rem;}
+.metric span{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+h2.section{font-size:.95rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 0 10px;font-family:var(--ff-body);font-weight:700;}
+.forecast{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;}
+.day{flex:0 0 84px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 8px;text-align:center;}
+.day .d{font-size:.78rem;color:var(--muted);}
+.day .i{font-size:1.6rem;margin:6px 0;}
+.day .hi{font-weight:700;}
+.day .lo{color:var(--muted);font-size:.85rem;}
+.tips,.cards{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.tip,.card{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:10px;padding:12px 14px;font-size:.9rem;}
+.tip{display:flex;gap:10px;}
+.tip.warn{border-left-color:var(--bad);}
+.tip .ic{font-size:1.2rem;}
+.card b{display:block;font-family:var(--ff-display);font-size:1.02rem;margin-bottom:4px;}
+.card .sym{color:var(--muted);margin:2px 0;}
+.pill{display:inline-block;background:var(--bg-alt);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.72rem;margin-right:6px;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
+.field label{font-size:.78rem;color:var(--muted);display:block;margin-bottom:4px;}
+.field input,.field select{width:100%;padding:11px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text);}
+.npkout{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+.npkout div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 8px;text-align:center;}
+.npkout b{font-family:var(--ff-display);font-size:1.4rem;display:block;}
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:.88rem;}
+th,td{padding:10px;text-align:left;border-bottom:1px solid var(--line);}
+th{color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase;}
+tr:last-child td{border-bottom:none;}
+.note{color:var(--muted);font-size:.78rem;margin-top:8px;}
+.scheme b{font-family:var(--ff-body);}
+.tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:10;}
+.tabbar button{background:none;border:none;color:var(--muted);font-size:.68rem;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 6px;}
+.tabbar button .ic{font-size:1.15rem;}
+.tabbar button.active{color:var(--green);}
+footer{border-top:1px solid var(--line);margin-top:20px;padding:22px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;color:var(--muted);font-size:.8rem;}
+footer strong{color:var(--text);}
+@media(max-width:380px){.now{flex-direction:column;text-align:center;}.brand h1{font-size:1.12rem;}}
 </style>
 </head>
 <body>
-<div class="app">
-
-  <header>
-    <div class="eyebrow">Bus <b>Speedometer</b></div>
-    <div class="theme-toggle" role="group" aria-label="Theme">
-      <button data-theme-btn="dark" aria-pressed="true" title="Dark">D</button>
-      <button data-theme-btn="light" aria-pressed="false" title="Light">L</button>
-      <button data-theme-btn="oled" aria-pressed="false" title="OLED True Black">O</button>
-      <button data-theme-btn="hc" aria-pressed="false" title="High Contrast">HC</button>
-    </div>
-  </header>
-
-  <section class="panel gauge-card">
-    <div class="gauge" id="gauge">
-      <div class="readout">
-        <div id="speed" class="num" aria-live="polite">0</div>
-        <div class="unit"><span id="unitLabel">KM/H</span></div>
+<header><div class="wrap">
+  <div class="brand">
+    <h1>Field <span>Almanac</span></h1>
+    <div class="hdrbtns">
+      <button class="unitbtn" id="unitBtn">°C · km/h</button>
+      <div class="themebar" id="themebar" role="group" aria-label="Theme">
+        <button data-theme="light" aria-pressed="true" title="Light">☀</button>
+        <button data-theme="dark" aria-pressed="false" title="Dark">☾</button>
+        <button data-theme="oled" aria-pressed="false" title="OLED true black">●</button>
+        <button data-theme="hc" aria-pressed="false" title="High contrast">◐</button>
       </div>
     </div>
-    <div class="status"><span class="dot" id="dot"></span><span id="statusText">Tap start to track</span></div>
+  </div>
+  <div class="tag">Weather & field advisory for growers</div>
+</div></header>
+
+<main><div class="wrap">
+  <div class="cropbar">
+    <select id="cropSelect"></select>
+  </div>
+  <div id="offlineBanner" class="offline hidden">You're offline — showing last saved weather.</div>
+
+  <!-- WEATHER TAB -->
+  <section class="panel active" id="tab-weather">
+    <button class="locbtn" id="locBtn">📍 Use my current location</button>
+    <div class="search">
+      <input id="cityInput" type="text" placeholder="Search village, town or city…" autocomplete="off">
+      <button class="btn" id="searchBtn">Search</button>
+    </div>
+    <div id="status" class="status">Search a place or use your location to see today's advisory.</div>
+    <div id="result" class="hidden">
+      <div class="now">
+        <div class="icon" id="nowIcon">☀️</div>
+        <div style="flex:1;">
+          <div class="place" id="nowPlace">—</div>
+          <div class="temp"><span id="nowTemp">--</span><span id="nowUnit">°C</span></div>
+          <div class="desc" id="nowDesc">—</div>
+          <div class="updated" id="updated"></div>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><b id="mHumidity">--%</b><span>Humidity</span></div>
+        <div class="metric"><b id="mWind">--</b><span>Wind</span></div>
+        <div class="metric"><b id="mRain">--%</b><span>Rain chance</span></div>
+      </div>
+      <h2 class="section">🌾 Field advisory</h2>
+      <div class="tips" id="tips"></div>
+      <h2 class="section">5-Day outlook</h2>
+      <div class="forecast" id="forecast"></div>
+    </div>
   </section>
 
-  <section class="stats">
-    <div class="stat"><div class="lbl">Max</div><div class="val num" id="maxVal">0</div></div>
-    <div class="stat"><div class="lbl">Avg</div><div class="val num" id="avgVal">0</div></div>
-    <div class="stat"><div class="lbl">Accuracy</div><div class="val num" id="accVal">–</div></div>
+  <!-- CROP CARE TAB -->
+  <section class="panel" id="tab-crop">
+    <h2 class="section">🌱 Crop profile</h2>
+    <div class="cards" id="cropProfile"></div>
+    <h2 class="section">📅 Sowing & harvest window</h2>
+    <div class="cards" id="cropCalendar"></div>
+    <h2 class="section">🐛 Common pests & diseases</h2>
+    <div class="cards" id="pestList"></div>
+    <p class="note">Symptom-based reference list — for confirmed diagnosis, consult your local agriculture extension office.</p>
   </section>
 
-  <section class="controls">
-    <button class="btn btn-primary" id="toggleBtn">START</button>
-    <button class="btn btn-ghost" id="resetBtn">RESET</button>
-    <button class="btn btn-ghost btn-unit" id="unitBtn">MPH</button>
+  <!-- CALCULATOR TAB -->
+  <section class="panel" id="tab-calc">
+    <h2 class="section">🧮 Fertilizer calculator</h2>
+    <div class="grid2">
+      <div class="field"><label>Land area</label><input id="areaInput" type="number" min="0" step="0.1" value="1"></div>
+      <div class="field"><label>Unit</label><select id="areaUnit"><option value="acre">Acre</option><option value="hectare">Hectare</option></select></div>
+    </div>
+    <button class="btn" id="calcBtn" style="width:100%;">Calculate NPK dose</button>
+    <div class="npkout" id="npkOut">
+      <div><b id="outN">--</b>kg N</div>
+      <div><b id="outP">--</b>kg P</div>
+      <div><b id="outK">--</b>kg K</div>
+    </div>
+    <p class="note">Indicative standard dosage per selected crop — adjust per soil test results.</p>
+    <h2 class="section">💧 Irrigation guide</h2>
+    <div class="cards" id="irriGuide"></div>
   </section>
 
-  <footer>
-    <div>&copy; Manik Roy <span id="year"></span>. <strong>All Rights Reserved.</strong></div>
-  </footer>
-</div>
+  <!-- PRICES TAB -->
+  <section class="panel" id="tab-prices">
+    <h2 class="section">💰 Reference market prices</h2>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+      <button class="unitbtn" id="currBtn">₹ INR</button>
+    </div>
+    <table id="priceTable"><thead><tr><th>Crop</th><th>Price</th><th>Unit</th></tr></thead><tbody></tbody></table>
+    <p class="note">Indicative values for reference only — not live market data. Check your local mandi/market for current rates.</p>
+  </section>
+
+  <!-- SCHEMES TAB -->
+  <section class="panel" id="tab-schemes">
+    <h2 class="section">🏛 Government schemes</h2>
+    <div class="cards" id="schemeList"></div>
+    <p class="note">Summaries only — verify eligibility and details on the official portal before applying.</p>
+  </section>
+
+</div></main>
+
+<nav class="tabbar" id="tabbar">
+  <button data-tab="weather" class="active"><span class="ic">🌦</span>Weather</button>
+  <button data-tab="crop"><span class="ic">🌱</span>Crop Care</button>
+  <button data-tab="calc"><span class="ic">🧮</span>Calculator</button>
+  <button data-tab="prices"><span class="ic">💰</span>Prices</button>
+  <button data-tab="schemes"><span class="ic">🏛</span>Schemes</button>
+</nav>
+
+<footer>
+  <div>© <span id="year"></span> <strong>Manik Roy</strong>. All Rights Reserved.</div>
+  <div>Weather data by Open-Meteo</div>
+</footer>
 
 <script>
-(function(){
-  var TICK_COUNT = 48, START_ANGLE = -135, SWEEP = 270, DANGER_FRAC = 0.85;
-  var gauge = document.getElementById('gauge'), ticks = [];
-  var speedEl = document.getElementById('speed'), dot = document.getElementById('dot'), statusText = document.getElementById('statusText');
-  var maxValEl = document.getElementById('maxVal'), avgValEl = document.getElementById('avgVal'), accValEl = document.getElementById('accVal');
-  var toggleBtn = document.getElementById('toggleBtn'), resetBtn = document.getElementById('resetBtn'), unitBtn = document.getElementById('unitBtn');
-  var unitLabel = document.getElementById('unitLabel');
+document.getElementById('year').textContent = new Date().getFullYear();
 
-  var unit = 'kmh', tracking = false, watchId = null;
-  var lastPos = null, lastTime = null, totalDist = 0, totalTime = 0, maxSpeed = 0;
+/* ---------- theme ---------- */
+const themebar = document.getElementById('themebar');
+themebar.addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.documentElement.setAttribute('data-theme', b.dataset.theme);
+  [...themebar.children].forEach(c=>c.setAttribute('aria-pressed', c===b));
+});
+if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches){
+  document.documentElement.setAttribute('data-theme','dark');
+  [...themebar.children].forEach(c=>c.setAttribute('aria-pressed', c.dataset.theme==='dark'));
+}
 
-  function maxScale(){ return unit === 'kmh' ? 120 : 75; }
+/* ---------- tabs ---------- */
+document.getElementById('tabbar').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('.tabbar button').forEach(x=>x.classList.toggle('active', x===b));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+b.dataset.tab));
+});
 
-  function buildTicks(){
-    gauge.querySelectorAll('.tick').forEach(function(t){ t.remove(); });
-    ticks = [];
-    var r = gauge.clientWidth / 2 - 10;
-    for(var i = 0; i < TICK_COUNT; i++){
-      var angle = START_ANGLE + (SWEEP / (TICK_COUNT - 1)) * i;
-      var el = document.createElement('div');
-      el.className = 'tick';
-      el.style.transform = 'rotate(' + angle + 'deg) translateY(-' + r + 'px)';
-      gauge.appendChild(el);
-      ticks.push(el);
-    }
+/* ---------- units ---------- */
+let unit = 'metric';
+document.getElementById('unitBtn').addEventListener('click', ()=>{
+  unit = unit==='metric' ? 'imperial' : 'metric';
+  document.getElementById('unitBtn').textContent = unit==='metric' ? '°C · km/h' : '°F · mph';
+  if(lastData) render(lastData.place, lastData.cur, lastData.daily, lastData.time);
+});
+let currency = 'INR';
+document.getElementById('currBtn').addEventListener('click', ()=>{
+  currency = currency==='INR' ? 'USD' : 'INR';
+  document.getElementById('currBtn').textContent = currency==='INR' ? '₹ INR' : '$ USD';
+  renderPrices();
+});
+const c2f = c => Math.round(c*9/5+32);
+const k2mph = k => Math.round(k*0.621371);
+
+/* ---------- crop data ---------- */
+const CROPS = [
+ {k:'rice',n:'Rice',ic:'🌾',water:'High',frost:false,season:'Kharif',sow:'June – July',harv:'October – November',npk:[50,25,25],price:2183,unit:'quintal',
+  pests:[{n:'Stem borer',s:'Dead hearts in young plants, white empty ears later',r:'Use resistant variety; apply neem-based spray at early infestation'},
+         {n:'Blast disease',s:'Diamond-shaped grey lesions on leaves',r:'Avoid excess nitrogen; apply recommended fungicide'}]},
+ {k:'wheat',n:'Wheat',ic:'🌾',water:'Medium',frost:true,season:'Rabi',sow:'October – December',harv:'March – April',npk:[60,30,20],price:2275,unit:'quintal',
+  pests:[{n:'Aphids',s:'Curled yellow leaves, sticky honeydew residue',r:'Spray neem oil or insecticidal soap early'},
+         {n:'Yellow rust',s:'Orange-yellow pustules in stripes on leaves',r:'Use rust-resistant variety; fungicide if severe'}]},
+ {k:'maize',n:'Maize',ic:'🌽',water:'Medium',frost:true,season:'Kharif/Rabi',sow:'June – July',harv:'September – October',npk:[80,40,20],price:2090,unit:'quintal',
+  pests:[{n:'Fall armyworm',s:'Ragged holes and sawdust-like frass in leaf whorl',r:'Handpick larvae; apply biopesticide spray'},
+         {n:'Stalk rot',s:'Wilting with soft, rotten stalk base',r:'Improve field drainage; avoid waterlogging'}]},
+ {k:'cotton',n:'Cotton',ic:'🌱',water:'High',frost:false,season:'Kharif',sow:'April – June',harv:'October – January',npk:[40,20,20],price:7121,unit:'quintal',
+  pests:[{n:'Bollworm',s:'Holes in bolls and damaged flower buds',r:'Use pheromone traps; Bt-based spray'},
+         {n:'Whitefly',s:'Yellowing leaves with sooty black mould',r:'Yellow sticky traps; neem oil spray'}]},
+ {k:'potato',n:'Potato',ic:'🥔',water:'Medium',frost:true,season:'Rabi',sow:'October – November',harv:'January – February',npk:[60,40,40],price:1200,unit:'quintal',
+  pests:[{n:'Late blight',s:'Dark water-soaked spots on leaves',r:'Fungicide spray; avoid overhead irrigation'},
+         {n:'Tuber moth',s:'Tunnels in leaves and stored tubers',r:'Earth up soil over tubers; remove crop debris'}]},
+ {k:'tomato',n:'Tomato',ic:'🍅',water:'Medium',frost:true,season:'Year-round (season-dependent)',sow:'Varies by region',harv:'60–80 days after transplant',npk:[50,25,25],price:1500,unit:'quintal',
+  pests:[{n:'Fruit borer',s:'Round holes bored into fruit',r:'Pheromone traps; neem-based spray'},
+         {n:'Leaf curl virus',s:'Upward curling and yellowing of leaves',r:'Control whitefly vector; remove infected plants'}]},
+ {k:'sugarcane',n:'Sugarcane',ic:'🎋',water:'High',frost:false,season:'Perennial',sow:'February – March',harv:'December – March (next yr)',npk:[100,50,50],price:340,unit:'quintal',
+  pests:[{n:'Early shoot borer',s:'Dead heart in young cane shoots',r:'Remove and destroy affected shoots promptly'},
+         {n:'Red rot',s:'Reddened internal tissue with alcohol-like smell',r:'Use disease-free setts and resistant variety'}]},
+ {k:'soybean',n:'Soybean',ic:'🌱',water:'Medium',frost:false,season:'Kharif',sow:'June – July',harv:'October',npk:[20,40,20],price:4600,unit:'quintal',
+  pests:[{n:'Girdle beetle',s:'Girdling ring on stem, plant wilts',r:'Destroy old stubble; sow at the recommended time'},
+         {n:'Yellow mosaic virus',s:'Yellow-green mosaic pattern on leaves',r:'Control whitefly vector; use resistant varieties'}]},
+ {k:'onion',n:'Onion',ic:'🧅',water:'Medium',frost:false,season:'Rabi',sow:'November – December',harv:'March – April',npk:[60,30,30],price:1500,unit:'quintal',
+  pests:[{n:'Thrips',s:'Silvery streaks and curling on leaves',r:'Blue sticky traps; neem oil spray'},
+         {n:'Purple blotch',s:'Purple-brown patches on leaves',r:'Fungicide spray; rotate crops each season'}]},
+ {k:'chickpea',n:'Chickpea',ic:'🫘',water:'Low',frost:false,season:'Rabi',sow:'October – November',harv:'February – March',npk:[20,40,20],price:5335,unit:'quintal',
+  pests:[{n:'Pod borer',s:'Round holes bored into pods',r:'Pheromone traps; neem-based spray'},
+         {n:'Wilt',s:'Sudden drooping and drying of whole plant',r:'Use wilt-resistant variety; treat seed before sowing'}]}
+];
+const cropSelect = document.getElementById('cropSelect');
+CROPS.forEach(c=>{ const o=document.createElement('option'); o.value=c.k; o.textContent=`${c.ic} ${c.n}`; cropSelect.appendChild(o); });
+function currentCrop(){ return CROPS.find(c=>c.k===cropSelect.value) || CROPS[0]; }
+cropSelect.addEventListener('change', renderCropTab);
+
+function renderCropTab(){
+  const c = currentCrop();
+  document.getElementById('cropProfile').innerHTML = `<div class="card">
+    <b>${c.ic} ${c.n}</b>
+    <span class="pill">Water need: ${c.water}</span>
+    <span class="pill">${c.frost ? 'Frost sensitive' : 'Frost tolerant'}</span>
+    <span class="pill">${c.season}</span></div>`;
+  document.getElementById('cropCalendar').innerHTML = `<div class="card">
+    <b>Sowing</b><div class="sym">${c.sow}</div>
+    <b style="margin-top:8px;">Harvest</b><div class="sym">${c.harv}</div></div>`;
+  document.getElementById('pestList').innerHTML = c.pests.map(p=>`<div class="card">
+    <b>${p.n}</b><div class="sym">Symptom: ${p.s}</div><div class="sym">Remedy: ${p.r}</div></div>`).join('');
+  document.getElementById('irriGuide').innerHTML = `<div class="card">
+    <b>${c.n} — ${c.water} water requirement</b>
+    <div class="sym">${c.water==='High' ? 'Keep soil consistently moist; irrigate every 3–5 days in dry weather, more in flowering stage.' :
+       c.water==='Medium' ? 'Irrigate every 7–10 days depending on rainfall; avoid waterlogging.' :
+       'Drought-tolerant — irrigate mainly at sowing, flowering and pod-filling stages.'}</div></div>`;
+  renderPrices();
+}
+
+/* ---------- prices ---------- */
+function renderPrices(){
+  const rate = currency==='INR' ? 1 : 0.012; // rough indicative INR->USD
+  const sym = currency==='INR' ? '₹' : '$';
+  const tbody = document.querySelector('#priceTable tbody');
+  tbody.innerHTML = CROPS.map(c=>`<tr><td>${c.ic} ${c.n}</td><td>${sym}${Math.round(c.price*rate).toLocaleString()}</td><td>per ${c.unit}</td></tr>`).join('');
+}
+
+/* ---------- schemes ---------- */
+const SCHEMES = [
+ {n:'PM-KISAN', d:'Direct income support of ₹6,000/year to eligible farmer families, paid in three instalments.', u:'https://pmkisan.gov.in'},
+ {n:'Pradhan Mantri Fasal Bima Yojana (PMFBY)', d:'Crop insurance scheme covering losses from natural calamities, pests and disease.', u:'https://pmfby.gov.in'},
+ {n:'Soil Health Card Scheme', d:'Free periodic soil testing with crop-wise nutrient and fertilizer recommendations.', u:'https://soilhealth.dac.gov.in'},
+ {n:'Kisan Credit Card (KCC)', d:'Low-interest short-term credit for seeds, inputs and other farming needs.', u:'https://www.nabard.org'},
+ {n:'PM Krishi Sinchayee Yojana', d:'Support for irrigation infrastructure and efficient water-use practices ("more crop per drop").', u:'https://pmksy.gov.in'}
+];
+document.getElementById('schemeList').innerHTML = SCHEMES.map(s=>`<div class="card scheme">
+  <b>${s.n}</b><div class="sym">${s.d}</div><a href="${s.u}" target="_blank" rel="noopener">Official site ↗</a></div>`).join('');
+
+/* ---------- fertilizer calculator ---------- */
+document.getElementById('calcBtn').addEventListener('click', ()=>{
+  const c = currentCrop();
+  let area = parseFloat(document.getElementById('areaInput').value) || 0;
+  if(document.getElementById('areaUnit').value === 'hectare') area = area * 2.47105;
+  document.getElementById('outN').textContent = Math.round(c.npk[0]*area);
+  document.getElementById('outP').textContent = Math.round(c.npk[1]*area);
+  document.getElementById('outK').textContent = Math.round(c.npk[2]*area);
+});
+
+/* ---------- weather code map ---------- */
+function wInfo(code){
+  const m = {0:['☀️','Clear sky'],1:['🌤️','Mostly clear'],2:['⛅','Partly cloudy'],3:['☁️','Overcast'],
+    45:['🌫️','Fog'],48:['🌫️','Rime fog'],51:['🌦️','Light drizzle'],53:['🌦️','Drizzle'],55:['🌦️','Dense drizzle'],
+    61:['🌧️','Light rain'],63:['🌧️','Rain'],65:['🌧️','Heavy rain'],71:['🌨️','Light snow'],73:['🌨️','Snow'],75:['❄️','Heavy snow'],
+    80:['🌧️','Rain showers'],81:['🌧️','Heavy showers'],82:['⛈️','Violent showers'],95:['⛈️','Thunderstorm'],96:['⛈️','Thunderstorm & hail'],99:['⛈️','Severe thunderstorm']};
+  return m[code] || ['🌡️','—'];
+}
+
+/* ---------- advisory (crop-aware) ---------- */
+function buildTips(cur, today, crop){
+  const tips = [];
+  const rainProb = today.precipitation_probability_max ?? 0;
+  const tMax = today.temperature_2m_max, tMin = today.temperature_2m_min;
+  const wind = today.wind_speed_10m_max ?? cur.wind_speed_10m;
+  const hum = cur.relative_humidity_2m;
+  if (crop.frost && tMin <= 5) tips.push({warn:true, ic:'❄️', t:`Frost risk tonight — ${crop.n} is frost-sensitive; cover seedlings and delay early irrigation.`});
+  else if (tMin <= 2) tips.push({warn:true, ic:'❄️', t:'Frost risk tonight — protect young transplants.'});
+  if (tMax >= 36) tips.push({warn:true, ic:'🔥', t:'Heat stress likely — irrigate early morning or evening, shade nurseries and livestock.'});
+  if (rainProb >= 60) tips.push({warn:false, ic:'🌧️', t:'Rain likely — hold off on spraying and fertilizing; check field drainage.'});
+  if (rainProb < 20 && tMax >= 28 && crop.water !== 'Low') tips.push({warn:true, ic:'💧', t:`Dry and warm — ${crop.n} (${crop.water.toLowerCase()} water need) may need irrigation soon.`});
+  if (wind >= 30) tips.push({warn:true, ic:'💨', t:'Strong winds expected — stake young plants and avoid spraying.'});
+  if (hum >= 80 && tMax >= 20) tips.push({warn:false, ic:'🍄', t:'High humidity — watch for fungal disease, ensure airflow between rows.'});
+  if (!tips.length) tips.push({warn:false, ic:'✅', t:'Conditions look favourable — good day for routine fieldwork.'});
+  return tips;
+}
+
+/* ---------- render weather ---------- */
+let lastData = null;
+function render(place, cur, daily, ts){
+  document.getElementById('status').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+  lastData = {place, cur, daily, time: ts || Date.now()};
+
+  const [icon, desc] = wInfo(cur.weather_code);
+  document.getElementById('nowIcon').textContent = icon;
+  document.getElementById('nowUnit').textContent = unit==='metric' ? '°C' : '°F';
+  document.getElementById('nowTemp').textContent = unit==='metric' ? Math.round(cur.temperature_2m) : c2f(cur.temperature_2m);
+  document.getElementById('nowDesc').textContent = desc;
+  document.getElementById('nowPlace').textContent = place;
+  document.getElementById('mHumidity').textContent = cur.relative_humidity_2m + '%';
+  document.getElementById('mWind').textContent = unit==='metric' ? Math.round(cur.wind_speed_10m)+' km/h' : k2mph(cur.wind_speed_10m)+' mph';
+  document.getElementById('mRain').textContent = (daily.precipitation_probability_max[0] ?? 0) + '%';
+  document.getElementById('updated').textContent = 'Updated ' + new Date(lastData.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+  const crop = currentCrop();
+  const today = {precipitation_probability_max: daily.precipitation_probability_max[0], temperature_2m_max: daily.temperature_2m_max[0],
+    temperature_2m_min: daily.temperature_2m_min[0], wind_speed_10m_max: daily.wind_speed_10m_max[0]};
+  document.getElementById('tips').innerHTML = buildTips(cur, today, crop).map(tp=>
+    `<div class="tip${tp.warn?' warn':''}"><span class="ic">${tp.ic}</span><span>${tp.t}</span></div>`).join('');
+
+  const names = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('forecast').innerHTML = daily.time.map((t,i)=>{
+    const [ic] = wInfo(daily.weather_code[i]);
+    const dow = names[new Date(t+'T00:00:00').getDay()];
+    const hi = unit==='metric' ? Math.round(daily.temperature_2m_max[i]) : c2f(daily.temperature_2m_max[i]);
+    const lo = unit==='metric' ? Math.round(daily.temperature_2m_min[i]) : c2f(daily.temperature_2m_min[i]);
+    return `<div class="day"><div class="d">${i===0?'Today':dow}</div><div class="i">${ic}</div><div class="hi">${hi}°</div><div class="lo">${lo}°</div></div>`;
+  }).join('');
+}
+
+async function fetchWeather(lat, lon, place){
+  document.getElementById('status').classList.remove('hidden');
+  document.getElementById('status').textContent = 'Fetching weather…';
+  document.getElementById('result').classList.add('hidden');
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=5`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('weather fetch failed');
+    const data = await res.json();
+    render(place, data.current, data.daily, Date.now());
+  }catch(err){
+    if(lastData){ render(lastData.place, lastData.cur, lastData.daily, lastData.time); }
+    else document.getElementById('status').textContent = 'Could not load weather. Please try again.';
   }
+}
 
-  function toDisplay(mps){
-    var v = unit === 'kmh' ? mps * 3.6 : mps * 2.23694;
-    return v < 0 ? 0 : v;
-  }
+async function searchCity(){
+  const q = document.getElementById('cityInput').value.trim();
+  if(!q) return;
+  document.getElementById('status').classList.remove('hidden');
+  document.getElementById('status').textContent = 'Searching…';
+  try{
+    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1`);
+    const data = await res.json();
+    if(!data.results || !data.results.length){ document.getElementById('status').textContent = 'No place found — try a different spelling.'; return; }
+    const r = data.results[0];
+    fetchWeather(r.latitude, r.longitude, [r.name, r.admin1, r.country].filter(Boolean).join(', '));
+  }catch{ document.getElementById('status').textContent = 'Search failed. Please try again.'; }
+}
+document.getElementById('searchBtn').addEventListener('click', searchCity);
+document.getElementById('cityInput').addEventListener('keydown', e=>{ if(e.key==='Enter') searchCity(); });
+document.getElementById('locBtn').addEventListener('click', ()=>{
+  if(!navigator.geolocation){ document.getElementById('status').textContent = 'Location not supported on this device.'; return; }
+  document.getElementById('status').classList.remove('hidden');
+  document.getElementById('status').textContent = 'Locating…';
+  navigator.geolocation.getCurrentPosition(
+    pos => fetchWeather(pos.coords.latitude, pos.coords.longitude, 'Your location'),
+    () => { document.getElementById('status').textContent = 'Location access denied.'; }
+  );
+});
 
-  function haversine(a, b){
-    var R = 6371000, toRad = Math.PI / 180;
-    var dLat = (b.latitude - a.latitude) * toRad, dLon = (b.longitude - a.longitude) * toRad;
-    var la1 = a.latitude * toRad, la2 = b.latitude * toRad;
-    var h = Math.sin(dLat/2)**2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLon/2)**2;
-    return 2 * R * Math.asin(Math.sqrt(h));
-  }
+/* ---------- offline banner ---------- */
+function updateOnlineStatus(){ document.getElementById('offlineBanner').classList.toggle('hidden', navigator.onLine); }
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
 
-  function setStatus(cls, text){
-    dot.className = 'dot ' + cls;
-    statusText.textContent = text;
-  }
-
-  function render(speedMps, accuracy){
-    var displaySpeed = toDisplay(speedMps);
-    var frac = Math.min(displaySpeed / maxScale(), 1);
-    var danger = frac >= DANGER_FRAC;
-    var lit = Math.round(frac * TICK_COUNT);
-
-    ticks.forEach(function(t, i){
-      t.classList.toggle('on', i < lit);
-      t.classList.toggle('danger', i < lit && danger);
-    });
-    speedEl.textContent = Math.round(displaySpeed);
-    speedEl.classList.toggle('danger', danger);
-
-    if(displaySpeed > maxSpeed) maxSpeed = displaySpeed;
-    maxValEl.textContent = Math.round(maxSpeed);
-    var avgMps = totalTime > 0 ? totalDist / totalTime : 0;
-    avgValEl.textContent = Math.round(toDisplay(avgMps));
-    if(typeof accuracy === 'number') accValEl.textContent = Math.round(accuracy) + 'm';
-  }
-
-  function onPosition(pos){
-    var c = pos.coords, now = pos.timestamp;
-    var speedMps = c.speed;
-
-    if(lastPos && lastTime){
-      var dt = (now - lastTime) / 1000;
-      if(dt > 0){
-        var dist = haversine(lastPos, c);
-        if(speedMps == null) speedMps = dist / dt;
-        totalDist += dist;
-        totalTime += dt;
-      }
-    }
-    lastPos = c; lastTime = now;
-    setStatus(c.accuracy <= 25 ? 'locked' : 'weak', c.accuracy <= 25 ? 'GPS locked' : 'Weak GPS signal');
-    render(speedMps || 0, c.accuracy);
-  }
-
-  function onError(err){
-    setStatus('err', err.code === 1 ? 'Location permission denied' : 'GPS unavailable');
-  }
-
-  function startTracking(){
-    if(!('geolocation' in navigator)){ setStatus('err', 'Geolocation not supported'); return; }
-    tracking = true;
-    toggleBtn.textContent = 'STOP';
-    toggleBtn.classList.add('active');
-    setStatus('weak', 'Acquiring GPS…');
-    watchId = navigator.geolocation.watchPosition(onPosition, onError, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
-  }
-
-  function stopTracking(){
-    tracking = false;
-    toggleBtn.textContent = 'START';
-    toggleBtn.classList.remove('active');
-    if(watchId !== null) navigator.geolocation.clearWatch(watchId);
-    watchId = null; lastPos = null; lastTime = null;
-    setStatus('', 'Tracking stopped');
-    render(0);
-  }
-
-  function resetStats(){
-    maxSpeed = 0; totalDist = 0; totalTime = 0;
-    render(0);
-  }
-
-  toggleBtn.addEventListener('click', function(){ tracking ? stopTracking() : startTracking(); });
-  resetBtn.addEventListener('click', resetStats);
-  unitBtn.addEventListener('click', function(){
-    unit = unit === 'kmh' ? 'mph' : 'kmh';
-    unitLabel.textContent = unit === 'kmh' ? 'KM/H' : 'MPH';
-    unitBtn.textContent = unit === 'kmh' ? 'MPH' : 'KM/H';
-  });
-
-  document.querySelectorAll('[data-theme-btn]').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      document.documentElement.setAttribute('data-theme', btn.dataset.themeBtn);
-      document.querySelectorAll('[data-theme-btn]').forEach(function(b){ b.setAttribute('aria-pressed', b === btn); });
-    });
-  });
-
-  window.addEventListener('resize', buildTicks);
-  document.getElementById('year').textContent = new Date().getFullYear() > 2026 ? '2026–' + new Date().getFullYear() : '2026';
-
-  buildTicks();
-  render(0);
-})();
+renderCropTab();
 </script>
 </body>
 </html>
