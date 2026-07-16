@@ -1,623 +1,421 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="bn">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Field Almanac — Farm Weather & Advisory</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>পূজায়ো | Purohit Fee Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--radius:14px;--ff-display:'Fraunces',serif;--ff-body:'Inter',sans-serif;}
-html[data-theme="light"]{--bg:#F6F1E4;--bg-alt:#EDE5D2;--surface:#FFFDF8;--text:#2A2318;--muted:#6B6152;--line:#DCD2BA;--green:#3F6B3B;--green-ink:#F4F8F0;--gold:#B9862B;--bad:#B5442E;}
-html[data-theme="dark"]{--bg:#1B1F17;--bg-alt:#232920;--surface:#252B20;--text:#EDE8D8;--muted:#A6A290;--line:#3A4232;--green:#7FB06B;--green-ink:#12190F;--gold:#E0B25C;--bad:#E38268;}
-html[data-theme="oled"]{--bg:#000;--bg-alt:#0A0A0A;--surface:#0D0D0D;--text:#F0F0EA;--muted:#8C8C86;--line:#242424;--green:#66C24C;--green-ink:#000;--gold:#E8B84B;--bad:#FF7A5C;}
-html[data-theme="hc"]{--bg:#000;--bg-alt:#000;--surface:#000;--text:#FFF;--muted:#FFF;--line:#FFF;--green:#00FF6A;--green-ink:#000;--gold:#FFD400;--bad:#FF3B3B;}
-*{box-sizing:border-box;}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--ff-body);transition:background .25s,color .25s;min-height:100vh;display:flex;flex-direction:column;padding-bottom:66px;}
-h1,h2,h3{font-family:var(--ff-display);margin:0;}
-button,input,select{font-family:inherit;}
-a{color:var(--green);}
-.wrap{max-width:640px;margin:0 auto;padding:0 18px;width:100%;}
-header{border-bottom:1px solid var(--line);padding:14px 0;}
-.brand{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.brand h1{font-size:1.3rem;font-weight:700;letter-spacing:-.01em;}
-.brand h1 span{color:var(--green);}
-.hdrbtns{display:flex;gap:8px;align-items:center;}
-.themebar{display:flex;gap:6px;background:var(--bg-alt);padding:4px;border-radius:999px;border:1px solid var(--line);}
-.themebar button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text);opacity:.55;}
-.themebar button[aria-pressed="true"]{opacity:1;border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset;}
-.unitbtn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:6px 10px;font-size:.78rem;font-weight:600;cursor:pointer;}
-.tag{margin-top:6px;color:var(--muted);font-size:.82rem;}
-.cropbar{display:flex;gap:8px;align-items:center;margin:14px 0;}
-.cropbar select{flex:1;padding:11px 12px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:.92rem;}
-.offline{background:var(--gold);color:#1A1400;font-size:.8rem;text-align:center;padding:6px;border-radius:10px;margin-bottom:10px;}
-main{flex:1;}
-.wrap>.panel{display:none;}
-.wrap>.panel.active{display:block;}
-.search{display:flex;gap:8px;margin:6px 0 8px;}
-.search input{flex:1;padding:12px 14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:1rem;}
-.search input:focus{outline:2px solid var(--green);outline-offset:1px;}
-.btn{padding:12px 16px;border-radius:var(--radius);border:1px solid var(--green);background:var(--green);color:var(--green-ink);font-weight:600;cursor:pointer;white-space:nowrap;font-size:.92rem;}
-.locbtn{width:100%;margin-bottom:10px;background:transparent;color:var(--muted);border:1px dashed var(--line);border-radius:var(--radius);padding:10px;cursor:pointer;font-size:.85rem;}
-.locbtn:hover{color:var(--green);border-color:var(--green);}
-.status{text-align:center;color:var(--muted);padding:24px 0;font-size:.9rem;}
-.hidden{display:none !important;}
-.now{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;margin:14px 0;display:flex;align-items:center;gap:16px;}
-.now .icon{font-size:3rem;line-height:1;}
-.now .temp{font-family:var(--ff-display);font-size:2.6rem;font-weight:600;}
-.now .place{font-weight:600;font-size:.95rem;}
-.now .desc{color:var(--muted);font-size:.88rem;}
-.updated{color:var(--muted);font-size:.72rem;margin-top:2px;}
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 16px;}
-.metric{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;}
-.metric b{display:block;font-size:1.05rem;}
-.metric span{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
-.detailgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 16px;}
-.detailgrid div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;}
-.detailgrid b{display:block;font-size:.95rem;}
-.detailgrid span{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;}
-h2.section{font-size:.95rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 0 10px;font-family:var(--ff-body);font-weight:700;}
-.forecast{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;}
-.day{flex:0 0 84px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 8px;text-align:center;}
-.day .d{font-size:.78rem;color:var(--muted);}
-.day .i{font-size:1.6rem;margin:6px 0;}
-.day .hi{font-weight:700;}
-.day .lo{color:var(--muted);font-size:.85rem;}
-.tips,.cards{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
-.tip,.card{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:10px;padding:12px 14px;font-size:.9rem;}
-.tip{display:flex;gap:10px;}
-.tip.warn{border-left-color:var(--bad);}
-.tip .ic{font-size:1.2rem;}
-.card b{display:block;font-family:var(--ff-display);font-size:1.02rem;margin-bottom:4px;}
-.card .sym{color:var(--muted);margin:2px 0;}
-.pill{display:inline-block;background:var(--bg-alt);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.72rem;margin-right:6px;margin-bottom:6px;}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
-.field label{font-size:.78rem;color:var(--muted);display:block;margin-bottom:4px;}
-.field input,.field select{width:100%;padding:11px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text);}
-.npkout{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
-.npkout div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 8px;text-align:center;}
-.npkout b{font-family:var(--ff-display);font-size:1.4rem;display:block;}
-.resultline{margin-top:8px;font-size:.9rem;}
-.resultline b{color:var(--green);font-family:var(--ff-display);font-size:1.05rem;}
-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:.85rem;}
-th,td{padding:9px;text-align:left;border-bottom:1px solid var(--line);}
-th{color:var(--muted);font-weight:600;font-size:.72rem;text-transform:uppercase;}
-tr:last-child td{border-bottom:none;}
-.note{color:var(--muted);font-size:.78rem;margin-top:8px;}
-.scheme b{font-family:var(--ff-body);}
-.sharefield{margin-bottom:10px;}
-.tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:10;}
-.tabbar button{background:none;border:none;color:var(--muted);font-size:.68rem;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 6px;}
-.tabbar button .ic{font-size:1.15rem;}
-.tabbar button.active{color:var(--green);}
-footer{border-top:1px solid var(--line);margin-top:20px;padding:22px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;color:var(--muted);font-size:.8rem;}
-footer strong{color:var(--text);}
-@media(max-width:380px){.now{flex-direction:column;text-align:center;}.brand h1{font-size:1.12rem;}}
+:root{--bg:#1a1008;--sf:#2a1f10;--sf2:#3a2c18;--bd:#5a4020;--gd:#e8b84b;--gd2:#f5d07a;--tx:#f0e6d0;--mu:#a08060;--r:12px;--sh:0 4px 20px rgba(0,0,0,.5)}
+[data-theme=light]{--bg:#fdf6e8;--sf:#fff8ec;--sf2:#fef0d0;--bd:#d4a84b;--gd:#b8760a;--gd2:#8a5500;--tx:#3a2000;--mu:#8a6030;--sh:0 4px 20px rgba(180,100,0,.15)}
+[data-theme=oled]{--bg:#000;--sf:#0a0700;--sf2:#120e05;--bd:#3a2800;--gd:#e8b84b;--gd2:#f5d07a;--tx:#f0e6d0;--mu:#806040}
+[data-theme=hc]{--bg:#000;--sf:#000;--sf2:#111;--bd:#ff0;--gd:#ff0;--gd2:#fff;--tx:#fff;--mu:#ff0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:'Noto Sans Bengali',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;transition:background .3s,color .3s}
+header{width:100%;max-width:480px;padding:16px 16px 8px;text-align:center}
+.app-name{font-family:'Tiro Bangla',serif;font-size:2.6rem;font-weight:900;color:var(--gd);display:block;line-height:1.1;letter-spacing:2px;text-shadow:0 2px 12px rgba(232,184,75,.35)}
+.app-sub{display:block;font-size:.72rem;color:var(--mu);margin-top:5px;letter-spacing:2px;text-transform:uppercase}
+.top-bar{display:flex;gap:6px;justify-content:center;margin-top:9px;flex-wrap:wrap}
+.lang-bar{display:flex;gap:6px;justify-content:center;margin-top:6px}
+.t-btn,.l-btn{border:1.5px solid var(--bd);background:var(--sf);color:var(--mu);padding:4px 10px;border-radius:20px;cursor:pointer;font-size:.7rem;font-family:inherit;transition:all .2s}
+.t-btn.active,.l-btn.active,.t-btn:hover,.l-btn:hover{border-color:var(--gd);color:var(--gd);background:var(--sf2)}
+main{width:100%;max-width:480px;padding:0 16px;flex:1}
+.trial-bar{border-radius:var(--r);padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;font-size:.78rem}
+.trial-bar.active{background:#1a3a1a;border:1px solid #4caf50;color:#81c784}
+.trial-bar.expired{background:#3a0000;border:1px solid #f44336;color:#ef9a9a}
+.trial-bar.paid{background:#1a2a3a;border:1px solid var(--gd);color:var(--gd)}
+.trial-days{font-weight:700;font-size:.9rem}
+.info{background:var(--sf2);border-left:3px solid var(--gd);padding:9px 11px;border-radius:0 8px 8px 0;font-size:.76rem;color:var(--mu);line-height:1.6;margin-bottom:12px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh)}
+.ct{font-family:'Tiro Bangla',serif;font-size:1rem;color:var(--gd);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.ct::before{content:'';width:3px;height:1em;background:var(--gd);border-radius:2px;display:inline-block}
+label{display:block;font-size:.78rem;color:var(--mu);margin-bottom:3px;margin-top:9px}
+label:first-of-type{margin-top:0}
+select,input[type=number]{width:100%;background:var(--sf2);border:1px solid var(--bd);color:var(--tx);padding:9px 11px;border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;transition:border .2s}
+select{appearance:auto;cursor:pointer}
+select:focus,input:focus{border-color:var(--gd)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.extras{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:4px}
+.chk-item{display:flex;align-items:center;gap:6px;background:var(--sf2);border:1px solid var(--bd);padding:7px 9px;border-radius:8px;cursor:pointer;font-size:.8rem;transition:border .2s}
+.chk-item input{accent-color:var(--gd);width:14px;height:14px;flex-shrink:0}
+.chk-item.on{border-color:var(--gd);color:var(--gd)}
+.surge-tag{display:inline-block;background:var(--gd);color:#1a0e00;font-size:.68rem;padding:2px 7px;border-radius:10px;margin-top:5px;font-weight:700}
+.btn{width:100%;background:var(--gd);color:#1a0e00;border:none;padding:12px;border-radius:10px;font-size:.95rem;font-family:'Tiro Bangla',serif;font-weight:700;cursor:pointer;margin-top:5px}
+.btn2{background:var(--sf2);color:var(--gd);border:1px solid var(--gd);font-size:.82rem;padding:8px;margin-top:8px}
+.rg{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:baseline}
+.rl{font-size:.8rem;color:var(--mu)}.rv{font-size:.86rem;color:var(--tx);text-align:right}
+.dv{grid-column:1/-1;height:1px;background:var(--bd);margin:5px 0}
+.tot{display:flex;justify-content:space-between;align-items:center;background:var(--sf2);border:1px solid var(--gd);border-radius:8px;padding:10px 13px;margin-top:6px}
+.tl{font-family:'Tiro Bangla',serif;font-size:.95rem;color:var(--gd)}
+.ta{font-family:'Tiro Bangla',serif;font-size:1.25rem;color:var(--gd2);font-weight:700}
+.note{font-size:.72rem;color:var(--mu);text-align:center;margin-top:7px}
+.bhog-result{background:var(--sf2);border:1px solid var(--gd);border-radius:8px;padding:10px 13px;margin-top:8px;font-size:.84rem}
+.checklist{display:flex;flex-direction:column;gap:5px}
+.cli{display:flex;align-items:center;gap:8px;font-size:.82rem;padding:6px 0;border-bottom:1px solid var(--bd);cursor:pointer}
+.cli:last-child{border-bottom:none}
+.cli input{accent-color:var(--gd);width:15px;height:15px;flex-shrink:0}
+.cli.done{color:var(--mu);text-decoration:line-through}
+.hist-item{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:9px 11px;margin-bottom:8px;font-size:.8rem}
+.hist-item strong{color:var(--gd);display:block;margin-bottom:2px}
+.hist-del{float:right;background:none;border:none;color:var(--mu);cursor:pointer}
+/* Payment Wall */
+.pay-wall{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+.pay-wall.show{display:flex}
+.pw-icon{font-size:3rem;margin-bottom:10px}
+.pw-title{font-family:'Tiro Bangla',serif;font-size:1.3rem;color:var(--gd);margin-bottom:6px}
+.pw-sub{font-size:.8rem;color:var(--mu);margin-bottom:16px;line-height:1.6}
+.pw-box{background:var(--sf);border:1px solid var(--gd);border-radius:var(--r);padding:20px;width:100%;max-width:380px}
+.pw-amount{font-size:2rem;font-weight:900;color:var(--gd2);margin:8px 0}
+.upi-id{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:10px;text-align:center;margin:10px 0}
+.upi-id small{font-size:.7rem;color:var(--mu)}
+.upi-id strong{display:block;color:var(--gd);font-size:1rem;margin-top:2px;letter-spacing:1px}
+.upi-btn{display:block;background:var(--gd);color:#1a0e00;border:none;padding:12px;border-radius:10px;font-family:'Tiro Bangla',serif;font-weight:700;font-size:.95rem;cursor:pointer;width:100%;margin:10px 0;text-decoration:none;text-align:center}
+.txn-input{width:100%;background:var(--sf2);border:1px solid var(--bd);color:var(--tx);padding:10px;border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;margin-top:8px}
+.txn-input:focus{border-color:var(--gd)}
+.act-btn{width:100%;background:#4caf50;color:#fff;border:none;padding:12px;border-radius:9px;font-family:'Tiro Bangla',serif;font-weight:700;font-size:.95rem;cursor:pointer;margin-top:8px}
+.mid-note{font-size:.68rem;color:var(--mu);margin-top:10px}
+.pay-msg{font-size:.75rem;margin-top:8px;min-height:18px;text-align:center}
+@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}body>*:not(#rcpt){display:none!important}#rcpt,#rcpt *{background:#fff!important;color:#000!important;border-color:#000!important;box-shadow:none!important}#rcpt{display:block!important;position:fixed;top:0;left:0;width:100%;padding:24px 20px;font-family:'Noto Sans Bengali',sans-serif}}
+footer{width:100%;max-width:480px;text-align:center;padding:16px;font-size:.7rem;color:var(--mu);border-top:1px solid var(--bd);margin-top:6px}
 </style>
 </head>
-<body>
-<header><div class="wrap">
-  <div class="brand">
-    <h1>Field <span>Almanac</span></h1>
-    <div class="hdrbtns">
-      <button class="unitbtn" id="unitBtn">°C · km/h</button>
-      <div class="themebar" id="themebar" role="group" aria-label="Theme">
-        <button data-theme="light" aria-pressed="true" title="Light">☀</button>
-        <button data-theme="dark" aria-pressed="false" title="Dark">☾</button>
-        <button data-theme="oled" aria-pressed="false" title="OLED true black">●</button>
-        <button data-theme="hc" aria-pressed="false" title="High contrast">◐</button>
-      </div>
+<body data-theme="dark">
+<header>
+  <strong class="app-name" id="appTitle">পূজায়ো</strong>
+  <span class="app-sub" id="appSub">Purohit Fee Calculator</span>
+  <div class="top-bar">
+    <button class="t-btn active" onclick="setTheme('dark',this)">🌙 Dark</button>
+    <button class="t-btn" onclick="setTheme('light',this)">☀️ Light</button>
+    <button class="t-btn" onclick="setTheme('oled',this)">⚫ OLED</button>
+    <button class="t-btn" onclick="setTheme('hc',this)">◈ HC</button>
+  </div>
+  <div class="lang-bar">
+    <button class="l-btn active" onclick="setLang('bn',this)">বাং</button>
+    <button class="l-btn" onclick="setLang('en',this)">EN</button>
+    <button class="l-btn" onclick="setLang('hi',this)">हिं</button>
+  </div>
+</header>
+<main>
+  <div id="trialBar" class="trial-bar active">
+    <span id="trialMsg">ট্রায়াল সক্রিয়</span>
+    <span class="trial-days" id="trialDays"></span>
+  </div>
+  <div class="info" id="infoText">পূজা-পার্বণে পুরোহিতের দক্ষিণা নির্ভর করে পূজার ধরন, সময়কাল ও অতিরিক্ত সেবার উপর।</div>
+
+  <div class="card">
+    <div class="ct" id="lbl_details">পূজার বিবরণ</div>
+    <label id="lbl_pujaType">পূজার ধরন</label>
+    <select id="pujaType" onchange="updateDuration();showChecklist();showSeason()">
+      <option value="saraswati">সরস্বতী পূজা</option><option value="durga">দুর্গাপূজা (পঞ্চমী–দশমী)</option>
+      <option value="kali">কালীপূজা</option><option value="lakshmi">লক্ষ্মীপূজা</option>
+      <option value="ganesh">গণেশ পূজা</option><option value="vivah">বিবাহ (সম্পূর্ণ)</option>
+      <option value="annaprasan">অন্নপ্রাশন</option><option value="upanayana">উপনয়ন / পৈতা</option>
+      <option value="shraddha">শ্রাদ্ধ / অন্ত্যেষ্টি</option><option value="satyanarayan">সত্যনারায়ণ পূজা</option>
+      <option value="griha">গৃহপ্রবেশ</option><option value="vastu">বাস্তু শান্তি</option>
+      <option value="navagraha">নবগ্রহ পূজা</option><option value="hanuman">হনুমান পূজা</option>
+      <option value="manasa">মনসা পূজা</option><option value="bishwakarma">বিশ্বকর্মা পূজা</option>
+      <option value="jagaddhatri">জগদ্ধাত্রী পূজা</option><option value="kartik">কার্তিক পূজা</option>
+      <option value="jamai_shashthi">জামাই ষষ্ঠী</option><option value="ras">রাস পূজা</option>
+      <option value="dol">দোলযাত্রা / হোলি পূজা</option><option value="charak">চড়ক পূজা / গাজন</option>
+      <option value="namkaran">নামকরণ সংস্কার</option><option value="brata">ব্রত উদযাপন</option>
+      <option value="custom">অন্যান্য / কাস্টম</option>
+    </select>
+    <div id="surgeTag"></div>
+    <div class="row2">
+      <div><label id="lbl_exp">পুরোহিতের অভিজ্ঞতা</label>
+        <select id="experience"><option value="1">নতুন (০–৫ বছর)</option><option value="1.5" selected>মধ্যম (৫–১৫ বছর)</option><option value="2">বিশেষজ্ঞ (১৫+ বছর)</option></select></div>
+      <div><label id="lbl_loc">পূজার স্থান</label>
+        <select id="location"><option value="0.9">গ্রাম / মফস্বল</option><option value="1" selected>শহর</option><option value="1.3">মহানগর (কলকাতা)</option></select></div>
+    </div>
+    <div class="row2">
+      <div><label id="lbl_dur">সময়কাল (ঘণ্টা)</label><input type="number" id="duration" value="4" min="1" max="72"></div>
+      <div><label id="lbl_priests">পুরোহিত সংখ্যা</label><input type="number" id="priests" value="1" min="1" max="10"></div>
+    </div>
+    <label id="lbl_month">উৎসবের মাস (সার্জ চেক)</label>
+    <select id="festMonth" onchange="showSeason()">
+      <option value="1">জানুয়ারি</option><option value="2">ফেব্রুয়ারি</option><option value="3">মার্চ</option><option value="4">এপ্রিল</option><option value="5">মে</option><option value="6">জুন</option><option value="7">জুলাই</option><option value="8">আগস্ট</option><option value="9">সেপ্টেম্বর</option><option value="10" selected>অক্টোবর</option><option value="11">নভেম্বর</option><option value="12">ডিসেম্বর</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <div class="ct" id="lbl_extras">অতিরিক্ত সেবা</div>
+    <div class="extras">
+      <label class="chk-item" id="lx_samgri"><input type="checkbox" id="samgri" onchange="toggleChk('lx_samgri')"> <span id="ex_samgri">পূজার সামগ্রী</span></label>
+      <label class="chk-item" id="lx_travel"><input type="checkbox" id="travel" onchange="toggleChk('lx_travel')"> <span id="ex_travel">যাতায়াত খরচ</span></label>
+      <label class="chk-item" id="lx_sankalpa"><input type="checkbox" id="sankalpa" onchange="toggleChk('lx_sankalpa')"> <span id="ex_sankalpa">সংকল্প পাঠ</span></label>
+      <label class="chk-item" id="lx_homa"><input type="checkbox" id="homa" onchange="toggleChk('lx_homa')"> <span id="ex_homa">হোম / যজ্ঞ</span></label>
+      <label class="chk-item" id="lx_pushpanjali"><input type="checkbox" id="pushpanjali" onchange="toggleChk('lx_pushpanjali')"> <span id="ex_pushpanjali">পুষ্পাঞ্জলি</span></label>
+      <label class="chk-item" id="lx_prasad"><input type="checkbox" id="prasad" onchange="toggleChk('lx_prasad')"> <span id="ex_prasad">প্রসাদ বিতরণ</span></label>
     </div>
   </div>
-  <div class="tag">Weather & field advisory for growers</div>
-</div></header>
 
-<main><div class="wrap">
-  <div class="cropbar">
-    <select id="cropSelect"></select>
+  <div class="card">
+    <div class="ct" id="lbl_bhog">ভোগ / প্রসাদ খরচ</div>
+    <div class="row2">
+      <div><label id="lbl_guests">অতিথি সংখ্যা</label><input type="number" id="guests" value="20" min="1" max="5000"></div>
+      <div><label id="lbl_bhogType">ভোগের ধরন</label>
+        <select id="bhogType"><option value="35">সাধারণ (ফল-মিষ্টি)</option><option value="80" selected>মাঝারি (রান্না ভোগ)</option><option value="150">বিশেষ (পঞ্চব্যঞ্জন)</option></select></div>
+    </div>
+    <button class="btn btn2" onclick="calcBhog()" id="btn_bhog">ভোগ খরচ হিসাব করুন</button>
+    <div id="bhogResult" style="display:none" class="bhog-result"></div>
   </div>
-  <div id="offlineBanner" class="offline hidden">You're offline — showing last saved weather.</div>
 
-  <!-- WEATHER TAB -->
-  <section class="panel active" id="tab-weather">
-    <button class="locbtn" id="locBtn">📍 Use my current location</button>
-    <div class="search">
-      <input id="cityInput" type="text" placeholder="Search village, town or city…" autocomplete="off">
-      <button class="btn" id="searchBtn">Search</button>
+  <div class="card">
+    <div class="ct" id="lbl_checklist">সামগ্রী চেকলিস্ট</div>
+    <div class="checklist" id="checklistItems"></div>
+  </div>
+
+  <button class="btn" onclick="calculate()" id="btn_calc">দক্ষিণা হিসাব করুন ▶</button>
+
+  <div class="card" id="resultCard" style="display:none">
+    <div class="ct" id="lbl_result">দক্ষিণার বিবরণ</div>
+    <div class="rg" id="resultGrid"></div>
+    <div class="tot"><span class="tl" id="lbl_total">মোট দক্ষিণা</span><span class="ta" id="totalAmt"></span></div>
+    <div class="note" id="resultNote">* আনুমানিক হিসাব। পুরোহিতের সাথে আলোচনা করে নির্ধারণ করুন।</div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn2" style="flex:1" onclick="saveEstimate()" id="btn_save">💾 সংরক্ষণ করুন</button>
+      <button class="btn btn2" style="flex:1" onclick="printReceipt()" id="btn_print">🖨️ প্রিন্ট রসিদ</button>
     </div>
-    <div id="status" class="status">Search a place or use your location to see today's advisory.</div>
-    <div id="result" class="hidden">
-      <div class="now">
-        <div class="icon" id="nowIcon">☀️</div>
-        <div style="flex:1;">
-          <div class="place" id="nowPlace">—</div>
-          <div class="temp"><span id="nowTemp">--</span><span id="nowUnit">°C</span></div>
-          <div class="desc" id="nowDesc">—</div>
-          <div class="updated" id="updated"></div>
-        </div>
-      </div>
-      <div class="metrics">
-        <div class="metric"><b id="mHumidity">--%</b><span>Humidity</span></div>
-        <div class="metric"><b id="mWind">--</b><span>Wind</span></div>
-        <div class="metric"><b id="mRain">--%</b><span>Rain chance</span></div>
-      </div>
+  </div>
 
-      <h2 class="section">📊 Extended conditions</h2>
-      <div class="detailgrid">
-        <div><b id="eFeels">--</b><span>Feels like</span></div>
-        <div><b id="eGust">--</b><span>Wind gusts</span></div>
-        <div><b id="eCloud">--</b><span>Cloud cover</span></div>
-        <div><b id="ePress">--</b><span>Pressure</span></div>
-        <div><b id="eUv">--</b><span>UV index</span></div>
-        <div><b id="eDir">--</b><span>Wind direction</span></div>
-        <div><b id="eSunrise">--</b><span>Sunrise</span></div>
-        <div><b id="eSunset">--</b><span>Sunset</span></div>
-        <div><b id="eRainSum">--</b><span>Rain today</span></div>
-        <div><b id="eEt0">--</b><span>Evapotranspiration</span></div>
-      </div>
+  <div class="card" id="histCard" style="display:none">
+    <div class="ct" id="lbl_history">সংরক্ষিত হিসাব</div>
+    <div id="histList"></div>
+    <button class="btn btn2" onclick="clearHistory()" id="btn_clearHist">সব মুছুন</button>
+  </div>
+</main>
 
-      <h2 class="section">🌾 Field advisory</h2>
-      <div class="tips" id="tips"></div>
-      <h2 class="section">5-Day outlook</h2>
-      <div class="forecast" id="forecast"></div>
+<!-- Payment Wall (full screen) -->
+<div class="pay-wall" id="payWall">
+  <div class="pw-icon">⏰</div>
+  <div class="pw-title" id="pw_title">ট্রায়াল মেয়াদ শেষ</div>
+  <div class="pw-sub" id="pw_sub">আপনার ১৪ দিনের বিনামূল্যে ট্রায়াল শেষ হয়েছে।<br>সম্পূর্ণ সুবিধা পেতে সাবস্ক্রাইব করুন।</div>
+  <div class="pw-box">
+    <div style="font-family:'Tiro Bangla',serif;font-size:.95rem;color:var(--gd)" id="pw_plan">পূজায়ো — মাসিক প্ল্যান</div>
+    <div class="pw-amount">₹১৯৯<span style="font-size:1rem;font-weight:400;color:var(--mu)">/মাস</span></div>
+    <div class="upi-id">
+      <small id="pw_upi_label">UPI তে পাঠান</small>
+      <strong id="pw_upi_id">9433082017@ybl</strong>
     </div>
-  </section>
+    <a class="upi-btn" id="pw_upi_btn" href="#">📱 UPI অ্যাপে পে করুন</a>
+    <div style="font-size:.72rem;color:var(--mu);margin-bottom:6px" id="pw_txn_label">পেমেন্টের পর Transaction ID লিখুন</div>
+    <input class="txn-input" id="pw_txn" type="text" placeholder="Transaction ID / UTR নম্বর">
+    <button class="act-btn" onclick="activateFromWall()" id="pw_activate">✅ অ্যাক্টিভেট করুন</button>
+    <div class="pay-msg" id="pw_msg"></div>
+    <div class="mid-note" id="pw_mid"></div>
+  </div>
+</div>
 
-  <!-- CROP CARE TAB -->
-  <section class="panel" id="tab-crop">
-    <h2 class="section">🌱 Crop profile</h2>
-    <div class="cards" id="cropProfile"></div>
-    <h2 class="section">📅 Sowing & harvest window</h2>
-    <div class="cards" id="cropCalendar"></div>
-    <h2 class="section">🐛 Common pests & diseases</h2>
-    <div class="cards" id="pestList"></div>
-    <p class="note">Symptom-based reference list — for confirmed diagnosis, consult your local agriculture extension office.</p>
-  </section>
-
-  <!-- CALCULATOR TAB -->
-  <section class="panel" id="tab-calc">
-    <h2 class="section">📐 Field size (used by tools below)</h2>
-    <div class="grid2">
-      <div class="field"><label>Land area</label><input id="areaInput" type="number" min="0" step="0.1" value="1"></div>
-      <div class="field"><label>Unit</label><select id="areaUnit"><option value="acre">Acre</option><option value="hectare">Hectare</option></select></div>
-    </div>
-
-    <h2 class="section">🧮 Fertilizer calculator</h2>
-    <div class="card">
-      <button class="btn" id="calcBtn" style="width:100%;">Calculate NPK dose</button>
-      <div class="npkout" id="npkOut">
-        <div><b id="outN">--</b>kg N</div>
-        <div><b id="outP">--</b>kg P</div>
-        <div><b id="outK">--</b>kg K</div>
-      </div>
-      <p class="note">Indicative standard dosage per selected crop — adjust per soil test results.</p>
-    </div>
-
-    <h2 class="section">💧 Irrigation guide</h2>
-    <div class="cards" id="irriGuide"></div>
-
-    <h2 class="section">🌰 Seed rate</h2>
-    <div class="card"><button class="btn" id="seedBtn" style="width:100%;">Calculate seed needed</button>
-      <div class="resultline" id="seedOut">Seed needed: <b>--</b></div></div>
-
-    <h2 class="section">🌿 Plant population</h2>
-    <div class="card"><button class="btn" id="popBtn" style="width:100%;">Estimate plant count</button>
-      <div class="resultline" id="popOut">Estimated plants: <b>--</b></div>
-      <p class="note" id="popSpacing"></p></div>
-
-    <h2 class="section">💦 Irrigation water requirement</h2>
-    <div class="card"><button class="btn" id="waterBtn" style="width:100%;">Estimate water needed</button>
-      <div class="resultline" id="waterOut">Water per irrigation: <b>--</b></div>
-      <p class="note" id="waterSrc"></p></div>
-
-    <h2 class="section">📈 Farm economics (yield · revenue · cost · profit)</h2>
-    <div class="card"><button class="btn" id="econBtn" style="width:100%;">Estimate economics</button>
-      <div class="npkout" id="econOut">
-        <div><b id="outYield">--</b>Yield (qtl)</div>
-        <div><b id="outRevenue">--</b>Revenue</div>
-        <div><b id="outCost">--</b>Cost</div>
-      </div>
-      <div class="resultline" id="profitOut">Estimated profit: <b>--</b></div>
-      <p class="note">Based on reference yield/cost figures — actuals vary with inputs, market and season.</p></div>
-
-    <h2 class="section">🐄 Organic manure (FYM/compost)</h2>
-    <div class="card"><button class="btn" id="manureBtn" style="width:100%;">Estimate manure needed</button>
-      <div class="resultline" id="manureOut">FYM/compost needed: <b>--</b></div></div>
-
-    <h2 class="section">🧴 Pesticide spray dilution</h2>
-    <div class="card">
-      <div class="grid2">
-        <div class="field"><label>Sprayer tank size (L)</label><input id="tankInput" type="number" min="0" step="0.5" value="15"></div>
-        <div class="field"><label>Dose (ml per litre)</label><input id="doseInput" type="number" min="0" step="0.1" value="2"></div>
-      </div>
-      <button class="btn" id="pestBtn" style="width:100%;">Calculate</button>
-      <div class="resultline" id="pestOut1">Product per tank: <b>--</b></div>
-      <div class="resultline" id="pestOut2">Tank-fills for your field: <b>--</b></div>
-      <div class="resultline" id="pestOut3">Total product for field: <b>--</b></div>
-      <p class="note">Assumes ~200 L spray solution per acre — always follow the product label rate.</p>
-    </div>
-
-    <h2 class="section">📏 Area unit converter</h2>
-    <div class="card">
-      <div class="grid2">
-        <div class="field"><label>Value</label><input id="convInput" type="number" min="0" step="0.1" value="1"></div>
-        <div class="field"><label>From</label><select id="convUnit"><option value="acre">Acre</option><option value="hectare">Hectare</option><option value="bigha">Bigha (approx.)</option><option value="sqft">Sq. feet</option><option value="sqm">Sq. metres</option></select></div>
-      </div>
-      <button class="btn" id="convBtn" style="width:100%;">Convert</button>
-      <div id="convOut" class="detailgrid" style="margin-top:10px;"></div>
-      <p class="note">Bigha varies by region (UP standard used here) — confirm local measure before relying on it.</p>
-    </div>
-  </section>
-
-  <!-- PRICES TAB -->
-  <section class="panel" id="tab-prices">
-    <h2 class="section">💰 Reference market prices</h2>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-      <button class="unitbtn" id="currBtn">₹ INR</button>
-    </div>
-    <table id="priceTable"><thead><tr><th>Crop</th><th>Price</th><th>Unit</th></tr></thead><tbody></tbody></table>
-    <p class="note">Indicative values for reference only — not live market data. Check your local mandi/market for current rates.</p>
-  </section>
-
-  <!-- SCHEMES TAB -->
-  <section class="panel" id="tab-schemes">
-    <h2 class="section">🏛 Government schemes</h2>
-    <div class="cards" id="schemeList"></div>
-    <p class="note">Summaries only — verify eligibility and details on the official portal before applying.</p>
-  </section>
-
-</div></main>
-
-<nav class="tabbar" id="tabbar">
-  <button data-tab="weather" class="active"><span class="ic">🌦</span>Weather</button>
-  <button data-tab="crop"><span class="ic">🌱</span>Crop Care</button>
-  <button data-tab="calc"><span class="ic">🧮</span>Calculator</button>
-  <button data-tab="prices"><span class="ic">💰</span>Prices</button>
-  <button data-tab="schemes"><span class="ic">🏛</span>Schemes</button>
-</nav>
-
-<footer>
-  <div>© <span id="year"></span> <strong>Manik Roy</strong>. All Rights Reserved.</div>
-  <div>Weather data by Open-Meteo</div>
-</footer>
-
+<footer>© <span id="yr"></span> Manik Roy. All Rights Reserved.</footer>
 <script>
-document.getElementById('year').textContent = new Date().getFullYear();
+const BASE={saraswati:800,durga:6000,kali:1500,lakshmi:700,ganesh:900,vivah:8000,annaprasan:2500,upanayana:3500,shraddha:2000,satyanarayan:1200,griha:2000,vastu:1800,navagraha:1500,hanuman:1100,manasa:1100,bishwakarma:1000,jagaddhatri:2500,kartik:1000,jamai_shashthi:800,ras:1800,dol:1200,charak:1500,namkaran:1800,brata:700,custom:1000};
+const DUR={saraswati:3,durga:48,kali:6,lakshmi:2,ganesh:3,vivah:12,annaprasan:4,upanayana:6,shraddha:5,satyanarayan:3,griha:4,vastu:4,navagraha:3,hanuman:3,manasa:4,bishwakarma:3,jagaddhatri:6,kartik:3,jamai_shashthi:2,ras:5,dol:3,charak:6,namkaran:3,brata:2,custom:4};
+const SURGE={durga:{9:1.3,10:1.3},kali:{10:1.25,11:1.25},jagaddhatri:{10:1.2,11:1.2},saraswati:{1:1.2,2:1.2},dol:{2:1.15,3:1.15},bishwakarma:{8:1.2,9:1.2},charak:{3:1.2,4:1.2},kartik:{10:1.15,11:1.15},lakshmi:{9:1.15,10:1.2}};
+const EXTRAS_AMT={samgri:500,travel:300,sankalpa:200,homa:800,pushpanjali:150,prasad:250};
+const CL={saraswati:['সরস্বতী প্রতিমা','বই-কলম (অঞ্জলির জন্য)','পুষ্প ও মালা','ধুনো ও ধূপ','পঞ্চপ্রদীপ','দধি-দুর্বা','নৈবেদ্য (ফল-মিষ্টি)','লাল পাড় শাড়ি'],durga:['দুর্গা প্রতিমা','বেলপাতা','ষোড়শোপচার সামগ্রী','ধুনো ও ধূপ','পুষ্পাঞ্জলির ফুল','হোমের কাঠ','নৈবেদ্য ও ভোগ','লাল কাপড়','সন্ধি পূজার মালা','ঢাক-ঢোল ব্যবস্থা'],kali:['কালী প্রতিমা','লাল জবা ফুল','নীল অপরাজিতা','মাটির প্রদীপ','ধুনো','নৈবেদ্য','লাল কাপড়','মিষ্টি ও ফল'],vivah:['বেদী ও মণ্ডপ','মঙ্গলঘট','লাজা (খই)','শালপাতা','ধান-দুর্বা','পুষ্পমালা','সপ্তপদীর ধান','হোমের কাঠ','তিল','আম্রপল্লব'],hanuman:['হনুমান প্রতিমা / ছবি','সিঁদুর','লাল ফুল','কলা ও ফল','তিল ও গুড়','দীপ ও ধূপ','হনুমান চালিশা','লাল কাপড়'],lakshmi:['লক্ষ্মী প্রতিমা','ধানের ছড়া','পদ্ম ফুল','ষোড়শোপচার','আলপনা সামগ্রী','নৈবেদ্য','প্রদীপ','সাদা কাপড়'],default:['ফুল ও মালা','ধুনো ও ধূপকাঠি','পঞ্চপ্রদীপ','নৈবেদ্য (ফল-মিষ্টি)','কলাপাতা','দূর্বাঘাস','পঞ্চামৃত উপকরণ','লাল বা হলুদ কাপড়']};
+const UPI_ID='9433082017@ybl';
+const TRIAL_DAYS=14;
 
-/* ---------- theme ---------- */
-const themebar = document.getElementById('themebar');
-themebar.addEventListener('click', e=>{
-  const b = e.target.closest('button'); if(!b) return;
-  document.documentElement.setAttribute('data-theme', b.dataset.theme);
-  [...themebar.children].forEach(c=>c.setAttribute('aria-pressed', c===b));
-});
-if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches){
-  document.documentElement.setAttribute('data-theme','dark');
-  [...themebar.children].forEach(c=>c.setAttribute('aria-pressed', c.dataset.theme==='dark'));
+const L={
+bn:{appTitle:'পূজায়ো',appSub:'পুরোহিত দক্ষিণা ক্যালকুলেটর',infoText:'পূজা-পার্বণে পুরোহিতের দক্ষিণা নির্ভর করে পূজার ধরন, সময়কাল ও অতিরিক্ত সেবার উপর।',lbl_details:'পূজার বিবরণ',lbl_pujaType:'পূজার ধরন',lbl_exp:'পুরোহিতের অভিজ্ঞতা',lbl_loc:'পূজার স্থান',lbl_dur:'সময়কাল (ঘণ্টা)',lbl_priests:'পুরোহিত সংখ্যা',lbl_month:'উৎসবের মাস (সার্জ চেক)',lbl_extras:'অতিরিক্ত সেবা',ex_samgri:'পূজার সামগ্রী',ex_travel:'যাতায়াত খরচ',ex_sankalpa:'সংকল্প পাঠ',ex_homa:'হোম / যজ্ঞ',ex_pushpanjali:'পুষ্পাঞ্জলি',ex_prasad:'প্রসাদ বিতরণ',lbl_bhog:'ভোগ / প্রসাদ খরচ',lbl_guests:'অতিথি সংখ্যা',lbl_bhogType:'ভোগের ধরন',btn_bhog:'ভোগ খরচ হিসাব করুন',lbl_checklist:'সামগ্রী চেকলিস্ট',btn_calc:'দক্ষিণা হিসাব করুন ▶',lbl_result:'দক্ষিণার বিবরণ',lbl_total:'মোট দক্ষিণা',resultNote:'* আনুমানিক হিসাব। পুরোহিতের সাথে আলোচনা করে নির্ধারণ করুন।',btn_save:'💾 সংরক্ষণ করুন',btn_print:'🖨️ প্রিন্ট রসিদ',lbl_history:'সংরক্ষিত হিসাব',btn_clearHist:'সব মুছুন',surge_lbl:'🔥 উৎসব মরসুম সার্জ',r_type:'পূজার ধরন',r_base:'ভিত্তি দক্ষিণা',r_surge:'মরসুম সার্জ',r_sub:'পুরোহিত মোট',r_range:'প্রস্তাবিত পরিসর',bhog_pp:'প্রতি জন',bhog_guests:'অতিথি',bhog_total:'মোট ভোগ খরচ',priests:'পুরোহিত',trial_active:'✅ ট্রায়াল সক্রিয়',trial_left:'দিন বাকি',trial_paid:'✅ সক্রিয় সদস্যতা',pw_title:'ট্রায়াল মেয়াদ শেষ',pw_sub:'আপনার ১৪ দিনের বিনামূল্যে ট্রায়াল শেষ।\nসম্পূর্ণ সুবিধা পেতে সাবস্ক্রাইব করুন।',pw_plan:'পূজায়ো — মাসিক প্ল্যান',pw_upi_label:'UPI তে পাঠান',pw_upi_btn:'📱 UPI অ্যাপে পে করুন',pw_txn_label:'পেমেন্টের পর Transaction ID লিখুন',pw_activate:'✅ অ্যাক্টিভেট করুন'},
+en:{appTitle:'Pujayo',appSub:'Priest Fee Calculator',infoText:'Puja fees depend on puja type, duration, and additional services. This calculator gives an estimate.',lbl_details:'Puja Details',lbl_pujaType:'Puja Type',lbl_exp:'Priest Experience',lbl_loc:'Location',lbl_dur:'Duration (hrs)',lbl_priests:'No. of Priests',lbl_month:'Festival Month (surge check)',lbl_extras:'Additional Services',ex_samgri:'Puja Samagri',ex_travel:'Travel Allowance',ex_sankalpa:'Sankalpa Recitation',ex_homa:'Homa / Yajna',ex_pushpanjali:'Pushpanjali',ex_prasad:'Prasad Distribution',lbl_bhog:'Bhog / Prasad Cost',lbl_guests:'No. of Guests',lbl_bhogType:'Bhog Type',btn_bhog:'Calculate Bhog Cost',lbl_checklist:'Samagri Checklist',btn_calc:'Calculate Fee ▶',lbl_result:'Fee Breakdown',lbl_total:'Total Dakshina',resultNote:'* Approximate estimate. Please confirm with your purohit.',btn_save:'💾 Save Estimate',btn_print:'🖨️ Print Receipt',lbl_history:'Saved Estimates',btn_clearHist:'Clear All',surge_lbl:'🔥 Peak Season Surge',r_type:'Puja Type',r_base:'Base Fee',r_surge:'Season Surge',r_sub:'Priest Subtotal',r_range:'Suggested Range',bhog_pp:'Per person',bhog_guests:'Guests',bhog_total:'Total Bhog Cost',priests:'priest(s)',trial_active:'✅ Trial Active',trial_left:'days left',trial_paid:'✅ Active Subscription',pw_title:'Trial Expired',pw_sub:'Your 14-day free trial has ended.\nSubscribe to continue using all features.',pw_plan:'Pujayo — Monthly Plan',pw_upi_label:'Pay via UPI',pw_upi_btn:'📱 Pay with UPI App',pw_txn_label:'Enter Transaction ID after payment',pw_activate:'✅ Activate'},
+hi:{appTitle:'पूजायो',appSub:'पुरोहित दक्षिणा कैलकुलेटर',infoText:'पूजा में दक्षिणा पूजा प्रकार, अवधि और अतिरिक्त सेवाओं पर निर्भर करती है।',lbl_details:'पूजा विवरण',lbl_pujaType:'पूजा प्रकार',lbl_exp:'पुरोहित अनुभव',lbl_loc:'स्थान',lbl_dur:'अवधि (घंटे)',lbl_priests:'पुरोहित संख्या',lbl_month:'उत्सव माह (सर्ज जांच)',lbl_extras:'अतिरिक्त सेवाएं',ex_samgri:'पूजा सामग्री',ex_travel:'यात्रा भत्ता',ex_sankalpa:'संकल्प पाठ',ex_homa:'होम / यज्ञ',ex_pushpanjali:'पुष्पांजलि',ex_prasad:'प्रसाद वितरण',lbl_bhog:'भोग / प्रसाद लागत',lbl_guests:'अतिथि संख्या',lbl_bhogType:'भोग प्रकार',btn_bhog:'भोग लागत गणना करें',lbl_checklist:'सामग्री चेकलिस्ट',btn_calc:'दक्षिणा गणना करें ▶',lbl_result:'दक्षिणा विवरण',lbl_total:'कुल दक्षिणा',resultNote:'* अनुमानित हिसाब। पुरोहित से चर्चा करके तय करें।',btn_save:'💾 सहेजें',btn_print:'🖨️ रसीद प्रिंट करें',lbl_history:'सहेजे गए अनुमान',btn_clearHist:'सभी हटाएं',surge_lbl:'🔥 त्योहारी सीजन सर्ज',r_type:'पूजा प्रकार',r_base:'आधार दक्षिणा',r_surge:'मौसमी वृद्धि',r_sub:'पुरोहित उप-योग',r_range:'सुझाई गई सीमा',bhog_pp:'प्रति व्यक्ति',bhog_guests:'अतिथि',bhog_total:'कुल भोग लागत',priests:'पुरोहित',trial_active:'✅ ट्रायल सक्रिय',trial_left:'दिन शेष',trial_paid:'✅ सक्रिय सदस्यता',pw_title:'ट्रायल समाप्त',pw_sub:'आपका 14 दिन का निःशुल्क ट्रायल समाप्त हो गया।\nसभी सुविधाएं जारी रखने के लिए सब्सक्राइब करें।',pw_plan:'पूजायो — मासिक प्लान',pw_upi_label:'UPI से भुगतान करें',pw_upi_btn:'📱 UPI ऐप से पे करें',pw_txn_label:'भुगतान के बाद Transaction ID दर्ज करें',pw_activate:'✅ एक्टिवेट करें'}
+};
+
+window.lang='bn';let lastResult=null;
+function t(k){const l=window.lang||'bn';return(L[l]&&L[l][k])||L.bn[k]||k;}
+const BN_D=['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+const HI_D=['०','१','२','३','४','५','६','७','८','९'];
+function fmt(n){const l=window.lang||'bn';const s=Math.round(n).toLocaleString('en-IN');if(l==='bn')return'₹'+s.replace(/\d/g,d=>BN_D[d]);if(l==='hi')return'₹'+s.replace(/\d/g,d=>HI_D[d]);return'₹'+s;}
+
+// Machine ID
+function getMID(){const fp=[navigator.userAgent,screen.width+'x'+screen.height,screen.colorDepth,navigator.language,navigator.hardwareConcurrency||0,new Date().getTimezoneOffset()].join('|');let h=0;for(let i=0;i<fp.length;i++){h=((h<<5)-h)+fp.charCodeAt(i);h=h&h;}return Math.abs(h).toString(36).toUpperCase().padStart(8,'0');}
+const MID=getMID();
+const TRIAL_KEY='pujayo_trial_'+MID;
+const PAID_KEY='pujayo_paid_'+MID;
+
+function getTrialData(){
+  let data=localStorage.getItem(TRIAL_KEY);
+  if(!data){data=JSON.stringify({start:Date.now(),mid:MID});localStorage.setItem(TRIAL_KEY,data);}
+  const {start}=JSON.parse(data);
+  const used=Math.floor((Date.now()-start)/86400000);
+  return{start,used,left:Math.max(0,TRIAL_DAYS-used),expired:used>=TRIAL_DAYS};
 }
+function isPaid(){return!!localStorage.getItem(PAID_KEY);}
 
-/* ---------- tabs ---------- */
-document.getElementById('tabbar').addEventListener('click', e=>{
-  const b = e.target.closest('button'); if(!b) return;
-  document.querySelectorAll('.tabbar button').forEach(x=>x.classList.toggle('active', x===b));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+b.dataset.tab));
-});
-
-/* ---------- units ---------- */
-let unit = 'metric';
-document.getElementById('unitBtn').addEventListener('click', ()=>{
-  unit = unit==='metric' ? 'imperial' : 'metric';
-  document.getElementById('unitBtn').textContent = unit==='metric' ? '°C · km/h' : '°F · mph';
-  if(lastData) render(lastData.place, lastData.cur, lastData.daily, lastData.time);
-});
-let currency = 'INR';
-document.getElementById('currBtn').addEventListener('click', ()=>{
-  currency = currency==='INR' ? 'USD' : 'INR';
-  document.getElementById('currBtn').textContent = currency==='INR' ? '₹ INR' : '$ USD';
-  renderPrices();
-});
-const c2f = c => Math.round(c*9/5+32);
-const k2mph = k => Math.round(k*0.621371);
-function money(v){ const rate = currency==='INR' ? 1 : 0.012; const sym = currency==='INR' ? '₹' : '$'; return sym + Math.round(v*rate).toLocaleString(); }
-
-/* ---------- crop data (20 crops) ---------- */
-const CROPS = [
- {k:'rice',n:'Rice',ic:'🌾',water:'High',frost:false,season:'Kharif',sow:'June – July',harv:'October – November',npk:[50,25,25],price:2183,unit:'quintal',seed:20,sp:[20,15],yld:25,cost:25000,
-  pests:[{n:'Stem borer',s:'Dead hearts in young plants, white empty ears later',r:'Use resistant variety; neem-based spray at early infestation'},{n:'Blast disease',s:'Diamond-shaped grey lesions on leaves',r:'Avoid excess nitrogen; apply recommended fungicide'}]},
- {k:'wheat',n:'Wheat',ic:'🌾',water:'Medium',frost:true,season:'Rabi',sow:'October – December',harv:'March – April',npk:[60,30,20],price:2275,unit:'quintal',seed:40,sp:[20,5],yld:18,cost:20000,
-  pests:[{n:'Aphids',s:'Curled yellow leaves, sticky honeydew residue',r:'Spray neem oil or insecticidal soap early'},{n:'Yellow rust',s:'Orange-yellow pustules in stripes on leaves',r:'Use rust-resistant variety; fungicide if severe'}]},
- {k:'maize',n:'Maize',ic:'🌽',water:'Medium',frost:true,season:'Kharif/Rabi',sow:'June – July',harv:'September – October',npk:[80,40,20],price:2090,unit:'quintal',seed:8,sp:[60,20],yld:20,cost:18000,
-  pests:[{n:'Fall armyworm',s:'Ragged holes and sawdust-like frass in leaf whorl',r:'Handpick larvae; apply biopesticide spray'},{n:'Stalk rot',s:'Wilting with soft, rotten stalk base',r:'Improve field drainage; avoid waterlogging'}]},
- {k:'cotton',n:'Cotton',ic:'🌱',water:'High',frost:false,season:'Kharif',sow:'April – June',harv:'October – January',npk:[40,20,20],price:7121,unit:'quintal',seed:2,sp:[90,60],yld:8,cost:30000,
-  pests:[{n:'Bollworm',s:'Holes in bolls and damaged flower buds',r:'Use pheromone traps; Bt-based spray'},{n:'Whitefly',s:'Yellowing leaves with sooty black mould',r:'Yellow sticky traps; neem oil spray'}]},
- {k:'potato',n:'Potato',ic:'🥔',water:'Medium',frost:true,season:'Rabi',sow:'October – November',harv:'January – February',npk:[60,40,40],price:1200,unit:'quintal',seed:800,sp:[60,20],yld:80,cost:40000,
-  pests:[{n:'Late blight',s:'Dark water-soaked spots on leaves',r:'Fungicide spray; avoid overhead irrigation'},{n:'Tuber moth',s:'Tunnels in leaves and stored tubers',r:'Earth up soil over tubers; remove crop debris'}]},
- {k:'tomato',n:'Tomato',ic:'🍅',water:'Medium',frost:true,season:'Year-round (season-dependent)',sow:'Varies by region',harv:'60–80 days after transplant',npk:[50,25,25],price:1500,unit:'quintal',seed:0.1,sp:[90,45],yld:100,cost:45000,
-  pests:[{n:'Fruit borer',s:'Round holes bored into fruit',r:'Pheromone traps; neem-based spray'},{n:'Leaf curl virus',s:'Upward curling and yellowing of leaves',r:'Control whitefly vector; remove infected plants'}]},
- {k:'sugarcane',n:'Sugarcane',ic:'🎋',water:'High',frost:false,season:'Perennial',sow:'February – March',harv:'December – March (next yr)',npk:[100,50,50],price:340,unit:'quintal',seed:4000,sp:[90,30],yld:350,cost:50000,
-  pests:[{n:'Early shoot borer',s:'Dead heart in young cane shoots',r:'Remove and destroy affected shoots promptly'},{n:'Red rot',s:'Reddened internal tissue with alcohol-like smell',r:'Use disease-free setts and resistant variety'}]},
- {k:'soybean',n:'Soybean',ic:'🌱',water:'Medium',frost:false,season:'Kharif',sow:'June – July',harv:'October',npk:[20,40,20],price:4600,unit:'quintal',seed:30,sp:[45,5],yld:10,cost:15000,
-  pests:[{n:'Girdle beetle',s:'Girdling ring on stem, plant wilts',r:'Destroy old stubble; sow at the recommended time'},{n:'Yellow mosaic virus',s:'Yellow-green mosaic pattern on leaves',r:'Control whitefly vector; use resistant varieties'}]},
- {k:'onion',n:'Onion',ic:'🧅',water:'Medium',frost:false,season:'Rabi',sow:'November – December',harv:'March – April',npk:[60,30,30],price:1500,unit:'quintal',seed:4,sp:[15,10],yld:80,cost:35000,
-  pests:[{n:'Thrips',s:'Silvery streaks and curling on leaves',r:'Blue sticky traps; neem oil spray'},{n:'Purple blotch',s:'Purple-brown patches on leaves',r:'Fungicide spray; rotate crops each season'}]},
- {k:'chickpea',n:'Chickpea',ic:'🫘',water:'Low',frost:false,season:'Rabi',sow:'October – November',harv:'February – March',npk:[20,40,20],price:5335,unit:'quintal',seed:40,sp:[30,10],yld:8,cost:14000,
-  pests:[{n:'Pod borer',s:'Round holes bored into pods',r:'Pheromone traps; neem-based spray'},{n:'Wilt',s:'Sudden drooping and drying of whole plant',r:'Use wilt-resistant variety; treat seed before sowing'}]},
- {k:'groundnut',n:'Groundnut',ic:'🥜',water:'Low',frost:false,season:'Kharif',sow:'June – July',harv:'October – November',npk:[20,40,0],price:6377,unit:'quintal',seed:40,sp:[30,10],yld:8,cost:18000,
-  pests:[{n:'Leaf spot',s:'Dark circular spots on leaves',r:'Fungicide spray; rotate crops'},{n:'Aphids',s:'Curled leaves, sticky residue',r:'Neem oil spray'}]},
- {k:'mustard',n:'Mustard',ic:'🌼',water:'Low',frost:true,season:'Rabi',sow:'October – November',harv:'February – March',npk:[40,20,20],price:5650,unit:'quintal',seed:2,sp:[30,10],yld:6,cost:10000,
-  pests:[{n:'Mustard aphid',s:'Clustered aphids on flowering shoots',r:'Neem oil spray at early sign'},{n:'Painted bug',s:'Holes in leaves, stunted plants',r:'Timely sowing; insecticide if severe'}]},
- {k:'barley',n:'Barley',ic:'🌾',water:'Low',frost:true,season:'Rabi',sow:'November',harv:'March – April',npk:[40,20,10],price:1850,unit:'quintal',seed:40,sp:[20,4],yld:16,cost:12000,
-  pests:[{n:'Aphids',s:'Yellowing leaves, sticky residue',r:'Neem oil spray'},{n:'Yellow rust',s:'Orange pustules on leaves',r:'Resistant variety; fungicide'}]},
- {k:'sunflower',n:'Sunflower',ic:'🌻',water:'Medium',frost:false,season:'Kharif/Rabi',sow:'June–July or Jan–Feb',harv:'90–100 days after sowing',npk:[40,30,20],price:6760,unit:'quintal',seed:2,sp:[60,30],yld:8,cost:16000,
-  pests:[{n:'Head borer',s:'Holes bored into flower head',r:'Pheromone traps'},{n:'Leaf blight',s:'Brown spots spreading on leaves',r:'Fungicide spray'}]},
- {k:'sesame',n:'Sesame',ic:'🌰',water:'Low',frost:false,season:'Kharif',sow:'June – July',harv:'September – October',npk:[20,20,0],price:8635,unit:'quintal',seed:1.5,sp:[30,10],yld:3,cost:9000,
-  pests:[{n:'Phyllody',s:'Leaf-like sterile flowers',r:'Remove infected plants; control leafhopper vector'},{n:'Leaf webber',s:'Webbed, folded leaves',r:'Neem oil spray'}]},
- {k:'turmeric',n:'Turmeric',ic:'🫚',water:'High',frost:false,season:'Kharif (long duration)',sow:'April – May',harv:'January – March',npk:[60,30,60],price:15000,unit:'quintal',seed:800,sp:[30,25],yld:80,cost:60000,
-  pests:[{n:'Rhizome rot',s:'Soft, rotten rhizomes with wilting',r:'Well-drained soil; avoid waterlogging'},{n:'Leaf spot',s:'Brown spots on leaves',r:'Fungicide spray'}]},
- {k:'cabbage',n:'Cabbage',ic:'🥬',water:'Medium',frost:true,season:'Rabi',sow:'September – October',harv:'December – January',npk:[50,25,25],price:1200,unit:'quintal',seed:0.15,sp:[45,45],yld:120,cost:30000,
-  pests:[{n:'Diamondback moth',s:'Holes and shot-holes in leaves',r:'Bt spray; pheromone traps'},{n:'Aphids',s:'Curled, sticky leaves',r:'Neem oil spray'}]},
- {k:'peas',n:'Peas',ic:'🫛',water:'Medium',frost:true,season:'Rabi',sow:'October – November',harv:'January – February',npk:[20,40,20],price:4000,unit:'quintal',seed:30,sp:[30,7],yld:15,cost:15000,
-  pests:[{n:'Pod borer',s:'Holes bored into pods',r:'Neem spray; pheromone traps'},{n:'Powdery mildew',s:'White powdery coating on leaves',r:'Sulfur-based fungicide spray'}]},
- {k:'brinjal',n:'Brinjal',ic:'🍆',water:'Medium',frost:true,season:'Kharif/Rabi',sow:'Varies by region',harv:'60–70 days after transplant',npk:[50,25,25],price:1500,unit:'quintal',seed:0.15,sp:[75,60],yld:100,cost:35000,
-  pests:[{n:'Fruit & shoot borer',s:'Holes in fruit and wilted shoot tips',r:'Remove affected parts; pheromone traps'},{n:'Aphids',s:'Curled, sticky leaves',r:'Neem oil spray'}]},
- {k:'okra',n:'Okra',ic:'🌿',water:'Medium',frost:false,season:'Kharif/Summer',sow:'Feb–Mar or June–July',harv:'45–50 days after sowing',npk:[40,20,20],price:2000,unit:'quintal',seed:5,sp:[45,30],yld:40,cost:20000,
-  pests:[{n:'Fruit borer',s:'Holes bored into young pods',r:'Neem-based spray'},{n:'Yellow vein mosaic',s:'Yellow veins on leaves',r:'Control whitefly vector; resistant variety'}]}
-];
-const cropSelect = document.getElementById('cropSelect');
-CROPS.forEach(c=>{ const o=document.createElement('option'); o.value=c.k; o.textContent=`${c.ic} ${c.n}`; cropSelect.appendChild(o); });
-function currentCrop(){ return CROPS.find(c=>c.k===cropSelect.value) || CROPS[0]; }
-cropSelect.addEventListener('change', renderCropTab);
-
-function renderCropTab(){
-  const c = currentCrop();
-  document.getElementById('cropProfile').innerHTML = `<div class="card">
-    <b>${c.ic} ${c.n}</b>
-    <span class="pill">Water need: ${c.water}</span>
-    <span class="pill">${c.frost ? 'Frost sensitive' : 'Frost tolerant'}</span>
-    <span class="pill">${c.season}</span></div>`;
-  document.getElementById('cropCalendar').innerHTML = `<div class="card">
-    <b>Sowing</b><div class="sym">${c.sow}</div>
-    <b style="margin-top:8px;">Harvest</b><div class="sym">${c.harv}</div></div>`;
-  document.getElementById('pestList').innerHTML = c.pests.map(p=>`<div class="card">
-    <b>${p.n}</b><div class="sym">Symptom: ${p.s}</div><div class="sym">Remedy: ${p.r}</div></div>`).join('');
-  document.getElementById('irriGuide').innerHTML = `<div class="card">
-    <b>${c.n} — ${c.water} water requirement</b>
-    <div class="sym">${c.water==='High' ? 'Keep soil consistently moist; irrigate every 3–5 days in dry weather, more in flowering stage.' :
-       c.water==='Medium' ? 'Irrigate every 7–10 days depending on rainfall; avoid waterlogging.' :
-       'Drought-tolerant — irrigate mainly at sowing, flowering and pod-filling stages.'}</div></div>`;
-  renderPrices();
-}
-
-/* ---------- prices ---------- */
-function renderPrices(){
-  const tbody = document.querySelector('#priceTable tbody');
-  tbody.innerHTML = CROPS.map(c=>`<tr><td>${c.ic} ${c.n}</td><td>${money(c.price)}</td><td>per ${c.unit}</td></tr>`).join('');
-}
-
-/* ---------- schemes ---------- */
-const SCHEMES = [
- {n:'PM-KISAN', d:'Direct income support of ₹6,000/year to eligible farmer families, paid in three instalments.', u:'https://pmkisan.gov.in'},
- {n:'Pradhan Mantri Fasal Bima Yojana (PMFBY)', d:'Crop insurance scheme covering losses from natural calamities, pests and disease.', u:'https://pmfby.gov.in'},
- {n:'Soil Health Card Scheme', d:'Free periodic soil testing with crop-wise nutrient and fertilizer recommendations.', u:'https://soilhealth.dac.gov.in'},
- {n:'Kisan Credit Card (KCC)', d:'Low-interest short-term credit for seeds, inputs and other farming needs.', u:'https://www.nabard.org'},
- {n:'PM Krishi Sinchayee Yojana', d:'Support for irrigation infrastructure and efficient water-use practices ("more crop per drop").', u:'https://pmksy.gov.in'}
-];
-document.getElementById('schemeList').innerHTML = SCHEMES.map(s=>`<div class="card scheme">
-  <b>${s.n}</b><div class="sym">${s.d}</div><a href="${s.u}" target="_blank" rel="noopener">Official site ↗</a></div>`).join('');
-
-/* ---------- shared calculator helpers ---------- */
-function getAreaAcres(){
-  let v = parseFloat(document.getElementById('areaInput').value) || 0;
-  if(document.getElementById('areaUnit').value === 'hectare') v = v * 2.47105;
-  return v;
-}
-
-/* ---------- fertilizer calculator ---------- */
-document.getElementById('calcBtn').addEventListener('click', ()=>{
-  const c = currentCrop(), area = getAreaAcres();
-  document.getElementById('outN').textContent = Math.round(c.npk[0]*area);
-  document.getElementById('outP').textContent = Math.round(c.npk[1]*area);
-  document.getElementById('outK').textContent = Math.round(c.npk[2]*area);
-});
-
-/* ---------- 1. seed rate ---------- */
-document.getElementById('seedBtn').addEventListener('click', ()=>{
-  const c = currentCrop(), area = getAreaAcres();
-  const kg = c.seed*area;
-  document.getElementById('seedOut').innerHTML = `Seed needed: <b>${kg<1?kg.toFixed(2):Math.round(kg).toLocaleString()} kg</b>`;
-});
-
-/* ---------- 2. plant population ---------- */
-document.getElementById('popBtn').addEventListener('click', ()=>{
-  const c = currentCrop(), area = getAreaAcres();
-  const sqm = area*4046.86;
-  const perPlant = (c.sp[0]/100)*(c.sp[1]/100);
-  const pop = Math.round(sqm/perPlant);
-  document.getElementById('popOut').innerHTML = `Estimated plants: <b>${pop.toLocaleString()}</b>`;
-  document.getElementById('popSpacing').textContent = `Based on recommended spacing ${c.sp[0]}cm × ${c.sp[1]}cm for ${c.n}.`;
-});
-
-/* ---------- 3. irrigation water requirement ---------- */
-document.getElementById('waterBtn').addEventListener('click', ()=>{
-  const area = getAreaAcres();
-  const sqm = area*4046.86;
-  const et0 = lastData?.daily?.et0_fao_evapotranspiration?.[0];
-  const mm = et0 ?? 5;
-  const liters = Math.round(mm*sqm);
-  document.getElementById('waterOut').innerHTML = `Water per irrigation: <b>${liters.toLocaleString()} L</b> (~${(liters/1000).toFixed(1)} m³)`;
-  document.getElementById('waterSrc').textContent = et0 ? `Based on today's evapotranspiration (${mm.toFixed(1)} mm) from the Weather tab.` : 'No live weather loaded yet — using a default estimate of 5 mm/day. Load weather for an accurate figure.';
-});
-
-/* ---------- 4-7. farm economics ---------- */
-document.getElementById('econBtn').addEventListener('click', ()=>{
-  const c = currentCrop(), area = getAreaAcres();
-  const yieldQtl = c.yld*area;
-  const revenue = yieldQtl*c.price;
-  const cost = c.cost*area;
-  const profit = revenue-cost;
-  document.getElementById('outYield').textContent = yieldQtl.toFixed(1);
-  document.getElementById('outRevenue').textContent = money(revenue);
-  document.getElementById('outCost').textContent = money(cost);
-  document.getElementById('profitOut').innerHTML = `Estimated profit: <b style="color:${profit>=0?'var(--green)':'var(--bad)'}">${money(profit)}</b>`;
-});
-
-/* ---------- 8. organic manure ---------- */
-document.getElementById('manureBtn').addEventListener('click', ()=>{
-  const c = currentCrop(), area = getAreaAcres();
-  const rate = c.water==='High' ? 8 : c.water==='Medium' ? 5 : 3;
-  document.getElementById('manureOut').innerHTML = `FYM/compost needed: <b>${(rate*area).toFixed(1)} tonnes</b> <span class="note">(~${rate} t/acre for ${c.water.toLowerCase()}-water crops)</span>`;
-});
-
-/* ---------- 9. pesticide dilution ---------- */
-document.getElementById('pestBtn').addEventListener('click', ()=>{
-  const tank = parseFloat(document.getElementById('tankInput').value)||0;
-  const dose = parseFloat(document.getElementById('doseInput').value)||0;
-  const area = getAreaAcres();
-  const perTankMl = tank*dose;
-  const totalSprayL = area*200;
-  const tanks = tank ? totalSprayL/tank : 0;
-  const totalProductMl = totalSprayL*dose;
-  document.getElementById('pestOut1').innerHTML = `Product per tank: <b>${perTankMl.toFixed(0)} ml</b>`;
-  document.getElementById('pestOut2').innerHTML = `Tank-fills for your field: <b>${tanks.toFixed(1)}</b>`;
-  document.getElementById('pestOut3').innerHTML = `Total product for field: <b>${totalProductMl>=1000 ? (totalProductMl/1000).toFixed(2)+' L' : totalProductMl.toFixed(0)+' ml'}</b>`;
-});
-
-/* ---------- 10. area unit converter ---------- */
-const AREA_UNITS = {acre:1, hectare:0.404686, bigha:1.6, sqft:43560, sqm:4046.86};
-const AREA_LABELS = {acre:'Acre', hectare:'Hectare', bigha:'Bigha (approx.)', sqft:'Sq. feet', sqm:'Sq. metres'};
-document.getElementById('convBtn').addEventListener('click', ()=>{
-  const val = parseFloat(document.getElementById('convInput').value)||0;
-  const from = document.getElementById('convUnit').value;
-  const acres = val/AREA_UNITS[from];
-  document.getElementById('convOut').innerHTML = Object.keys(AREA_UNITS).map(u=>
-    `<div><b>${(acres*AREA_UNITS[u]).toLocaleString(undefined,{maximumFractionDigits:2})}</b><span>${AREA_LABELS[u]}</span></div>`).join('');
-});
-
-/* ---------- weather code map ---------- */
-function wInfo(code){
-  const m = {0:['☀️','Clear sky'],1:['🌤️','Mostly clear'],2:['⛅','Partly cloudy'],3:['☁️','Overcast'],
-    45:['🌫️','Fog'],48:['🌫️','Rime fog'],51:['🌦️','Light drizzle'],53:['🌦️','Drizzle'],55:['🌦️','Dense drizzle'],
-    61:['🌧️','Light rain'],63:['🌧️','Rain'],65:['🌧️','Heavy rain'],71:['🌨️','Light snow'],73:['🌨️','Snow'],75:['❄️','Heavy snow'],
-    80:['🌧️','Rain showers'],81:['🌧️','Heavy showers'],82:['⛈️','Violent showers'],95:['⛈️','Thunderstorm'],96:['⛈️','Thunderstorm & hail'],99:['⛈️','Severe thunderstorm']};
-  return m[code] || ['🌡️','—'];
-}
-function degToCompass(d){ const dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']; return dirs[Math.round(d/22.5)%16]; }
-function fmtTime(iso){ return iso ? new Date(iso).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '--'; }
-
-/* ---------- advisory (crop-aware) ---------- */
-function buildTips(cur, today, crop){
-  const tips = [];
-  const rainProb = today.precipitation_probability_max ?? 0;
-  const tMax = today.temperature_2m_max, tMin = today.temperature_2m_min;
-  const wind = today.wind_speed_10m_max ?? cur.wind_speed_10m;
-  const hum = cur.relative_humidity_2m;
-  if (crop.frost && tMin <= 5) tips.push({warn:true, ic:'❄️', t:`Frost risk tonight — ${crop.n} is frost-sensitive; cover seedlings and delay early irrigation.`});
-  else if (tMin <= 2) tips.push({warn:true, ic:'❄️', t:'Frost risk tonight — protect young transplants.'});
-  if (tMax >= 36) tips.push({warn:true, ic:'🔥', t:'Heat stress likely — irrigate early morning or evening, shade nurseries and livestock.'});
-  if (rainProb >= 60) tips.push({warn:false, ic:'🌧️', t:'Rain likely — hold off on spraying and fertilizing; check field drainage.'});
-  if (rainProb < 20 && tMax >= 28 && crop.water !== 'Low') tips.push({warn:true, ic:'💧', t:`Dry and warm — ${crop.n} (${crop.water.toLowerCase()} water need) may need irrigation soon.`});
-  if (wind >= 30) tips.push({warn:true, ic:'💨', t:'Strong winds expected — stake young plants and avoid spraying.'});
-  if (hum >= 80 && tMax >= 20) tips.push({warn:false, ic:'🍄', t:'High humidity — watch for fungal disease, ensure airflow between rows.'});
-  if (!tips.length) tips.push({warn:false, ic:'✅', t:'Conditions look favourable — good day for routine fieldwork.'});
-  return tips;
-}
-
-/* ---------- render weather ---------- */
-let lastData = null;
-function render(place, cur, daily, ts){
-  document.getElementById('status').classList.add('hidden');
-  document.getElementById('result').classList.remove('hidden');
-  lastData = {place, cur, daily, time: ts || Date.now()};
-
-  const [icon, desc] = wInfo(cur.weather_code);
-  document.getElementById('nowIcon').textContent = icon;
-  document.getElementById('nowUnit').textContent = unit==='metric' ? '°C' : '°F';
-  document.getElementById('nowTemp').textContent = unit==='metric' ? Math.round(cur.temperature_2m) : c2f(cur.temperature_2m);
-  document.getElementById('nowDesc').textContent = desc;
-  document.getElementById('nowPlace').textContent = place;
-  document.getElementById('mHumidity').textContent = cur.relative_humidity_2m + '%';
-  document.getElementById('mWind').textContent = unit==='metric' ? Math.round(cur.wind_speed_10m)+' km/h' : k2mph(cur.wind_speed_10m)+' mph';
-  document.getElementById('mRain').textContent = (daily.precipitation_probability_max[0] ?? 0) + '%';
-  document.getElementById('updated').textContent = 'Updated ' + new Date(lastData.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-
-  document.getElementById('eFeels').textContent = (unit==='metric' ? Math.round(cur.apparent_temperature)+'°C' : c2f(cur.apparent_temperature)+'°F');
-  document.getElementById('eGust').textContent = unit==='metric' ? Math.round(cur.wind_gusts_10m)+' km/h' : k2mph(cur.wind_gusts_10m)+' mph';
-  document.getElementById('eCloud').textContent = (cur.cloud_cover ?? '--') + '%';
-  document.getElementById('ePress').textContent = Math.round(cur.surface_pressure ?? 0) + ' hPa';
-  document.getElementById('eUv').textContent = (daily.uv_index_max?.[0] ?? '--');
-  document.getElementById('eDir').textContent = daily.wind_direction_10m_dominant ? degToCompass(daily.wind_direction_10m_dominant[0]) : '--';
-  document.getElementById('eSunrise').textContent = fmtTime(daily.sunrise?.[0]);
-  document.getElementById('eSunset').textContent = fmtTime(daily.sunset?.[0]);
-  document.getElementById('eRainSum').textContent = (daily.precipitation_sum?.[0] ?? 0) + ' mm';
-  document.getElementById('eEt0').textContent = (daily.et0_fao_evapotranspiration?.[0]?.toFixed(1) ?? '--') + ' mm';
-
-  const crop = currentCrop();
-  const today = {precipitation_probability_max: daily.precipitation_probability_max[0], temperature_2m_max: daily.temperature_2m_max[0],
-    temperature_2m_min: daily.temperature_2m_min[0], wind_speed_10m_max: daily.wind_speed_10m_max[0]};
-  document.getElementById('tips').innerHTML = buildTips(cur, today, crop).map(tp=>
-    `<div class="tip${tp.warn?' warn':''}"><span class="ic">${tp.ic}</span><span>${tp.t}</span></div>`).join('');
-
-  const names = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  document.getElementById('forecast').innerHTML = daily.time.map((t,i)=>{
-    const [ic] = wInfo(daily.weather_code[i]);
-    const dow = names[new Date(t+'T00:00:00').getDay()];
-    const hi = unit==='metric' ? Math.round(daily.temperature_2m_max[i]) : c2f(daily.temperature_2m_max[i]);
-    const lo = unit==='metric' ? Math.round(daily.temperature_2m_min[i]) : c2f(daily.temperature_2m_min[i]);
-    return `<div class="day"><div class="d">${i===0?'Today':dow}</div><div class="i">${ic}</div><div class="hi">${hi}°</div><div class="lo">${lo}°</div></div>`;
-  }).join('');
-}
-
-async function fetchWeather(lat, lon, place){
-  document.getElementById('status').classList.remove('hidden');
-  document.getElementById('status').textContent = 'Fetching weather…';
-  document.getElementById('result').classList.add('hidden');
-  try{
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`+
-      `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,apparent_temperature,wind_gusts_10m,cloud_cover,surface_pressure`+
-      `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset,precipitation_sum,et0_fao_evapotranspiration,wind_direction_10m_dominant`+
-      `&timezone=auto&forecast_days=5`;
-    const res = await fetch(url);
-    if(!res.ok) throw new Error('weather fetch failed');
-    const data = await res.json();
-    render(place, data.current, data.daily, Date.now());
-  }catch(err){
-    if(lastData){ render(lastData.place, lastData.cur, lastData.daily, lastData.time); }
-    else document.getElementById('status').textContent = 'Could not load weather. Please try again.';
+function checkAccess(){
+  const bar=document.getElementById('trialBar');
+  if(isPaid()){
+    bar.className='trial-bar paid';
+    document.getElementById('trialMsg').textContent=t('trial_paid');
+    document.getElementById('trialDays').textContent='';
+    return true;
   }
+  const td=getTrialData();
+  if(td.expired){
+    bar.className='trial-bar expired';
+    document.getElementById('trialMsg').textContent=t('pw_title');
+    document.getElementById('trialDays').textContent='';
+    showPayWall();
+    return false;
+  }
+  bar.className='trial-bar active';
+  document.getElementById('trialMsg').textContent=t('trial_active');
+  document.getElementById('trialDays').textContent=td.left+' '+t('trial_left');
+  return true;
 }
 
-async function searchCity(){
-  const q = document.getElementById('cityInput').value.trim();
-  if(!q) return;
-  document.getElementById('status').classList.remove('hidden');
-  document.getElementById('status').textContent = 'Searching…';
-  try{
-    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1`);
-    const data = await res.json();
-    if(!data.results || !data.results.length){ document.getElementById('status').textContent = 'No place found — try a different spelling.'; return; }
-    const r = data.results[0];
-    fetchWeather(r.latitude, r.longitude, [r.name, r.admin1, r.country].filter(Boolean).join(', '));
-  }catch{ document.getElementById('status').textContent = 'Search failed. Please try again.'; }
+function showPayWall(){
+  ['pw_title','pw_sub','pw_plan','pw_upi_label','pw_upi_btn','pw_txn_label','pw_activate'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.textContent=t(id);
+  });
+  document.getElementById('pw_upi_id').textContent=UPI_ID;
+  document.getElementById('pw_upi_btn').href=`upi://pay?pa=${UPI_ID}&pn=Pujayo&am=199&cu=INR&tn=Pujayo+Subscription`;
+  document.getElementById('pw_mid').textContent='Machine ID: '+MID;
+  document.getElementById('payWall').classList.add('show');
 }
-document.getElementById('searchBtn').addEventListener('click', searchCity);
-document.getElementById('cityInput').addEventListener('keydown', e=>{ if(e.key==='Enter') searchCity(); });
-document.getElementById('locBtn').addEventListener('click', ()=>{
-  if(!navigator.geolocation){ document.getElementById('status').textContent = 'Location not supported on this device.'; return; }
-  document.getElementById('status').classList.remove('hidden');
-  document.getElementById('status').textContent = 'Locating…';
-  navigator.geolocation.getCurrentPosition(
-    pos => fetchWeather(pos.coords.latitude, pos.coords.longitude, 'Your location'),
-    () => { document.getElementById('status').textContent = 'Location access denied.'; }
-  );
-});
 
-/* ---------- offline banner ---------- */
-function updateOnlineStatus(){ document.getElementById('offlineBanner').classList.toggle('hidden', navigator.onLine); }
-window.addEventListener('online', updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
-updateOnlineStatus();
+function activateFromWall(){
+  const txn=document.getElementById('pw_txn').value.trim();
+  const msg=document.getElementById('pw_msg');
+  if(!txn){msg.style.color='#f44336';msg.textContent=t('lbl_pujaType')==='পূজার ধরন'?'Transaction ID লিখুন।':'Please enter Transaction ID.';return;}
+  localStorage.setItem(PAID_KEY,JSON.stringify({txn,date:new Date().toISOString(),mid:MID}));
+  msg.style.color='#4caf50';
+  msg.textContent='✅ '+(window.lang==='bn'?'সফলভাবে অ্যাক্টিভ!':window.lang==='hi'?'सफलतापूर्वक सक्रिय!':'Successfully activated!');
+  setTimeout(()=>{document.getElementById('payWall').classList.remove('show');checkAccess();},1500);
+}
 
-renderCropTab();
+function setTheme(th,el){document.body.setAttribute('data-theme',th);document.querySelectorAll('.t-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');localStorage.setItem('pt_theme',th);}
+function setLang(l,el){window.lang=l;document.querySelectorAll('.l-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');applyLang();showChecklist();showSeason();localStorage.setItem('pt_lang',l);}
+
+function applyLang(){
+  ['appTitle','appSub','infoText','lbl_details','lbl_pujaType','lbl_exp','lbl_loc','lbl_dur','lbl_priests','lbl_month','lbl_extras','ex_samgri','ex_travel','ex_sankalpa','ex_homa','ex_pushpanjali','ex_prasad','lbl_bhog','lbl_guests','lbl_bhogType','btn_bhog','lbl_checklist','btn_calc','lbl_result','lbl_total','resultNote','btn_save','btn_print','lbl_history','btn_clearHist'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t(id);});
+  const _t=document.getElementById('appTitle'),_s=document.getElementById('appSub');
+  if(_t)_t.textContent=t('appTitle');if(_s)_s.textContent=t('appSub');
+  checkAccess();
+  if(lastResult&&lastResult.raw&&document.getElementById('resultCard').style.display!=='none')renderResult();
+}
+
+function toggleChk(id){const el=document.getElementById(id);el.classList.toggle('on',el.querySelector('input').checked);}
+function updateDuration(){document.getElementById('duration').value=DUR[document.getElementById('pujaType').value]||4;}
+function showSeason(){
+  const type=document.getElementById('pujaType').value,mo=+document.getElementById('festMonth').value;
+  const tag=document.getElementById('surgeTag'),s=SURGE[type];
+  if(s&&s[mo]){tag.innerHTML=`<span class="surge-tag">${t('surge_lbl')}: ×${s[mo]}</span>`;}
+  else tag.innerHTML='';
+}
+function showChecklist(){
+  const type=document.getElementById('pujaType').value,items=CL[type]||CL.default;
+  document.getElementById('checklistItems').innerHTML=items.map((item,i)=>`<label class="cli" id="cl${i}"><input type="checkbox" onchange="document.getElementById('cl${i}').classList.toggle('done',this.checked)"> ${item}</label>`).join('');
+}
+function calcBhog(){
+  const guests=+document.getElementById('guests').value||20,loc=+document.getElementById('location').value;
+  const pp=Math.round(+document.getElementById('bhogType').value*loc),total=guests*pp;
+  const d=document.getElementById('bhogResult');d.style.display='block';
+  d.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--mu);font-size:.77rem">${t('bhog_pp')}: ${fmt(pp)}</span><span style="color:var(--mu);font-size:.77rem">${t('bhog_guests')}: ${guests}</span></div><div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--gd);font-family:'Tiro Bangla',serif">${t('bhog_total')}</span><span style="color:var(--gd2);font-family:'Tiro Bangla',serif;font-size:1.15rem;font-weight:700">${fmt(total)}</span></div>`;
+}
+
+function renderResult(){
+  if(!lastResult||!lastResult.raw)return;
+  const r=lastResult.raw;
+  const typeName=document.getElementById('pujaType').options[document.getElementById('pujaType').selectedIndex].text;
+  let rows=`<div class="rl">${t('r_type')}</div><div class="rv">${typeName}</div><div class="rl">${t('r_base')}</div><div class="rv">${fmt(r.base)}</div>`;
+  if(r.surge>1)rows+=`<div class="rl">${t('r_surge')} ×${r.surge}</div><div class="rv">${fmt(r.surgedBase)}</div>`;
+  rows+=`<div class="rl">${t('r_sub')} ×${r.priests}</div><div class="rv">${fmt(r.priestFee)}</div><div class="dv"></div>`;
+  r.extras.forEach(e=>{rows+=`<div class="rl">${t('ex_'+e.key)}</div><div class="rv">${fmt(e.amt)}</div>`;});
+  if(r.extras.length)rows+=`<div class="dv"></div>`;
+  rows+=`<div class="rl">${t('r_range')}</div><div class="rv">${fmt(r.low)} – ${fmt(r.high)}</div>`;
+  document.getElementById('resultGrid').innerHTML=rows;
+  document.getElementById('totalAmt').textContent=fmt(r.total);
+}
+
+function calculate(){
+  if(!checkAccess())return;
+  const type=document.getElementById('pujaType').value,exp=+document.getElementById('experience').value;
+  const loc=+document.getElementById('location').value,hrs=+document.getElementById('duration').value||1;
+  const priests=+document.getElementById('priests').value||1,mo=+document.getElementById('festMonth').value;
+  const surge=(SURGE[type]&&SURGE[type][mo])||1;
+  let base=BASE[type]||1000;const defH=DUR[type]||4;
+  if(hrs!==defH)base=base*(hrs/defH);
+  base=Math.round(base*exp*loc);
+  const surgedBase=Math.round(base*surge),priestFee=surgedBase*priests;
+  const extras=[];
+  ['samgri','travel','sankalpa','homa','pushpanjali','prasad'].forEach(k=>{
+    if(document.getElementById(k).checked)extras.push({key:k,amt:Math.round(EXTRAS_AMT[k]*loc*surge)});
+  });
+  const extrasTotal=extras.reduce((s,e)=>s+e.amt,0);
+  const total=priestFee+extrasTotal,low=Math.round(total*.85),high=Math.round(total*1.15);
+  const typeName=document.getElementById('pujaType').options[document.getElementById('pujaType').selectedIndex].text;
+  lastResult={type:typeName,total,surge,priests,date:new Date().toLocaleDateString('en-IN'),raw:{base,surgedBase,priestFee,surge,priests,extras,total,low,high}};
+  renderResult();
+  const rc=document.getElementById('resultCard');rc.style.display='block';
+  rc.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function saveEstimate(){
+  if(!lastResult)return;
+  const h=JSON.parse(localStorage.getItem('pt_hist')||'[]');
+  h.unshift(lastResult);if(h.length>10)h.pop();
+  localStorage.setItem('pt_hist',JSON.stringify(h));renderHistory();
+}
+function renderHistory(){
+  const h=JSON.parse(localStorage.getItem('pt_hist')||'[]');
+  const hc=document.getElementById('histCard'),hl=document.getElementById('histList');
+  if(!h.length){hc.style.display='none';return;}
+  hc.style.display='block';
+  hl.innerHTML=h.map((e,i)=>`<div class="hist-item"><button class="hist-del" onclick="delHist(${i})">✕</button><strong>${e.type}</strong>${fmt(e.total)} · ${e.priests} ${t('priests')}${e.surge>1?' 🔥':''} · ${e.date}</div>`).join('');
+}
+function delHist(i){const h=JSON.parse(localStorage.getItem('pt_hist')||'[]');h.splice(i,1);localStorage.setItem('pt_hist',JSON.stringify(h));renderHistory();}
+function clearHistory(){localStorage.removeItem('pt_hist');renderHistory();}
+
+function printReceipt(){
+  if(!lastResult||!lastResult.raw)return;
+  const existing=document.getElementById('rcpt');if(existing)existing.remove();
+  const r=lastResult.raw;
+  const typeName=document.getElementById('pujaType').options[document.getElementById('pujaType').selectedIndex].text;
+
+  // Build rows from raw data — 100% hardcoded black styles, zero CSS variables
+  const S={label:'font-size:.82rem;color:#000;padding:5px 0;border-bottom:1px solid #ccc',val:'font-size:.82rem;color:#000;text-align:right;padding:5px 0;border-bottom:1px solid #ccc',divider:'grid-column:1/-1;height:2px;background:#000;margin:6px 0'};
+  let rows=`<div style="${S.label}">${t('r_type')}</div><div style="${S.val}">${typeName}</div>`;
+  rows+=`<div style="${S.label}">${t('r_base')}</div><div style="${S.val}">${fmt(r.base)}</div>`;
+  if(r.surge>1)rows+=`<div style="${S.label}">${t('r_surge')} \xd7${r.surge}</div><div style="${S.val}">${fmt(r.surgedBase)}</div>`;
+  rows+=`<div style="${S.label}">${t('r_sub')} \xd7${r.priests}</div><div style="${S.val}">${fmt(r.priestFee)}</div>`;
+  if(r.extras.length){
+    rows+=`<div style="${S.divider}"></div>`;
+    r.extras.forEach(e=>{rows+=`<div style="${S.label}">${t('ex_'+e.key)}</div><div style="${S.val}">${fmt(e.amt)}</div>`;});
+  }
+  rows+=`<div style="${S.divider}"></div>`;
+  rows+=`<div style="${S.label}">${t('r_range')}</div><div style="${S.val}">${fmt(r.low)} \u2013 ${fmt(r.high)}</div>`;
+
+  const div=document.createElement('div');div.id='rcpt';
+  div.setAttribute('style','background:#fff;color:#000;font-family:\'Noto Sans Bengali\',sans-serif');
+  div.innerHTML=`
+    <div style="text-align:center;border-bottom:3px solid #000;padding-bottom:14px;margin-bottom:16px">
+      <div style="font-size:2rem;font-weight:900;color:#000;letter-spacing:2px">${t('appTitle')}</div>
+      <div style="font-size:.75rem;color:#000;margin-top:4px;letter-spacing:1px;text-transform:uppercase">${t('appSub')}</div>
+      <div style="font-size:.72rem;color:#000;margin-top:5px">${lastResult.date}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:0 12px;margin-bottom:14px">${rows}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;border:2px solid #000;border-radius:4px;padding:10px 14px;margin-bottom:12px">
+      <span style="font-size:1rem;font-weight:700;color:#000">${t('lbl_total')}</span>
+      <span style="font-size:1.4rem;font-weight:900;color:#000">${fmt(r.total)}</span>
+    </div>
+    <div style="font-size:.7rem;color:#000;text-align:center;line-height:1.6;margin-bottom:14px">${t('resultNote')}</div>
+    <div style="text-align:center;font-size:.68rem;color:#000;padding-top:10px;border-top:1px solid #000">
+      \xa9 ${new Date().getFullYear()} Manik Roy. All Rights Reserved.
+    </div>`;
+  document.body.appendChild(div);
+  window.print();
+  setTimeout(()=>{const el=document.getElementById('rcpt');if(el)el.remove();},600);
+}
+
+// INIT
+document.getElementById('yr').textContent=new Date().getFullYear();
+const sT=localStorage.getItem('pt_theme');
+if(sT){document.body.setAttribute('data-theme',sT);document.querySelectorAll('.t-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick').includes(`'${sT}'`)));}
+const sL=localStorage.getItem('pt_lang')||'bn';
+window.lang=sL;
+document.querySelectorAll('.l-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick').includes(`'${sL}'`)));
+applyLang();showChecklist();showSeason();renderHistory();checkAccess();
 </script>
 </body>
 </html>
