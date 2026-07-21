@@ -1,1027 +1,265 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Vastu Compass</title>
-<meta name="theme-color" content="#151414">
-<meta name="description" content="A precision Vastu Compass — find true direction and see Vastu Shastra guidance for every zone of your home.">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>बीज मंत्र · Beej Mantra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Noto+Sans+Devanagari:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg-1:#1b1a17;
-    --bg-2:#0d0c0b;
-    --brass:#cb9c4d;
-    --brass-light:#f0d999;
-    --steel:#8a919b;
-    --cream:#f8f1e0;
-    --ink:#241a0d;
-    --danger:#d3341c;
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{height:100%;}
-  body{
-    margin:0;
-    min-height:100vh;
-    background:
-      radial-gradient(ellipse at 50% -10%, #2a2823 0%, var(--bg-1) 45%, var(--bg-2) 100%);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:var(--cream);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    overflow-x:hidden;
-    padding-top:calc(var(--safe-top) + 14px);
-    padding-bottom:calc(var(--safe-bottom) + 14px);
-  }
-
-  .app-title{
-    text-align:center;
-    margin:4px 0 2px;
-  }
-  .app-title h1{
-    font-size:22px;
-    letter-spacing:0.14em;
-    margin:0;
-    font-weight:700;
-    color:var(--brass-light);
-    text-transform:uppercase;
-  }
-  .app-title .sub{
-    font-size:13px;
-    color:#b8ab8a;
-    letter-spacing:0.05em;
-    margin-top:2px;
-  }
-
-  .compass-stage{
-    position:relative;
-    width:min(82vw, 380px);
-    aspect-ratio:1/1;
-    margin:22px auto 6px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-
-  .fixed-pointer{
-    position:absolute;
-    top:-6px;
-    left:50%;
-    transform:translateX(-50%);
-    width:0;height:0;
-    border-left:11px solid transparent;
-    border-right:11px solid transparent;
-    border-top:18px solid var(--danger);
-    filter:drop-shadow(0 2px 3px rgba(0,0,0,0.5));
-    z-index:5;
-  }
-
-  .rotor{
-    width:100%;
-    height:100%;
-    will-change:transform;
-    transition:transform 0.15s linear;
-  }
-  .rotor svg{
-    width:100%;
-    height:100%;
-    display:block;
-  }
-
-  .readout{
-    text-align:center;
-    margin-top:2px;
-  }
-  .readout .deg{
-    font-size:40px;
-    font-weight:700;
-    color:var(--cream);
-    letter-spacing:0.02em;
-  }
-  .readout .deg span{ font-size:22px; color:#c9bd9f; }
-  .readout .zone{
-    font-size:15px;
-    color:var(--brass-light);
-    margin-top:2px;
-    letter-spacing:0.04em;
-  }
-  .readout .zone .sanskrit{
-    color:#e3d3a0;
-    opacity:0.85;
-  }
-
-  .status-msg{
-    font-size:12.5px;
-    color:#a79c86;
-    text-align:center;
-    max-width:320px;
-    margin:8px auto 0;
-    line-height:1.5;
-  }
-
-  button.enable-btn{
-    margin-top:14px;
-    background:linear-gradient(180deg,#eecd7c,#a97a34);
-    color:#241a0d;
-    border:none;
-    padding:12px 26px;
-    border-radius:30px;
-    font-size:15px;
-    font-weight:700;
-    letter-spacing:0.03em;
-    box-shadow:0 4px 14px rgba(0,0,0,0.4);
-  }
-  button.enable-btn:active{ transform:scale(0.97); }
-
-  .guide-toggle{
-    margin-top:20px;
-    background:none;
-    border:1px solid #6b6250;
-    color:#e3d3a0;
-    padding:9px 20px;
-    border-radius:24px;
-    font-size:13.5px;
-    letter-spacing:0.03em;
-  }
-
-  .guide-panel{
-    width:min(92vw,420px);
-    margin:14px auto 0;
-    max-height:0;
-    overflow:hidden;
-    transition:max-height 0.35s ease;
-    border-radius:14px;
-  }
-  .guide-panel.open{ max-height:900px; }
-  .guide-inner{
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:14px;
-    padding:8px;
-  }
-  .guide-row{
-    display:flex;
-    gap:12px;
-    align-items:flex-start;
-    padding:10px 8px;
-    border-bottom:1px solid rgba(255,255,255,0.06);
-  }
-  .guide-row:last-child{ border-bottom:none; }
-  .guide-row.active{
-    background:rgba(240,217,153,0.08);
-    border-radius:10px;
-  }
-  .guide-row .swatch{
-    width:14px;height:14px;border-radius:4px;flex:0 0 auto;margin-top:3px;
-    box-shadow:0 0 0 1px rgba(0,0,0,0.4) inset;
-  }
-  .guide-row .txt b{
-    display:block;
-    font-size:14.5px;
-    color:var(--cream);
-  }
-  .guide-row .txt .dev{
-    font-size:12.5px;
-    color:#c9a95c;
-    margin-left:6px;
-  }
-  .guide-row .txt p{
-    margin:3px 0 0;
-    font-size:12.5px;
-    color:#b3a78d;
-    line-height:1.45;
-  }
-
-  footer{
-    margin-top:auto;
-    padding-top:20px;
-    font-size:11px;
-    color:#5f584a;
-    text-align:center;
-  }
-
-  .header-bar{
-    width:100%;
-    max-width:460px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
-    padding:0 44px;
-  }
-  .settings-btn{
-    position:absolute;
-    right:8px;
-    top:2px;
-    background:none;
-    border:1px solid rgba(240,217,153,0.35);
-    color:var(--brass-light);
-    width:34px;height:34px;
-    border-radius:50%;
-    font-size:16px;
-    line-height:1;
-    display:flex;align-items:center;justify-content:center;
-  }
-
-  .tabbar{
-    display:flex;
-    gap:6px;
-    width:min(94vw,460px);
-    overflow-x:auto;
-    margin:22px auto 0;
-    padding-bottom:4px;
-    scrollbar-width:none;
-  }
-  .tabbar::-webkit-scrollbar{ display:none; }
-  .tab-btn{
-    flex:0 0 auto;
-    background:rgba(255,255,255,0.04);
-    border:1px solid rgba(255,255,255,0.09);
-    color:#c9bd9f;
-    padding:8px 14px;
-    border-radius:20px;
-    font-size:12.5px;
-    white-space:nowrap;
-    letter-spacing:0.02em;
-  }
-  .tab-btn.active{
-    background:linear-gradient(180deg,#eecd7c,#a97a34);
-    color:#241a0d;
-    border-color:transparent;
-    font-weight:700;
-  }
-
-  .panel{
-    display:none;
-    width:min(92vw,440px);
-    margin:14px auto 0;
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:14px;
-    padding:16px;
-  }
-  .panel.active{ display:block; }
-  .panel h2{
-    font-size:14px;
-    margin:0 0 10px;
-    color:var(--brass-light);
-    letter-spacing:0.04em;
-    text-transform:uppercase;
-  }
-  .panel select, .panel input[type=text], .panel input[type=number]{
-    width:100%;
-    background:#1f1d19;
-    border:1px solid #4a4436;
-    color:var(--cream);
-    padding:10px 12px;
-    border-radius:8px;
-    font-size:14px;
-    margin-bottom:10px;
-  }
-  .capture-btn{
-    width:100%;
-    background:linear-gradient(180deg,#eecd7c,#a97a34);
-    color:#241a0d;
-    border:none;
-    padding:11px;
-    border-radius:10px;
-    font-size:14px;
-    font-weight:700;
-    margin-bottom:12px;
-  }
-  .capture-btn:active{ transform:scale(0.98); }
-
-  .result-card{
-    border-radius:10px;
-    padding:12px 14px;
-    font-size:13.5px;
-    line-height:1.5;
-    border:1px solid rgba(255,255,255,0.08);
-  }
-  .result-card.rating-Excellent{ background:rgba(143,174,130,0.16); border-color:rgba(143,174,130,0.4); }
-  .result-card.rating-Good{ background:rgba(159,196,221,0.14); border-color:rgba(159,196,221,0.4); }
-  .result-card.rating-Acceptable{ background:rgba(224,198,117,0.14); border-color:rgba(224,198,117,0.4); }
-  .result-card.rating-Neutral{ background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15); }
-  .result-card.rating-Caution{ background:rgba(219,160,119,0.16); border-color:rgba(219,160,119,0.4); }
-  .result-card.rating-Avoid{ background:rgba(192,122,114,0.18); border-color:rgba(192,122,114,0.45); }
-  .result-card b{ display:block; font-size:15px; margin-bottom:4px; color:var(--cream); }
-  .result-card .rating-tag{
-    display:inline-block;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:0.05em;
-    text-transform:uppercase;
-    padding:2px 8px;
-    border-radius:10px;
-    background:rgba(0,0,0,0.25);
-    margin-left:8px;
-  }
-
-  .room-row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:8px 0;
-    border-bottom:1px solid rgba(255,255,255,0.07);
-  }
-  .room-row:last-child{ border-bottom:none; }
-  .room-row .info{ flex:1; min-width:0; }
-  .room-row .info b{ font-size:13.5px; color:var(--cream); display:block; }
-  .room-row .info span{ font-size:11.5px; color:#a79c86; }
-  .room-row .del-btn{
-    background:none;
-    border:1px solid rgba(192,122,114,0.5);
-    color:#e0a89e;
-    width:26px;height:26px;
-    border-radius:50%;
-    font-size:14px;
-    line-height:1;
-    flex:0 0 auto;
-  }
-  .empty-hint{ font-size:12.5px; color:#8b8069; text-align:center; padding:8px 0; }
-
-  .modal-overlay{
-    display:none;
-    position:fixed; inset:0;
-    background:rgba(0,0,0,0.6);
-    align-items:center;
-    justify-content:center;
-    z-index:50;
-    padding:20px;
-  }
-  .modal-overlay.open{ display:flex; }
-  .modal-box{
-    width:min(92vw,380px);
-    background:#1c1a16;
-    border:1px solid rgba(255,255,255,0.12);
-    border-radius:16px;
-    padding:20px;
-  }
-  .modal-box h3{
-    margin:0 0 12px;
-    font-size:16px;
-    color:var(--brass-light);
-  }
-  .switch-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:12px;
-  }
-  .switch-row label{ font-size:13.5px; color:var(--cream); }
-  .switch{
-    position:relative;
-    width:44px;height:24px;
-    background:#4a4436;
-    border-radius:14px;
-  }
-  .switch input{ display:none; }
-  .switch .knob{
-    position:absolute;
-    top:2px;left:2px;
-    width:20px;height:20px;
-    background:#c9bd9f;
-    border-radius:50%;
-    transition:transform 0.2s;
-  }
-  .switch input:checked + .knob{
-    transform:translateX(20px);
-    background:var(--brass-light);
-  }
-  .modal-note{ font-size:11.5px; color:#8b8069; line-height:1.5; margin-top:4px; }
-  .modal-close{
-    width:100%;
-    margin-top:14px;
-    background:none;
-    border:1px solid rgba(255,255,255,0.2);
-    color:var(--cream);
-    padding:10px;
-    border-radius:10px;
-    font-size:14px;
-  }
+  :root[data-theme="light"]{--bg:#F5EFE4;--card:#FFFFFF;--text:#241F1B;--muted:#77695A;--accent:#B8431E;--accent2:#D69A34;--ring:rgba(184,67,30,.18);--border:rgba(36,31,27,.12);--shadow:0 8px 24px rgba(36,31,27,.08)}
+  :root[data-theme="dark"]{--bg:#131019;--card:#1D1926;--text:#F1E9DC;--muted:#A79A88;--accent:#E4A33B;--accent2:#C1521E;--ring:rgba(228,163,59,.2);--border:rgba(241,233,220,.1);--shadow:0 8px 28px rgba(0,0,0,.4)}
+  :root[data-theme="oled"]{--bg:#000000;--card:#070707;--text:#F1E9DC;--muted:#8C8074;--accent:#E4A33B;--accent2:#C1521E;--ring:rgba(228,163,59,.16);--border:rgba(241,233,220,.08);--shadow:none}
+  :root[data-theme="hc"]{--bg:#000000;--card:#000000;--text:#FFFFFF;--muted:#FFFFFF;--accent:#FFD400;--accent2:#00E5FF;--ring:rgba(255,212,0,.35);--border:#FFFFFF;--shadow:none}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);min-height:100%}
+  body{font-family:'Inter',sans-serif;display:flex;flex-direction:column;min-height:100vh;transition:background .25s,color .25s}
+  a{color:inherit}
+  .wrap{max-width:640px;margin:0 auto;padding:0 18px;width:100%}
+  header{padding-top:28px}
+  .eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);text-align:center;margin:0}
+  h1{font-family:'Fraunces',serif;font-weight:700;font-size:clamp(30px,8vw,42px);text-align:center;margin:6px 0 2px;line-height:1.05}
+  .devnote{font-family:'Noto Sans Devanagari',sans-serif;font-size:.55em;display:block;color:var(--accent);font-weight:500}
+  .lede{text-align:center;color:var(--muted);font-size:14px;max-width:44ch;margin:10px auto 20px;line-height:1.5}
+  .controls{display:flex;justify-content:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+  .btn{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:999px;padding:9px 16px;font-size:13px;font-family:'Inter',sans-serif;font-weight:500;cursor:pointer;transition:border-color .2s,transform .1s}
+  .btn:active{transform:scale(.96)}
+  .btn:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .btn.theme{display:flex;align-items:center;gap:8px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+  .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+  .chip{border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+  .chip.active{background:var(--accent);color:var(--card);border-color:var(--accent)}
+  .tag{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:2px 8px;white-space:nowrap;align-self:center}
+  input[type="search"]{width:100%;padding:12px 16px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:15px;margin-bottom:22px;font-family:'Inter',sans-serif}
+  input[type="search"]::placeholder{color:var(--muted)}
+  main{flex:1}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px;padding-bottom:20px}
+  @media(min-width:520px){.grid{grid-template-columns:1fr 1fr}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:18px;box-shadow:var(--shadow);cursor:pointer;position:relative;overflow:hidden}
+  .card .rings{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0}
+  .card.speaking .rings{opacity:1}
+  .ring{position:absolute;border:1px solid var(--accent);border-radius:50%;width:40px;height:40px;animation:pulse 1.4s ease-out infinite}
+  .ring.r2{animation-delay:.35s}.ring.r3{animation-delay:.7s}
+  @keyframes pulse{0%{width:40px;height:40px;opacity:.65}100%{width:230px;height:230px;opacity:0}}
+  .top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;position:relative}
+  .syll{font-family:'Noto Sans Devanagari',sans-serif;font-size:44px;font-weight:700;color:var(--accent)}
+  .iast{font-family:'Fraunces',serif;font-size:15px;color:var(--muted);font-style:italic}
+  .deity{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent2);font-weight:600;margin-top:10px}
+  .meaning{font-size:13.5px;color:var(--muted);line-height:1.45;margin-top:6px}
+  .detail{font-size:13px;color:var(--muted);line-height:1.55;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
+  .more{background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;padding:8px 0 0;cursor:pointer;font-family:'Inter',sans-serif}
+  .row2{display:flex;align-items:center;justify-content:space-between;margin-top:14px;position:relative}
+  .play{border:1px solid var(--border);background:transparent;color:var(--text);border-radius:999px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .play svg{width:13px;height:13px}
+  .count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .count b{color:var(--text)}
+  .empty{text-align:center;color:var(--muted);padding:40px 0;font-size:14px}
+  footer{border-top:1px solid var(--border);margin-top:20px;padding:22px 18px 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center}
+  footer .name{font-family:'Fraunces',serif;font-size:13px;color:var(--muted)}
+  footer .copy{font-size:12px;color:var(--muted)}
+  footer .copy b{color:var(--text);font-weight:600}
+  @media(prefers-reduced-motion:reduce){.ring{animation:none;opacity:.3}}
 </style>
 </head>
 <body>
-
-  <div class="header-bar">
-    <div class="app-title">
-      <h1>Vastu Compass</h1>
-      <div class="sub">वास्तु कम्पास · directional guidance</div>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Seed sounds of the subtle body</p>
+    <h1>Beej Mantra<span class="devnote">बीज मंत्र</span></h1>
+    <p class="lede">95 bīja syllables in full — 7 chakra seeds, 18 deity seeds, 9 navagraha seeds, all 50 mātṛkā letters, the 7 vyāhṛtis, and the 4 remaining ṣaḍaṅga ritual endings. Tap a card to hear it spoken aloud.</p>
+    <div class="controls">
+      <button class="btn theme" id="themeBtn" aria-label="Toggle theme"><span class="dot" id="themeDot"></span><span id="themeLabel">Dark</span></button>
+      <button class="btn" id="resetBtn">Reset counts</button>
     </div>
-    <button class="settings-btn" id="settingsBtn" title="Settings" aria-label="Settings">⚙</button>
-  </div>
-
-  <div class="compass-stage">
-    <div class="fixed-pointer"></div>
-    <div class="rotor" id="rotor">
-      <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="steelBezel" cx="38%" cy="30%" r="75%">
-            <stop offset="0%" stop-color="#f4f5f7"/><stop offset="18%" stop-color="#d9dde2"/>
-            <stop offset="38%" stop-color="#aab1ba"/><stop offset="55%" stop-color="#7d838d"/>
-            <stop offset="72%" stop-color="#565b63"/><stop offset="88%" stop-color="#33363b"/>
-            <stop offset="100%" stop-color="#1c1e21"/>
-          </radialGradient>
-          <linearGradient id="steelEdgeHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="30%" stop-color="#ffffff" stop-opacity="0.05"/>
-            <stop offset="70%" stop-color="#000000" stop-opacity="0.05"/><stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
-          </linearGradient>
-          <radialGradient id="brassRing" cx="42%" cy="35%" r="70%">
-            <stop offset="0%" stop-color="#fdf1c8"/><stop offset="25%" stop-color="#eecd7c"/>
-            <stop offset="48%" stop-color="#cb9c4d"/><stop offset="70%" stop-color="#a97a34"/>
-            <stop offset="88%" stop-color="#7c5522"/><stop offset="100%" stop-color="#5a3c16"/>
-          </radialGradient>
-          <radialGradient id="dialFace" cx="46%" cy="40%" r="65%">
-            <stop offset="0%" stop-color="#fffdf6"/><stop offset="55%" stop-color="#f8f1e0"/>
-            <stop offset="80%" stop-color="#eee2c6"/><stop offset="100%" stop-color="#ddceac"/>
-          </radialGradient>
-          <radialGradient id="glassLens" cx="35%" cy="28%" r="80%">
-            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/><stop offset="12%" stop-color="#ffffff" stop-opacity="0.35"/>
-            <stop offset="35%" stop-color="#ffffff" stop-opacity="0.06"/><stop offset="70%" stop-color="#cfd8e0" stop-opacity="0.04"/>
-            <stop offset="100%" stop-color="#8fa0ac" stop-opacity="0.10"/>
-          </radialGradient>
-          <linearGradient id="needleRed" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#ff8f6b"/><stop offset="45%" stop-color="#d3341c"/><stop offset="100%" stop-color="#7a1408"/>
-          </linearGradient>
-          <linearGradient id="needleBlack" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#6b6f75"/><stop offset="45%" stop-color="#2a2c30"/><stop offset="100%" stop-color="#050506"/>
-          </linearGradient>
-          <radialGradient id="pivotMetal" cx="35%" cy="30%" r="75%">
-            <stop offset="0%" stop-color="#ffffff"/><stop offset="30%" stop-color="#e4c98a"/>
-            <stop offset="60%" stop-color="#a9812f"/><stop offset="100%" stop-color="#4a3410"/>
-          </radialGradient>
-          <radialGradient id="screwHead" cx="35%" cy="30%" r="75%">
-            <stop offset="0%" stop-color="#f5f6f8"/><stop offset="40%" stop-color="#b7bcc3"/>
-            <stop offset="75%" stop-color="#6b6f75"/><stop offset="100%" stop-color="#2b2d30"/>
-          </radialGradient>
-          <linearGradient id="innerRimShadow" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#000000" stop-opacity="0.45"/><stop offset="12%" stop-color="#000000" stop-opacity="0"/>
-            <stop offset="88%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity="0.35"/>
-          </linearGradient>
-          <filter id="brushed" x="-20%" y="-20%" width="140%" height="140%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.9 0.02" numOctaves="2" seed="7" result="noise"/>
-            <feColorMatrix in="noise" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0" result="softNoise"/>
-            <feComposite in="softNoise" in2="SourceGraphic" operator="over" result="brushedOver"/>
-            <feBlend in="brushedOver" in2="SourceGraphic" mode="multiply"/>
-          </filter>
-          <filter id="dropShadowBig" x="-40%" y="-40%" width="180%" height="180%">
-            <feDropShadow dx="0" dy="14" stdDeviation="22" flood-color="#000000" flood-opacity="0.45"/>
-          </filter>
-          <filter id="softShadow" x="-40%" y="-40%" width="180%" height="180%">
-            <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.35"/>
-          </filter>
-          <filter id="engrave" x="-20%" y="-20%" width="140%" height="140%">
-            <feOffset in="SourceAlpha" dx="0" dy="1" result="off1"/>
-            <feGaussianBlur in="off1" stdDeviation="0.6" result="blur1"/>
-            <feComposite in="blur1" in2="SourceAlpha" operator="out" result="shadowPart"/>
-            <feFlood flood-color="#000000" flood-opacity="0.55"/>
-            <feComposite in2="shadowPart" operator="in" result="innerShadow"/>
-            <feOffset in="SourceAlpha" dx="0" dy="-1" result="off2"/>
-            <feGaussianBlur in="off2" stdDeviation="0.6" result="blur2"/>
-            <feComposite in="blur2" in2="SourceAlpha" operator="out" result="highlightPart"/>
-            <feFlood flood-color="#ffffff" flood-opacity="0.5"/>
-            <feComposite in2="highlightPart" operator="in" result="innerHighlight"/>
-            <feMerge>
-              <feMergeNode in="SourceGraphic"/><feMergeNode in="innerShadow"/><feMergeNode in="innerHighlight"/>
-            </feMerge>
-          </filter>
-          <clipPath id="dialClip"><circle cx="512" cy="512" r="352"/></clipPath>
-          <style>
-            .tick-minor{stroke:#4a3d22;stroke-width:2;opacity:0.55;}
-            .tick-mid{stroke:#3a2f1a;stroke-width:3;opacity:0.75;}
-            .tick-major{stroke:#241d0f;stroke-width:5;}
-            .label16{font-family:Georgia,'Times New Roman',serif;font-weight:700;fill:#2a2015;}
-            .sanskrit{font-family:'Noto Sans Devanagari','Nirmala UI',serif;font-weight:600;fill:#f6dfa0;stroke:#3a2a10;stroke-width:0.6;}
-            .mainletter{font-family:'Trajan Pro',Georgia,serif;font-weight:700;fill:#241a0d;}
-          </style>
-        </defs>
-
-        <g filter="url(#dropShadowBig)">
-          <circle cx="512" cy="512" r="486" fill="url(#steelBezel)"/>
-          <circle cx="512" cy="512" r="486" fill="none" stroke="url(#steelEdgeHighlight)" stroke-width="6"/>
-          <circle cx="512" cy="512" r="486" fill="none" filter="url(#brushed)" opacity="0.5"/>
-        </g>
-        <g opacity="0.55"><circle cx="512" cy="512" r="470" fill="none" stroke="#0d0e10" stroke-width="2" stroke-dasharray="3,5"/></g>
-        <circle cx="512" cy="512" r="452" fill="none" stroke="#202225" stroke-width="10"/>
-        <circle cx="512" cy="512" r="452" fill="none" stroke="#8b9096" stroke-width="2" opacity="0.6"/>
-
-        <circle cx="512" cy="512" r="440" fill="url(#brassRing)"/>
-        <circle cx="512" cy="512" r="440" fill="none" filter="url(#brushed)" opacity="0.35"/>
-
-        <g>
-        <path d="M 348.21,116.58 A 428,428 0 0 1 675.79,116.58 L 646.70,186.79 A 352,352 0 0 0 377.30,186.79 Z" fill="#c9d6c4" fill-opacity="0.55"/>
-        <path d="M 675.79,116.58 A 428,428 0 0 1 907.42,348.21 L 837.21,377.30 A 352,352 0 0 0 646.70,186.79 Z" fill="#cfe3ee" fill-opacity="0.55"/>
-        <path d="M 907.42,348.21 A 428,428 0 0 1 907.42,675.79 L 837.21,646.70 A 352,352 0 0 0 837.21,377.30 Z" fill="#f0d999" fill-opacity="0.55"/>
-        <path d="M 907.42,675.79 A 428,428 0 0 1 675.79,907.42 L 646.70,837.21 A 352,352 0 0 0 837.21,646.70 Z" fill="#e8b08e" fill-opacity="0.55"/>
-        <path d="M 675.79,907.42 A 428,428 0 0 1 348.21,907.42 L 377.30,837.21 A 352,352 0 0 0 646.70,837.21 Z" fill="#d9a3a3" fill-opacity="0.55"/>
-        <path d="M 348.21,907.42 A 428,428 0 0 1 116.58,675.79 L 186.79,646.70 A 352,352 0 0 0 377.30,837.21 Z" fill="#c9bcae" fill-opacity="0.55"/>
-        <path d="M 116.58,675.79 A 428,428 0 0 1 116.58,348.21 L 186.79,377.30 A 352,352 0 0 0 186.79,646.70 Z" fill="#a9c3d6" fill-opacity="0.55"/>
-        <path d="M 116.58,348.21 A 428,428 0 0 1 348.21,116.58 L 377.30,186.79 A 352,352 0 0 0 186.79,377.30 Z" fill="#d8d8d8" fill-opacity="0.55"/>
-        </g>
-
-        <circle cx="512" cy="512" r="428" fill="none" stroke="#5a3c16" stroke-width="2" opacity="0.7"/>
-        <circle cx="512" cy="512" r="352" fill="none" stroke="#5a3c16" stroke-width="3" opacity="0.8"/>
-
-        <g>
-        <line x1="512.00" y1="82.00" x2="512.00" y2="97.00" class="tick-minor"/><line x1="549.48" y1="83.64" x2="548.17" y2="98.58" class="tick-minor"/><line x1="586.67" y1="88.53" x2="584.06" y2="103.30" class="tick-minor"/><line x1="623.29" y1="96.65" x2="619.41" y2="111.14" class="tick-minor"/><line x1="659.07" y1="107.93" x2="653.94" y2="122.03" class="tick-minor"/><line x1="693.73" y1="122.29" x2="687.39" y2="135.88" class="tick-minor"/><line x1="727.00" y1="139.61" x2="719.50" y2="152.60" class="tick-minor"/><line x1="758.64" y1="159.76" x2="750.03" y2="172.05" class="tick-minor"/><line x1="788.40" y1="182.60" x2="778.76" y2="194.09" class="tick-minor"/><line x1="816.06" y1="207.94" x2="805.45" y2="218.55" class="tick-minor"/><line x1="841.40" y1="235.60" x2="829.91" y2="245.24" class="tick-minor"/><line x1="864.24" y1="265.36" x2="851.95" y2="273.97" class="tick-minor"/><line x1="884.39" y1="297.00" x2="871.40" y2="304.50" class="tick-minor"/><line x1="901.71" y1="330.27" x2="888.12" y2="336.61" class="tick-minor"/><line x1="916.07" y1="364.93" x2="901.97" y2="370.06" class="tick-minor"/><line x1="927.35" y1="400.71" x2="912.86" y2="404.59" class="tick-minor"/><line x1="935.47" y1="437.33" x2="920.70" y2="439.94" class="tick-minor"/><line x1="940.36" y1="474.52" x2="925.42" y2="475.83" class="tick-minor"/><line x1="942.00" y1="512.00" x2="927.00" y2="512.00" class="tick-minor"/><line x1="940.36" y1="549.48" x2="925.42" y2="548.17" class="tick-minor"/><line x1="935.47" y1="586.67" x2="920.70" y2="584.06" class="tick-minor"/><line x1="927.35" y1="623.29" x2="912.86" y2="619.41" class="tick-minor"/><line x1="916.07" y1="659.07" x2="901.97" y2="653.94" class="tick-minor"/><line x1="901.71" y1="693.73" x2="888.12" y2="687.39" class="tick-minor"/><line x1="884.39" y1="727.00" x2="871.40" y2="719.50" class="tick-minor"/><line x1="864.24" y1="758.64" x2="851.95" y2="750.03" class="tick-minor"/><line x1="841.40" y1="788.40" x2="829.91" y2="778.76" class="tick-minor"/><line x1="816.06" y1="816.06" x2="805.45" y2="805.45" class="tick-minor"/><line x1="788.40" y1="841.40" x2="778.76" y2="829.91" class="tick-minor"/><line x1="758.64" y1="864.24" x2="750.03" y2="851.95" class="tick-minor"/><line x1="727.00" y1="884.39" x2="719.50" y2="871.40" class="tick-minor"/><line x1="693.73" y1="901.71" x2="687.39" y2="888.12" class="tick-minor"/><line x1="659.07" y1="916.07" x2="653.94" y2="901.97" class="tick-minor"/><line x1="623.29" y1="927.35" x2="619.41" y2="912.86" class="tick-minor"/><line x1="586.67" y1="935.47" x2="584.06" y2="920.70" class="tick-minor"/><line x1="549.48" y1="940.36" x2="548.17" y2="925.42" class="tick-minor"/><line x1="512.00" y1="942.00" x2="512.00" y2="927.00" class="tick-minor"/><line x1="474.52" y1="940.36" x2="475.83" y2="925.42" class="tick-minor"/><line x1="437.33" y1="935.47" x2="439.94" y2="920.70" class="tick-minor"/><line x1="400.71" y1="927.35" x2="404.59" y2="912.86" class="tick-minor"/><line x1="364.93" y1="916.07" x2="370.06" y2="901.97" class="tick-minor"/><line x1="330.27" y1="901.71" x2="336.61" y2="888.12" class="tick-minor"/><line x1="297.00" y1="884.39" x2="304.50" y2="871.40" class="tick-minor"/><line x1="265.36" y1="864.24" x2="273.97" y2="851.95" class="tick-minor"/><line x1="235.60" y1="841.40" x2="245.24" y2="829.91" class="tick-minor"/><line x1="207.94" y1="816.06" x2="218.55" y2="805.45" class="tick-minor"/><line x1="182.60" y1="788.40" x2="194.09" y2="778.76" class="tick-minor"/><line x1="159.76" y1="758.64" x2="172.05" y2="750.03" class="tick-minor"/><line x1="139.61" y1="727.00" x2="152.60" y2="719.50" class="tick-minor"/><line x1="122.29" y1="693.73" x2="135.88" y2="687.39" class="tick-minor"/><line x1="107.93" y1="659.07" x2="122.03" y2="653.94" class="tick-minor"/><line x1="96.65" y1="623.29" x2="111.14" y2="619.41" class="tick-minor"/><line x1="88.53" y1="586.67" x2="103.30" y2="584.06" class="tick-minor"/><line x1="83.64" y1="549.48" x2="98.58" y2="548.17" class="tick-minor"/><line x1="82.00" y1="512.00" x2="97.00" y2="512.00" class="tick-minor"/><line x1="83.64" y1="474.52" x2="98.58" y2="475.83" class="tick-minor"/><line x1="88.53" y1="437.33" x2="103.30" y2="439.94" class="tick-minor"/><line x1="96.65" y1="400.71" x2="111.14" y2="404.59" class="tick-minor"/><line x1="107.93" y1="364.93" x2="122.03" y2="370.06" class="tick-minor"/><line x1="122.29" y1="330.27" x2="135.88" y2="336.61" class="tick-minor"/><line x1="139.61" y1="297.00" x2="152.60" y2="304.50" class="tick-minor"/><line x1="159.76" y1="265.36" x2="172.05" y2="273.97" class="tick-minor"/><line x1="182.60" y1="235.60" x2="194.09" y2="245.24" class="tick-minor"/><line x1="207.94" y1="207.94" x2="218.55" y2="218.55" class="tick-minor"/><line x1="235.60" y1="182.60" x2="245.24" y2="194.09" class="tick-minor"/><line x1="265.36" y1="159.76" x2="273.97" y2="172.05" class="tick-minor"/><line x1="297.00" y1="139.61" x2="304.50" y2="152.60" class="tick-minor"/><line x1="330.27" y1="122.29" x2="336.61" y2="135.88" class="tick-minor"/><line x1="364.93" y1="107.93" x2="370.06" y2="122.03" class="tick-minor"/><line x1="400.71" y1="96.65" x2="404.59" y2="111.14" class="tick-minor"/><line x1="437.33" y1="88.53" x2="439.94" y2="103.30" class="tick-minor"/><line x1="474.52" y1="83.64" x2="475.83" y2="98.58" class="tick-minor"/>
-        </g>
-        <g>
-        <line x1="586.67" y1="88.53" x2="582.85" y2="110.20" class="tick-mid"/><line x1="659.07" y1="107.93" x2="651.54" y2="128.61" class="tick-mid"/><line x1="727.00" y1="139.61" x2="716.00" y2="158.66" class="tick-mid"/><line x1="788.40" y1="182.60" x2="774.26" y2="199.45" class="tick-mid"/><line x1="841.40" y1="235.60" x2="824.55" y2="249.74" class="tick-mid"/><line x1="884.39" y1="297.00" x2="865.34" y2="308.00" class="tick-mid"/><line x1="916.07" y1="364.93" x2="895.39" y2="372.46" class="tick-mid"/><line x1="935.47" y1="437.33" x2="913.80" y2="441.15" class="tick-mid"/><line x1="935.47" y1="586.67" x2="913.80" y2="582.85" class="tick-mid"/><line x1="916.07" y1="659.07" x2="895.39" y2="651.54" class="tick-mid"/><line x1="884.39" y1="727.00" x2="865.34" y2="716.00" class="tick-mid"/><line x1="841.40" y1="788.40" x2="824.55" y2="774.26" class="tick-mid"/><line x1="788.40" y1="841.40" x2="774.26" y2="824.55" class="tick-mid"/><line x1="727.00" y1="884.39" x2="716.00" y2="865.34" class="tick-mid"/><line x1="659.07" y1="916.07" x2="651.54" y2="895.39" class="tick-mid"/><line x1="586.67" y1="935.47" x2="582.85" y2="913.80" class="tick-mid"/><line x1="437.33" y1="935.47" x2="441.15" y2="913.80" class="tick-mid"/><line x1="364.93" y1="916.07" x2="372.46" y2="895.39" class="tick-mid"/><line x1="297.00" y1="884.39" x2="308.00" y2="865.34" class="tick-mid"/><line x1="235.60" y1="841.40" x2="249.74" y2="824.55" class="tick-mid"/><line x1="182.60" y1="788.40" x2="199.45" y2="774.26" class="tick-mid"/><line x1="139.61" y1="727.00" x2="158.66" y2="716.00" class="tick-mid"/><line x1="107.93" y1="659.07" x2="128.61" y2="651.54" class="tick-mid"/><line x1="88.53" y1="586.67" x2="110.20" y2="582.85" class="tick-mid"/><line x1="88.53" y1="437.33" x2="110.20" y2="441.15" class="tick-mid"/><line x1="107.93" y1="364.93" x2="128.61" y2="372.46" class="tick-mid"/><line x1="139.61" y1="297.00" x2="158.66" y2="308.00" class="tick-mid"/><line x1="182.60" y1="235.60" x2="199.45" y2="249.74" class="tick-mid"/><line x1="235.60" y1="182.60" x2="249.74" y2="199.45" class="tick-mid"/><line x1="297.00" y1="139.61" x2="308.00" y2="158.66" class="tick-mid"/><line x1="364.93" y1="107.93" x2="372.46" y2="128.61" class="tick-mid"/><line x1="437.33" y1="88.53" x2="441.15" y2="110.20" class="tick-mid"/>
-        </g>
-
-        <g class="tick-major">
-        <line x1="512.00" y1="82.00" x2="512.00" y2="117.00"/><line x1="676.55" y1="114.73" x2="663.16" y2="147.07"/><line x1="816.06" y1="207.94" x2="791.31" y2="232.69"/><line x1="909.27" y1="347.45" x2="876.93" y2="360.84"/><line x1="942.00" y1="512.00" x2="907.00" y2="512.00"/><line x1="909.27" y1="676.55" x2="876.93" y2="663.16"/><line x1="816.06" y1="816.06" x2="791.31" y2="791.31"/><line x1="676.55" y1="909.27" x2="663.16" y2="876.93"/><line x1="512.00" y1="942.00" x2="512.00" y2="907.00"/><line x1="347.45" y1="909.27" x2="360.84" y2="876.93"/><line x1="207.94" y1="816.06" x2="232.69" y2="791.31"/><line x1="114.73" y1="676.55" x2="147.07" y2="663.16"/><line x1="82.00" y1="512.00" x2="117.00" y2="512.00"/><line x1="114.73" y1="347.45" x2="147.07" y2="360.84"/><line x1="207.94" y1="207.94" x2="232.69" y2="232.69"/><line x1="347.45" y1="114.73" x2="360.84" y2="147.07"/>
-        </g>
-
-        <g class="label16" text-anchor="middle" filter="url(#engrave)">
-          <text x="658.57" y="163" font-size="17">NNE</text><text x="865.85" y="370" font-size="17">ENE</text>
-          <text x="865.85" y="663" font-size="17">ESE</text><text x="658.57" y="871" font-size="17">SSE</text>
-          <text x="365.43" y="871" font-size="17">SSW</text><text x="158.15" y="663" font-size="17">WSW</text>
-          <text x="158.15" y="370" font-size="17">WNW</text><text x="365.43" y="163" font-size="17">NNW</text>
-        </g>
-
-        <g class="sanskrit" text-anchor="middle" font-size="26">
-          <text x="512" y="60">उत्तर</text><text x="838.68" y="193">ईशान</text>
-          <text x="960" y="520">पूर्व</text><text x="838.68" y="850">आग्नेय</text>
-          <text x="512" y="985">दक्षिण</text><text x="185.32" y="850">नैऋत्य</text>
-          <text x="64" y="520">पश्चिम</text><text x="185.32" y="193">वायव्य</text>
-        </g>
-
-        <g filter="url(#softShadow)">
-          <g transform="translate(835.85,188.15)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30"/></g>
-          <g transform="translate(835.85,835.85)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30" transform="rotate(45)"/></g>
-          <g transform="translate(188.15,835.85)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30" transform="rotate(-20)"/></g>
-          <g transform="translate(188.15,188.15)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30" transform="rotate(70)"/></g>
-        </g>
-
-        <g clip-path="url(#dialClip)">
-          <circle cx="512" cy="512" r="352" fill="url(#dialFace)"/>
-          <polygon points="512.00,212.00 561.75,391.90 724.13,299.87 632.10,462.25 812.00,512.00 632.10,561.75 724.13,724.13 561.75,632.10 512.00,812.00 462.25,632.10 299.87,724.13 391.90,561.75 212.00,512.00 391.90,462.25 299.87,299.87 462.25,391.90" fill="none" stroke="#b08d4f" stroke-width="1.4" opacity="0.28"/>
-          <circle cx="512" cy="512" r="300" fill="none" stroke="#b08d4f" stroke-width="1" opacity="0.22"/>
-          <circle cx="512" cy="512" r="130" fill="none" stroke="#b08d4f" stroke-width="1" opacity="0.22"/>
-          <g stroke="#8a6a35" stroke-width="0.6" opacity="0.14">
-            <line x1="378" y1="512" x2="646" y2="512"/><line x1="512" y1="378" x2="512" y2="646"/>
-            <line x1="418" y1="418" x2="606" y2="606"/><line x1="606" y1="418" x2="418" y2="606"/>
-          </g>
-          <circle cx="512" cy="512" r="352" fill="url(#innerRimShadow)"/>
-        </g>
-        <circle cx="512" cy="512" r="352" fill="none" stroke="#8a6a35" stroke-width="2"/>
-
-        <g class="mainletter" text-anchor="middle" filter="url(#engrave)">
-          <text x="512.00" y="272" font-size="46" fill="#7a1408">N</text>
-          <text x="700" y="345" font-size="30">NE</text>
-          <text x="782" y="522" font-size="46">E</text>
-          <text x="700" y="702" font-size="30">SE</text>
-          <text x="512.00" y="795" font-size="46">S</text>
-          <text x="324" y="702" font-size="30">SW</text>
-          <text x="242" y="522" font-size="46">W</text>
-          <text x="324" y="345" font-size="30">NW</text>
-        </g>
-
-        <circle cx="512" cy="512" r="352" fill="url(#glassLens)"/>
-        <ellipse cx="420" cy="360" rx="150" ry="70" fill="#ffffff" opacity="0.18" transform="rotate(-25 420 360)"/>
-        <ellipse cx="640" cy="700" rx="90" ry="30" fill="#ffffff" opacity="0.08" transform="rotate(-20 640 700)"/>
-
-        <g filter="url(#softShadow)">
-          <polygon points="512,168 528,512 496,512" fill="url(#needleRed)" stroke="#4a0d05" stroke-width="1.5"/>
-          <polygon points="512,168 524,512 512,512" fill="#ffffff" opacity="0.25"/>
-          <polygon points="512,856 528,512 496,512" fill="url(#needleBlack)" stroke="#000000" stroke-width="1.5"/>
-          <polygon points="512,856 524,512 512,512" fill="#ffffff" opacity="0.12"/>
-        </g>
-        <g filter="url(#softShadow)">
-          <circle cx="512" cy="512" r="34" fill="url(#pivotMetal)" stroke="#3a2a0f" stroke-width="2"/>
-          <circle cx="512" cy="512" r="34" fill="none" stroke="#fff6d8" stroke-width="1" opacity="0.6"/>
-          <rect x="497" y="508" width="30" height="8" rx="2" fill="#2a2010" opacity="0.85"/>
-          <circle cx="500" cy="500" r="9" fill="#ffffff" opacity="0.45"/>
-        </g>
-        <ellipse cx="440" cy="300" rx="220" ry="110" fill="#ffffff" opacity="0.10" transform="rotate(-18 440 300)"/>
-      </svg>
-    </div>
-  </div>
-
-  <div class="readout">
-    <div class="deg"><span id="degVal">--</span><span>°</span></div>
-    <div class="zone" id="zoneName">Enable compass to begin</div>
-  </div>
-
-  <div class="status-msg" id="statusMsg">Vastu Compass uses your device's magnetic sensor. Hold your phone flat, level with the ground, and away from metal objects for an accurate reading.</div>
-
-  <button class="enable-btn" id="enableBtn">Enable Compass</button>
-  <button class="guide-toggle" id="guideToggle">Show all 16 direction meanings</button>
-
-  <div class="guide-panel" id="guidePanel">
-    <div class="guide-inner" id="guideInner"></div>
-  </div>
-
-  <div class="tabbar" id="tabbar">
-    <button class="tab-btn active" data-panel="sitting">Sitting Direction</button>
-    <button class="tab-btn" data-panel="sleeping">Sleeping Direction</button>
-    <button class="tab-btn" data-panel="door">Main Door</button>
-    <button class="tab-btn" data-panel="roommap">Room Mapping</button>
-  </div>
-
-  <!-- SITTING DIRECTION ADVISOR -->
-  <div class="panel active" id="panel-sitting">
-    <h2>Sitting Direction Advisor</h2>
-    <select id="sitActivity"></select>
-    <button class="capture-btn" id="sitCapture">Use Current Facing Direction</button>
-    <div class="result-card" id="sitResult" style="display:none;"></div>
-  </div>
-
-  <!-- SLEEPING DIRECTION ADVISOR -->
-  <div class="panel" id="panel-sleeping">
-    <h2>Sleeping Direction Advisor</h2>
-    <div class="status-msg" style="margin:0 0 12px;text-align:left;max-width:none;">Lie down as you normally sleep and hold the phone flat with the top of the phone pointing the same way as the top of your head.</div>
-    <button class="capture-btn" id="sleepCapture">Capture Head Direction</button>
-    <div class="result-card" id="sleepResult" style="display:none;"></div>
-  </div>
-
-  <!-- MAIN DOOR CHECKER -->
-  <div class="panel" id="panel-door">
-    <h2>Main Door Checker</h2>
-    <div class="status-msg" style="margin:0 0 12px;text-align:left;max-width:none;">Stand at your threshold, facing outward through the doorway, then capture the reading.</div>
-    <button class="capture-btn" id="doorCapture">Capture Door Facing</button>
-    <div class="result-card" id="doorResult" style="display:none;"></div>
-  </div>
-
-  <!-- ROOM MAPPING MODE -->
-  <div class="panel" id="panel-roommap">
-    <h2>Room Mapping Mode</h2>
-    <div class="status-msg" style="margin:0 0 12px;text-align:left;max-width:none;">Face each wall of a room in turn and log it, to see which Vastu zone falls where before placing furniture.</div>
-    <input type="text" id="roomLabel" placeholder="Label (e.g. North wall, Bed wall)">
-    <button class="capture-btn" id="roomCapture">Add Wall Reading</button>
-    <div id="roomList"></div>
-    <div class="empty-hint" id="roomEmptyHint">No readings yet — walk to a wall and tap "Add Wall Reading".</div>
-  </div>
-
-  <footer>© Manik Roy 2026 · Vastu Compass</footer>
-
-  <!-- SETTINGS MODAL -->
-  <div class="modal-overlay" id="settingsModal">
-    <div class="modal-box">
-      <h3>Compass Settings</h3>
-      <div class="switch-row">
-        <label for="trueNorthToggle">Show True North</label>
-        <label class="switch">
-          <input type="checkbox" id="trueNorthToggle">
-          <span class="knob"></span>
-        </label>
-      </div>
-      <div id="declinationField" style="display:none;">
-        <label style="font-size:12.5px;color:#c9bd9f;">Magnetic declination at your location (degrees, + East / − West)</label>
-        <input type="number" id="declinationInput" value="0" step="0.1">
-        <div class="modal-note">Find your local declination by searching "magnetic declination calculator" for your city (e.g. NOAA's NCEI tool), then enter it here. All readings in the app will be corrected by this amount.</div>
-      </div>
-      <div class="modal-note" id="magneticNote">Currently showing magnetic north — the direction your phone's sensor detects directly, without correction.</div>
-      <button class="modal-close" id="settingsClose">Close</button>
-    </div>
-  </div>
-
+    <div class="chips" id="chips"></div>
+    <input type="search" id="search" placeholder="Search by syllable, deity or chakra…" aria-label="Search mantras">
+  </header>
+  <main>
+    <div class="grid" id="grid"></div>
+    <p class="empty" id="empty" hidden>No mantra matches that search.</p>
+  </main>
+</div>
+<footer>
+  <span class="name">Beej Mantra · A quiet study of sacred sound</span>
+  <span class="copy">© <span id="year"></span> <b>Manik Roy</b>. All Rights Reserved.</span>
+</footer>
 <script>
-(function(){
-  var rotor = document.getElementById('rotor');
-  var degVal = document.getElementById('degVal');
-  var zoneName = document.getElementById('zoneName');
-  var statusMsg = document.getElementById('statusMsg');
-  var enableBtn = document.getElementById('enableBtn');
-  var guideToggle = document.getElementById('guideToggle');
-  var guidePanel = document.getElementById('guidePanel');
-  var guideInner = document.getElementById('guideInner');
-
-  // 16-point Vastu direction data: name, Sanskrit, ruling force, guidance, color swatch
-  var ZONES = [
-    {n:'North',      ab:'N',   dev:'उत्तर',    ruler:'Kubera',  color:'#8fae82', use:'Wealth zone — best for cash lockers, safes and the main office desk.'},
-    {n:'North-Northeast', ab:'NNE', dev:'—', ruler:'Water support', color:'#a9c1d8', use:'Supports the NE water zone — good for an open, uncluttered space.'},
-    {n:'Northeast',  ab:'NE',  dev:'ईशान',    ruler:'Water / Ishana', color:'#9fc4dd', use:'Most sacred zone — ideal for the prayer room, main entrance or water storage.'},
-    {n:'East-Northeast', ab:'ENE', dev:'—', ruler:'Sun support', color:'#e0c675', use:'Supports morning sunlight — good for a study nook or reading corner.'},
-    {n:'East',       ab:'E',   dev:'पूर्व',    ruler:'Indra / Surya', color:'#e8c25f', use:'Sunrise direction — ideal for the main entrance, living room and windows.'},
-    {n:'East-Southeast', ab:'ESE', dev:'—', ruler:'Fire support', color:'#dba077', use:'Transition zone between sun and fire — suited to a light dining area.'},
-    {n:'Southeast',  ab:'SE',  dev:'आग्नेय',   ruler:'Agni', color:'#d38a5c', use:'Fire element — the traditional placement for the kitchen and stove.'},
-    {n:'South-Southeast', ab:'SSE', dev:'—', ruler:'Fire support', color:'#c98c7a', use:'Good for kitchen storage or a utility extension.'},
-    {n:'South',      ab:'S',   dev:'दक्षिण',   ruler:'Yama', color:'#c07a72', use:'Heavier energy — best for storage and solid furniture, avoid the main entrance here.'},
-    {n:'South-Southwest', ab:'SSW', dev:'—', ruler:'Earth support', color:'#b98f7d', use:'Good for wardrobes and heavy cabinets.'},
-    {n:'Southwest',  ab:'SW',  dev:'नैऋत्य',   ruler:'Rahu / Nirriti', color:'#a99479', use:'Most stable zone — ideal for the master bedroom and heavy furniture.'},
-    {n:'West-Southwest', ab:'WSW', dev:'—', ruler:'Earth support', color:'#9fa591', use:'Suits a secondary bedroom or long-term storage.'},
-    {n:'West',       ab:'W',   dev:'पश्चिम',   ruler:'Varuna', color:'#7fa0bd', use:'Water element — good for the dining room, study or children\u2019s room.'},
-    {n:'West-Northwest', ab:'WNW', dev:'—', ruler:'Air support', color:'#a3aab3', use:'Suits a guest room or dressing area.'},
-    {n:'Northwest',  ab:'NW',  dev:'वायव्य',   ruler:'Vayu', color:'#b7bcc3', use:'Air element — best for the guest room, garage or movable items.'},
-    {n:'North-Northwest', ab:'NNW', dev:'—', ruler:'Air / wealth support', color:'#9fb098', use:'Supports the north wealth zone — keep this area light and open.'}
-  ];
-
-  // build guide list
-  ZONES.forEach(function(z, i){
-    var row = document.createElement('div');
-    row.className = 'guide-row';
-    row.id = 'zone-' + i;
-    row.innerHTML =
-      '<div class="swatch" style="background:'+z.color+'"></div>' +
-      '<div class="txt"><b>'+z.n+' ('+z.ab+')'+(z.dev!=='—' ? '<span class="dev">'+z.dev+'</span>' : '')+'</b><p>'+z.use+'</p></div>';
-    guideInner.appendChild(row);
+const CHAKRA = [
+  ["ॐ","Oṁ","chakra","Prāṇava · The Origin","The primordial sound said to contain all other mantras within it.","Traditionally described as three sounds — a, u, and m — fused into one, tracing the states of waking, dreaming and deep sleep, with the silence that follows representing a fourth state beyond them. It is chanted before and after most other mantras and treated as the root from which all sound is said to arise."],
+  ["लं","Laṁ","chakra","Mūlādhāra · Root","Seed of the earth element; grounding, stability, survival.","Seated at the base of the spine, Mūlādhāra is linked to the earth element and the sense of smell. Its four petals are traditionally associated with instinct, discernment, effort and pleasure — qualities a practitioner works to steady. Laṁ is chanted to settle the body and quiet the survival instinct before deeper practice."],
+  ["वं","Vaṁ","chakra","Svādhiṣṭhāna · Sacral","Seed of the water element; fluidity, feeling, creativity.","Located near the sacral region, Svādhiṣṭhāna governs the water element and the sense of taste. Its six petals are linked to emotional tendencies — from affection to self-doubt — that the practice aims to balance rather than suppress. Vaṁ is chanted to soften rigidity and restore emotional fluidity."],
+  ["रं","Raṁ","chakra","Maṇipūra · Navel","Seed of the fire element; will, transformation, digestion.","Centered at the navel, Maṇipūra holds the fire element and governs digestion, willpower and personal identity. Its ten petals are associated with states like fear and shame that the practice seeks to transmute into clarity and resolve. Raṁ is chanted to build inner fire and confidence."],
+  ["यं","Yaṁ","chakra","Anāhata · Heart","Seed of the air element; compassion, breath, connection.","Seated at the heart, Anāhata holds the air element and the sense of touch. Its twelve petals represent a wide range of emotional states meeting and balancing at this center. Yaṁ is chanted to open compassion, steady the breath, and soften the boundary between self and other."],
+  ["हं","Haṁ","chakra","Viśuddha · Throat","Seed of ether/space; voice, truth, expression.","Located at the throat, Viśuddha governs the ether element, sound and self-expression. Its sixteen petals correspond to the sixteen vowel sounds of Sanskrit, treated as the purest register of speech. Haṁ is chanted to clear the voice and align speech with truth."],
+  ["क्षं","Kṣaṁ","chakra","Ājñā · Third Eye","Union of all elements; intuition, inner sight.","Positioned between the eyebrows, Ājñā is described as the meeting point of the body's two primary subtle channels. Its two petals carry the sounds ha and kṣa, often read as the union of individual and universal awareness. Kṣaṁ is chanted to sharpen intuition and quiet the analytical mind."]
+];
+const DEITY = [
+  ["ऐं","Aiṁ","deity","Sarasvatī · Wisdom","Seed of speech, learning and the arts.","Considered the bīja of speech itself, and closely tied to Sarasvatī, patron of learning, music and the arts. Students and musicians traditionally chant Aiṁ before study or performance, and it often opens longer Sarasvatī mantras as an invocation of clarity and eloquence."],
+  ["ह्रीं","Hrīṁ","deity","Māyā · Illusion","The bīja of transformation; dissolving what is unreal.","Known as the 'māyā bīja', tied to the power that both conceals and reveals reality. It appears across several goddess traditions as a seed said to dissolve confusion and loosen attachment to appearances, and is often chanted for inner clarity."],
+  ["श्रीं","Śrīṁ","deity","Lakṣmī · Abundance","Seed of prosperity, grace and beauty.","The seed of Lakṣmī, goddess of prosperity, beauty and grace. It is chanted for abundance in the broad sense — not only wealth, but well-being and generosity — and is common in Friday worship and in mantras recited during festivals devoted to her."],
+  ["क्लीं","Klīṁ","deity","Kṛṣṇa · Attraction","Seed of magnetism and devotional longing.","Called the 'attraction bīja', associated with Kṛṣṇa and with Kāmadeva, the god of love and desire. It is used devotionally to intensify longing for the divine, and more broadly to invoke magnetism and connection."],
+  ["गं","Gaṁ","deity","Gaṇeśa · Remover of Obstacles","Invoked first, to clear the way for any undertaking.","The primary seed of Gaṇeśa, remover of obstacles. Tradition holds that any new undertaking should open with an invocation to Gaṇeśa, making Gaṁ one of the most commonly chanted bījas in daily practice."],
+  ["दुं","Duṁ","deity","Durgā · Protection","Seed of fierce, protective feminine strength.","The seed of Durgā, the protective form of the Goddess who confronts adharma directly. Duṁ is chanted for courage and protection, and features prominently during Navarātri worship."],
+  ["क्रीं","Krīṁ","deity","Kālī · Transformation","Fierce feminine power said to burn away illusion.","The seed of Kālī, whose fierce form represents the dissolving of time, ego and illusion. Krīṁ is chanted in Kālī worship for transformation through direct confrontation with what one fears, and is traditionally approached with an experienced teacher's guidance."],
+  ["ग्लौं","Glauṁ","deity","Gaṇeśa · Alternate Seed","An alternate bīja invoked for swift removal of obstacles.","A secondary bīja for Gaṇeśa used alongside or in place of Gaṁ in certain lineages, particularly in worship focused on the swift clearing of obstacles."],
+  ["हूं","Hūṁ","deity","Rudra · Protection","A wrathful, protective sound used in astra and kavacha mantras.","A forceful, protective sound associated with Śiva in his fierce Rudra aspect. It appears at the close of many protective mantras and kavacha (armor) recitations, used to repel negative influence and instill resolve."],
+  ["हौं","Hauṁ","deity","Śiva · Sadāśiva","Union of the syllables ha (Śiva) and au (Sadāśiva).","Read as a union of ha (Śiva) and au (Sadāśiva, his all-pervading form), this bīja appears in Śaiva worship to invoke steadiness, detachment and witnessing awareness."],
+  ["क्रौं","Krauṁ","deity","Narasiṁha · Courage","Invoked for fierce protection and courage.","The seed of Narasiṁha, the half-lion form of Viṣṇu who appears to protect a devotee from tyranny. Krauṁ is chanted for courage in the face of injustice and protection from harm."],
+  ["सौः","Sauḥ","deity","Parā Devī · Śrī Vidyā","The 'heart bīja' — essence beyond form, in the Śrī Vidyā tradition.","Known in Śrī Vidyā as the 'heart bīja', considered the most subtle and interior of seed sounds, pointing beyond form toward the Goddess as pure awareness. It is generally reserved for practitioners formally initiated into that lineage."],
+  ["फट्","Phaṭ","deity","Astra · Repelling","A forceful closing sound meaning roughly 'to split, to shatter obstacles.'","Not tied to a single deity but used as a forceful closing syllable in protective and 'astra' (weapon) mantras, functioning almost like a percussive full stop said to shatter obstacles at the moment a mantra completes."],
+  ["स्त्रीं","Strīṁ","deity","Tārā · Chinnamastā","A bīja tied to Tārā and Chinnamastā among the Daśamahāvidyā, the ten wisdom goddesses.","Chinnamastā is depicted as a fierce, self-decapitating goddess symbolizing transcendence of ego and physical identity. Strīṁ is used within initiated Daśamahāvidyā practice and, like Krīṁ, is traditionally approached only with a qualified teacher's guidance."],
+  ["ठं","Ṭhaṁ","deity","Kubera · Wealth","The seed of Kubera, guardian deity of wealth and treasure.","Kubera is regarded as treasurer of the gods and guardian of the north direction. Ṭhaṁ is chanted, often alongside Lakṣmī's Śrīṁ, in prayers for financial stability and protection of resources."],
+  ["धूं","Dhūṁ","deity","Dhūmāvatī · The Widow Goddess","The seed of Dhūmāvatī, one of the Daśamahāvidyā, who embodies loss, hunger and the wisdom found in what is discarded.","Dhūmāvatī is depicted as an aged, inauspicious-looking widow — a goddess representing what ordinary life avoids: poverty, hunger and endings. Dhūṁ is chanted in her worship to face impermanence directly, and like other Mahāvidyā bījas is traditionally used under a teacher's guidance."],
+  ["ह्लीं","Hlīṁ","deity","Bagalāmukhī · Stunning Power","The seed of Bagalāmukhī, the Mahāvidyā associated with stilling an opponent's speech, thought or intent.","Bagalāmukhī worship is traditionally directed at neutralizing hostility or obstruction rather than causing harm outright — 'stilling' rather than destroying. Hlīṁ is chanted in this context, within initiated tantric practice."],
+  ["क्ष्रौं","Kṣrauṁ","deity","Narasiṁha · Extended Seed","An extended form of the Narasiṁha bīja, combining kṣa with Krauṁ.","Where Krauṁ is the simpler seed for Narasiṁha, Kṣrauṁ appears in fuller Narasiṁha kavacha (protective armor) texts, intensifying the same invocation of fierce protection against tyranny and fear."]
+];
+const ANGA = [
+  ["नमः","Namaḥ","anga","Ṣaḍaṅga · Salutation","The first of six traditional ritual endings, meaning 'salutation' or 'reverence.'","In tantric worship, six short words — Namaḥ, Svāhā, Vaṣaṭ, Hūṁ, Vauṣaṭ and Phaṭ — are traditionally paired with the six 'limbs' of a deity's subtle body during nyāsa, a ritual of consecrating the practitioner's own body before worship. Namaḥ is paired with the heart."],
+  ["स्वाहा","Svāhā","anga","Ṣaḍaṅga · Offering","The second ritual ending, traditionally used when making an offering, especially into fire.","Svāhā is one of the six ritual endings used in nyāsa and homa (fire ritual), traditionally paired with the crown of the head in body-consecration sequences."],
+  ["वषट्","Vaṣaṭ","anga","Ṣaḍaṅga · Invocation","The third ritual ending, used to invoke or draw a deity's presence forward.","Vaṣaṭ is traditionally paired with the crest or tuft of hair (śikhā) in nyāsa sequences, one of the six ritual endings recited across many tantric worship traditions."],
+  ["वौषट्","Vauṣaṭ","anga","Ṣaḍaṅga · Protective Gaze","The fifth ritual ending, traditionally paired with the eyes in body-consecration practice.","Vauṣaṭ is used alongside Hūṁ, the heart's protective seed, in nyāsa sequences that consecrate a practitioner's body — part of the six ritual endings used throughout tantric worship."]
+];
+const VYAHRITI = [
+  ["भूः","Bhūḥ","vyahriti","Vyāhṛti · Earth Realm","The first of three primordial seed-utterances, representing the earthly realm.","The three vyāhṛtis — Bhūḥ, Bhuvaḥ and Svaḥ — open the Gāyatrī mantra and are chanted daily in Sandhyāvandana practice, invoking the earthly, atmospheric and heavenly realms before the mind turns to the mantra that follows."],
+  ["भुवः","Bhuvaḥ","vyahriti","Vyāhṛti · Atmospheric Realm","The second vyāhṛti, representing the intermediate or atmospheric realm.","Chanted alongside Bhūḥ and Svaḥ before the Gāyatrī mantra, Bhuvaḥ is said to invoke the subtle space connecting earth and heaven, where breath and mind are said to move."],
+  ["स्वः","Svaḥ","vyahriti","Vyāhṛti · Heavenly Realm","The third vyāhṛti, representing the heavenly realm.","Svaḥ completes the familiar three vyāhṛtis chanted before the Gāyatrī mantra, invoking the heavenly realm and marking the mind's turn toward the aspiration held in the verse that follows."],
+  ["महः","Mahaḥ","vyahriti","Vyāhṛti · Radiant Realm","The fourth of seven vyāhṛtis named in the Taittirīya Upaniṣad, representing a radiant plane beyond the visible worlds.","Extended Gāyatrī recitation continues the three familiar vyāhṛtis — Bhūḥ, Bhuvaḥ, Svaḥ — with four more named in the Taittirīya Upaniṣad: Mahaḥ, Janaḥ, Tapaḥ and Satyam. Together the seven map an ascending sequence of worlds, from the physical to the absolute."],
+  ["जनः","Janaḥ","vyahriti","Vyāhṛti · Realm of Creation","The fifth vyāhṛti, traditionally associated with the plane of creative beings.","Part of the extended set of seven vyāhṛtis recited in fuller Gāyatrī and Vedic sandhyā practice, continuing the ascent from the physical world toward the absolute described in the Taittirīya Upaniṣad."],
+  ["तपः","Tapaḥ","vyahriti","Vyāhṛti · Realm of Austerity","The sixth vyāhṛti, associated with the plane of tapas, or spiritual discipline.","One of the seven vyāhṛtis of the Taittirīya Upaniṣad, chanted in extended Vedic recitation as the sequence moves closer to the final, absolute realm named Satyam."],
+  ["सत्यम्","Satyam","vyahriti","Vyāhṛti · Realm of Truth","The seventh and final vyāhṛti, meaning simply 'truth' — the highest of the worlds in this sequence.","Satyam closes the extended sequence of seven vyāhṛtis from the Taittirīya Upaniṣad, naming the absolute reality that the preceding six worlds are said to lead toward."]
+];
+const GRAHA = [
+  ["ह्रां","Hrāṁ","graha","Sūrya · Sun","Solar bīja for vitality, confidence and authority.","Associated with Sunday and the Sun's qualities of vitality, leadership and self-confidence. In Vedic astrology it's chanted to strengthen a weak solar placement, or simply to build stamina and clarity of purpose."],
+  ["श्रां","Śrāṁ","graha","Candra · Moon","Lunar bīja for calm, intuition and emotional balance.","Associated with Monday and the Moon's qualities of mind, emotion and intuition. It's chanted to soothe an unsettled mind, support restful sleep, and steady emotional reactivity."],
+  ["क्रां","Krāṁ","graha","Maṅgala · Mars","Bīja for courage, drive and decisive action.","Associated with Tuesday and Mars' qualities of courage, energy and decisiveness. It's chanted to build resolve and vitality, or to temper excess anger attributed to a strong Martian influence."],
+  ["ब्रां","Brāṁ","graha","Budha · Mercury","Bīja for intellect, communication and clarity.","Associated with Wednesday and Mercury's qualities of intellect, communication and commerce. Students, writers and those in business chant it to sharpen clarity of thought and expression."],
+  ["ग्रां","Grāṁ","graha","Bṛhaspati · Jupiter","Bīja for wisdom, growth and good counsel.","Associated with Thursday and Jupiter's qualities of wisdom, teaching and good fortune. It's chanted for guidance in study, ethical decisions, and seeking a teacher's counsel."],
+  ["द्रां","Drāṁ","graha","Śukra · Venus","Bīja for love, harmony and creative refinement.","Associated with Friday and Venus' qualities of love, beauty and creativity. It's chanted to support harmony in relationships and to refine artistic pursuits."],
+  ["प्रां","Prāṁ","graha","Śani · Saturn","Bīja for discipline, patience and karmic balance.","Associated with Saturday and Saturn's qualities of discipline, patience and karmic accountability. It's chanted less for quick results than for the endurance to work through long-term difficulty steadily."],
+  ["भ्रां","Bhrāṁ","graha","Rāhu · North Node","Bīja for navigating obsession, ambition and illusion.","Rāhu is a shadow point in Vedic astrology linked to ambition, obsession and worldly craving. This bīja is chanted to bring awareness to unchecked desire and to navigate the confusion it is said to intensify."],
+  ["स्रां","Srāṁ","graha","Ketu · South Node","Bīja for detachment, intuition and release.","Ketu is Rāhu's counterpart, linked to detachment and spiritual insight gained through release. It's chanted to support letting go and to find meaning in endings."]
+];
+const VOWELS16 = [["अ","a"],["आ","ā"],["इ","i"],["ई","ī"],["उ","u"],["ऊ","ū"],["ऋ","ṛ"],["ॠ","ṝ"],["ऌ","ḷ"],["ॡ","ḹ"],["ए","e"],["ऐ","ai"],["ओ","o"],["औ","au"],["अं","aṁ"],["अः","aḥ"]];
+const MATRIKA_GROUPS = [
+  ["Ājñā",2,[["ह","ha"],["क्ष","kṣa"]]],
+  ["Viśuddha",16,VOWELS16],
+  ["Anāhata",12,[["क","ka"],["ख","kha"],["ग","ga"],["घ","gha"],["ङ","ṅa"],["च","ca"],["छ","cha"],["ज","ja"],["झ","jha"],["ञ","ña"],["ट","ṭa"],["ठ","ṭha"]]],
+  ["Maṇipūra",10,[["ड","ḍa"],["ढ","ḍha"],["ण","ṇa"],["त","ta"],["थ","tha"],["द","da"],["ध","dha"],["न","na"],["प","pa"],["फ","pha"]]],
+  ["Svādhiṣṭhāna",6,[["ब","ba"],["भ","bha"],["म","ma"],["य","ya"],["र","ra"],["ल","la"]]],
+  ["Mūlādhāra",4,[["व","va"],["श","śa"],["ष","ṣa"],["स","sa"]]]
+];
+const PHON = {ka:'a guttural (kaṇṭhya)',kha:'a guttural (kaṇṭhya)',ga:'a guttural (kaṇṭhya)',gha:'a guttural (kaṇṭhya)','ṅa':'a guttural (kaṇṭhya)',ca:'a palatal (tālavya)',cha:'a palatal (tālavya)',ja:'a palatal (tālavya)',jha:'a palatal (tālavya)','ña':'a palatal (tālavya)','ṭa':'a retroflex (mūrdhanya)','ṭha':'a retroflex (mūrdhanya)','ḍa':'a retroflex (mūrdhanya)','ḍha':'a retroflex (mūrdhanya)','ṇa':'a retroflex (mūrdhanya)',ta:'a dental (dantya)',tha:'a dental (dantya)',da:'a dental (dantya)',dha:'a dental (dantya)',na:'a dental (dantya)',pa:'a labial (oṣṭhya)',pha:'a labial (oṣṭhya)',ba:'a labial (oṣṭhya)',bha:'a labial (oṣṭhya)',ma:'a labial (oṣṭhya)',ya:'a semivowel (antaḥstha)',ra:'a semivowel (antaḥstha)',la:'a semivowel (antaḥstha)',va:'a semivowel (antaḥstha)','śa':'a sibilant (ūṣman)','ṣa':'a sibilant (ūṣman)',sa:'a sibilant (ūṣman)',ha:'a sibilant/aspirate (ūṣman)','kṣa':'a conjunct sound (a compound of ka and ṣa)','aṁ':'a nasalized vowel sound (anusvāra)','aḥ':'a breath-toned vowel sound (visarga)'};
+const MATRIKA = MATRIKA_GROUPS.flatMap(([ch, petals, letters]) =>
+  letters.map(([s, iast], i) => [s, iast, "matrika", `${ch} · Petal ${i+1}/${petals}`,
+    `One of the fifty mātṛkā seed-letters, inscribed on petal ${i+1} of the ${petals}-petal ${ch} lotus.`,
+    `In Sanskrit phonetics this is ${PHON[iast] || 'a vowel (svara)'} sound. Tantric texts map all fifty letters of the alphabet onto the petals of the six chakras, treating the entire alphabet as a garland of seed sounds circling the subtle body; this letter occupies petal ${i+1} of ${petals} on the ${ch} lotus.`])
+);
+const toRows = (arr, prefix) => arr.map((r,i) => ({id:prefix+i, s:r[0], iast:r[1], cat:r[2], deity:r[3], meaning:r[4], detail:r[5]}));
+const DATA = [...toRows(CHAKRA,'c'), ...toRows(DEITY,'d'), ...toRows(GRAHA,'g'), ...toRows(MATRIKA,'m'), ...toRows(VYAHRITI,'v'), ...toRows(ANGA,'a')];
+const CATLABEL = {chakra:'Chakra', deity:'Deity', graha:'Navagraha', matrika:'Mātṛkā', vyahriti:'Vyāhṛti', anga:'Ṣaḍaṅga'};
+let activeCat = 'all';
+const chips = document.getElementById('chips');
+[['all','All (95)'],['chakra','Chakra (7)'],['deity','Deity (18)'],['graha','Navagraha (9)'],['matrika','Mātṛkā (50)'],['vyahriti','Vyāhṛti (7)'],['anga','Ṣaḍaṅga (4)']].forEach(([cat,label], i) => {
+  const b = document.createElement('button');
+  b.className = 'chip' + (i===0 ? ' active' : '');
+  b.textContent = label; b.dataset.cat = cat;
+  b.addEventListener('click', () => { activeCat = cat; [...chips.children].forEach(c => c.classList.toggle('active', c===b)); render(document.getElementById('search').value); });
+  chips.appendChild(b);
+});
+const grid = document.getElementById('grid');
+const empty = document.getElementById('empty');
+const counts = Object.fromEntries(DATA.map(m => [m.id, 0]));
+let voice = null;
+let currentUtterance = null; // kept alive on purpose: browsers can silently drop unreferenced utterances
+const supported = 'speechSynthesis' in window;
+if (supported){
+  const pick = () => { const vs = speechSynthesis.getVoices(); voice = vs.find(v => /hi[-_]IN/i.test(v.lang)) || vs.find(v => /IN/i.test(v.lang)) || null; };
+  pick(); speechSynthesis.onvoiceschanged = pick;
+}
+function toast(msg){
+  let t = document.getElementById('toast');
+  if(!t){ t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--card);color:var(--text);border:1px solid var(--border);padding:10px 16px;border-radius:999px;font-size:13px;z-index:99;box-shadow:var(--shadow)'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.opacity = '1';
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.opacity = '0', 2600);
+}
+async function networkTTS(text, card){
+  // Fallback for browsers/webviews with no Web Speech API: fetches real audio
+  // from a free, keyless, no-registration TTS endpoint.
+  try{
+    const url = 'https://api.streamelements.com/kappa/v2/speech?voice=Aditi&text=' + encodeURIComponent(text);
+    const audio = new Audio(url);
+    card.classList.add('speaking');
+    audio.onended = () => card.classList.remove('speaking');
+    audio.onerror = () => { card.classList.remove('speaking'); toast('No voice engine available on this device.'); };
+    await audio.play();
+  } catch(err){
+    card.classList.remove('speaking');
+    toast('No voice engine available on this device.');
+  }
+}
+function speak(text, card){
+  if(!supported){ networkTTS(text, card); return; }
+  try{
+    speechSynthesis.cancel();
+    card.classList.add('speaking');
+    setTimeout(() => {
+      const u = new SpeechSynthesisUtterance(text);
+      currentUtterance = u; // prevents premature garbage collection mid-speech
+      if(voice) u.voice = voice;
+      u.rate = 0.75; u.pitch = 1;
+      u.onend = () => card.classList.remove('speaking');
+      u.onerror = () => { card.classList.remove('speaking'); networkTTS(text, card); };
+      speechSynthesis.speak(u);
+      if(speechSynthesis.paused) speechSynthesis.resume();
+    }, 40);
+  } catch(err){
+    networkTTS(text, card);
+  }
+}
+function render(filter){
+  const q = (filter||'').trim().toLowerCase();
+  grid.innerHTML = '';
+  const list = DATA.filter(m => (activeCat==='all' || m.cat===activeCat) && (!q || m.s.includes(q) || m.iast.toLowerCase().includes(q) || m.deity.toLowerCase().includes(q) || m.meaning.toLowerCase().includes(q)));
+  empty.hidden = list.length !== 0;
+  list.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="rings"><span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span></div>
+      <div class="top"><span class="syll">${m.s}</span><span class="iast">${m.iast}</span><span class="tag">${CATLABEL[m.cat]}</span></div>
+      <div class="deity">${m.deity}</div>
+      <div class="meaning">${m.meaning}</div>
+      <p class="detail" hidden>${m.detail}</p>
+      <button class="more" type="button">Read more</button>
+      <div class="row2">
+        <button class="play" aria-label="Play ${m.iast}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Chant</button>
+        <span class="count">Repeats: <b>${counts[m.id]}</b></span>
+      </div>`;
+    const detailEl = card.querySelector('.detail');
+    const moreBtn = card.querySelector('.more');
+    moreBtn.addEventListener('click', (e) => { e.stopPropagation(); const open = detailEl.hidden; detailEl.hidden = !open; moreBtn.textContent = open ? 'Show less' : 'Read more'; });
+    const doPlay = (e) => { e.stopPropagation(); counts[m.id]++; card.querySelector('.count b').textContent = counts[m.id]; speak(m.iast, card); };
+    card.querySelector('.play').addEventListener('click', doPlay);
+    card.addEventListener('click', doPlay);
+    grid.appendChild(card);
   });
+}
+document.getElementById('search').addEventListener('input', e => render(e.target.value));
+document.getElementById('resetBtn').addEventListener('click', () => { DATA.forEach(m => counts[m.id] = 0); render(document.getElementById('search').value); });
 
-  guideToggle.addEventListener('click', function(){
-    var open = guidePanel.classList.toggle('open');
-    guideToggle.textContent = open ? 'Hide direction meanings' : 'Show all 16 direction meanings';
-  });
-
-  function zoneIndexFromHeading(h){
-    return Math.round(h / 22.5) % 16;
-  }
-
-  var EIGHT = ['N','NE','E','SE','S','SW','W','NW'];
-  function eightFromHeading(h){
-    return EIGHT[Math.round(h / 45) % 8];
-  }
-
-  // ===== True North correction =====
-  var trueNorthEnabled = false;
-  var declination = 0;
-  var rawHeading = 0;
-  var currentHeading = 0; // corrected heading used everywhere in the app
-
-  function applyCorrection(){
-    currentHeading = ((rawHeading + (trueNorthEnabled ? declination : 0)) % 360 + 360) % 360;
-    renderHeading();
-  }
-
-  var lastActive = -1;
-  function renderHeading(){
-    var heading = currentHeading;
-    rotor.style.transform = 'rotate(' + (-heading) + 'deg)';
-    degVal.textContent = Math.round(heading);
-    var idx = zoneIndexFromHeading(heading);
-    var z = ZONES[idx];
-    zoneName.innerHTML = z.n + ' <span class="sanskrit">' + (z.dev!=='—' ? z.dev : '') + '</span>';
-    if(lastActive !== idx){
-      var prev = document.getElementById('zone-' + lastActive);
-      if(prev) prev.classList.remove('active');
-      var cur = document.getElementById('zone-' + idx);
-      if(cur){
-        cur.classList.add('active');
-        if(guidePanel.classList.contains('open')) cur.scrollIntoView({block:'nearest', behavior:'smooth'});
-      }
-      lastActive = idx;
-    }
-  }
-
-  function updateHeading(heading){
-    rawHeading = ((heading % 360) + 360) % 360;
-    applyCorrection();
-  }
-
-  function handleOrientation(e){
-    var heading;
-    if(typeof e.webkitCompassHeading === 'number'){
-      heading = e.webkitCompassHeading; // iOS: already true compass heading
-    } else if(e.absolute && e.alpha !== null){
-      heading = 360 - e.alpha;
-    } else if(e.alpha !== null){
-      heading = 360 - e.alpha;
-    } else {
-      return;
-    }
-    updateHeading(heading);
-  }
-
-  function startListening(){
-    statusMsg.textContent = 'Reading device orientation…';
-    if('ondeviceorientationabsolute' in window){
-      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-    } else {
-      window.addEventListener('deviceorientation', handleOrientation, true);
-    }
-    enableBtn.style.display = 'none';
-  }
-
-  enableBtn.addEventListener('click', function(){
-    if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
-      DeviceOrientationEvent.requestPermission().then(function(resp){
-        if(resp === 'granted'){
-          startListening();
-        } else {
-          statusMsg.textContent = 'Compass permission was denied. You can re-enable it in your browser settings.';
-        }
-      }).catch(function(){
-        statusMsg.textContent = 'Could not access the compass sensor on this device.';
-      });
-    } else if('DeviceOrientationEvent' in window){
-      startListening();
-    } else {
-      statusMsg.textContent = 'This device or browser does not expose a compass sensor. Try on a mobile phone with Chrome or Safari.';
-    }
-  });
-
-  // Desktop / no-sensor fallback: drag to rotate, for preview and testing
-  var dragging = false, lastAngle = 0, dragHeading = 0;
-  var stage = document.querySelector('.compass-stage');
-
-  function angleFromEvent(evt){
-    var rect = stage.getBoundingClientRect();
-    var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
-    var x = (evt.touches ? evt.touches[0].clientX : evt.clientX) - cx;
-    var y = (evt.touches ? evt.touches[0].clientY : evt.clientY) - cy;
-    return Math.atan2(x, -y) * 180 / Math.PI;
-  }
-
-  function dragStart(evt){
-    if(window.DeviceOrientationEvent && enableBtn.style.display === 'none') return; // sensor active, skip manual drag
-    dragging = true;
-    lastAngle = angleFromEvent(evt);
-  }
-  function dragMove(evt){
-    if(!dragging) return;
-    var a = angleFromEvent(evt);
-    var delta = a - lastAngle;
-    lastAngle = a;
-    dragHeading = ((dragHeading + delta) % 360 + 360) % 360;
-    updateHeading(dragHeading);
-    evt.preventDefault();
-  }
-  function dragEnd(){ dragging = false; }
-
-  stage.addEventListener('mousedown', dragStart);
-  window.addEventListener('mousemove', dragMove);
-  window.addEventListener('mouseup', dragEnd);
-  stage.addEventListener('touchstart', dragStart, {passive:true});
-  stage.addEventListener('touchmove', dragMove, {passive:false});
-  stage.addEventListener('touchend', dragEnd);
-
-  // ===== TAB SWITCHING =====
-  var tabButtons = document.querySelectorAll('.tab-btn');
-  var panels = document.querySelectorAll('.panel');
-  tabButtons.forEach(function(btn){
-    btn.addEventListener('click', function(){
-      tabButtons.forEach(function(b){ b.classList.remove('active'); });
-      panels.forEach(function(p){ p.classList.remove('active'); });
-      btn.classList.add('active');
-      document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
-    });
-  });
-
-  // ===== SETTINGS MODAL (True North) =====
-  var settingsBtn = document.getElementById('settingsBtn');
-  var settingsModal = document.getElementById('settingsModal');
-  var settingsClose = document.getElementById('settingsClose');
-  var trueNorthToggle = document.getElementById('trueNorthToggle');
-  var declinationField = document.getElementById('declinationField');
-  var declinationInput = document.getElementById('declinationInput');
-  var magneticNote = document.getElementById('magneticNote');
-
-  settingsBtn.addEventListener('click', function(){ settingsModal.classList.add('open'); });
-  settingsClose.addEventListener('click', function(){ settingsModal.classList.remove('open'); });
-  settingsModal.addEventListener('click', function(e){ if(e.target === settingsModal) settingsModal.classList.remove('open'); });
-
-  trueNorthToggle.addEventListener('change', function(){
-    trueNorthEnabled = trueNorthToggle.checked;
-    declinationField.style.display = trueNorthEnabled ? 'block' : 'none';
-    magneticNote.style.display = trueNorthEnabled ? 'none' : 'block';
-    applyCorrection();
-  });
-  declinationInput.addEventListener('input', function(){
-    declination = parseFloat(declinationInput.value) || 0;
-    applyCorrection();
-  });
-
-  // ===== SITTING DIRECTION ADVISOR =====
-  var SIT_ACTIVITIES = [
-    {key:'work',   label:'Work / study desk', best:['E','N'], acceptable:['NE'], avoid:['S'],
-      tip:'Facing East sharpens focus and decision-making. Facing North supports steady, income-related work. Avoid facing South at your desk.'},
-    {key:'meeting', label:'Meetings / negotiations', best:['N','E'], acceptable:['NE'], avoid:['S','SW'],
-      tip:'Facing North or East while negotiating is considered favourable for reaching good outcomes.'},
-    {key:'eating', label:'Eating meals', best:['E'], acceptable:['W','N'], avoid:['S'],
-      tip:'Facing East while eating is ideal. West and North are acceptable. South is traditionally discouraged at mealtimes.'},
-    {key:'boss', label:'Business owner / head-of-household seat', best:['N','E'], acceptable:['NE'], avoid:['S','SW'],
-      tip:'Sit facing North or East with a solid wall behind you (ideally to the South or West) for authority and stability.'}
-  ];
-  var sitActivitySelect = document.getElementById('sitActivity');
-  SIT_ACTIVITIES.forEach(function(a){
-    var opt = document.createElement('option');
-    opt.value = a.key; opt.textContent = a.label;
-    sitActivitySelect.appendChild(opt);
-  });
-
-  function rateFromLists(dir, best, acceptable, avoid){
-    if(best.indexOf(dir) !== -1) return 'Excellent';
-    if(avoid.indexOf(dir) !== -1) return 'Avoid';
-    if(acceptable && acceptable.indexOf(dir) !== -1) return 'Acceptable';
-    return 'Neutral';
-  }
-
-  document.getElementById('sitCapture').addEventListener('click', function(){
-    var activity = SIT_ACTIVITIES.filter(function(a){ return a.key === sitActivitySelect.value; })[0] || SIT_ACTIVITIES[0];
-    var dir = eightFromHeading(currentHeading);
-    var rating = rateFromLists(dir, activity.best, activity.acceptable, activity.avoid);
-    var card = document.getElementById('sitResult');
-    card.style.display = 'block';
-    card.className = 'result-card rating-' + rating;
-    card.innerHTML = 'Facing ' + dir + ' <span class="rating-tag">' + rating + '</span>' +
-      '<div style="margin-top:6px;">' + activity.tip + '</div>';
-  });
-
-  // ===== SLEEPING DIRECTION ADVISOR =====
-  var SLEEP_RATING = {
-    S:  {rating:'Excellent', note:'Head towards South is considered the most restful position, aligning naturally with the body\u2019s own magnetic field.'},
-    SE: {rating:'Good',      note:'Head towards Southeast is generally comfortable, with only mild restlessness for some sleepers.'},
-    E:  {rating:'Good',      note:'Head towards East favours alertness and is traditionally recommended for students.'},
-    SW: {rating:'Acceptable',note:'Head towards Southwest is stable, though some find it feels heavier than South.'},
-    W:  {rating:'Neutral',   note:'Head towards West is acceptable but not ideal — may cause mild restlessness for some.'},
-    NW: {rating:'Caution',   note:'Head towards Northwest can disturb sleep quality and lead to a restless, unsettled feeling.'},
-    N:  {rating:'Avoid',     note:'Head towards North is traditionally avoided — believed to conflict with the body\u2019s own magnetic field and disturb sleep.'},
-    NE: {rating:'Avoid',     note:'Northeast is considered too energetically active a zone for sleep; better reserved for prayer or meditation.'}
-  };
-  document.getElementById('sleepCapture').addEventListener('click', function(){
-    var dir = eightFromHeading(currentHeading);
-    var info = SLEEP_RATING[dir];
-    var card = document.getElementById('sleepResult');
-    card.style.display = 'block';
-    card.className = 'result-card rating-' + info.rating;
-    card.innerHTML = 'Head direction: ' + dir + ' <span class="rating-tag">' + info.rating + '</span>' +
-      '<div style="margin-top:6px;">' + info.note + '</div>';
-  });
-
-  // ===== MAIN DOOR CHECKER =====
-  var DOOR_RATING = {
-    N:{rating:'Excellent',note:'A North-facing entrance is linked to Kubera, the lord of wealth — considered highly favourable.'},
-    NNE:{rating:'Excellent',note:'Close to the sacred Northeast zone — a favourable entrance direction.'},
-    NE:{rating:'Excellent',note:'The most auspicious entrance direction in Vastu, associated with positive energy and prosperity.'},
-    ENE:{rating:'Good',note:'A good entrance direction, benefiting from morning sunlight.'},
-    E:{rating:'Excellent',note:'An East-facing entrance welcomes the rising sun and is considered highly auspicious.'},
-    ESE:{rating:'Good',note:'A workable entrance direction, though slightly transitional between sun and fire zones.'},
-    SE:{rating:'Caution',note:'The Southeast is ruled by fire (Agni) — traditionally considered less ideal for a main entrance.'},
-    SSE:{rating:'Caution',note:'Similar to Southeast — a fire-influenced zone, less favoured for the main door.'},
-    S:{rating:'Avoid',note:'A South-facing main entrance is traditionally considered weak; if unavoidable, Vastu remedies are often recommended.'},
-    SSW:{rating:'Avoid',note:'Close to the heavy Southwest zone — generally avoided for a main entrance.'},
-    SW:{rating:'Avoid',note:'The Southwest is meant to anchor the whole house — an entrance here is traditionally discouraged.'},
-    WSW:{rating:'Caution',note:'A workable but not ideal entrance direction.'},
-    W:{rating:'Good',note:'A West-facing entrance is generally considered good, linked to steady long-term gains.'},
-    WNW:{rating:'Good',note:'A favourable secondary-entrance direction, linked to the air element.'},
-    NW:{rating:'Good',note:'The Northwest (air element) is a common and acceptable direction for entrances, especially secondary ones.'},
-    NNW:{rating:'Good',note:'Close to the Northwest air zone — an acceptable entrance direction.'}
-  };
-  document.getElementById('doorCapture').addEventListener('click', function(){
-    var idx = zoneIndexFromHeading(currentHeading);
-    var z = ZONES[idx];
-    var info = DOOR_RATING[z.ab];
-    var card = document.getElementById('doorResult');
-    card.style.display = 'block';
-    card.className = 'result-card rating-' + info.rating;
-    card.innerHTML = 'Door faces ' + z.n + ' (' + z.ab + ') <span class="rating-tag">' + info.rating + '</span>' +
-      '<div style="margin-top:6px;">' + info.note + '</div>';
-  });
-
-  // ===== ROOM MAPPING MODE =====
-  var roomReadings = [];
-  var roomList = document.getElementById('roomList');
-  var roomEmptyHint = document.getElementById('roomEmptyHint');
-  var roomLabelInput = document.getElementById('roomLabel');
-  var wallCounter = 0;
-
-  function renderRoomList(){
-    roomList.innerHTML = '';
-    roomEmptyHint.style.display = roomReadings.length ? 'none' : 'block';
-    roomReadings.forEach(function(r, i){
-      var row = document.createElement('div');
-      row.className = 'room-row';
-      row.innerHTML =
-        '<div class="info"><b>' + r.label + '</b><span>' + r.zoneName + ' (' + r.ab + ', ' + Math.round(r.heading) + '\u00B0) — ' + r.use + '</span></div>' +
-        '<button class="del-btn" aria-label="Remove">✕</button>';
-      row.querySelector('.del-btn').addEventListener('click', function(){
-        roomReadings.splice(i, 1);
-        renderRoomList();
-      });
-      roomList.appendChild(row);
-    });
-  }
-
-  document.getElementById('roomCapture').addEventListener('click', function(){
-    wallCounter++;
-    var idx = zoneIndexFromHeading(currentHeading);
-    var z = ZONES[idx];
-    var label = roomLabelInput.value.trim() || ('Wall ' + wallCounter);
-    roomReadings.push({label:label, heading:currentHeading, ab:z.ab, zoneName:z.n, use:z.use});
-    roomLabelInput.value = '';
-    renderRoomList();
-  });
-
-  renderRoomList();
-
-  updateHeading(0);
-
-  if(!(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') && 'DeviceOrientationEvent' in window){
-    // Android/other browsers usually don't need explicit permission
-    statusMsg.textContent = 'Tap "Enable Compass" to start, or drag the dial to explore directions manually.';
-  }
-
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', function(){
-      navigator.serviceWorker.register('service-worker.js').catch(function(){});
-    });
-  }
-})();
+const THEMES = ['dark','light','oled','hc'];
+const LABELS = {dark:'Dark', light:'Light', oled:'OLED', hc:'High Contrast'};
+let ti = 0;
+document.getElementById('themeBtn').addEventListener('click', () => {
+  ti = (ti + 1) % THEMES.length;
+  const t = THEMES[ti];
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('themeLabel').textContent = LABELS[t];
+});
+document.getElementById('year').textContent = new Date().getFullYear();
+render('');
 </script>
 </body>
 </html>
