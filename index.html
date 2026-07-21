@@ -147,7 +147,7 @@
       <option value="in">India</option>
       <option value="au">Australia</option>
     </select>
-    <input id="search" type="search" placeholder="Filter by callsign or country…" aria-label="Filter flights">
+    <input id="search" type="search" placeholder="Filter by callsign, type, or registration…" aria-label="Filter flights">
   </section>
   <div class="status" id="status" role="status"></div>
 
@@ -155,19 +155,19 @@
 </main>
 
 <footer>
-  <div>Data via <a href="https://opensky-network.org" target="_blank" rel="noopener">OpenSky Network</a> — free, keyless public API</div>
+  <div>Data via <a href="https://adsb.fi" target="_blank" rel="noopener">ADS-B.fi</a> — free, keyless public API</div>
   <div class="src">Positions may be delayed. Not for navigation use.</div>
   <div id="copyright">© 2026 Manik Roy. All Rights Reserved.</div>
 </footer>
 
 <script>
   const REGIONS = {
-    eu:  {label:'Europe',        lamin:36, lomin:-10, lamax:60, lomax:30},
-    us:  {label:'USA — East',    lamin:25, lomin:-90, lamax:48, lomax:-65},
-    asia:{label:'Japan & Korea', lamin:24, lomin:122, lamax:46, lomax:146},
-    me:  {label:'Middle East',   lamin:12, lomin:34,  lamax:40, lomax:63},
-    in:  {label:'India',         lamin:6,  lomin:68,  lamax:35, lomax:97},
-    au:  {label:'Australia',     lamin:-44,lomin:112, lamax:-10,lomax:154},
+    eu:  {label:'Europe',        lat:48,  lon:10,  dist:250},
+    us:  {label:'USA — East',    lat:36,  lon:-80, dist:250},
+    asia:{label:'Japan & Korea', lat:35,  lon:130, dist:250},
+    me:  {label:'Middle East',   lat:26,  lon:50,  dist:250},
+    in:  {label:'India',         lat:20,  lon:78,  dist:250},
+    au:  {label:'Australia',     lat:-27, lon:135, dist:250},
   };
   const THEMES = ['dark','light','oled','hc'];
   const THEME_LABELS = {dark:'Dark', light:'Light', oled:'OLED Black', hc:'High Contrast'};
@@ -193,14 +193,21 @@
     return COMPASS[Math.round(deg / 45) % 8];
   }
 
+  function regionBox(region){
+    const dLat = region.dist / 60;
+    const dLon = region.dist / (60 * Math.cos(region.lat * Math.PI / 180));
+    return {lamin:region.lat-dLat, lamax:region.lat+dLat, lomin:region.lon-dLon, lomax:region.lon+dLon};
+  }
+
   function renderRadar(flights, region){
+    const box = regionBox(region);
     const radar = el('radar');
     radar.querySelectorAll('.blip').forEach(b => b.remove());
     const frag = document.createDocumentFragment();
     flights.forEach(f => {
       if (f.lon === null || f.lat === null) return;
-      const x = (f.lon - region.lomin) / (region.lomax - region.lomin) * 100;
-      const y = 100 - (f.lat - region.lamin) / (region.lamax - region.lamin) * 100;
+      const x = (f.lon - box.lomin) / (box.lomax - box.lomin) * 100;
+      const y = 100 - (f.lat - box.lamin) / (box.lomax - box.lamin) * 100;
       if (x < 0 || x > 100 || y < 0 || y > 100) return;
       const dot = document.createElement('div');
       dot.className = 'blip';
@@ -215,7 +222,7 @@
     const list = el('list');
     const q = el('search').value.trim().toLowerCase();
     const filtered = flights.filter(f =>
-      !q || f.callsign.toLowerCase().includes(q) || f.country.toLowerCase().includes(q)
+      !q || f.callsign.toLowerCase().includes(q) || f.type.toLowerCase().includes(q) || f.reg.toLowerCase().includes(q)
     ).slice(0, 40);
 
     if (!filtered.length){
@@ -223,15 +230,15 @@
       return;
     }
     list.innerHTML = filtered.map(f => {
-      const alt = f.onGround ? 'GND' : (f.altitude !== null ? Math.round(f.altitude) + ' m' : '—');
-      const spd = f.velocity !== null ? Math.round(f.velocity * 3.6) + ' km/h' : '—';
+      const alt = f.onGround ? 'GND' : (f.altitude !== null ? Math.round(f.altitude).toLocaleString() + ' ft' : '—');
+      const spd = f.speed !== null ? Math.round(f.speed) + ' kt' : '—';
       const vr = f.vrate === null ? '<span>–</span>' :
-        f.vrate > 1 ? '<span class="vr-up">▲ climbing</span>' :
-        f.vrate < -1 ? '<span class="vr-down">▼ descending</span>' : '<span>▬ level</span>';
+        f.vrate > 100 ? '<span class="vr-up">▲ climbing</span>' :
+        f.vrate < -100 ? '<span class="vr-down">▼ descending</span>' : '<span>▬ level</span>';
       const hdg = f.heading !== null ? Math.round(f.heading) + '° ' + headingToCompass(f.heading) : '—';
       return `<div class="row">
         <div class="call">${f.callsign || '—'}</div>
-        <div class="country">${f.country}</div>
+        <div class="country">${f.type}${f.reg ? ' • ' + f.reg : ''}</div>
         <div class="metrics">
           <span><em>ALT</em>${alt}</span>
           <span><em>SPD</em>${spd}</span>
@@ -248,18 +255,20 @@
     const status = el('status');
     status.textContent = 'Fetching live positions…';
     status.classList.remove('err');
-    const url = `https://opensky-network.org/api/states/all?lamin=${region.lamin}&lomin=${region.lomin}&lamax=${region.lamax}&lomax=${region.lomax}`;
+    const url = `https://opendata.adsb.fi/api/v3/lat/${region.lat}/lon/${region.lon}/dist/${region.dist}`;
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
-      const states = data.states || [];
-      allFlights = states
-        .filter(s => s[1] && s[1].trim())
-        .map(s => ({
-          icao24: s[0], callsign: s[1].trim(), country: s[2],
-          lon: s[5], lat: s[6], altitude: s[7], onGround: s[8],
-          velocity: s[9], heading: s[10], vrate: s[11],
+      const craft = data.ac || [];
+      allFlights = craft
+        .filter(a => a.flight && a.flight.trim())
+        .map(a => ({
+          hex: a.hex, callsign: a.flight.trim(), type: a.t || '—', reg: a.r || '',
+          lon: a.lon ?? null, lat: a.lat ?? null,
+          altitude: typeof a.alt_baro === 'number' ? a.alt_baro : null,
+          onGround: a.alt_baro === 'ground',
+          speed: a.gs ?? null, heading: a.track ?? null, vrate: a.baro_rate ?? null,
         }))
         .sort((a, b) => (b.altitude || 0) - (a.altitude || 0));
 
