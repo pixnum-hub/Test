@@ -1,277 +1,582 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Vastu Compass</title>
+<meta name="theme-color" content="#151414">
+<meta name="description" content="A precision Vastu Compass — find true direction and see Vastu Shastra guidance for every zone of your home.">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>
-:root{--radius:18px;--gap:12px;}
-[data-theme="dark"]{--bg:#14110B;--panel:#1F1A12;--panel2:#241E15;--text:#EDE4D3;--muted:#B8A98C;--accent:#C9873D;--border:#3A3124;--needle:#EDE4D3;}
-[data-theme="light"]{--bg:#F7F2E7;--panel:#FFFFFF;--panel2:#F1EAD9;--text:#2B2213;--muted:#6B5D45;--accent:#A8551A;--border:#E3D9C2;--needle:#2B2213;}
-[data-theme="oled"]{--bg:#000000;--panel:#0A0A0A;--panel2:#111111;--text:#E8E0CF;--muted:#9A8F75;--accent:#C9873D;--border:#1F1F1F;--needle:#E8E0CF;}
-[data-theme="hc"]{--bg:#000000;--panel:#000000;--panel2:#000000;--text:#FFFFFF;--muted:#FFFF33;--accent:#FFFF33;--border:#FFFFFF;--needle:#FFFF33;}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;transition:background .3s,color .3s;}
-header{width:100%;max-width:480px;padding:20px 20px 4px;text-align:center;}
-h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:1.5rem;letter-spacing:.5px;}
-.sub{margin:6px 0 0;font-size:.8rem;color:var(--muted);}
-.enable{display:none;margin:14px auto 0;padding:10px 22px;border-radius:30px;border:1px solid var(--accent);background:var(--panel2);color:var(--text);font-size:.85rem;font-weight:600;}
-main{width:100%;max-width:480px;padding:12px 20px 10px;display:flex;flex-direction:column;align-items:center;gap:var(--gap);}
-.dialwrap{position:relative;width:min(78vw,300px);height:min(78vw,300px);margin-top:6px;}
-.ring{position:absolute;inset:0;border-radius:50%;border:2px solid var(--border);}
-.dial{position:absolute;inset:8%;border-radius:50%;transition:transform .12s linear;overflow:hidden;border:1px solid var(--border);}
-.dial::after{content:"";position:absolute;inset:36%;border-radius:50%;background:var(--panel);border:1px solid var(--border);z-index:2;}
-.label{position:absolute;left:50%;top:50%;font-size:.72rem;font-weight:700;color:#161208;text-shadow:0 1px 1px rgba(255,255,255,.25);z-index:3;}
-[data-theme="hc"] .label{color:#fff;mix-blend-mode:difference;}
-.mandala{position:absolute;left:19%;top:19%;width:62%;height:62%;display:none;transition:transform .12s linear;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:calc(100%/9) calc(100%/9);opacity:.85;}
-.mandala.show{display:block;}
-.mlabel{position:absolute;font-size:.5rem;font-weight:700;transform:translate(-50%,-50%);color:var(--text);text-shadow:0 0 3px var(--panel),0 0 3px var(--panel);white-space:nowrap;}
-.needle{position:absolute;left:50%;top:6%;bottom:46%;width:0;transform:translateX(-50%);z-index:5;}
-.needle::before{content:"";position:absolute;left:-9px;top:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:16px solid var(--accent);}
-.needle::after{content:"";position:absolute;left:-1.5px;top:14px;width:3px;bottom:0;background:var(--needle);opacity:.55;}
-.center-dot{position:absolute;left:50%;top:50%;width:9px;height:9px;background:var(--accent);border-radius:50%;transform:translate(-50%,-50%);z-index:6;}
-.deg{font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;}
-.facing{font-size:.85rem;color:var(--muted);text-align:center;}
-.card{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;text-align:center;border-top:4px solid var(--zonecolor,var(--accent));}
-.card h2{margin:0 0 2px;font-family:Georgia,serif;font-size:1.1rem;}
-.card .sk{font-size:.78rem;color:var(--muted);margin-bottom:8px;}
-.rowinfo{display:flex;justify-content:center;gap:18px;font-size:.7rem;color:var(--muted);margin-bottom:8px;}
-.rowinfo b{display:block;color:var(--text);font-size:.85rem;font-weight:600;}
-.note{font-size:.83rem;line-height:1.4;}
-.loc{font-size:.75rem;color:var(--muted);}
-.calib{font-size:.68rem;color:var(--muted);text-align:center;max-width:320px;}
-.panel{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
-.panel h3{margin:0 0 10px;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
-.seg{display:flex;gap:6px;margin-bottom:10px;}
-.seg button{flex:1;padding:8px 6px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--muted);font-size:.72rem;font-weight:600;}
-.seg button.active{border-color:var(--accent);color:var(--text);}
-.fieldrow{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-.fieldrow label{flex:1;font-size:.75rem;color:var(--muted);}
-.fieldrow input[type=number]{width:70px;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:.8rem;}
-select{width:100%;padding:9px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:.82rem;margin-bottom:10px;}
-.verdict{border-radius:12px;padding:10px 12px;font-size:.82rem;font-weight:600;text-align:center;}
-.v-ideal{background:#2E4B32;color:#CDEFC9;}
-.v-ok{background:#4B4322;color:#F0E4A8;}
-.v-avoid{background:#4B2222;color:#F5C6C6;}
-.v-neutral{background:var(--panel);color:var(--muted);border:1px solid var(--border);}
-.mini{font-size:.68rem;color:var(--muted);margin-top:6px;text-align:center;}
-.themes{display:flex;gap:8px;margin:4px 0 4px;}
-.tbtn{padding:8px 12px;border-radius:20px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);font-size:.72rem;font-weight:600;}
-.tbtn.active{border-color:var(--accent);color:var(--text);}
-footer{width:100%;max-width:480px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;padding:16px 12px 30px;color:var(--muted);font-size:.72rem;}
-footer .name{font-weight:600;color:var(--text);font-size:.78rem;}
+  :root{
+    --bg-1:#1b1a17;
+    --bg-2:#0d0c0b;
+    --brass:#cb9c4d;
+    --brass-light:#f0d999;
+    --steel:#8a919b;
+    --cream:#f8f1e0;
+    --ink:#241a0d;
+    --danger:#d3341c;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse at 50% -10%, #2a2823 0%, var(--bg-1) 45%, var(--bg-2) 100%);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--cream);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    overflow-x:hidden;
+    padding-top:calc(var(--safe-top) + 14px);
+    padding-bottom:calc(var(--safe-bottom) + 14px);
+  }
+
+  .app-title{
+    text-align:center;
+    margin:4px 0 2px;
+  }
+  .app-title h1{
+    font-size:22px;
+    letter-spacing:0.14em;
+    margin:0;
+    font-weight:700;
+    color:var(--brass-light);
+    text-transform:uppercase;
+  }
+  .app-title .sub{
+    font-size:13px;
+    color:#b8ab8a;
+    letter-spacing:0.05em;
+    margin-top:2px;
+  }
+
+  .compass-stage{
+    position:relative;
+    width:min(82vw, 380px);
+    aspect-ratio:1/1;
+    margin:22px auto 6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .fixed-pointer{
+    position:absolute;
+    top:-6px;
+    left:50%;
+    transform:translateX(-50%);
+    width:0;height:0;
+    border-left:11px solid transparent;
+    border-right:11px solid transparent;
+    border-top:18px solid var(--danger);
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+    z-index:5;
+  }
+
+  .rotor{
+    width:100%;
+    height:100%;
+    will-change:transform;
+    transition:transform 0.15s linear;
+  }
+  .rotor svg{
+    width:100%;
+    height:100%;
+    display:block;
+  }
+
+  .readout{
+    text-align:center;
+    margin-top:2px;
+  }
+  .readout .deg{
+    font-size:40px;
+    font-weight:700;
+    color:var(--cream);
+    letter-spacing:0.02em;
+  }
+  .readout .deg span{ font-size:22px; color:#c9bd9f; }
+  .readout .zone{
+    font-size:15px;
+    color:var(--brass-light);
+    margin-top:2px;
+    letter-spacing:0.04em;
+  }
+  .readout .zone .sanskrit{
+    color:#e3d3a0;
+    opacity:0.85;
+  }
+
+  .status-msg{
+    font-size:12.5px;
+    color:#a79c86;
+    text-align:center;
+    max-width:320px;
+    margin:8px auto 0;
+    line-height:1.5;
+  }
+
+  button.enable-btn{
+    margin-top:14px;
+    background:linear-gradient(180deg,#eecd7c,#a97a34);
+    color:#241a0d;
+    border:none;
+    padding:12px 26px;
+    border-radius:30px;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:0.03em;
+    box-shadow:0 4px 14px rgba(0,0,0,0.4);
+  }
+  button.enable-btn:active{ transform:scale(0.97); }
+
+  .guide-toggle{
+    margin-top:20px;
+    background:none;
+    border:1px solid #6b6250;
+    color:#e3d3a0;
+    padding:9px 20px;
+    border-radius:24px;
+    font-size:13.5px;
+    letter-spacing:0.03em;
+  }
+
+  .guide-panel{
+    width:min(92vw,420px);
+    margin:14px auto 0;
+    max-height:0;
+    overflow:hidden;
+    transition:max-height 0.35s ease;
+    border-radius:14px;
+  }
+  .guide-panel.open{ max-height:900px; }
+  .guide-inner{
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px;
+    padding:8px;
+  }
+  .guide-row{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    padding:10px 8px;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .guide-row:last-child{ border-bottom:none; }
+  .guide-row.active{
+    background:rgba(240,217,153,0.08);
+    border-radius:10px;
+  }
+  .guide-row .swatch{
+    width:14px;height:14px;border-radius:4px;flex:0 0 auto;margin-top:3px;
+    box-shadow:0 0 0 1px rgba(0,0,0,0.4) inset;
+  }
+  .guide-row .txt b{
+    display:block;
+    font-size:14.5px;
+    color:var(--cream);
+  }
+  .guide-row .txt .dev{
+    font-size:12.5px;
+    color:#c9a95c;
+    margin-left:6px;
+  }
+  .guide-row .txt p{
+    margin:3px 0 0;
+    font-size:12.5px;
+    color:#b3a78d;
+    line-height:1.45;
+  }
+
+  footer{
+    margin-top:auto;
+    padding-top:20px;
+    font-size:11px;
+    color:#5f584a;
+    text-align:center;
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>Vastu Compass</h1>
-  <p class="sub">Point your phone to read Vastu direction, zone & room fit</p>
-  <button class="enable" id="enableBtn">Enable Compass</button>
-</header>
-<main>
-  <div class="dialwrap">
-    <div class="ring"></div>
-    <div class="dial" id="dial"></div>
-    <div class="mandala" id="mandala"></div>
-    <div class="needle"></div>
-    <div class="center-dot"></div>
-  </div>
-  <div class="deg" id="deg">--°</div>
-  <div class="facing" id="facing">Waiting for sensor…</div>
 
-  <div class="card" id="card">
-    <h2 id="zName">—</h2>
-    <div class="sk" id="zSk">—</div>
-    <div class="rowinfo"><div>Element<b id="zEl">—</b></div><div>Deity<b id="zGod">—</b></div></div>
-    <div class="note" id="zNote">Allow motion access to begin reading your direction.</div>
+  <div class="app-title">
+    <h1>Vastu Compass</h1>
+    <div class="sub">वास्तु कम्पास · directional guidance</div>
   </div>
 
-  <div class="panel">
-    <h3>Check a room</h3>
-    <select id="roomSel"></select>
-    <div class="verdict v-neutral" id="verdict">Select a room to see how this direction suits it.</div>
+  <div class="compass-stage">
+    <div class="fixed-pointer"></div>
+    <div class="rotor" id="rotor">
+      <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="steelBezel" cx="38%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="#f4f5f7"/><stop offset="18%" stop-color="#d9dde2"/>
+            <stop offset="38%" stop-color="#aab1ba"/><stop offset="55%" stop-color="#7d838d"/>
+            <stop offset="72%" stop-color="#565b63"/><stop offset="88%" stop-color="#33363b"/>
+            <stop offset="100%" stop-color="#1c1e21"/>
+          </radialGradient>
+          <linearGradient id="steelEdgeHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="30%" stop-color="#ffffff" stop-opacity="0.05"/>
+            <stop offset="70%" stop-color="#000000" stop-opacity="0.05"/><stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
+          </linearGradient>
+          <radialGradient id="brassRing" cx="42%" cy="35%" r="70%">
+            <stop offset="0%" stop-color="#fdf1c8"/><stop offset="25%" stop-color="#eecd7c"/>
+            <stop offset="48%" stop-color="#cb9c4d"/><stop offset="70%" stop-color="#a97a34"/>
+            <stop offset="88%" stop-color="#7c5522"/><stop offset="100%" stop-color="#5a3c16"/>
+          </radialGradient>
+          <radialGradient id="dialFace" cx="46%" cy="40%" r="65%">
+            <stop offset="0%" stop-color="#fffdf6"/><stop offset="55%" stop-color="#f8f1e0"/>
+            <stop offset="80%" stop-color="#eee2c6"/><stop offset="100%" stop-color="#ddceac"/>
+          </radialGradient>
+          <radialGradient id="glassLens" cx="35%" cy="28%" r="80%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/><stop offset="12%" stop-color="#ffffff" stop-opacity="0.35"/>
+            <stop offset="35%" stop-color="#ffffff" stop-opacity="0.06"/><stop offset="70%" stop-color="#cfd8e0" stop-opacity="0.04"/>
+            <stop offset="100%" stop-color="#8fa0ac" stop-opacity="0.10"/>
+          </radialGradient>
+          <linearGradient id="needleRed" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#ff8f6b"/><stop offset="45%" stop-color="#d3341c"/><stop offset="100%" stop-color="#7a1408"/>
+          </linearGradient>
+          <linearGradient id="needleBlack" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#6b6f75"/><stop offset="45%" stop-color="#2a2c30"/><stop offset="100%" stop-color="#050506"/>
+          </linearGradient>
+          <radialGradient id="pivotMetal" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="#ffffff"/><stop offset="30%" stop-color="#e4c98a"/>
+            <stop offset="60%" stop-color="#a9812f"/><stop offset="100%" stop-color="#4a3410"/>
+          </radialGradient>
+          <radialGradient id="screwHead" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="#f5f6f8"/><stop offset="40%" stop-color="#b7bcc3"/>
+            <stop offset="75%" stop-color="#6b6f75"/><stop offset="100%" stop-color="#2b2d30"/>
+          </radialGradient>
+          <linearGradient id="innerRimShadow" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#000000" stop-opacity="0.45"/><stop offset="12%" stop-color="#000000" stop-opacity="0"/>
+            <stop offset="88%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity="0.35"/>
+          </linearGradient>
+          <filter id="brushed" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9 0.02" numOctaves="2" seed="7" result="noise"/>
+            <feColorMatrix in="noise" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0" result="softNoise"/>
+            <feComposite in="softNoise" in2="SourceGraphic" operator="over" result="brushedOver"/>
+            <feBlend in="brushedOver" in2="SourceGraphic" mode="multiply"/>
+          </filter>
+          <filter id="dropShadowBig" x="-40%" y="-40%" width="180%" height="180%">
+            <feDropShadow dx="0" dy="14" stdDeviation="22" flood-color="#000000" flood-opacity="0.45"/>
+          </filter>
+          <filter id="softShadow" x="-40%" y="-40%" width="180%" height="180%">
+            <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.35"/>
+          </filter>
+          <filter id="engrave" x="-20%" y="-20%" width="140%" height="140%">
+            <feOffset in="SourceAlpha" dx="0" dy="1" result="off1"/>
+            <feGaussianBlur in="off1" stdDeviation="0.6" result="blur1"/>
+            <feComposite in="blur1" in2="SourceAlpha" operator="out" result="shadowPart"/>
+            <feFlood flood-color="#000000" flood-opacity="0.55"/>
+            <feComposite in2="shadowPart" operator="in" result="innerShadow"/>
+            <feOffset in="SourceAlpha" dx="0" dy="-1" result="off2"/>
+            <feGaussianBlur in="off2" stdDeviation="0.6" result="blur2"/>
+            <feComposite in="blur2" in2="SourceAlpha" operator="out" result="highlightPart"/>
+            <feFlood flood-color="#ffffff" flood-opacity="0.5"/>
+            <feComposite in2="highlightPart" operator="in" result="innerHighlight"/>
+            <feMerge>
+              <feMergeNode in="SourceGraphic"/><feMergeNode in="innerShadow"/><feMergeNode in="innerHighlight"/>
+            </feMerge>
+          </filter>
+          <clipPath id="dialClip"><circle cx="512" cy="512" r="352"/></clipPath>
+          <style>
+            .tick-minor{stroke:#4a3d22;stroke-width:2;opacity:0.55;}
+            .tick-mid{stroke:#3a2f1a;stroke-width:3;opacity:0.75;}
+            .tick-major{stroke:#241d0f;stroke-width:5;}
+            .label16{font-family:Georgia,'Times New Roman',serif;font-weight:700;fill:#2a2015;}
+            .sanskrit{font-family:'Noto Sans Devanagari','Nirmala UI',serif;font-weight:600;fill:#f6dfa0;stroke:#3a2a10;stroke-width:0.6;}
+            .mainletter{font-family:'Trajan Pro',Georgia,serif;font-weight:700;fill:#241a0d;}
+          </style>
+        </defs>
+
+        <g filter="url(#dropShadowBig)">
+          <circle cx="512" cy="512" r="486" fill="url(#steelBezel)"/>
+          <circle cx="512" cy="512" r="486" fill="none" stroke="url(#steelEdgeHighlight)" stroke-width="6"/>
+          <circle cx="512" cy="512" r="486" fill="none" filter="url(#brushed)" opacity="0.5"/>
+        </g>
+        <g opacity="0.55"><circle cx="512" cy="512" r="470" fill="none" stroke="#0d0e10" stroke-width="2" stroke-dasharray="3,5"/></g>
+        <circle cx="512" cy="512" r="452" fill="none" stroke="#202225" stroke-width="10"/>
+        <circle cx="512" cy="512" r="452" fill="none" stroke="#8b9096" stroke-width="2" opacity="0.6"/>
+
+        <circle cx="512" cy="512" r="440" fill="url(#brassRing)"/>
+        <circle cx="512" cy="512" r="440" fill="none" filter="url(#brushed)" opacity="0.35"/>
+
+        <g>
+        <path d="M 348.21,116.58 A 428,428 0 0 1 675.79,116.58 L 646.70,186.79 A 352,352 0 0 0 377.30,186.79 Z" fill="#c9d6c4" fill-opacity="0.55"/>
+        <path d="M 675.79,116.58 A 428,428 0 0 1 907.42,348.21 L 837.21,377.30 A 352,352 0 0 0 646.70,186.79 Z" fill="#cfe3ee" fill-opacity="0.55"/>
+        <path d="M 907.42,348.21 A 428,428 0 0 1 907.42,675.79 L 837.21,646.70 A 352,352 0 0 0 837.21,377.30 Z" fill="#f0d999" fill-opacity="0.55"/>
+        <path d="M 907.42,675.79 A 428,428 0 0 1 675.79,907.42 L 646.70,837.21 A 352,352 0 0 0 837.21,646.70 Z" fill="#e8b08e" fill-opacity="0.55"/>
+        <path d="M 675.79,907.42 A 428,428 0 0 1 348.21,907.42 L 377.30,837.21 A 352,352 0 0 0 646.70,837.21 Z" fill="#d9a3a3" fill-opacity="0.55"/>
+        <path d="M 348.21,907.42 A 428,428 0 0 1 116.58,675.79 L 186.79,646.70 A 352,352 0 0 0 377.30,837.21 Z" fill="#c9bcae" fill-opacity="0.55"/>
+        <path d="M 116.58,675.79 A 428,428 0 0 1 116.58,348.21 L 186.79,377.30 A 352,352 0 0 0 186.79,646.70 Z" fill="#a9c3d6" fill-opacity="0.55"/>
+        <path d="M 116.58,348.21 A 428,428 0 0 1 348.21,116.58 L 377.30,186.79 A 352,352 0 0 0 186.79,377.30 Z" fill="#d8d8d8" fill-opacity="0.55"/>
+        </g>
+
+        <circle cx="512" cy="512" r="428" fill="none" stroke="#5a3c16" stroke-width="2" opacity="0.7"/>
+        <circle cx="512" cy="512" r="352" fill="none" stroke="#5a3c16" stroke-width="3" opacity="0.8"/>
+
+        <g>
+        <line x1="512.00" y1="82.00" x2="512.00" y2="97.00" class="tick-minor"/><line x1="549.48" y1="83.64" x2="548.17" y2="98.58" class="tick-minor"/><line x1="586.67" y1="88.53" x2="584.06" y2="103.30" class="tick-minor"/><line x1="623.29" y1="96.65" x2="619.41" y2="111.14" class="tick-minor"/><line x1="659.07" y1="107.93" x2="653.94" y2="122.03" class="tick-minor"/><line x1="693.73" y1="122.29" x2="687.39" y2="135.88" class="tick-minor"/><line x1="727.00" y1="139.61" x2="719.50" y2="152.60" class="tick-minor"/><line x1="758.64" y1="159.76" x2="750.03" y2="172.05" class="tick-minor"/><line x1="788.40" y1="182.60" x2="778.76" y2="194.09" class="tick-minor"/><line x1="816.06" y1="207.94" x2="805.45" y2="218.55" class="tick-minor"/><line x1="841.40" y1="235.60" x2="829.91" y2="245.24" class="tick-minor"/><line x1="864.24" y1="265.36" x2="851.95" y2="273.97" class="tick-minor"/><line x1="884.39" y1="297.00" x2="871.40" y2="304.50" class="tick-minor"/><line x1="901.71" y1="330.27" x2="888.12" y2="336.61" class="tick-minor"/><line x1="916.07" y1="364.93" x2="901.97" y2="370.06" class="tick-minor"/><line x1="927.35" y1="400.71" x2="912.86" y2="404.59" class="tick-minor"/><line x1="935.47" y1="437.33" x2="920.70" y2="439.94" class="tick-minor"/><line x1="940.36" y1="474.52" x2="925.42" y2="475.83" class="tick-minor"/><line x1="942.00" y1="512.00" x2="927.00" y2="512.00" class="tick-minor"/><line x1="940.36" y1="549.48" x2="925.42" y2="548.17" class="tick-minor"/><line x1="935.47" y1="586.67" x2="920.70" y2="584.06" class="tick-minor"/><line x1="927.35" y1="623.29" x2="912.86" y2="619.41" class="tick-minor"/><line x1="916.07" y1="659.07" x2="901.97" y2="653.94" class="tick-minor"/><line x1="901.71" y1="693.73" x2="888.12" y2="687.39" class="tick-minor"/><line x1="884.39" y1="727.00" x2="871.40" y2="719.50" class="tick-minor"/><line x1="864.24" y1="758.64" x2="851.95" y2="750.03" class="tick-minor"/><line x1="841.40" y1="788.40" x2="829.91" y2="778.76" class="tick-minor"/><line x1="816.06" y1="816.06" x2="805.45" y2="805.45" class="tick-minor"/><line x1="788.40" y1="841.40" x2="778.76" y2="829.91" class="tick-minor"/><line x1="758.64" y1="864.24" x2="750.03" y2="851.95" class="tick-minor"/><line x1="727.00" y1="884.39" x2="719.50" y2="871.40" class="tick-minor"/><line x1="693.73" y1="901.71" x2="687.39" y2="888.12" class="tick-minor"/><line x1="659.07" y1="916.07" x2="653.94" y2="901.97" class="tick-minor"/><line x1="623.29" y1="927.35" x2="619.41" y2="912.86" class="tick-minor"/><line x1="586.67" y1="935.47" x2="584.06" y2="920.70" class="tick-minor"/><line x1="549.48" y1="940.36" x2="548.17" y2="925.42" class="tick-minor"/><line x1="512.00" y1="942.00" x2="512.00" y2="927.00" class="tick-minor"/><line x1="474.52" y1="940.36" x2="475.83" y2="925.42" class="tick-minor"/><line x1="437.33" y1="935.47" x2="439.94" y2="920.70" class="tick-minor"/><line x1="400.71" y1="927.35" x2="404.59" y2="912.86" class="tick-minor"/><line x1="364.93" y1="916.07" x2="370.06" y2="901.97" class="tick-minor"/><line x1="330.27" y1="901.71" x2="336.61" y2="888.12" class="tick-minor"/><line x1="297.00" y1="884.39" x2="304.50" y2="871.40" class="tick-minor"/><line x1="265.36" y1="864.24" x2="273.97" y2="851.95" class="tick-minor"/><line x1="235.60" y1="841.40" x2="245.24" y2="829.91" class="tick-minor"/><line x1="207.94" y1="816.06" x2="218.55" y2="805.45" class="tick-minor"/><line x1="182.60" y1="788.40" x2="194.09" y2="778.76" class="tick-minor"/><line x1="159.76" y1="758.64" x2="172.05" y2="750.03" class="tick-minor"/><line x1="139.61" y1="727.00" x2="152.60" y2="719.50" class="tick-minor"/><line x1="122.29" y1="693.73" x2="135.88" y2="687.39" class="tick-minor"/><line x1="107.93" y1="659.07" x2="122.03" y2="653.94" class="tick-minor"/><line x1="96.65" y1="623.29" x2="111.14" y2="619.41" class="tick-minor"/><line x1="88.53" y1="586.67" x2="103.30" y2="584.06" class="tick-minor"/><line x1="83.64" y1="549.48" x2="98.58" y2="548.17" class="tick-minor"/><line x1="82.00" y1="512.00" x2="97.00" y2="512.00" class="tick-minor"/><line x1="83.64" y1="474.52" x2="98.58" y2="475.83" class="tick-minor"/><line x1="88.53" y1="437.33" x2="103.30" y2="439.94" class="tick-minor"/><line x1="96.65" y1="400.71" x2="111.14" y2="404.59" class="tick-minor"/><line x1="107.93" y1="364.93" x2="122.03" y2="370.06" class="tick-minor"/><line x1="122.29" y1="330.27" x2="135.88" y2="336.61" class="tick-minor"/><line x1="139.61" y1="297.00" x2="152.60" y2="304.50" class="tick-minor"/><line x1="159.76" y1="265.36" x2="172.05" y2="273.97" class="tick-minor"/><line x1="182.60" y1="235.60" x2="194.09" y2="245.24" class="tick-minor"/><line x1="207.94" y1="207.94" x2="218.55" y2="218.55" class="tick-minor"/><line x1="235.60" y1="182.60" x2="245.24" y2="194.09" class="tick-minor"/><line x1="265.36" y1="159.76" x2="273.97" y2="172.05" class="tick-minor"/><line x1="297.00" y1="139.61" x2="304.50" y2="152.60" class="tick-minor"/><line x1="330.27" y1="122.29" x2="336.61" y2="135.88" class="tick-minor"/><line x1="364.93" y1="107.93" x2="370.06" y2="122.03" class="tick-minor"/><line x1="400.71" y1="96.65" x2="404.59" y2="111.14" class="tick-minor"/><line x1="437.33" y1="88.53" x2="439.94" y2="103.30" class="tick-minor"/><line x1="474.52" y1="83.64" x2="475.83" y2="98.58" class="tick-minor"/>
+        </g>
+        <g>
+        <line x1="586.67" y1="88.53" x2="582.85" y2="110.20" class="tick-mid"/><line x1="659.07" y1="107.93" x2="651.54" y2="128.61" class="tick-mid"/><line x1="727.00" y1="139.61" x2="716.00" y2="158.66" class="tick-mid"/><line x1="788.40" y1="182.60" x2="774.26" y2="199.45" class="tick-mid"/><line x1="841.40" y1="235.60" x2="824.55" y2="249.74" class="tick-mid"/><line x1="884.39" y1="297.00" x2="865.34" y2="308.00" class="tick-mid"/><line x1="916.07" y1="364.93" x2="895.39" y2="372.46" class="tick-mid"/><line x1="935.47" y1="437.33" x2="913.80" y2="441.15" class="tick-mid"/><line x1="935.47" y1="586.67" x2="913.80" y2="582.85" class="tick-mid"/><line x1="916.07" y1="659.07" x2="895.39" y2="651.54" class="tick-mid"/><line x1="884.39" y1="727.00" x2="865.34" y2="716.00" class="tick-mid"/><line x1="841.40" y1="788.40" x2="824.55" y2="774.26" class="tick-mid"/><line x1="788.40" y1="841.40" x2="774.26" y2="824.55" class="tick-mid"/><line x1="727.00" y1="884.39" x2="716.00" y2="865.34" class="tick-mid"/><line x1="659.07" y1="916.07" x2="651.54" y2="895.39" class="tick-mid"/><line x1="586.67" y1="935.47" x2="582.85" y2="913.80" class="tick-mid"/><line x1="437.33" y1="935.47" x2="441.15" y2="913.80" class="tick-mid"/><line x1="364.93" y1="916.07" x2="372.46" y2="895.39" class="tick-mid"/><line x1="297.00" y1="884.39" x2="308.00" y2="865.34" class="tick-mid"/><line x1="235.60" y1="841.40" x2="249.74" y2="824.55" class="tick-mid"/><line x1="182.60" y1="788.40" x2="199.45" y2="774.26" class="tick-mid"/><line x1="139.61" y1="727.00" x2="158.66" y2="716.00" class="tick-mid"/><line x1="107.93" y1="659.07" x2="128.61" y2="651.54" class="tick-mid"/><line x1="88.53" y1="586.67" x2="110.20" y2="582.85" class="tick-mid"/><line x1="88.53" y1="437.33" x2="110.20" y2="441.15" class="tick-mid"/><line x1="107.93" y1="364.93" x2="128.61" y2="372.46" class="tick-mid"/><line x1="139.61" y1="297.00" x2="158.66" y2="308.00" class="tick-mid"/><line x1="182.60" y1="235.60" x2="199.45" y2="249.74" class="tick-mid"/><line x1="235.60" y1="182.60" x2="249.74" y2="199.45" class="tick-mid"/><line x1="297.00" y1="139.61" x2="308.00" y2="158.66" class="tick-mid"/><line x1="364.93" y1="107.93" x2="372.46" y2="128.61" class="tick-mid"/><line x1="437.33" y1="88.53" x2="441.15" y2="110.20" class="tick-mid"/>
+        </g>
+
+        <g class="tick-major">
+        <line x1="512.00" y1="82.00" x2="512.00" y2="117.00"/><line x1="676.55" y1="114.73" x2="663.16" y2="147.07"/><line x1="816.06" y1="207.94" x2="791.31" y2="232.69"/><line x1="909.27" y1="347.45" x2="876.93" y2="360.84"/><line x1="942.00" y1="512.00" x2="907.00" y2="512.00"/><line x1="909.27" y1="676.55" x2="876.93" y2="663.16"/><line x1="816.06" y1="816.06" x2="791.31" y2="791.31"/><line x1="676.55" y1="909.27" x2="663.16" y2="876.93"/><line x1="512.00" y1="942.00" x2="512.00" y2="907.00"/><line x1="347.45" y1="909.27" x2="360.84" y2="876.93"/><line x1="207.94" y1="816.06" x2="232.69" y2="791.31"/><line x1="114.73" y1="676.55" x2="147.07" y2="663.16"/><line x1="82.00" y1="512.00" x2="117.00" y2="512.00"/><line x1="114.73" y1="347.45" x2="147.07" y2="360.84"/><line x1="207.94" y1="207.94" x2="232.69" y2="232.69"/><line x1="347.45" y1="114.73" x2="360.84" y2="147.07"/>
+        </g>
+
+        <g class="label16" text-anchor="middle" filter="url(#engrave)">
+          <text x="658.57" y="163" font-size="17">NNE</text><text x="865.85" y="370" font-size="17">ENE</text>
+          <text x="865.85" y="663" font-size="17">ESE</text><text x="658.57" y="871" font-size="17">SSE</text>
+          <text x="365.43" y="871" font-size="17">SSW</text><text x="158.15" y="663" font-size="17">WSW</text>
+          <text x="158.15" y="370" font-size="17">WNW</text><text x="365.43" y="163" font-size="17">NNW</text>
+        </g>
+
+        <g class="sanskrit" text-anchor="middle" font-size="26">
+          <text x="512" y="60">उत्तर</text><text x="838.68" y="193">ईशान</text>
+          <text x="960" y="520">पूर्व</text><text x="838.68" y="850">आग्नेय</text>
+          <text x="512" y="985">दक्षिण</text><text x="185.32" y="850">नैऋत्य</text>
+          <text x="64" y="520">पश्चिम</text><text x="185.32" y="193">वायव्य</text>
+        </g>
+
+        <g filter="url(#softShadow)">
+          <g transform="translate(835.85,188.15)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30"/></g>
+          <g transform="translate(835.85,835.85)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30" transform="rotate(45)"/></g>
+          <g transform="translate(188.15,835.85)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30" transform="rotate(-20)"/></g>
+          <g transform="translate(188.15,188.15)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30" transform="rotate(70)"/></g>
+        </g>
+
+        <g clip-path="url(#dialClip)">
+          <circle cx="512" cy="512" r="352" fill="url(#dialFace)"/>
+          <polygon points="512.00,212.00 561.75,391.90 724.13,299.87 632.10,462.25 812.00,512.00 632.10,561.75 724.13,724.13 561.75,632.10 512.00,812.00 462.25,632.10 299.87,724.13 391.90,561.75 212.00,512.00 391.90,462.25 299.87,299.87 462.25,391.90" fill="none" stroke="#b08d4f" stroke-width="1.4" opacity="0.28"/>
+          <circle cx="512" cy="512" r="300" fill="none" stroke="#b08d4f" stroke-width="1" opacity="0.22"/>
+          <circle cx="512" cy="512" r="130" fill="none" stroke="#b08d4f" stroke-width="1" opacity="0.22"/>
+          <g stroke="#8a6a35" stroke-width="0.6" opacity="0.14">
+            <line x1="378" y1="512" x2="646" y2="512"/><line x1="512" y1="378" x2="512" y2="646"/>
+            <line x1="418" y1="418" x2="606" y2="606"/><line x1="606" y1="418" x2="418" y2="606"/>
+          </g>
+          <circle cx="512" cy="512" r="352" fill="url(#innerRimShadow)"/>
+        </g>
+        <circle cx="512" cy="512" r="352" fill="none" stroke="#8a6a35" stroke-width="2"/>
+
+        <g class="mainletter" text-anchor="middle" filter="url(#engrave)">
+          <text x="512.00" y="272" font-size="46" fill="#7a1408">N</text>
+          <text x="700" y="345" font-size="30">NE</text>
+          <text x="782" y="522" font-size="46">E</text>
+          <text x="700" y="702" font-size="30">SE</text>
+          <text x="512.00" y="795" font-size="46">S</text>
+          <text x="324" y="702" font-size="30">SW</text>
+          <text x="242" y="522" font-size="46">W</text>
+          <text x="324" y="345" font-size="30">NW</text>
+        </g>
+
+        <circle cx="512" cy="512" r="352" fill="url(#glassLens)"/>
+        <ellipse cx="420" cy="360" rx="150" ry="70" fill="#ffffff" opacity="0.18" transform="rotate(-25 420 360)"/>
+        <ellipse cx="640" cy="700" rx="90" ry="30" fill="#ffffff" opacity="0.08" transform="rotate(-20 640 700)"/>
+
+        <g filter="url(#softShadow)">
+          <polygon points="512,168 528,512 496,512" fill="url(#needleRed)" stroke="#4a0d05" stroke-width="1.5"/>
+          <polygon points="512,168 524,512 512,512" fill="#ffffff" opacity="0.25"/>
+          <polygon points="512,856 528,512 496,512" fill="url(#needleBlack)" stroke="#000000" stroke-width="1.5"/>
+          <polygon points="512,856 524,512 512,512" fill="#ffffff" opacity="0.12"/>
+        </g>
+        <g filter="url(#softShadow)">
+          <circle cx="512" cy="512" r="34" fill="url(#pivotMetal)" stroke="#3a2a0f" stroke-width="2"/>
+          <circle cx="512" cy="512" r="34" fill="none" stroke="#fff6d8" stroke-width="1" opacity="0.6"/>
+          <rect x="497" y="508" width="30" height="8" rx="2" fill="#2a2010" opacity="0.85"/>
+          <circle cx="500" cy="500" r="9" fill="#ffffff" opacity="0.45"/>
+        </g>
+        <ellipse cx="440" cy="300" rx="220" ry="110" fill="#ffffff" opacity="0.10" transform="rotate(-18 440 300)"/>
+      </svg>
+    </div>
   </div>
 
-  <div class="panel">
-    <h3>Dial & orientation</h3>
-    <div class="seg" id="zoneMode"><button data-v="8" class="active">8 Zones</button><button data-v="16">16 Zones</button></div>
-    <div class="seg" id="northRef"><button data-v="mag" class="active">Magnetic North</button><button data-v="true">True North</button></div>
-    <div class="fieldrow" id="declRow" style="display:none"><label for="decl">Local declination (°, E+/W−)</label><input type="number" id="decl" value="0" step="0.5"></div>
-    <div class="fieldrow"><label for="calib">Fine-tune offset (°)</label><input type="number" id="calib" value="0" step="1" min="-30" max="30"></div>
-    <div class="seg"><button id="mandalaBtn">Show Mandala Grid</button></div>
-    <p class="mini">Don't know your declination? Search "magnetic declination" + your city. Leave at 0° for standard magnetic-north Vastu readings.</p>
+  <div class="readout">
+    <div class="deg"><span id="degVal">--</span><span>°</span></div>
+    <div class="zone" id="zoneName">Enable compass to begin</div>
   </div>
 
-  <div class="loc" id="loc">Locating…</div>
-  <p class="calib">Tip: wave your phone in a figure-8 a couple of times if the reading looks off, to calibrate the magnetometer.</p>
+  <div class="status-msg" id="statusMsg">Vastu Compass uses your device's magnetic sensor. Hold your phone flat, level with the ground, and away from metal objects for an accurate reading.</div>
 
-  <div class="themes">
-    <button class="tbtn" data-t="dark">Dark</button>
-    <button class="tbtn" data-t="light">Light</button>
-    <button class="tbtn" data-t="oled">OLED</button>
-    <button class="tbtn" data-t="hc">HC</button>
+  <button class="enable-btn" id="enableBtn">Enable Compass</button>
+  <button class="guide-toggle" id="guideToggle">Show all 16 direction meanings</button>
+
+  <div class="guide-panel" id="guidePanel">
+    <div class="guide-inner" id="guideInner"></div>
   </div>
-</main>
 
-<footer>
-  <div class="name">Vastu Compass</div>
-  <div>© Manik Roy <span id="yr"></span>. All Rights Reserved.</div>
-</footer>
+  <footer>© Manik Roy 2026 · Vastu Compass</footer>
 
 <script>
-const zones8=[
- {a:0,short:"N",name:"North",sk:"Uttara",el:"Water",god:"Kubera",note:"The zone of wealth. Keep it open and light — ideal for cash, safes, or open space.",c:"#6FA8C9"},
- {a:45,short:"NE",name:"Northeast",sk:"Ishanya",el:"Water & Space",god:"Ishaan / Shiva",note:"The most sacred zone. Best for the puja room, water storage, or an open corner.",c:"#DCE8E0"},
- {a:90,short:"E",name:"East",sk:"Purva",el:"Air",god:"Indra",note:"Welcomes the morning sun. Favoured for the main entrance and windows.",c:"#E8C468"},
- {a:135,short:"SE",name:"Southeast",sk:"Agneya",el:"Fire",god:"Agni",note:"The fire zone — ideal placement for the kitchen and electrical equipment.",c:"#D8622E"},
- {a:180,short:"S",name:"South",sk:"Dakshina",el:"Earth & Fire",god:"Yama",note:"A stable, solid zone. Good for heavier furniture and a south-facing wall.",c:"#B03A2E"},
- {a:225,short:"SW",name:"Southwest",sk:"Nairutya",el:"Earth",god:"Nirriti",note:"The heaviest, most grounded zone. Traditionally best for the master bedroom.",c:"#7A5C3E"},
- {a:270,short:"W",name:"West",sk:"Paschima",el:"Water & Air",god:"Varuna",note:"A settling zone — well suited to the dining room or a study.",c:"#5B7C99"},
- {a:315,short:"NW",name:"Northwest",sk:"Vayavya",el:"Air",god:"Vayu",note:"A zone of movement and change — good for guest rooms, garages, or storage.",c:"#8FA88A"}
-];
-const zones16=(()=>{const out=[];zones8.forEach((z,i)=>{out.push(z);const n=zones8[(i+1)%8];out.push({a:z.a+22.5,short:z.short+"/"+n.short,name:z.name+"–"+n.name,sk:z.sk+" · "+n.sk,el:z.el+" / "+n.el,god:z.god+" & "+n.god,note:"Transition zone blending "+z.name+" and "+n.name+" — generally follows the nearer main direction's guidance.",c:z.c});});return out;})();
+(function(){
+  var rotor = document.getElementById('rotor');
+  var degVal = document.getElementById('degVal');
+  var zoneName = document.getElementById('zoneName');
+  var statusMsg = document.getElementById('statusMsg');
+  var enableBtn = document.getElementById('enableBtn');
+  var guideToggle = document.getElementById('guideToggle');
+  var guidePanel = document.getElementById('guidePanel');
+  var guideInner = document.getElementById('guideInner');
 
-let zoneSet=zones8, mode16=false;
-const dial=document.getElementById('dial'), mandala=document.getElementById('mandala'), degEl=document.getElementById('deg'), facingEl=document.getElementById('facing');
-const card=document.getElementById('card'), zName=document.getElementById('zName'), zSk=document.getElementById('zSk');
-const zEl=document.getElementById('zEl'), zGod=document.getElementById('zGod'), zNote=document.getElementById('zNote');
-const locEl=document.getElementById('loc'), enableBtn=document.getElementById('enableBtn');
-const declInput=document.getElementById('decl'), calibInput=document.getElementById('calib'), declRow=document.getElementById('declRow');
+  // 16-point Vastu direction data: name, Sanskrit, ruling force, guidance, color swatch
+  var ZONES = [
+    {n:'North',      ab:'N',   dev:'उत्तर',    ruler:'Kubera',  color:'#8fae82', use:'Wealth zone — best for cash lockers, safes and the main office desk.'},
+    {n:'North-Northeast', ab:'NNE', dev:'—', ruler:'Water support', color:'#a9c1d8', use:'Supports the NE water zone — good for an open, uncluttered space.'},
+    {n:'Northeast',  ab:'NE',  dev:'ईशान',    ruler:'Water / Ishana', color:'#9fc4dd', use:'Most sacred zone — ideal for the prayer room, main entrance or water storage.'},
+    {n:'East-Northeast', ab:'ENE', dev:'—', ruler:'Sun support', color:'#e0c675', use:'Supports morning sunlight — good for a study nook or reading corner.'},
+    {n:'East',       ab:'E',   dev:'पूर्व',    ruler:'Indra / Surya', color:'#e8c25f', use:'Sunrise direction — ideal for the main entrance, living room and windows.'},
+    {n:'East-Southeast', ab:'ESE', dev:'—', ruler:'Fire support', color:'#dba077', use:'Transition zone between sun and fire — suited to a light dining area.'},
+    {n:'Southeast',  ab:'SE',  dev:'आग्नेय',   ruler:'Agni', color:'#d38a5c', use:'Fire element — the traditional placement for the kitchen and stove.'},
+    {n:'South-Southeast', ab:'SSE', dev:'—', ruler:'Fire support', color:'#c98c7a', use:'Good for kitchen storage or a utility extension.'},
+    {n:'South',      ab:'S',   dev:'दक्षिण',   ruler:'Yama', color:'#c07a72', use:'Heavier energy — best for storage and solid furniture, avoid the main entrance here.'},
+    {n:'South-Southwest', ab:'SSW', dev:'—', ruler:'Earth support', color:'#b98f7d', use:'Good for wardrobes and heavy cabinets.'},
+    {n:'Southwest',  ab:'SW',  dev:'नैऋत्य',   ruler:'Rahu / Nirriti', color:'#a99479', use:'Most stable zone — ideal for the master bedroom and heavy furniture.'},
+    {n:'West-Southwest', ab:'WSW', dev:'—', ruler:'Earth support', color:'#9fa591', use:'Suits a secondary bedroom or long-term storage.'},
+    {n:'West',       ab:'W',   dev:'पश्चिम',   ruler:'Varuna', color:'#7fa0bd', use:'Water element — good for the dining room, study or children\u2019s room.'},
+    {n:'West-Northwest', ab:'WNW', dev:'—', ruler:'Air support', color:'#a3aab3', use:'Suits a guest room or dressing area.'},
+    {n:'Northwest',  ab:'NW',  dev:'वायव्य',   ruler:'Vayu', color:'#b7bcc3', use:'Air element — best for the guest room, garage or movable items.'},
+    {n:'North-Northwest', ab:'NNW', dev:'—', ruler:'Air / wealth support', color:'#9fb098', use:'Supports the north wealth zone — keep this area light and open.'}
+  ];
 
-function buildDial(){
-  dial.querySelectorAll('.label').forEach(l=>l.remove());
-  const stops=zoneSet.map(z=>`${z.c} ${z.a-360/zoneSet.length/2}deg ${z.a+360/zoneSet.length/2}deg`).join(',');
-  dial.style.background=`conic-gradient(from -${180/zoneSet.length}deg,${stops})`;
-  if(document.documentElement.getAttribute('data-theme')==='hc'){
-    dial.style.background=`repeating-conic-gradient(from -${180/zoneSet.length}deg,#000 0deg ${360/zoneSet.length}deg,#fff ${360/zoneSet.length}deg ${720/zoneSet.length}deg)`;
-  }
-  const r=dial.parentElement.offsetWidth*0.42;
-  zoneSet.forEach(z=>{
-    const el=document.createElement('div');
-    el.className='label'; el.textContent=z.short;
-    el.style.transform=`translate(-50%,-50%) rotate(${z.a}deg) translateY(-${r}px) rotate(${-z.a}deg)`;
-    dial.appendChild(el);
+  // build guide list
+  ZONES.forEach(function(z, i){
+    var row = document.createElement('div');
+    row.className = 'guide-row';
+    row.id = 'zone-' + i;
+    row.innerHTML =
+      '<div class="swatch" style="background:'+z.color+'"></div>' +
+      '<div class="txt"><b>'+z.n+' ('+z.ab+')'+(z.dev!=='—' ? '<span class="dev">'+z.dev+'</span>' : '')+'</b><p>'+z.use+'</p></div>';
+    guideInner.appendChild(row);
   });
-}
-function buildMandala(){
-  mandala.querySelectorAll('.mlabel').forEach(l=>l.remove());
-  const pts=[[5.55,5.55,"Vayu"],[94.44,5.55,"Ishaan"],[5.55,94.44,"Nirriti"],[94.44,94.44,"Agni"],[50,5.55,"Kubera"],[94.44,50,"Indra"],[50,94.44,"Yama"],[5.55,50,"Varuna"],[50,50,"Brahma"]];
-  pts.forEach(p=>{const el=document.createElement('div');el.className='mlabel';el.textContent=p[2];el.style.left=p[0]+'%';el.style.top=p[1]+'%';mandala.appendChild(el);});
-}
-buildDial();buildMandala();
-window.addEventListener('resize',buildDial);
 
-let smoothed=null, lastRaw=0;
-function angDiff(a,b){return (b-a+540)%360-180;}
-function zoneFor(h,set){let n=360/set.length;let i=Math.round(h/n)%set.length;if(i<0)i+=set.length;return set[i];}
-function zone8Code(h){let i=Math.round(h/45)%8;if(i<0)i+=8;return zones8[i].short;}
+  guideToggle.addEventListener('click', function(){
+    var open = guidePanel.classList.toggle('open');
+    guideToggle.textContent = open ? 'Hide direction meanings' : 'Show all 16 direction meanings';
+  });
 
-const roomGuide={
- "Main Entrance":{ideal:["N","NE","E"],ok:["W"],avoid:["SW","S"],note:"Entrances thrive facing the sun and open zones."},
- "Kitchen":{ideal:["SE"],ok:["NW"],avoid:["NE","SW"],note:"The fire element belongs in the Agneya corner."},
- "Master Bedroom":{ideal:["SW"],ok:["S","W"],avoid:["NE"],note:"The grounded Southwest supports rest and stability."},
- "Puja / Prayer Room":{ideal:["NE"],ok:["N","E"],avoid:["S","SW"],note:"Sacred spaces favour the Ishanya corner's stillness."},
- "Bathroom / Toilet":{ideal:["NW","W"],ok:["N"],avoid:["NE","SW"],note:"Keep waste-water zones away from sacred and grounded corners."},
- "Study / Office":{ideal:["NE","E"],ok:["N"],avoid:["SW"],note:"Morning light and open energy support focus here."},
- "Store Room":{ideal:["SW","S"],ok:["W"],avoid:["NE"],note:"Heavy storage suits the solid, grounded zones."},
- "Staircase":{ideal:["S","SW","W"],ok:["NW"],avoid:["NE"],note:"Stairs are best kept out of the sacred Northeast."}
-};
-const roomSel=document.getElementById('roomSel'), verdictEl=document.getElementById('verdict');
-Object.keys(roomGuide).forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;roomSel.appendChild(o);});
+  function zoneIndexFromHeading(h){
+    return Math.round(h / 22.5) % 16;
+  }
 
-function updateVerdict(code){
-  const room=roomGuide[roomSel.value]; if(!room)return;
-  let cls='v-neutral', text=`${roomSel.value}: neutral for ${code} — no strong tradition either way.`;
-  if(room.ideal.includes(code)){cls='v-ideal';text=`Ideal ✓ — ${roomSel.value} suits the ${code} zone well.`;}
-  else if(room.ok.includes(code)){cls='v-ok';text=`Acceptable — ${roomSel.value} works reasonably in ${code}.`;}
-  else if(room.avoid.includes(code)){cls='v-avoid';text=`Avoid ✕ — ${roomSel.value} is traditionally discouraged in ${code}.`;}
-  verdictEl.className='verdict '+cls; verdictEl.textContent=text+' '+room.note;
-}
-roomSel.addEventListener('change',()=>updateVerdict(zone8Code(smoothed||0)));
+  var lastActive = -1;
+  function updateHeading(heading){
+    heading = ((heading % 360) + 360) % 360;
+    rotor.style.transform = 'rotate(' + (-heading) + 'deg)';
+    degVal.textContent = Math.round(heading);
+    var idx = zoneIndexFromHeading(heading);
+    var z = ZONES[idx];
+    zoneName.innerHTML = z.n + ' <span class="sanskrit">' + (z.dev!=='—' ? z.dev : '') + '</span>';
+    if(lastActive !== idx){
+      var prev = document.getElementById('zone-' + lastActive);
+      if(prev) prev.classList.remove('active');
+      var cur = document.getElementById('zone-' + idx);
+      if(cur){
+        cur.classList.add('active');
+        if(guidePanel.classList.contains('open')) cur.scrollIntoView({block:'nearest', behavior:'smooth'});
+      }
+      lastActive = idx;
+    }
+  }
 
-function update(headingRaw){
-  lastRaw=headingRaw;
-  const calib=parseFloat(calibInput.value)||0;
-  const decl=(document.querySelector('#northRef .active').dataset.v==='true')?(parseFloat(declInput.value)||0):0;
-  const h=((headingRaw+calib+decl)%360+360)%360;
-  smoothed = smoothed===null ? h : (smoothed + angDiff(smoothed,h)*0.18 + 360)%360;
-  const rot=`rotate(${-smoothed}deg)`;
-  dial.style.transform=rot; if(mandala.classList.contains('show'))mandala.style.transform=rot;
-  degEl.textContent=Math.round(smoothed)+'°';
-  const z=zoneFor(smoothed,zoneSet);
-  facingEl.textContent=`Facing ${z.name} (${z.sk})`;
-  card.style.setProperty('--zonecolor',z.c);
-  zName.textContent=z.name; zSk.textContent=z.sk; zEl.textContent=z.el; zGod.textContent=z.god; zNote.textContent=z.note;
-  updateVerdict(zone8Code(smoothed));
-}
+  function handleOrientation(e){
+    var heading;
+    if(typeof e.webkitCompassHeading === 'number'){
+      heading = e.webkitCompassHeading; // iOS: already true compass heading
+    } else if(e.absolute && e.alpha !== null){
+      heading = 360 - e.alpha;
+    } else if(e.alpha !== null){
+      heading = 360 - e.alpha;
+    } else {
+      return;
+    }
+    updateHeading(heading);
+  }
 
-function onOrientation(e){
-  let heading;
-  if(typeof e.webkitCompassHeading==='number'){heading=e.webkitCompassHeading;}
-  else if(e.alpha!==null){heading=360-e.alpha;}
-  else return;
-  update(heading);
-}
-function startListening(){
-  if('ondeviceorientationabsolute' in window){window.addEventListener('deviceorientationabsolute',onOrientation,true);}
-  else{window.addEventListener('deviceorientation',onOrientation,true);}
-}
-function initCompass(){
-  const DOE=window.DeviceOrientationEvent;
-  if(DOE && typeof DOE.requestPermission==='function'){
-    enableBtn.style.display='inline-block';
-    enableBtn.onclick=async()=>{
-      try{const res=await DOE.requestPermission();
-        if(res==='granted'){startListening();enableBtn.style.display='none';}
-        else{facingEl.textContent='Compass access denied.';}
-      }catch(err){facingEl.textContent='Compass not supported on this device.';}
-      fetchLocation();
-    };
-  }else if(DOE){startListening();}
-  else{facingEl.textContent='Compass sensor not supported on this device.';}
-}
-function fetchLocation(){
-  if(!navigator.geolocation){locEl.textContent='Location unavailable';return;}
-  navigator.geolocation.getCurrentPosition(async pos=>{
-    try{
-      const {latitude,longitude}=pos.coords;
-      const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
-      const d=await r.json();
-      const parts=[d.locality,d.principalSubdivision,d.countryName].filter(Boolean);
-      locEl.textContent=parts.length?('Near '+parts.join(', ')):'Location found';
-    }catch(err){locEl.textContent='Location unavailable';}
-  },()=>{locEl.textContent='Location access denied';},{timeout:8000});
-}
-initCompass();fetchLocation();
+  function startListening(){
+    statusMsg.textContent = 'Reading device orientation…';
+    if('ondeviceorientationabsolute' in window){
+      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    } else {
+      window.addEventListener('deviceorientation', handleOrientation, true);
+    }
+    enableBtn.style.display = 'none';
+  }
 
-document.getElementById('zoneMode').addEventListener('click',e=>{
-  const b=e.target.closest('button'); if(!b)return;
-  document.querySelectorAll('#zoneMode button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  mode16=b.dataset.v==='16'; zoneSet=mode16?zones16:zones8; buildDial(); update(lastRaw);
-});
-document.getElementById('northRef').addEventListener('click',e=>{
-  const b=e.target.closest('button'); if(!b)return;
-  document.querySelectorAll('#northRef button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  declRow.style.display=b.dataset.v==='true'?'flex':'none'; update(lastRaw);
-});
-declInput.addEventListener('input',()=>update(lastRaw));
-calibInput.addEventListener('input',()=>update(lastRaw));
-document.getElementById('mandalaBtn').addEventListener('click',e=>{
-  mandala.classList.toggle('show');
-  e.target.textContent=mandala.classList.contains('show')?'Hide Mandala Grid':'Show Mandala Grid';
-  mandala.style.transform=dial.style.transform;
-});
+  enableBtn.addEventListener('click', function(){
+    if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
+      DeviceOrientationEvent.requestPermission().then(function(resp){
+        if(resp === 'granted'){
+          startListening();
+        } else {
+          statusMsg.textContent = 'Compass permission was denied. You can re-enable it in your browser settings.';
+        }
+      }).catch(function(){
+        statusMsg.textContent = 'Could not access the compass sensor on this device.';
+      });
+    } else if('DeviceOrientationEvent' in window){
+      startListening();
+    } else {
+      statusMsg.textContent = 'This device or browser does not expose a compass sensor. Try on a mobile phone with Chrome or Safari.';
+    }
+  });
 
-const tbtns=document.querySelectorAll('.tbtn');
-function setTheme(t){
-  document.documentElement.setAttribute('data-theme',t);
-  tbtns.forEach(b=>b.classList.toggle('active',b.dataset.t===t));
-  localStorage.setItem('vastu-theme',t); buildDial();
-}
-tbtns.forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.t)));
-setTheme(localStorage.getItem('vastu-theme')||'dark');
+  // Desktop / no-sensor fallback: drag to rotate, for preview and testing
+  var dragging = false, lastAngle = 0, currentHeading = 0;
+  var stage = document.querySelector('.compass-stage');
 
-document.getElementById('yr').textContent=new Date().getFullYear();
+  function angleFromEvent(evt){
+    var rect = stage.getBoundingClientRect();
+    var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+    var x = (evt.touches ? evt.touches[0].clientX : evt.clientX) - cx;
+    var y = (evt.touches ? evt.touches[0].clientY : evt.clientY) - cy;
+    return Math.atan2(x, -y) * 180 / Math.PI;
+  }
+
+  function dragStart(evt){
+    if(window.DeviceOrientationEvent && enableBtn.style.display === 'none') return; // sensor active, skip manual drag
+    dragging = true;
+    lastAngle = angleFromEvent(evt);
+  }
+  function dragMove(evt){
+    if(!dragging) return;
+    var a = angleFromEvent(evt);
+    var delta = a - lastAngle;
+    lastAngle = a;
+    currentHeading = ((currentHeading + delta) % 360 + 360) % 360;
+    updateHeading(currentHeading);
+    evt.preventDefault();
+  }
+  function dragEnd(){ dragging = false; }
+
+  stage.addEventListener('mousedown', dragStart);
+  window.addEventListener('mousemove', dragMove);
+  window.addEventListener('mouseup', dragEnd);
+  stage.addEventListener('touchstart', dragStart, {passive:true});
+  stage.addEventListener('touchmove', dragMove, {passive:false});
+  stage.addEventListener('touchend', dragEnd);
+
+  updateHeading(0);
+
+  if(!(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') && 'DeviceOrientationEvent' in window){
+    // Android/other browsers usually don't need explicit permission
+    statusMsg.textContent = 'Tap "Enable Compass" to start, or drag the dial to explore directions manually.';
+  }
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('service-worker.js').catch(function(){});
+    });
+  }
+})();
 </script>
 </body>
 </html>
