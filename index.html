@@ -134,15 +134,15 @@
 
 <div class="controls">
   <select id="region" aria-label="Region">
-    <option value="NA">North America</option>
-    <option value="EU" selected>Europe</option>
-    <option value="ASIA">Asia</option>
-    <option value="ME">Middle East</option>
-    <option value="OC">Oceania</option>
-    <option value="SA">South America</option>
+    <option value="NA">New York area</option>
+    <option value="EU" selected>London area</option>
+    <option value="ASIA">Tokyo area</option>
+    <option value="ME">Dubai area</option>
+    <option value="OC">Sydney area</option>
+    <option value="SA">São Paulo area</option>
     <option value="NEAR">Near me</option>
   </select>
-  <input type="text" id="search" placeholder="Filter callsign or country…" aria-label="Filter flights">
+  <input type="text" id="search" placeholder="Filter callsign or type…" aria-label="Filter flights">
   <button class="action" id="refreshBtn">Refresh</button>
   <div class="status">
     <span><span class="live-dot" aria-hidden="true"></span><span id="statusText">Loading…</span></span>
@@ -153,19 +153,21 @@
 <main id="list"><p class="empty">Fetching live flights…</p></main>
 
 <footer>
-  <p>Data via OpenSky Network — no key, updates every 20s.</p>
+  <p>Data via ADSB.lol — no key, updates every 15s.</p>
   <p>© Manik Roy <span id="year"></span>. All Rights Reserved.</p>
 </footer>
 
 <script>
-const REGIONS = {
-  NA:{lamin:24,lomin:-125,lamax:50,lomax:-66},
-  EU:{lamin:36,lomin:-10,lamax:60,lomax:30},
-  ASIA:{lamin:5,lomin:95,lamax:45,lomax:145},
-  ME:{lamin:12,lomin:34,lamax:42,lomax:63},
-  OC:{lamin:-45,lomin:110,lamax:-10,lomax:155},
-  SA:{lamin:-55,lomin:-80,lamax:13,lomax:-35},
+const CITIES = {
+  NA:{lat:40.7128, lon:-74.0060},
+  EU:{lat:51.5074, lon:-0.1278},
+  ASIA:{lat:35.6762, lon:139.6503},
+  ME:{lat:25.2048, lon:55.2708},
+  OC:{lat:-33.8688, lon:151.2093},
+  SA:{lat:-23.5505, lon:-46.6333},
 };
+const RADIUS_NM = 250;
+const API_BASES = ['https://api.adsb.lol', 'https://api.adsb.one'];
 
 document.getElementById('year').textContent = new Date().getFullYear();
 
@@ -178,7 +180,7 @@ const refreshBtn = document.getElementById('refreshBtn');
 
 let flights = [];
 let timer = null;
-let nearBox = null;
+let nearPoint = null;
 
 function setTheme(name){
   document.documentElement.setAttribute('data-theme', name);
@@ -191,51 +193,55 @@ document.querySelectorAll('[data-theme-btn]').forEach(b=>{
 });
 setTheme('dark');
 
-function msToKt(v){ return v==null ? null : Math.round(v * 1.94384); }
-function mToFt(v){ return v==null ? null : Math.round(v * 3.28084); }
-
-function boxFor(code){
-  if(code === 'NEAR'){
-    return nearBox || REGIONS.EU;
-  }
-  return REGIONS[code];
+function pointFor(code){
+  if(code === 'NEAR'){ return nearPoint || CITIES.EU; }
+  return CITIES[code];
 }
 
 async function requestNear(){
   return new Promise((resolve)=>{
-    if(!navigator.geolocation){ resolve(REGIONS.EU); return; }
+    if(!navigator.geolocation){ resolve(CITIES.EU); return; }
     navigator.geolocation.getCurrentPosition(
       pos=>{
-        const {latitude:la, longitude:lo} = pos.coords;
-        nearBox = {lamin:la-5, lamax:la+5, lomin:lo-5, lomax:lo+5};
-        resolve(nearBox);
+        nearPoint = {lat:pos.coords.latitude, lon:pos.coords.longitude};
+        resolve(nearPoint);
       },
-      ()=>resolve(REGIONS.EU),
+      ()=>resolve(CITIES.EU),
       {timeout:6000}
     );
   });
+}
+
+async function fetchFromBase(base, pt){
+  const url = `${base}/v2/point/${pt.lat}/${pt.lon}/${RADIUS_NM}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
 }
 
 async function fetchFlights(){
   refreshBtn.disabled = true;
   statusEl.textContent = 'Updating…';
   try{
-    let box = boxFor(regionSel.value);
-    if(regionSel.value === 'NEAR' && !nearBox){ box = await requestNear(); }
-    const url = `https://opensky-network.org/api/states/all?lamin=${box.lamin}&lomin=${box.lomin}&lamax=${box.lamax}&lomax=${box.lomax}`;
-    const res = await fetch(url);
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    flights = (data.states || []).map(s=>({
-      icao24:s[0], callsign:(s[1]||'').trim() || '—', country:s[2],
-      lon:s[5], lat:s[6], altBaro:s[7], onGround:s[8], velocity:s[9],
-      track:s[10], vRate:s[11], altGeo:s[13], squawk:s[14], lastContact:s[4],
+    let pt = pointFor(regionSel.value);
+    if(regionSel.value === 'NEAR' && !nearPoint){ pt = await requestNear(); }
+    let data, lastErr;
+    for(const base of API_BASES){
+      try{ data = await fetchFromBase(base, pt); break; }
+      catch(e){ lastErr = e; }
+    }
+    if(!data) throw lastErr || new Error('no response');
+    flights = (data.ac || []).map(a=>({
+      hex:a.hex, callsign:(a.flight||'').trim() || '—', reg:a.r, type:a.t,
+      lat:a.lat, lon:a.lon, alt:a.alt_baro, onGround:a.alt_baro === 'ground',
+      speed:a.gs, track:a.track, vRate:a.baro_rate, squawk:a.squawk,
+      emergency:a.emergency, seen:a.seen,
     }));
     statusEl.textContent = 'Live';
     render();
   }catch(err){
     statusEl.textContent = 'Error';
-    listEl.innerHTML = `<p class="err">Couldn't reach OpenSky Network right now (${err.message}). It's a free public API and occasionally rate-limits or times out — Refresh will retry.</p>`;
+    listEl.innerHTML = `<p class="err">Couldn't reach the live air-traffic feed right now (${err.message}). It's a free community API and occasionally has hiccups — Refresh will retry.</p>`;
     countEl.textContent = '';
   }finally{
     refreshBtn.disabled = false;
@@ -245,9 +251,9 @@ async function fetchFlights(){
 function render(){
   const q = searchInp.value.trim().toLowerCase();
   let rows = flights.filter(f=>
-    !q || f.callsign.toLowerCase().includes(q) || (f.country||'').toLowerCase().includes(q)
+    !q || f.callsign.toLowerCase().includes(q) || (f.reg||'').toLowerCase().includes(q) || (f.type||'').toLowerCase().includes(q)
   );
-  rows.sort((a,b)=>(b.altBaro||0) - (a.altBaro||0));
+  rows.sort((a,b)=>((typeof b.alt==='number'?b.alt:0) - (typeof a.alt==='number'?a.alt:0)));
   countEl.textContent = rows.length + ' aircraft';
   rows = rows.slice(0, 80);
 
@@ -257,32 +263,31 @@ function render(){
   }
 
   listEl.innerHTML = rows.map(f=>{
-    const emergency = ['7500','7600','7700'].includes(f.squawk);
+    const emergency = ['7500','7600','7700'].includes(f.squawk) || (f.emergency && f.emergency !== 'none');
     const cls = emergency ? 'emergency' : (f.onGround ? 'ground' : '');
-    const ft = mToFt(f.altBaro);
-    const kt = msToKt(f.velocity);
-    const vArrow = f.vRate > 1 ? '↑' : (f.vRate < -1 ? '↓' : '→');
+    const alt = f.onGround ? 'GND' : (typeof f.alt==='number' ? f.alt.toLocaleString()+' ft' : '—');
+    const vArrow = f.vRate > 100 ? '↑' : (f.vRate < -100 ? '↓' : '→');
     const badgeCls = f.onGround ? 'down' : 'up';
     const badgeTxt = f.onGround ? 'GROUND' : 'AIRBORNE';
     return `
-    <div class="strip ${cls}" data-id="${f.icao24}" tabindex="0" role="button" aria-expanded="false">
+    <div class="strip ${cls}" data-id="${f.hex}" tabindex="0" role="button" aria-expanded="false">
       <div class="row1">
         <span class="callsign mono">${f.callsign}</span>
-        <span class="country">${f.country||''}</span>
+        <span class="country">${f.type||''}</span>
       </div>
       <div class="row2">
         <span class="badge ${badgeCls}">${badgeTxt}</span>
-        <span>ALT <b class="mono">${ft!=null ? ft.toLocaleString()+' ft' : '—'}</b></span>
-        <span>SPD <b class="mono">${kt!=null ? kt+' kt' : '—'}</b></span>
+        <span>ALT <b class="mono">${alt}</b></span>
+        <span>SPD <b class="mono">${f.speed!=null ? Math.round(f.speed)+' kt' : '—'}</b></span>
         <span>HDG <b class="mono">${f.track!=null ? Math.round(f.track)+'°' : '—'}</b></span>
         <span>V/S <b class="mono">${vArrow}</b></span>
-        ${emergency ? `<span class="badge" style="color:var(--danger);border-color:var(--danger)">SQUAWK ${f.squawk}</span>` : ''}
+        ${emergency ? `<span class="badge" style="color:var(--danger);border-color:var(--danger)">SQUAWK ${f.squawk||''}</span>` : ''}
       </div>
       <div class="details hidden">
-        <span>ICAO24: <b class="mono">${f.icao24}</b></span>
+        <span>ICAO24: <b class="mono">${f.hex||'—'}</b></span>
+        <span>Registration: <b class="mono">${f.reg||'—'}</b></span>
         <span>Squawk: <b class="mono">${f.squawk||'—'}</b></span>
-        <span>Lat/Lon: <b class="mono">${f.lat?.toFixed(2)}, ${f.lon?.toFixed(2)}</b></span>
-        <span>Last contact: <b class="mono">${f.lastContact ? new Date(f.lastContact*1000).toLocaleTimeString() : '—'}</b></span>
+        <span>Lat/Lon: <b class="mono">${f.lat!=null ? f.lat.toFixed(2)+', '+f.lon.toFixed(2) : '—'}</b></span>
       </div>
     </div>`;
   }).join('');
@@ -300,7 +305,7 @@ function render(){
 
 function restartTimer(){
   if(timer) clearInterval(timer);
-  timer = setInterval(fetchFlights, 20000);
+  timer = setInterval(fetchFlights, 15000);
 }
 
 regionSel.addEventListener('change', ()=>{ fetchFlights(); restartTimer(); });
