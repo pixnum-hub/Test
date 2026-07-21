@@ -5,59 +5,74 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <title>Vastu Compass</title>
 <style>
-:root{
-  --radius:18px; --gap:14px;
-}
+:root{--radius:18px;--gap:12px;}
 [data-theme="dark"]{--bg:#14110B;--panel:#1F1A12;--panel2:#241E15;--text:#EDE4D3;--muted:#B8A98C;--accent:#C9873D;--border:#3A3124;--needle:#EDE4D3;}
 [data-theme="light"]{--bg:#F7F2E7;--panel:#FFFFFF;--panel2:#F1EAD9;--text:#2B2213;--muted:#6B5D45;--accent:#A8551A;--border:#E3D9C2;--needle:#2B2213;}
 [data-theme="oled"]{--bg:#000000;--panel:#0A0A0A;--panel2:#111111;--text:#E8E0CF;--muted:#9A8F75;--accent:#C9873D;--border:#1F1F1F;--needle:#E8E0CF;}
 [data-theme="hc"]{--bg:#000000;--panel:#000000;--panel2:#000000;--text:#FFFFFF;--muted:#FFFF33;--accent:#FFFF33;--border:#FFFFFF;--needle:#FFFF33;}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;transition:background .3s,color .3s;}
-header{width:100%;max-width:480px;padding:22px 20px 6px;text-align:center;}
+header{width:100%;max-width:480px;padding:20px 20px 4px;text-align:center;}
 h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:1.5rem;letter-spacing:.5px;}
 .sub{margin:6px 0 0;font-size:.8rem;color:var(--muted);}
 .enable{display:none;margin:14px auto 0;padding:10px 22px;border-radius:30px;border:1px solid var(--accent);background:var(--panel2);color:var(--text);font-size:.85rem;font-weight:600;}
-main{width:100%;max-width:480px;padding:14px 20px 10px;display:flex;flex-direction:column;align-items:center;gap:var(--gap);}
-.dialwrap{position:relative;width:min(78vw,300px);height:min(78vw,300px);margin-top:8px;}
+main{width:100%;max-width:480px;padding:12px 20px 10px;display:flex;flex-direction:column;align-items:center;gap:var(--gap);}
+.dialwrap{position:relative;width:min(78vw,300px);height:min(78vw,300px);margin-top:6px;}
 .ring{position:absolute;inset:0;border-radius:50%;border:2px solid var(--border);}
-.dial{position:absolute;inset:8%;border-radius:50%;transition:transform .12s linear;overflow:hidden;border:1px solid var(--border);
-  background:conic-gradient(from -22.5deg,#6FA8C9 0deg 45deg,#DCE8E0 45deg 90deg,#E8C468 90deg 135deg,#D8622E 135deg 180deg,#B03A2E 180deg 225deg,#7A5C3E 225deg 270deg,#5B7C99 270deg 315deg,#8FA88A 315deg 360deg);}
-[data-theme="hc"] .dial{background:repeating-conic-gradient(from -22.5deg,#000 0deg 45deg,#fff 45deg 90deg);}
-.dial::after{content:"";position:absolute;inset:36%;border-radius:50%;background:var(--panel);border:1px solid var(--border);}
-.label{position:absolute;left:50%;top:50%;font-size:.78rem;font-weight:700;color:#161208;text-shadow:0 1px 1px rgba(255,255,255,.25);}
+.dial{position:absolute;inset:8%;border-radius:50%;transition:transform .12s linear;overflow:hidden;border:1px solid var(--border);}
+.dial::after{content:"";position:absolute;inset:36%;border-radius:50%;background:var(--panel);border:1px solid var(--border);z-index:2;}
+.label{position:absolute;left:50%;top:50%;font-size:.72rem;font-weight:700;color:#161208;text-shadow:0 1px 1px rgba(255,255,255,.25);z-index:3;}
 [data-theme="hc"] .label{color:#fff;mix-blend-mode:difference;}
+.mandala{position:absolute;left:19%;top:19%;width:62%;height:62%;display:none;transition:transform .12s linear;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:calc(100%/9) calc(100%/9);opacity:.85;}
+.mandala.show{display:block;}
+.mlabel{position:absolute;font-size:.5rem;font-weight:700;transform:translate(-50%,-50%);color:var(--text);text-shadow:0 0 3px var(--panel),0 0 3px var(--panel);white-space:nowrap;}
 .needle{position:absolute;left:50%;top:6%;bottom:46%;width:0;transform:translateX(-50%);z-index:5;}
 .needle::before{content:"";position:absolute;left:-9px;top:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:16px solid var(--accent);}
 .needle::after{content:"";position:absolute;left:-1.5px;top:14px;width:3px;bottom:0;background:var(--needle);opacity:.55;}
 .center-dot{position:absolute;left:50%;top:50%;width:9px;height:9px;background:var(--accent);border-radius:50%;transform:translate(-50%,-50%);z-index:6;}
-.deg{font-size:2.1rem;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;}
+.deg{font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;}
 .facing{font-size:.85rem;color:var(--muted);text-align:center;}
-.card{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;text-align:center;border-top:4px solid var(--zonecolor,var(--accent));}
-.card h2{margin:0 0 2px;font-family:Georgia,serif;font-size:1.15rem;}
-.card .sk{font-size:.8rem;color:var(--muted);margin-bottom:8px;}
-.rowinfo{display:flex;justify-content:center;gap:18px;font-size:.72rem;color:var(--muted);margin-bottom:8px;}
+.card{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;text-align:center;border-top:4px solid var(--zonecolor,var(--accent));}
+.card h2{margin:0 0 2px;font-family:Georgia,serif;font-size:1.1rem;}
+.card .sk{font-size:.78rem;color:var(--muted);margin-bottom:8px;}
+.rowinfo{display:flex;justify-content:center;gap:18px;font-size:.7rem;color:var(--muted);margin-bottom:8px;}
 .rowinfo b{display:block;color:var(--text);font-size:.85rem;font-weight:600;}
-.note{font-size:.85rem;line-height:1.4;}
+.note{font-size:.83rem;line-height:1.4;}
 .loc{font-size:.75rem;color:var(--muted);}
-.calib{font-size:.7rem;color:var(--muted);text-align:center;max-width:300px;}
-.themes{display:flex;gap:8px;margin:6px 0 4px;}
+.calib{font-size:.68rem;color:var(--muted);text-align:center;max-width:320px;}
+.panel{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+.panel h3{margin:0 0 10px;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+.seg{display:flex;gap:6px;margin-bottom:10px;}
+.seg button{flex:1;padding:8px 6px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--muted);font-size:.72rem;font-weight:600;}
+.seg button.active{border-color:var(--accent);color:var(--text);}
+.fieldrow{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.fieldrow label{flex:1;font-size:.75rem;color:var(--muted);}
+.fieldrow input[type=number]{width:70px;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:.8rem;}
+select{width:100%;padding:9px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:.82rem;margin-bottom:10px;}
+.verdict{border-radius:12px;padding:10px 12px;font-size:.82rem;font-weight:600;text-align:center;}
+.v-ideal{background:#2E4B32;color:#CDEFC9;}
+.v-ok{background:#4B4322;color:#F0E4A8;}
+.v-avoid{background:#4B2222;color:#F5C6C6;}
+.v-neutral{background:var(--panel);color:var(--muted);border:1px solid var(--border);}
+.mini{font-size:.68rem;color:var(--muted);margin-top:6px;text-align:center;}
+.themes{display:flex;gap:8px;margin:4px 0 4px;}
 .tbtn{padding:8px 12px;border-radius:20px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);font-size:.72rem;font-weight:600;}
 .tbtn.active{border-color:var(--accent);color:var(--text);}
-footer{width:100%;max-width:480px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;padding:18px 12px 30px;color:var(--muted);font-size:.72rem;}
+footer{width:100%;max-width:480px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;padding:16px 12px 30px;color:var(--muted);font-size:.72rem;}
 footer .name{font-weight:600;color:var(--text);font-size:.78rem;}
 </style>
 </head>
 <body>
 <header>
   <h1>Vastu Compass</h1>
-  <p class="sub">Point your phone to find the Vastu direction and zone you're facing</p>
+  <p class="sub">Point your phone to read Vastu direction, zone & room fit</p>
   <button class="enable" id="enableBtn">Enable Compass</button>
 </header>
 <main>
   <div class="dialwrap">
     <div class="ring"></div>
     <div class="dial" id="dial"></div>
+    <div class="mandala" id="mandala"></div>
     <div class="needle"></div>
     <div class="center-dot"></div>
   </div>
@@ -67,11 +82,24 @@ footer .name{font-weight:600;color:var(--text);font-size:.78rem;}
   <div class="card" id="card">
     <h2 id="zName">—</h2>
     <div class="sk" id="zSk">—</div>
-    <div class="rowinfo">
-      <div>Element<b id="zEl">—</b></div>
-      <div>Deity<b id="zGod">—</b></div>
-    </div>
+    <div class="rowinfo"><div>Element<b id="zEl">—</b></div><div>Deity<b id="zGod">—</b></div></div>
     <div class="note" id="zNote">Allow motion access to begin reading your direction.</div>
+  </div>
+
+  <div class="panel">
+    <h3>Check a room</h3>
+    <select id="roomSel"></select>
+    <div class="verdict v-neutral" id="verdict">Select a room to see how this direction suits it.</div>
+  </div>
+
+  <div class="panel">
+    <h3>Dial & orientation</h3>
+    <div class="seg" id="zoneMode"><button data-v="8" class="active">8 Zones</button><button data-v="16">16 Zones</button></div>
+    <div class="seg" id="northRef"><button data-v="mag" class="active">Magnetic North</button><button data-v="true">True North</button></div>
+    <div class="fieldrow" id="declRow" style="display:none"><label for="decl">Local declination (°, E+/W−)</label><input type="number" id="decl" value="0" step="0.5"></div>
+    <div class="fieldrow"><label for="calib">Fine-tune offset (°)</label><input type="number" id="calib" value="0" step="1" min="-30" max="30"></div>
+    <div class="seg"><button id="mandalaBtn">Show Mandala Grid</button></div>
+    <p class="mini">Don't know your declination? Search "magnetic declination" + your city. Leave at 0° for standard magnetic-north Vastu readings.</p>
   </div>
 
   <div class="loc" id="loc">Locating…</div>
@@ -91,7 +119,7 @@ footer .name{font-weight:600;color:var(--text);font-size:.78rem;}
 </footer>
 
 <script>
-const zones=[
+const zones8=[
  {a:0,short:"N",name:"North",sk:"Uttara",el:"Water",god:"Kubera",note:"The zone of wealth. Keep it open and light — ideal for cash, safes, or open space.",c:"#6FA8C9"},
  {a:45,short:"NE",name:"Northeast",sk:"Ishanya",el:"Water & Space",god:"Ishaan / Shiva",note:"The most sacred zone. Best for the puja room, water storage, or an open corner.",c:"#DCE8E0"},
  {a:90,short:"E",name:"East",sk:"Purva",el:"Air",god:"Indra",note:"Welcomes the morning sun. Favoured for the main entrance and windows.",c:"#E8C468"},
@@ -101,39 +129,80 @@ const zones=[
  {a:270,short:"W",name:"West",sk:"Paschima",el:"Water & Air",god:"Varuna",note:"A settling zone — well suited to the dining room or a study.",c:"#5B7C99"},
  {a:315,short:"NW",name:"Northwest",sk:"Vayavya",el:"Air",god:"Vayu",note:"A zone of movement and change — good for guest rooms, garages, or storage.",c:"#8FA88A"}
 ];
+const zones16=(()=>{const out=[];zones8.forEach((z,i)=>{out.push(z);const n=zones8[(i+1)%8];out.push({a:z.a+22.5,short:z.short+"/"+n.short,name:z.name+"–"+n.name,sk:z.sk+" · "+n.sk,el:z.el+" / "+n.el,god:z.god+" & "+n.god,note:"Transition zone blending "+z.name+" and "+n.name+" — generally follows the nearer main direction's guidance.",c:z.c});});return out;})();
 
-const dial=document.getElementById('dial'), degEl=document.getElementById('deg'), facingEl=document.getElementById('facing');
+let zoneSet=zones8, mode16=false;
+const dial=document.getElementById('dial'), mandala=document.getElementById('mandala'), degEl=document.getElementById('deg'), facingEl=document.getElementById('facing');
 const card=document.getElementById('card'), zName=document.getElementById('zName'), zSk=document.getElementById('zSk');
 const zEl=document.getElementById('zEl'), zGod=document.getElementById('zGod'), zNote=document.getElementById('zNote');
 const locEl=document.getElementById('loc'), enableBtn=document.getElementById('enableBtn');
+const declInput=document.getElementById('decl'), calibInput=document.getElementById('calib'), declRow=document.getElementById('declRow');
 
-function buildLabels(){
-  const wrap=dial.parentElement, r=wrap.offsetWidth*0.42;
-  zones.forEach(z=>{
+function buildDial(){
+  dial.querySelectorAll('.label').forEach(l=>l.remove());
+  const stops=zoneSet.map(z=>`${z.c} ${z.a-360/zoneSet.length/2}deg ${z.a+360/zoneSet.length/2}deg`).join(',');
+  dial.style.background=`conic-gradient(from -${180/zoneSet.length}deg,${stops})`;
+  if(document.documentElement.getAttribute('data-theme')==='hc'){
+    dial.style.background=`repeating-conic-gradient(from -${180/zoneSet.length}deg,#000 0deg ${360/zoneSet.length}deg,#fff ${360/zoneSet.length}deg ${720/zoneSet.length}deg)`;
+  }
+  const r=dial.parentElement.offsetWidth*0.42;
+  zoneSet.forEach(z=>{
     const el=document.createElement('div');
     el.className='label'; el.textContent=z.short;
     el.style.transform=`translate(-50%,-50%) rotate(${z.a}deg) translateY(-${r}px) rotate(${-z.a}deg)`;
     dial.appendChild(el);
   });
 }
-buildLabels();
-window.addEventListener('resize',()=>{dial.querySelectorAll('.label').forEach(l=>l.remove());buildLabels();});
+function buildMandala(){
+  mandala.querySelectorAll('.mlabel').forEach(l=>l.remove());
+  const pts=[[5.55,5.55,"Vayu"],[94.44,5.55,"Ishaan"],[5.55,94.44,"Nirriti"],[94.44,94.44,"Agni"],[50,5.55,"Kubera"],[94.44,50,"Indra"],[50,94.44,"Yama"],[5.55,50,"Varuna"],[50,50,"Brahma"]];
+  pts.forEach(p=>{const el=document.createElement('div');el.className='mlabel';el.textContent=p[2];el.style.left=p[0]+'%';el.style.top=p[1]+'%';mandala.appendChild(el);});
+}
+buildDial();buildMandala();
+window.addEventListener('resize',buildDial);
 
-let smoothed=null;
-function angDiff(a,b){let d=(b-a+540)%360-180;return d;}
+let smoothed=null, lastRaw=0;
+function angDiff(a,b){return (b-a+540)%360-180;}
+function zoneFor(h,set){let n=360/set.length;let i=Math.round(h/n)%set.length;if(i<0)i+=set.length;return set[i];}
+function zone8Code(h){let i=Math.round(h/45)%8;if(i<0)i+=8;return zones8[i].short;}
 
-function zoneFor(h){let i=Math.round(h/45)%8;if(i<0)i+=8;return zones[i];}
+const roomGuide={
+ "Main Entrance":{ideal:["N","NE","E"],ok:["W"],avoid:["SW","S"],note:"Entrances thrive facing the sun and open zones."},
+ "Kitchen":{ideal:["SE"],ok:["NW"],avoid:["NE","SW"],note:"The fire element belongs in the Agneya corner."},
+ "Master Bedroom":{ideal:["SW"],ok:["S","W"],avoid:["NE"],note:"The grounded Southwest supports rest and stability."},
+ "Puja / Prayer Room":{ideal:["NE"],ok:["N","E"],avoid:["S","SW"],note:"Sacred spaces favour the Ishanya corner's stillness."},
+ "Bathroom / Toilet":{ideal:["NW","W"],ok:["N"],avoid:["NE","SW"],note:"Keep waste-water zones away from sacred and grounded corners."},
+ "Study / Office":{ideal:["NE","E"],ok:["N"],avoid:["SW"],note:"Morning light and open energy support focus here."},
+ "Store Room":{ideal:["SW","S"],ok:["W"],avoid:["NE"],note:"Heavy storage suits the solid, grounded zones."},
+ "Staircase":{ideal:["S","SW","W"],ok:["NW"],avoid:["NE"],note:"Stairs are best kept out of the sacred Northeast."}
+};
+const roomSel=document.getElementById('roomSel'), verdictEl=document.getElementById('verdict');
+Object.keys(roomGuide).forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;roomSel.appendChild(o);});
+
+function updateVerdict(code){
+  const room=roomGuide[roomSel.value]; if(!room)return;
+  let cls='v-neutral', text=`${roomSel.value}: neutral for ${code} — no strong tradition either way.`;
+  if(room.ideal.includes(code)){cls='v-ideal';text=`Ideal ✓ — ${roomSel.value} suits the ${code} zone well.`;}
+  else if(room.ok.includes(code)){cls='v-ok';text=`Acceptable — ${roomSel.value} works reasonably in ${code}.`;}
+  else if(room.avoid.includes(code)){cls='v-avoid';text=`Avoid ✕ — ${roomSel.value} is traditionally discouraged in ${code}.`;}
+  verdictEl.className='verdict '+cls; verdictEl.textContent=text+' '+room.note;
+}
+roomSel.addEventListener('change',()=>updateVerdict(zone8Code(smoothed||0)));
 
 function update(headingRaw){
-  const h=((headingRaw%360)+360)%360;
+  lastRaw=headingRaw;
+  const calib=parseFloat(calibInput.value)||0;
+  const decl=(document.querySelector('#northRef .active').dataset.v==='true')?(parseFloat(declInput.value)||0):0;
+  const h=((headingRaw+calib+decl)%360+360)%360;
   smoothed = smoothed===null ? h : (smoothed + angDiff(smoothed,h)*0.18 + 360)%360;
-  dial.style.transform=`rotate(${-smoothed}deg)`;
+  const rot=`rotate(${-smoothed}deg)`;
+  dial.style.transform=rot; if(mandala.classList.contains('show'))mandala.style.transform=rot;
   degEl.textContent=Math.round(smoothed)+'°';
-  const z=zoneFor(smoothed);
+  const z=zoneFor(smoothed,zoneSet);
   facingEl.textContent=`Facing ${z.name} (${z.sk})`;
   card.style.setProperty('--zonecolor',z.c);
-  zName.textContent=z.name; zSk.textContent=z.sk+' · Vastu direction';
-  zEl.textContent=z.el; zGod.textContent=z.god; zNote.textContent=z.note;
+  zName.textContent=z.name; zSk.textContent=z.sk; zEl.textContent=z.el; zGod.textContent=z.god; zNote.textContent=z.note;
+  updateVerdict(zone8Code(smoothed));
 }
 
 function onOrientation(e){
@@ -143,31 +212,24 @@ function onOrientation(e){
   else return;
   update(heading);
 }
-
 function startListening(){
   if('ondeviceorientationabsolute' in window){window.addEventListener('deviceorientationabsolute',onOrientation,true);}
   else{window.addEventListener('deviceorientation',onOrientation,true);}
 }
-
 function initCompass(){
   const DOE=window.DeviceOrientationEvent;
   if(DOE && typeof DOE.requestPermission==='function'){
     enableBtn.style.display='inline-block';
     enableBtn.onclick=async()=>{
-      try{
-        const res=await DOE.requestPermission();
+      try{const res=await DOE.requestPermission();
         if(res==='granted'){startListening();enableBtn.style.display='none';}
         else{facingEl.textContent='Compass access denied.';}
       }catch(err){facingEl.textContent='Compass not supported on this device.';}
       fetchLocation();
     };
-  }else if(DOE){
-    startListening();
-  }else{
-    facingEl.textContent='Compass sensor not supported on this device.';
-  }
+  }else if(DOE){startListening();}
+  else{facingEl.textContent='Compass sensor not supported on this device.';}
 }
-
 function fetchLocation(){
   if(!navigator.geolocation){locEl.textContent='Location unavailable';return;}
   navigator.geolocation.getCurrentPosition(async pos=>{
@@ -180,15 +242,31 @@ function fetchLocation(){
     }catch(err){locEl.textContent='Location unavailable';}
   },()=>{locEl.textContent='Location access denied';},{timeout:8000});
 }
+initCompass();fetchLocation();
 
-initCompass();
-fetchLocation();
+document.getElementById('zoneMode').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  document.querySelectorAll('#zoneMode button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  mode16=b.dataset.v==='16'; zoneSet=mode16?zones16:zones8; buildDial(); update(lastRaw);
+});
+document.getElementById('northRef').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  document.querySelectorAll('#northRef button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  declRow.style.display=b.dataset.v==='true'?'flex':'none'; update(lastRaw);
+});
+declInput.addEventListener('input',()=>update(lastRaw));
+calibInput.addEventListener('input',()=>update(lastRaw));
+document.getElementById('mandalaBtn').addEventListener('click',e=>{
+  mandala.classList.toggle('show');
+  e.target.textContent=mandala.classList.contains('show')?'Hide Mandala Grid':'Show Mandala Grid';
+  mandala.style.transform=dial.style.transform;
+});
 
 const tbtns=document.querySelectorAll('.tbtn');
 function setTheme(t){
   document.documentElement.setAttribute('data-theme',t);
   tbtns.forEach(b=>b.classList.toggle('active',b.dataset.t===t));
-  localStorage.setItem('vastu-theme',t);
+  localStorage.setItem('vastu-theme',t); buildDial();
 }
 tbtns.forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.t)));
 setTheme(localStorage.getItem('vastu-theme')||'dark');
