@@ -28,6 +28,10 @@
   .btn:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .btn.theme{display:flex;align-items:center;gap:8px}
   .dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+  .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+  .chip{border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+  .chip.active{background:var(--accent);color:var(--card);border-color:var(--accent)}
+  .tag{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:2px 8px;white-space:nowrap;align-self:center}
   input[type="search"]{width:100%;padding:12px 16px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:15px;margin-bottom:22px;font-family:'Inter',sans-serif}
   input[type="search"]::placeholder{color:var(--muted)}
   main{flex:1}
@@ -62,11 +66,12 @@
   <header>
     <p class="eyebrow">Seed sounds of the subtle body</p>
     <h1>Beej Mantra<span class="devnote">बीज मंत्र</span></h1>
-    <p class="lede">Thirteen bīja syllables — the seed sounds of the chakras and their presiding deities. Tap a card to hear it spoken aloud.</p>
+    <p class="lede">79 bīja syllables in full — the 7 chakra seeds, 9 navagraha seeds, 13 deity seeds and all 50 mātṛkā letters of the Sanskrit alphabet. Tap a card to hear it spoken aloud.</p>
     <div class="controls">
       <button class="btn theme" id="themeBtn" aria-label="Toggle theme"><span class="dot" id="themeDot"></span><span id="themeLabel">Dark</span></button>
       <button class="btn" id="resetBtn">Reset counts</button>
     </div>
+    <div class="chips" id="chips"></div>
     <input type="search" id="search" placeholder="Search by syllable, deity or chakra…" aria-label="Search mantras">
   </header>
   <main>
@@ -79,24 +84,68 @@
   <span class="copy">© <span id="year"></span> <b>Manik Roy</b>. All Rights Reserved.</span>
 </footer>
 <script>
-const DATA = [
-  {s:"ॐ",iast:"Oṁ",deity:"Pranava · The Origin",meaning:"The primordial sound said to contain all other mantras within it."},
-  {s:"लं",iast:"Laṁ",deity:"Mūlādhāra · Root",meaning:"Seed of the earth element; grounding, stability, survival."},
-  {s:"वं",iast:"Vaṁ",deity:"Svādhiṣṭhāna · Sacral",meaning:"Seed of the water element; fluidity, feeling, creativity."},
-  {s:"रं",iast:"Raṁ",deity:"Maṇipūra · Navel",meaning:"Seed of the fire element; will, transformation, digestion."},
-  {s:"यं",iast:"Yaṁ",deity:"Anāhata · Heart",meaning:"Seed of the air element; compassion, breath, connection."},
-  {s:"हं",iast:"Haṁ",deity:"Viśuddha · Throat",meaning:"Seed of ether/space; voice, truth, expression."},
-  {s:"क्षं",iast:"Kṣaṁ",deity:"Ājñā · Third Eye",meaning:"Union of all elements; intuition, inner sight."},
-  {s:"ऐं",iast:"Aiṁ",deity:"Sarasvatī · Wisdom",meaning:"Seed of speech, learning and the arts."},
-  {s:"ह्रीं",iast:"Hrīṁ",deity:"Māyā · Illusion",meaning:"The bīja of transformation; dissolving what is unreal."},
-  {s:"श्रीं",iast:"Śrīṁ",deity:"Lakṣmī · Abundance",meaning:"Seed of prosperity, grace and beauty."},
-  {s:"क्लीं",iast:"Klīṁ",deity:"Kṛṣṇa · Attraction",meaning:"Seed of magnetism and devotional longing."},
-  {s:"गं",iast:"Gaṁ",deity:"Gaṇeśa · Remover of Obstacles",meaning:"Invoked first, to clear the way for any undertaking."},
-  {s:"दुं",iast:"Duṁ",deity:"Durgā · Protection",meaning:"Seed of fierce, protective feminine strength."}
+const CHAKRA = [
+  ["ॐ","Oṁ","chakra","Prāṇava · The Origin","The primordial sound said to contain all other mantras within it."],
+  ["लं","Laṁ","chakra","Mūlādhāra · Root","Seed of the earth element; grounding, stability, survival."],
+  ["वं","Vaṁ","chakra","Svādhiṣṭhāna · Sacral","Seed of the water element; fluidity, feeling, creativity."],
+  ["रं","Raṁ","chakra","Maṇipūra · Navel","Seed of the fire element; will, transformation, digestion."],
+  ["यं","Yaṁ","chakra","Anāhata · Heart","Seed of the air element; compassion, breath, connection."],
+  ["हं","Haṁ","chakra","Viśuddha · Throat","Seed of ether/space; voice, truth, expression."],
+  ["क्षं","Kṣaṁ","chakra","Ājñā · Third Eye","Union of all elements; intuition, inner sight."]
 ];
+const DEITY = [
+  ["ऐं","Aiṁ","deity","Sarasvatī · Wisdom","Seed of speech, learning and the arts."],
+  ["ह्रीं","Hrīṁ","deity","Māyā · Illusion","The bīja of transformation; dissolving what is unreal."],
+  ["श्रीं","Śrīṁ","deity","Lakṣmī · Abundance","Seed of prosperity, grace and beauty."],
+  ["क्लीं","Klīṁ","deity","Kṛṣṇa · Attraction","Seed of magnetism and devotional longing."],
+  ["गं","Gaṁ","deity","Gaṇeśa · Remover of Obstacles","Invoked first, to clear the way for any undertaking."],
+  ["दुं","Duṁ","deity","Durgā · Protection","Seed of fierce, protective feminine strength."],
+  ["क्रीं","Krīṁ","deity","Kālī · Transformation","Fierce feminine power said to burn away illusion."],
+  ["ग्लौं","Glauṁ","deity","Gaṇeśa · Alternate Seed","An alternate bīja invoked for swift removal of obstacles."],
+  ["हूं","Hūṁ","deity","Rudra · Protection","A wrathful, protective sound used in astra and kavacha mantras."],
+  ["हौं","Hauṁ","deity","Śiva · Sadāśiva","Union of the syllables ha (Śiva) and au (Sadāśiva)."],
+  ["क्रौं","Krauṁ","deity","Narasiṁha · Courage","Invoked for fierce protection and courage."],
+  ["सौः","Sauḥ","deity","Parā Devī · Śrī Vidyā","The 'heart bīja' — essence beyond form, in the Śrī Vidyā tradition."],
+  ["फट्","Phaṭ","deity","Astra · Repelling","A forceful closing sound meaning roughly 'to split, to shatter obstacles.'"]
+];
+const GRAHA = [
+  ["ह्रां","Hrāṁ","graha","Sūrya · Sun","Solar bīja for vitality, confidence and authority."],
+  ["श्रां","Śrāṁ","graha","Candra · Moon","Lunar bīja for calm, intuition and emotional balance."],
+  ["क्रां","Krāṁ","graha","Maṅgala · Mars","Bīja for courage, drive and decisive action."],
+  ["ब्रां","Brāṁ","graha","Budha · Mercury","Bīja for intellect, communication and clarity."],
+  ["ग्रां","Grāṁ","graha","Bṛhaspati · Jupiter","Bīja for wisdom, growth and good counsel."],
+  ["द्रां","Drāṁ","graha","Śukra · Venus","Bīja for love, harmony and creative refinement."],
+  ["प्रां","Prāṁ","graha","Śani · Saturn","Bīja for discipline, patience and karmic balance."],
+  ["भ्रां","Bhrāṁ","graha","Rāhu · North Node","Bīja for navigating obsession, ambition and illusion."],
+  ["स्रां","Srāṁ","graha","Ketu · South Node","Bīja for detachment, intuition and release."]
+];
+const VOWELS16 = [["अ","a"],["आ","ā"],["इ","i"],["ई","ī"],["उ","u"],["ऊ","ū"],["ऋ","ṛ"],["ॠ","ṝ"],["ऌ","ḷ"],["ॡ","ḹ"],["ए","e"],["ऐ","ai"],["ओ","o"],["औ","au"],["अं","aṁ"],["अः","aḥ"]];
+const MATRIKA_GROUPS = [
+  ["Ājñā",2,[["ह","ha"],["क्ष","kṣa"]]],
+  ["Viśuddha",16,VOWELS16],
+  ["Anāhata",12,[["क","ka"],["ख","kha"],["ग","ga"],["घ","gha"],["ङ","ṅa"],["च","ca"],["छ","cha"],["ज","ja"],["झ","jha"],["ञ","ña"],["ट","ṭa"],["ठ","ṭha"]]],
+  ["Maṇipūra",10,[["ड","ḍa"],["ढ","ḍha"],["ण","ṇa"],["त","ta"],["थ","tha"],["द","da"],["ध","dha"],["न","na"],["प","pa"],["फ","pha"]]],
+  ["Svādhiṣṭhāna",6,[["ब","ba"],["भ","bha"],["म","ma"],["य","ya"],["र","ra"],["ल","la"]]],
+  ["Mūlādhāra",4,[["व","va"],["श","śa"],["ष","ṣa"],["स","sa"]]]
+];
+const MATRIKA = MATRIKA_GROUPS.flatMap(([ch, petals, letters]) =>
+  letters.map(([s, iast], i) => [s, iast, "matrika", `${ch} · Petal ${i+1}/${petals}`, `One of the fifty mātṛkā seed-letters, inscribed on petal ${i+1} of the ${petals}-petal ${ch} lotus.`])
+);
+const toRows = (arr, prefix) => arr.map((r,i) => ({id:prefix+i, s:r[0], iast:r[1], cat:r[2], deity:r[3], meaning:r[4]}));
+const DATA = [...toRows(CHAKRA,'c'), ...toRows(DEITY,'d'), ...toRows(GRAHA,'g'), ...toRows(MATRIKA,'m')];
+const CATLABEL = {chakra:'Chakra', deity:'Deity', graha:'Navagraha', matrika:'Mātṛkā'};
+let activeCat = 'all';
+const chips = document.getElementById('chips');
+[['all','All (79)'],['chakra','Chakra (7)'],['deity','Deity (13)'],['graha','Navagraha (9)'],['matrika','Mātṛkā (50)']].forEach(([cat,label], i) => {
+  const b = document.createElement('button');
+  b.className = 'chip' + (i===0 ? ' active' : '');
+  b.textContent = label; b.dataset.cat = cat;
+  b.addEventListener('click', () => { activeCat = cat; [...chips.children].forEach(c => c.classList.toggle('active', c===b)); render(document.getElementById('search').value); });
+  chips.appendChild(b);
+});
 const grid = document.getElementById('grid');
 const empty = document.getElementById('empty');
-const counts = Object.fromEntries(DATA.map(m => [m.iast, 0]));
+const counts = Object.fromEntries(DATA.map(m => [m.id, 0]));
 let voice = null;
 let currentUtterance = null; // kept alive on purpose: browsers can silently drop unreferenced utterances
 const supported = 'speechSynthesis' in window;
@@ -147,28 +196,28 @@ function speak(text, card){
 function render(filter){
   const q = (filter||'').trim().toLowerCase();
   grid.innerHTML = '';
-  const list = DATA.filter(m => !q || m.s.includes(q) || m.iast.toLowerCase().includes(q) || m.deity.toLowerCase().includes(q) || m.meaning.toLowerCase().includes(q));
+  const list = DATA.filter(m => (activeCat==='all' || m.cat===activeCat) && (!q || m.s.includes(q) || m.iast.toLowerCase().includes(q) || m.deity.toLowerCase().includes(q) || m.meaning.toLowerCase().includes(q)));
   empty.hidden = list.length !== 0;
   list.forEach(m => {
     const card = document.createElement('div');
     card.className = 'card';
     card.innerHTML = `
       <div class="rings"><span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span></div>
-      <div class="top"><span class="syll">${m.s}</span><span class="iast">${m.iast}</span></div>
+      <div class="top"><span class="syll">${m.s}</span><span class="iast">${m.iast}</span><span class="tag">${CATLABEL[m.cat]}</span></div>
       <div class="deity">${m.deity}</div>
       <div class="meaning">${m.meaning}</div>
       <div class="row2">
         <button class="play" aria-label="Play ${m.iast}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Chant</button>
-        <span class="count">Repeats: <b>${counts[m.iast]}</b></span>
+        <span class="count">Repeats: <b>${counts[m.id]}</b></span>
       </div>`;
-    const doPlay = (e) => { e.stopPropagation(); counts[m.iast]++; card.querySelector('.count b').textContent = counts[m.iast]; speak(m.iast, card); };
+    const doPlay = (e) => { e.stopPropagation(); counts[m.id]++; card.querySelector('.count b').textContent = counts[m.id]; speak(m.iast, card); };
     card.querySelector('.play').addEventListener('click', doPlay);
     card.addEventListener('click', doPlay);
     grid.appendChild(card);
   });
 }
 document.getElementById('search').addEventListener('input', e => render(e.target.value));
-document.getElementById('resetBtn').addEventListener('click', () => { DATA.forEach(m => counts[m.iast] = 0); render(document.getElementById('search').value); });
+document.getElementById('resetBtn').addEventListener('click', () => { DATA.forEach(m => counts[m.id] = 0); render(document.getElementById('search').value); });
 
 const THEMES = ['dark','light','oled','hc'];
 const LABELS = {dark:'Dark', light:'Light', oled:'OLED', hc:'High Contrast'};
