@@ -1,319 +1,298 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>FlightBoard — Live Air Traffic</title>
+<title>SkyTrace — Live Flight Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <style>
   :root{
-    --bg:#0B1220; --panel:#121B2E; --panel2:#0E1626; --border:#23304A;
-    --text:#E4ECF7; --dim:#8B9AB5; --accent:#FFB020; --accent2:#3ADB76;
-    --danger:#FF5C5C; --focus:#63B3FF; --radius:10px; --bw:1px;
+    --bg:#0b1220; --panel:#121a2b; --border:#1f2b42; --text:#e6edf5;
+    --muted:#93a4bf; --accent:#ffb020; --accent2:#35c46b; --danger:#ff5d5d;
+    --radius:14px; --focus:2px solid var(--accent);
   }
-  html[data-theme="light"]{
-    --bg:#F4F6F9; --panel:#FFFFFF; --panel2:#ECEFF4; --border:#D8DEE8;
-    --text:#101826; --dim:#5B6B84; --accent:#B9720A; --accent2:#1F9D55;
-    --danger:#C0392B; --focus:#1D6FE0;
+  [data-theme="light"]{
+    --bg:#f3f5f8; --panel:#ffffff; --border:#d8dee8; --text:#16202c;
+    --muted:#5b6b82; --accent:#b45f00; --accent2:#1f8f4e; --danger:#c62828;
   }
-  html[data-theme="oled"]{
-    --bg:#000000; --panel:#0A0A0A; --panel2:#050505; --border:#1C1C1C;
-    --text:#E4ECF7; --dim:#7C8AA0; --accent:#FFB020; --accent2:#3ADB76;
-    --danger:#FF5C5C; --focus:#63B3FF;
+  [data-theme="oled"]{
+    --bg:#000000; --panel:#0a0a0a; --border:#1a1a1a; --text:#f2f2f2;
+    --muted:#8a8a8a; --accent:#ffb020; --accent2:#35c46b; --danger:#ff5d5d;
   }
-  html[data-theme="hc"]{
-    --bg:#000000; --panel:#000000; --panel2:#000000; --border:#FFFFFF;
-    --text:#FFFFFF; --dim:#FFFFFF; --accent:#FFFF00; --accent2:#00FF66;
-    --danger:#FF4141; --focus:#FFFF00; --radius:0px; --bw:2px;
+  [data-theme="hc"]{
+    --bg:#000000; --panel:#000000; --border:#ffffff; --text:#ffffff;
+    --muted:#ffffff; --accent:#ffe400; --accent2:#00e5ff; --danger:#ff5d5d;
+    --radius:4px;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--text);
-    font-family:'Inter',-apple-system,system-ui,sans-serif;
-    -webkit-font-smoothing:antialiased; min-height:100vh;
-    display:flex; flex-direction:column; transition:background .2s,color .2s;}
-  .mono{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;}
-  a{color:inherit;}
-  :focus-visible{outline:3px solid var(--focus); outline-offset:2px;}
-
-  header{position:sticky; top:0; z-index:10; background:var(--panel);
-    border-bottom:var(--bw) solid var(--border); padding:.8rem 1rem;}
-  .brandrow{display:flex; align-items:center; justify-content:space-between; gap:.6rem;}
-  .brand{display:flex; align-items:center; gap:.6rem; min-width:0;}
-  .radar{width:26px; height:26px; border-radius:50%; flex:none;
-    border:var(--bw) solid var(--accent); position:relative; overflow:hidden;
-    background:radial-gradient(circle,var(--panel2) 0%, var(--panel) 100%);}
-  .radar::after{content:""; position:absolute; inset:0;
-    background:conic-gradient(from 0deg, var(--accent), transparent 35%);
-    animation:sweep 3s linear infinite;}
-  @keyframes sweep{to{transform:rotate(360deg);}}
-  .brand h1{font-size:1.05rem; margin:0; letter-spacing:.03em; white-space:nowrap;
-    overflow:hidden; text-overflow:ellipsis;}
-  .brand small{display:block; color:var(--dim); font-size:.68rem; letter-spacing:.08em;}
-  .themebar{display:flex; gap:.35rem; flex:none;}
-  .themebar button{width:34px; height:34px; border-radius:var(--radius);
-    border:var(--bw) solid var(--border); background:var(--panel2); color:var(--text);
-    cursor:pointer; font-size:.9rem; display:flex; align-items:center; justify-content:center;}
-  .themebar button[aria-pressed="true"]{border-color:var(--accent); color:var(--accent);}
-
-  .controls{display:flex; flex-wrap:wrap; gap:.5rem; padding:.7rem 1rem;
-    background:var(--panel2); border-bottom:var(--bw) solid var(--border);}
-  select,input[type="text"],button.action{
-    font:inherit; font-size:.85rem; padding:.55rem .7rem; border-radius:var(--radius);
-    border:var(--bw) solid var(--border); background:var(--panel); color:var(--text);}
-  select{flex:1 1 130px;}
-  input[type="text"]{flex:2 1 160px;}
-  button.action{background:var(--accent); color:#1A1200; border:none; font-weight:600;
-    cursor:pointer; flex:none;}
-  html[data-theme="hc"] button.action{color:#000;}
-  button.action:disabled{opacity:.55; cursor:progress;}
-  .status{width:100%; font-size:.75rem; color:var(--dim); display:flex;
-    justify-content:space-between; gap:.5rem; flex-wrap:wrap;}
-  .live-dot{display:inline-block; width:8px; height:8px; border-radius:50%;
-    background:var(--accent2); margin-right:.35rem; animation:pulse 1.6s ease-in-out infinite;}
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
-
-  main{flex:1; padding:.8rem 1rem 1.2rem; max-width:820px; width:100%; margin:0 auto;}
-  .empty,.err{color:var(--dim); text-align:center; padding:2.5rem 1rem; font-size:.9rem;}
-  .err{color:var(--danger);}
-
-  .strip{background:var(--panel); border:var(--bw) solid var(--border);
-    border-left:4px solid var(--accent2); border-radius:var(--radius);
-    margin-bottom:.55rem; padding:.65rem .8rem; cursor:pointer;}
-  .strip.ground{border-left-color:var(--dim);}
-  .strip.emergency{border-left-color:var(--danger); animation:pulse 1s ease-in-out infinite;}
-  .row1{display:flex; justify-content:space-between; align-items:baseline; gap:.5rem;}
-  .callsign{font-weight:700; font-size:1rem; letter-spacing:.03em;}
-  .country{font-size:.72rem; color:var(--dim); text-align:right;}
-  .row2{display:flex; flex-wrap:wrap; gap:.4rem .9rem; margin-top:.35rem;
-    font-size:.78rem; color:var(--dim);}
-  .row2 b{color:var(--text); font-weight:600;}
-  .badge{font-size:.66rem; text-transform:uppercase; letter-spacing:.05em;
-    padding:.15rem .4rem; border-radius:4px; border:var(--bw) solid var(--border);}
-  .badge.up{color:var(--accent2); border-color:var(--accent2);}
-  .badge.down{color:var(--accent);border-color:var(--accent);}
-  .details{margin-top:.5rem; padding-top:.5rem; border-top:1px dashed var(--border);
-    font-size:.75rem; color:var(--dim); display:grid; grid-template-columns:1fr 1fr; gap:.3rem .8rem;}
-  .details b{color:var(--text);}
-  .hidden{display:none;}
-
-  footer{border-top:var(--bw) solid var(--border); background:var(--panel);
-    padding:1.1rem 1rem; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; text-align:center; gap:.25rem; min-height:70px;}
-  footer p{margin:0; font-size:.78rem; color:var(--dim);}
-  footer .src{font-size:.7rem;}
-
-  @media(min-width:640px){
-    .brand h1{font-size:1.25rem;}
-    .strip{padding:.8rem 1rem;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    display:flex; flex-direction:column; min-height:100vh;
+    transition:background .2s,color .2s;
   }
-  @media(prefers-reduced-motion:reduce){
-    .radar::after,.live-dot,.strip.emergency{animation:none;}
+  h1,h2,.brand{font-family:'Space Grotesk',sans-serif;}
+  a{color:var(--accent);}
+  button{font-family:inherit;}
+  :focus-visible{outline:var(--focus); outline-offset:2px;}
+
+  header{
+    padding:14px 16px; border-bottom:1px solid var(--border);
+    display:flex; flex-direction:column; gap:12px;
+    position:sticky; top:0; background:var(--bg); z-index:20;
+  }
+  .brandrow{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .brand{font-size:1.25rem; font-weight:700; display:flex; align-items:center; gap:10px;}
+  .radar{
+    width:22px; height:22px; border-radius:50%;
+    border:1px solid var(--accent2); position:relative; overflow:hidden;
+    background:radial-gradient(circle, transparent 60%, transparent 100%);
+    flex:none;
+  }
+  .radar::before{
+    content:""; position:absolute; inset:0;
+    background:conic-gradient(from 0deg, var(--accent2), transparent 35%);
+    animation:sweep 2.4s linear infinite;
+  }
+  @media (prefers-reduced-motion:reduce){ .radar::before{animation:none;} }
+  @keyframes sweep{ to{ transform:rotate(360deg); } }
+
+  .themes{display:flex; gap:6px; flex-wrap:wrap;}
+  .themes button{
+    background:var(--panel); color:var(--text); border:1px solid var(--border);
+    border-radius:999px; padding:6px 10px; font-size:.72rem; cursor:pointer;
+    letter-spacing:.03em;
+  }
+  .themes button[aria-pressed="true"]{border-color:var(--accent); color:var(--accent);}
+
+  .statusbar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    font-size:.78rem; color:var(--muted);
+  }
+  .statusbar strong{color:var(--text);}
+  #refreshBtn{
+    background:transparent; border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:6px 10px; cursor:pointer; font-size:.75rem;
+  }
+
+  main{flex:1; display:flex; flex-direction:column;}
+  #map{ height:46vh; min-height:280px; width:100%; border-bottom:1px solid var(--border); background:var(--panel); }
+  .leaflet-container{ background:var(--panel); font-family:'JetBrains Mono',monospace; }
+
+  #list{
+    flex:1; padding:12px; display:grid; gap:10px;
+    grid-template-columns:1fr;
+  }
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:12px 14px; cursor:pointer; transition:border-color .15s;
+  }
+  .card:hover, .card:focus-visible{ border-color:var(--accent); }
+  .card .row1{display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+  .callsign{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.02rem;}
+  .country{color:var(--muted); font-size:.75rem;}
+  .metrics{display:flex; gap:14px; margin-top:8px; font-size:.78rem; flex-wrap:wrap;}
+  .metrics span b{color:var(--accent); font-weight:600;}
+  .ground{color:var(--accent2);}
+  .empty, .error{padding:24px; text-align:center; color:var(--muted); font-size:.85rem;}
+  .error{color:var(--danger);}
+
+  .plane-icon{ font-size:18px; line-height:1; filter:drop-shadow(0 0 2px rgba(0,0,0,.6)); }
+
+  footer{
+    border-top:1px solid var(--border); padding:16px 12px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; gap:4px; font-size:.75rem; color:var(--muted);
+  }
+  footer strong{color:var(--text);}
+
+  @media (min-width:768px){
+    main{flex-direction:row;}
+    #map{ height:auto; min-height:100%; flex:1.4; border-bottom:none; border-right:1px solid var(--border); }
+    #list{ flex:1; max-height:calc(100vh - 92px); overflow-y:auto; }
+    .brandrow{ }
   }
 </style>
 </head>
-<body>
+<body data-theme="dark">
 
 <header>
   <div class="brandrow">
-    <div class="brand">
-      <div class="radar" aria-hidden="true"></div>
-      <div>
-        <h1>FLIGHTBOARD</h1>
-        <small>LIVE AIR TRAFFIC</small>
-      </div>
+    <div class="brand"><span class="radar" aria-hidden="true"></span> SkyTrace</div>
+    <div class="themes" role="group" aria-label="Theme">
+      <button data-theme-btn="dark" aria-pressed="true">Dark</button>
+      <button data-theme-btn="light" aria-pressed="false">Light</button>
+      <button data-theme-btn="oled" aria-pressed="false">OLED</button>
+      <button data-theme-btn="hc" aria-pressed="false">HC</button>
     </div>
-    <div class="themebar" role="group" aria-label="Theme">
-      <button data-theme-btn="dark" title="Dark" aria-label="Dark theme">🌙</button>
-      <button data-theme-btn="light" title="Light" aria-label="Light theme">☀️</button>
-      <button data-theme-btn="oled" title="OLED true black" aria-label="OLED theme">⚫</button>
-      <button data-theme-btn="hc" title="High contrast" aria-label="High contrast theme">◐</button>
-    </div>
+  </div>
+  <div class="statusbar">
+    <span id="status">Locating you…</span>
+    <button id="refreshBtn" type="button">↻ Refresh</button>
   </div>
 </header>
 
-<div class="controls">
-  <select id="region" aria-label="Region">
-    <option value="NA">New York area</option>
-    <option value="EU" selected>London area</option>
-    <option value="ASIA">Tokyo area</option>
-    <option value="ME">Dubai area</option>
-    <option value="OC">Sydney area</option>
-    <option value="SA">São Paulo area</option>
-    <option value="NEAR">Near me</option>
-  </select>
-  <input type="text" id="search" placeholder="Filter callsign or type…" aria-label="Filter flights">
-  <button class="action" id="refreshBtn">Refresh</button>
-  <div class="status">
-    <span><span class="live-dot" aria-hidden="true"></span><span id="statusText">Loading…</span></span>
-    <span id="countText"></span>
-  </div>
-</div>
-
-<main id="list"><p class="empty">Fetching live flights…</p></main>
+<main>
+  <div id="map" role="application" aria-label="Live flight map"></div>
+  <div id="list" aria-live="polite"><div class="empty">Waiting for flight data…</div></div>
+</main>
 
 <footer>
-  <p>Data via ADSB.lol — no key, updates every 15s.</p>
-  <p>© Manik Roy <span id="year"></span>. All Rights Reserved.</p>
+  <div><strong>© Manik Roy <span id="yearRange"></span>.</strong> All Rights Reserved.</div>
+  <div>Live positions via the OpenSky Network — no key, no signup.</div>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
-const CITIES = {
-  NA:{lat:40.7128, lon:-74.0060},
-  EU:{lat:51.5074, lon:-0.1278},
-  ASIA:{lat:35.6762, lon:139.6503},
-  ME:{lat:25.2048, lon:55.2708},
-  OC:{lat:-33.8688, lon:151.2093},
-  SA:{lat:-23.5505, lon:-46.6333},
-};
-const RADIUS_NM = 250;
-const API_BASES = ['https://api.adsb.lol', 'https://api.adsb.one'];
+(function(){
+  "use strict";
 
-document.getElementById('year').textContent = new Date().getFullYear();
-
-const listEl = document.getElementById('list');
-const statusEl = document.getElementById('statusText');
-const countEl = document.getElementById('countText');
-const regionSel = document.getElementById('region');
-const searchInp = document.getElementById('search');
-const refreshBtn = document.getElementById('refreshBtn');
-
-let flights = [];
-let timer = null;
-let nearPoint = null;
-
-function setTheme(name){
-  document.documentElement.setAttribute('data-theme', name);
-  document.querySelectorAll('[data-theme-btn]').forEach(b=>{
-    b.setAttribute('aria-pressed', b.dataset.themeBtn === name ? 'true' : 'false');
-  });
-}
-document.querySelectorAll('[data-theme-btn]').forEach(b=>{
-  b.addEventListener('click', ()=>setTheme(b.dataset.themeBtn));
-});
-setTheme('dark');
-
-function pointFor(code){
-  if(code === 'NEAR'){ return nearPoint || CITIES.EU; }
-  return CITIES[code];
-}
-
-async function requestNear(){
-  return new Promise((resolve)=>{
-    if(!navigator.geolocation){ resolve(CITIES.EU); return; }
-    navigator.geolocation.getCurrentPosition(
-      pos=>{
-        nearPoint = {lat:pos.coords.latitude, lon:pos.coords.longitude};
-        resolve(nearPoint);
-      },
-      ()=>resolve(CITIES.EU),
-      {timeout:6000}
-    );
-  });
-}
-
-async function fetchFromBase(base, pt){
-  const url = `${base}/v2/point/${pt.lat}/${pt.lon}/${RADIUS_NM}`;
-  const res = await fetch(url);
-  if(!res.ok) throw new Error('HTTP ' + res.status);
-  return res.json();
-}
-
-async function fetchFlights(){
-  refreshBtn.disabled = true;
-  statusEl.textContent = 'Updating…';
-  try{
-    let pt = pointFor(regionSel.value);
-    if(regionSel.value === 'NEAR' && !nearPoint){ pt = await requestNear(); }
-    let data, lastErr;
-    for(const base of API_BASES){
-      try{ data = await fetchFromBase(base, pt); break; }
-      catch(e){ lastErr = e; }
-    }
-    if(!data) throw lastErr || new Error('no response');
-    flights = (data.ac || []).map(a=>({
-      hex:a.hex, callsign:(a.flight||'').trim() || '—', reg:a.r, type:a.t,
-      lat:a.lat, lon:a.lon, alt:a.alt_baro, onGround:a.alt_baro === 'ground',
-      speed:a.gs, track:a.track, vRate:a.baro_rate, squawk:a.squawk,
-      emergency:a.emergency, seen:a.seen,
-    }));
-    statusEl.textContent = 'Live';
-    render();
-  }catch(err){
-    statusEl.textContent = 'Error';
-    listEl.innerHTML = `<p class="err">Couldn't reach the live air-traffic feed right now (${err.message}). It's a free community API and occasionally has hiccups — Refresh will retry.</p>`;
-    countEl.textContent = '';
-  }finally{
-    refreshBtn.disabled = false;
-  }
-}
-
-function render(){
-  const q = searchInp.value.trim().toLowerCase();
-  let rows = flights.filter(f=>
-    !q || f.callsign.toLowerCase().includes(q) || (f.reg||'').toLowerCase().includes(q) || (f.type||'').toLowerCase().includes(q)
-  );
-  rows.sort((a,b)=>((typeof b.alt==='number'?b.alt:0) - (typeof a.alt==='number'?a.alt:0)));
-  countEl.textContent = rows.length + ' aircraft';
-  rows = rows.slice(0, 80);
-
-  if(rows.length === 0){
-    listEl.innerHTML = '<p class="empty">No aircraft match right now. Try another region or clear the filter.</p>';
+  if(typeof L === 'undefined'){
+    document.getElementById('status').textContent = 'Map library failed to load — check your connection and reload.';
+    document.getElementById('list').innerHTML = '<div class="error">Leaflet did not load from the CDN. Please refresh the page.</div>';
     return;
   }
 
-  listEl.innerHTML = rows.map(f=>{
-    const emergency = ['7500','7600','7700'].includes(f.squawk) || (f.emergency && f.emergency !== 'none');
-    const cls = emergency ? 'emergency' : (f.onGround ? 'ground' : '');
-    const alt = f.onGround ? 'GND' : (typeof f.alt==='number' ? f.alt.toLocaleString()+' ft' : '—');
-    const vArrow = f.vRate > 100 ? '↑' : (f.vRate < -100 ? '↓' : '→');
-    const badgeCls = f.onGround ? 'down' : 'up';
-    const badgeTxt = f.onGround ? 'GROUND' : 'AIRBORNE';
-    return `
-    <div class="strip ${cls}" data-id="${f.hex}" tabindex="0" role="button" aria-expanded="false">
-      <div class="row1">
-        <span class="callsign mono">${f.callsign}</span>
-        <span class="country">${f.type||''}</span>
-      </div>
-      <div class="row2">
-        <span class="badge ${badgeCls}">${badgeTxt}</span>
-        <span>ALT <b class="mono">${alt}</b></span>
-        <span>SPD <b class="mono">${f.speed!=null ? Math.round(f.speed)+' kt' : '—'}</b></span>
-        <span>HDG <b class="mono">${f.track!=null ? Math.round(f.track)+'°' : '—'}</b></span>
-        <span>V/S <b class="mono">${vArrow}</b></span>
-        ${emergency ? `<span class="badge" style="color:var(--danger);border-color:var(--danger)">SQUAWK ${f.squawk||''}</span>` : ''}
-      </div>
-      <div class="details hidden">
-        <span>ICAO24: <b class="mono">${f.hex||'—'}</b></span>
-        <span>Registration: <b class="mono">${f.reg||'—'}</b></span>
-        <span>Squawk: <b class="mono">${f.squawk||'—'}</b></span>
-        <span>Lat/Lon: <b class="mono">${f.lat!=null ? f.lat.toFixed(2)+', '+f.lon.toFixed(2) : '—'}</b></span>
-      </div>
-    </div>`;
-  }).join('');
+  /* ---------- Footer year ---------- */
+  var startYear = 2026, now = new Date().getFullYear();
+  document.getElementById('yearRange').textContent = now > startYear ? (startYear + '–' + now) : String(startYear);
 
-  listEl.querySelectorAll('.strip').forEach(el=>{
-    const open = ()=>{
-      const d = el.querySelector('.details');
-      d.classList.toggle('hidden');
-      el.setAttribute('aria-expanded', d.classList.contains('hidden') ? 'false' : 'true');
-    };
-    el.addEventListener('click', open);
-    el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); }});
+  /* ---------- Theme ---------- */
+  var THEME_KEY = 'skytrace-theme';
+  function applyTheme(t){
+    document.body.setAttribute('data-theme', t);
+    document.querySelectorAll('[data-theme-btn]').forEach(function(b){
+      b.setAttribute('aria-pressed', String(b.dataset.themeBtn === t));
+    });
+    try{ localStorage.setItem(THEME_KEY, t); }catch(e){}
+  }
+  document.querySelectorAll('[data-theme-btn]').forEach(function(b){
+    b.addEventListener('click', function(){ applyTheme(b.dataset.themeBtn); });
   });
-}
+  var saved = null;
+  try{ saved = localStorage.getItem(THEME_KEY); }catch(e){}
+  applyTheme(saved || 'dark');
 
-function restartTimer(){
-  if(timer) clearInterval(timer);
-  timer = setInterval(fetchFlights, 15000);
-}
+  /* ---------- Map ---------- */
+  var DEFAULT_CENTER = [51.4700, -0.4543]; // Heathrow, used if geolocation is unavailable
+  var map = L.map('map', { zoomControl:true }).setView(DEFAULT_CENTER, 8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'&copy; OpenStreetMap contributors', maxZoom:12
+  }).addTo(map);
 
-regionSel.addEventListener('change', ()=>{ fetchFlights(); restartTimer(); });
-searchInp.addEventListener('input', render);
-refreshBtn.addEventListener('click', fetchFlights);
+  var markersLayer = L.layerGroup().addTo(map);
+  var statusEl = document.getElementById('status');
+  var listEl = document.getElementById('list');
+  var lastBbox = null;
+  var lastStates = [];
 
-fetchFlights();
-restartTimer();
+  function planeDivIcon(track, onGround){
+    var rot = onGround ? 0 : (track || 0);
+    var color = onGround ? 'var(--muted)' : 'var(--accent)';
+    var html = '<div class="plane-icon" style="transform:rotate('+rot+'deg); color:'+color+';">✈</div>';
+    return L.divIcon({ html:html, className:'', iconSize:[22,22], iconAnchor:[11,11] });
+  }
+
+  function bboxAround(lat, lon, deg){
+    return { lamin:lat-deg, lamax:lat+deg, lomin:lon-deg, lomax:lon+deg };
+  }
+
+  function fetchFlights(bbox){
+    lastBbox = bbox;
+    statusEl.textContent = 'Fetching live traffic…';
+    var url = 'https://opensky-network.org/api/states/all?lamin='+bbox.lamin+
+      '&lomin='+bbox.lomin+'&lamax='+bbox.lamax+'&lomax='+bbox.lomax;
+    fetch(url).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    }).then(function(data){
+      var states = (data && data.states) || [];
+      lastStates = states;
+      render(states);
+    }).catch(function(err){
+      statusEl.textContent = 'Could not load flights (rate limited or offline). Try refresh.';
+      listEl.innerHTML = '<div class="error">'+ escapeHtml(err.message) +' — the OpenSky public API allows limited requests per day.</div>';
+    });
+  }
+
+  function render(states){
+    markersLayer.clearLayers();
+    listEl.innerHTML = '';
+    if(!states.length){
+      statusEl.textContent = 'No aircraft currently reporting in this area.';
+      listEl.innerHTML = '<div class="empty">No flights nearby right now. Try refreshing in a moment.</div>';
+      return;
+    }
+    statusEl.innerHTML = '<strong>'+states.length+'</strong> aircraft tracked';
+    states
+      .filter(function(s){ return s[5] != null && s[6] != null; })
+      .sort(function(a,b){ return (b[7]||0) - (a[7]||0); })
+      .forEach(function(s){ addFlight(s); });
+  }
+
+  function addFlight(s){
+    var icao = s[0], callsign = (s[1]||'').trim() || icao.toUpperCase();
+    var country = s[2], lon = s[5], lat = s[6], altM = s[7];
+    var onGround = s[8], velMs = s[9], track = s[10];
+    var alt = altM != null ? Math.round(altM * 3.28084) : null;      // metres to feet
+    var speed = velMs != null ? Math.round(velMs * 1.94384) : null;  // m/s to knots
+
+    var marker = L.marker([lat, lon], { icon: planeDivIcon(track, onGround) });
+    marker.bindPopup(
+      '<b>'+escapeHtml(callsign)+'</b><br>'+escapeHtml(country)+
+      '<br>Alt: '+(alt!=null? alt+' ft':'—')+
+      '<br>Speed: '+(speed!=null? speed+' kt':'—')
+    );
+    marker.addTo(markersLayer);
+
+    var card = document.createElement('div');
+    card.className = 'card'; card.tabIndex = 0;
+    card.innerHTML =
+      '<div class="row1"><span class="callsign">'+escapeHtml(callsign)+'</span>'+
+      '<span class="country">'+escapeHtml(country)+'</span></div>'+
+      '<div class="metrics">'+
+        '<span>Alt <b>'+(alt!=null? alt.toLocaleString()+' ft':'—')+'</b></span>'+
+        '<span>Spd <b>'+(speed!=null? speed+' kt':'—')+'</b></span>'+
+        (onGround ? '<span class="ground">● On ground</span>' : '<span>Hdg <b>'+(track!=null? Math.round(track)+'°':'—')+'</b></span>')+
+      '</div>';
+    function focusFlight(){ map.flyTo([lat, lon], 10); marker.openPopup(); }
+    card.addEventListener('click', focusFlight);
+    card.addEventListener('keydown', function(e){ if(e.key==='Enter') focusFlight(); });
+    listEl.appendChild(card);
+  }
+
+  function escapeHtml(str){
+    return String(str==null?'':str).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  /* ---------- Locate + boot ---------- */
+  function boot(lat, lon, label){
+    map.setView([lat, lon], 8);
+    L.circleMarker([lat, lon], { radius:5, color:'var(--accent2)', fillOpacity:1 })
+      .addTo(map).bindPopup(label);
+    fetchFlights(bboxAround(lat, lon, 2.2));
+  }
+
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      function(pos){ boot(pos.coords.latitude, pos.coords.longitude, 'You are near here'); },
+      function(){ statusEl.textContent = 'Location unavailable — showing London Heathrow area.'; boot(DEFAULT_CENTER[0], DEFAULT_CENTER[1], 'Default: London Heathrow'); },
+      { timeout:6000 }
+    );
+  } else {
+    boot(DEFAULT_CENTER[0], DEFAULT_CENTER[1], 'Default: London Heathrow');
+  }
+
+  document.getElementById('refreshBtn').addEventListener('click', function(){
+    if(lastBbox) fetchFlights(lastBbox);
+  });
+  setInterval(function(){ if(lastBbox) fetchFlights(lastBbox); }, 15000);
+})();
 </script>
 </body>
 </html>
