@@ -74,6 +74,14 @@ main{flex:1; width:100%; max-width:640px; margin:0 auto; padding:16px 16px 8px;}
   background:var(--card); font-size:14px; color:var(--sub);
 }
 
+.peaks{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:16px;}
+.peak-chip{
+  flex:0 0 auto; padding:8px 13px; border-radius:20px; border:1px solid var(--line);
+  background:var(--card); font-size:12.5px; color:var(--text); cursor:pointer; white-space:nowrap;
+}
+.peak-chip:hover, .peak-chip:focus{border-color:var(--accent);}
+.peak-chip .m{color:var(--sub); margin-left:4px;}
+
 .cache-banner{
   display:flex; align-items:center; justify-content:space-between; gap:10px;
   background:var(--card); border:1px dashed var(--line); border-radius:10px;
@@ -170,6 +178,7 @@ footer .sig{font-family:'Inter',sans-serif; letter-spacing:.03em;}
     <button id="goBtn">Go</button>
   </div>
   <ul id="suggest"></ul>
+  <div class="peaks" id="peaks"></div>
   <div id="cacheBanner"></div>
 
   <div id="content">
@@ -241,6 +250,35 @@ function timeAgo(ts){
   if(min < 60) return min+' min ago';
   return Math.round(min/60)+' hr ago';
 }
+
+// ---------- Quick-select summits ----------
+const PEAKS = [
+  {n:'Everest',      c:'Nepal / China',  lat:27.9881,  lon:86.9250,   m:8849},
+  {n:'K2',           c:'Pakistan',       lat:35.8825,  lon:76.5133,   m:8611},
+  {n:'Kangchenjunga',c:'Nepal / India',  lat:27.7025,  lon:88.1475,   m:8586},
+  {n:'Annapurna I',  c:'Nepal',          lat:28.5959,  lon:83.8203,   m:8091},
+  {n:'Nanga Parbat', c:'Pakistan',       lat:35.2426,  lon:74.5892,   m:8126},
+  {n:'Denali',       c:'USA',            lat:63.0692,  lon:-151.0070, m:6190},
+  {n:'Aconcagua',    c:'Argentina',      lat:-32.6532, lon:-70.0109,  m:6961},
+  {n:'Elbrus',       c:'Russia',         lat:43.3499,  lon:42.4453,   m:5642},
+  {n:'Vinson Massif',c:'Antarctica',     lat:-78.5254, lon:-85.6172,  m:4892},
+  {n:'Puncak Jaya',  c:'Indonesia',      lat:-4.0784,  lon:137.1585,  m:4884},
+  {n:'Kilimanjaro',  c:'Tanzania',       lat:-3.0674,  lon:37.3556,   m:5895},
+  {n:'Mount Kenya',  c:'Kenya',          lat:-0.1521,  lon:37.3084,   m:5199},
+  {n:'Mont Blanc',   c:'France / Italy', lat:45.8326,  lon:6.8652,    m:4808},
+  {n:'Matterhorn',   c:'Switz. / Italy', lat:45.9763,  lon:7.6586,    m:4478},
+  {n:'Mount Fuji',   c:'Japan',          lat:35.3606,  lon:138.7274,  m:3776}
+];
+const peaksEl = document.getElementById('peaks');
+peaksEl.innerHTML = PEAKS.map((p,i)=>
+  `<button class="peak-chip" data-i="${i}">${p.n}<span class="m">${p.m}m</span></button>`
+).join('');
+peaksEl.addEventListener('click', e=>{
+  const btn = e.target.closest('.peak-chip'); if(!btn) return;
+  const p = PEAKS[btn.dataset.i];
+  qInput.value = p.n; suggestEl.innerHTML = '';
+  loadConditions(p.lat, p.lon, `${p.n}, ${p.c}`);
+});
 
 // ---------- Geocoding ----------
 const qInput = document.getElementById('q');
