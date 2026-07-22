@@ -641,6 +641,14 @@
     <div class="modal-box">
       <h3>Compass Settings</h3>
       <div class="switch-row">
+        <label for="reverseNeedleToggle">Reverse Needle Direction</label>
+        <label class="switch">
+          <input type="checkbox" id="reverseNeedleToggle">
+          <span class="knob"></span>
+        </label>
+      </div>
+      <div class="modal-note" style="margin-bottom:14px;">Some phones report compass data flipped. If the needle swings the wrong way when you turn, or doesn't point to real North when you face it, switch this on.</div>
+      <div class="switch-row">
         <label for="trueNorthToggle">Show True North</label>
         <label class="switch">
           <input type="checkbox" id="trueNorthToggle">
@@ -719,6 +727,7 @@
   var declination = 0;
   var rawHeading = 0;
   var currentHeading = 0; // corrected 0-360 heading, used for zone lookups & ratings
+  var needleInverted = false; // manual calibration flag for devices that report compass data flipped
 
   // Continuous (unwrapped) rotor angle so the dial never snaps at the 0/360 seam
   var targetAngle = 0;   // where the rotor should end up, can grow past 360 or below 0
@@ -768,7 +777,7 @@
     } else {
       displayAngle += (targetAngle - displayAngle) * 0.14;
     }
-    needle.setAttribute('transform', 'rotate(' + (-displayAngle) + ' 512 512)');
+    needle.setAttribute('transform', 'rotate(' + ((needleInverted ? 1 : -1) * displayAngle) + ' 512 512)');
     requestAnimationFrame(animateRotor);
   }
   requestAnimationFrame(animateRotor);
@@ -868,9 +877,14 @@
   var settingsModal = document.getElementById('settingsModal');
   var settingsClose = document.getElementById('settingsClose');
   var trueNorthToggle = document.getElementById('trueNorthToggle');
+  var reverseNeedleToggle = document.getElementById('reverseNeedleToggle');
   var declinationField = document.getElementById('declinationField');
   var declinationInput = document.getElementById('declinationInput');
   var magneticNote = document.getElementById('magneticNote');
+
+  reverseNeedleToggle.addEventListener('change', function(){
+    needleInverted = reverseNeedleToggle.checked;
+  });
 
   settingsBtn.addEventListener('click', function(){ settingsModal.classList.add('open'); });
   settingsClose.addEventListener('click', function(){ settingsModal.classList.remove('open'); });
