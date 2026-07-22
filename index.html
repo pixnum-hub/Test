@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E1B2A" id="themeColorMeta">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Summit Watch — Mountaineer's Field Console</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -28,9 +32,10 @@ html[data-theme="hc"]{
   --good:#33FF33; --shadow:none;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{-webkit-text-size-adjust:100%; text-size-adjust:100%;}
 body{
-  margin:0; min-height:100vh; background:var(--bg); color:var(--text);
-  font-family:'Inter',sans-serif;
+  margin:0; min-height:100vh; min-height:100dvh; background:var(--bg); color:var(--text);
+  font-family:'Inter',sans-serif; overflow-x:hidden; width:100%;
   background-image:
     radial-gradient(circle at 20% 0%, var(--bg2), transparent 60%),
     repeating-radial-gradient(circle at 50% -20%, transparent 0 60px, var(--line) 61px, transparent 62px);
@@ -39,45 +44,59 @@ body{
   transition:background-color .25s,color .25s;
 }
 header{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:16px 18px; border-bottom:1px solid var(--line); gap:10px;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
+  padding:calc(14px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left));
+  border-bottom:1px solid var(--line); gap:10px; position:sticky; top:0; background:var(--bg); z-index:10;
 }
-.brand{display:flex; align-items:center; gap:10px;}
-.brand svg{width:26px;height:26px;flex:none;}
+.brand{display:flex; align-items:center; gap:10px; min-width:0;}
+.brand svg{width:24px;height:24px;flex:none;}
 .brand h1{
-  font-family:'Inter',sans-serif; font-size:19px; letter-spacing:.05em;
-  text-transform:uppercase; margin:0; font-weight:600;
+  font-family:'Inter',sans-serif; font-size:clamp(15px,4.2vw,19px); letter-spacing:.05em;
+  text-transform:uppercase; margin:0; font-weight:600; white-space:nowrap;
 }
-.themes{display:flex; gap:6px;}
+.themes{display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;}
 .themes button{
-  width:34px;height:34px;border-radius:9px;border:1px solid var(--line);
+  width:38px;height:38px;border-radius:9px;border:1px solid var(--line);
   background:var(--card); color:var(--text); cursor:pointer; font-size:15px;
-  display:flex;align-items:center;justify-content:center;
+  display:flex;align-items:center;justify-content:center; touch-action:manipulation;
 }
 .themes button[aria-pressed="true"]{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset;}
+#unitBtn{width:auto; min-width:38px; padding:0 10px; font-family:'Inter',sans-serif; font-weight:600; font-size:12px;}
 
-main{flex:1; width:100%; max-width:640px; margin:0 auto; padding:16px 16px 8px;}
+.wind-row{display:flex; align-items:center; gap:10px;}
+.compass{width:34px; height:34px; flex:none;}
+.compass .arrow{transform-origin:50% 50%; transition:transform .2s;}
+.wind-txt .val{font-size:24px;}
+.wind-txt .sub2{margin-top:0;}
+
+main{flex:1; width:100%; max-width:640px; margin:0 auto;
+  padding:16px max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));}
 
 .search{display:flex; gap:8px; margin-bottom:16px;}
 .search input{
-  flex:1; padding:12px 14px; border-radius:10px; border:1px solid var(--line);
-  background:var(--card); color:var(--text); font-size:15px; font-family:'Inter',sans-serif;
+  flex:1; min-width:0; padding:12px 14px; border-radius:10px; border:1px solid var(--line);
+  background:var(--card); color:var(--text); font-size:16px; font-family:'Inter',sans-serif;
+  min-height:44px;
 }
 .search button{
   border:1px solid var(--line); background:var(--accent); color:#0E1B2A; font-weight:600;
-  border-radius:10px; padding:0 14px; cursor:pointer; font-size:14px;
+  border-radius:10px; padding:0 14px; cursor:pointer; font-size:14px; min-height:44px; min-width:44px;
+  touch-action:manipulation; flex:none;
 }
 .search .locbtn{background:var(--card); color:var(--text);}
 #suggest{list-style:none; margin:-10px 0 16px; padding:0; display:flex; flex-direction:column; gap:6px;}
 #suggest li{
-  padding:10px 12px; border:1px solid var(--line); border-radius:8px; cursor:pointer;
-  background:var(--card); font-size:14px; color:var(--sub);
+  padding:12px; border:1px solid var(--line); border-radius:8px; cursor:pointer;
+  background:var(--card); font-size:14px; color:var(--sub); min-height:44px; display:flex; align-items:center;
 }
 
-.peaks{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:16px;}
+.peaks{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:16px;
+  -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+.peaks::-webkit-scrollbar{display:none;}
 .peak-chip{
-  flex:0 0 auto; padding:8px 13px; border-radius:20px; border:1px solid var(--line);
+  flex:0 0 auto; padding:10px 13px; border-radius:20px; border:1px solid var(--line);
   background:var(--card); font-size:12.5px; color:var(--text); cursor:pointer; white-space:nowrap;
+  min-height:40px; touch-action:manipulation;
 }
 .peak-chip:hover, .peak-chip:focus{border-color:var(--accent);}
 .peak-chip .m{color:var(--sub); margin-left:4px;}
@@ -105,7 +124,7 @@ main{flex:1; width:100%; max-width:640px; margin:0 auto; padding:16px 16px 8px;}
 }
 .hero .place{font-family:'Inter',sans-serif; text-transform:uppercase; letter-spacing:.06em; font-size:16px; color:var(--sub);}
 .hero .alt{
-  font-family:'Inter',sans-serif; font-weight:700; font-size:56px; line-height:1;
+  font-family:'Inter',sans-serif; font-weight:700; font-size:clamp(38px,13vw,56px); line-height:1;
   margin:10px 0 2px; color:var(--accent);
 }
 .hero .alt span{font-size:18px; color:var(--sub); font-weight:500;}
@@ -115,10 +134,10 @@ main{flex:1; width:100%; max-width:640px; margin:0 auto; padding:16px 16px 8px;}
 .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px;}
 .card{
   background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px;
-  box-shadow:var(--shadow);
+  box-shadow:var(--shadow); min-width:0;
 }
 .card .lbl{font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--sub); font-family:'Inter',sans-serif;}
-.card .val{font-family:'Inter',sans-serif; font-size:24px; font-weight:700; margin-top:4px;}
+.card .val{font-family:'Inter',sans-serif; font-size:clamp(18px,5.5vw,24px); font-weight:700; margin-top:4px; word-break:break-word;}
 .card .val small{font-size:13px; color:var(--sub); font-weight:400;}
 .card .sub2{font-size:11px; color:var(--sub); margin-top:3px;}
 .trend{font-size:15px; margin-left:4px;}
@@ -129,7 +148,8 @@ main{flex:1; width:100%; max-width:640px; margin:0 auto; padding:16px 16px 8px;}
   margin-bottom:20px; box-shadow:var(--shadow);
 }
 .forecast h2{font-family:'Inter',sans-serif; font-size:13px; text-transform:uppercase; letter-spacing:.07em; color:var(--sub); margin:0 0 10px;}
-.days{display:flex; gap:8px; overflow-x:auto; padding-bottom:2px;}
+.days{display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+.days::-webkit-scrollbar{display:none;}
 .day{
   flex:0 0 auto; min-width:64px; text-align:center; padding:10px 6px; border-radius:10px;
   border:1px solid var(--line);
@@ -142,14 +162,20 @@ main{flex:1; width:100%; max-width:640px; margin:0 auto; padding:16px 16px 8px;}
 .msg{text-align:center; color:var(--sub); font-size:14px; padding:30px 10px;}
 
 footer{
-  border-top:1px solid var(--line); padding:16px 10px 22px;
+  border-top:1px solid var(--line); padding:16px 10px calc(22px + env(safe-area-inset-bottom));
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   text-align:center; gap:4px; color:var(--sub); font-size:12px;
 }
 footer .sig{font-family:'Inter',sans-serif; letter-spacing:.03em;}
 
+.wind-row{flex-wrap:wrap;}
+
 @media (min-width:520px){
   .grid{grid-template-columns:repeat(3,1fr);}
+}
+@media (max-width:359px){
+  .grid{grid-template-columns:1fr 1fr; gap:8px;}
+  .card{padding:12px;}
 }
 </style>
 </head>
@@ -168,12 +194,14 @@ footer .sig{font-family:'Inter',sans-serif; letter-spacing:.03em;}
     <button data-t="dark" title="Dark">☾</button>
     <button data-t="oled" title="OLED true black">●</button>
     <button data-t="hc" title="High contrast">◐</button>
+    <button id="unitBtn" title="Toggle units">°C</button>
   </div>
 </header>
 
 <main>
   <div class="search">
-    <input id="q" type="text" placeholder="Search a peak, town, or region…" autocomplete="off">
+    <input id="q" type="text" placeholder="Search a peak, town, or region…" autocomplete="off"
+      autocapitalize="words" autocorrect="off" spellcheck="false" inputmode="search" enterkeyhint="search">
     <button class="locbtn" id="locBtn" title="Use my location">📍</button>
     <button id="goBtn">Go</button>
   </div>
@@ -196,10 +224,13 @@ document.getElementById('year').textContent = new Date().getFullYear();
 
 // ---------- Theme handling ----------
 const themeBtns = document.querySelectorAll('#themes button');
+const THEME_COLORS = {dark:'#0E1B2A', light:'#EEF2F5', oled:'#000000', hc:'#000000'};
+const themeColorMeta = document.getElementById('themeColorMeta');
 function setTheme(t){
   document.documentElement.setAttribute('data-theme', t);
   localStorage.setItem('sw-theme', t);
   themeBtns.forEach(b => b.setAttribute('aria-pressed', b.dataset.t === t));
+  themeColorMeta.setAttribute('content', THEME_COLORS[t] || '#0E1B2A');
 }
 themeBtns.forEach(b => b.addEventListener('click', () => setTheme(b.dataset.t)));
 setTheme(localStorage.getItem('sw-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
@@ -216,6 +247,30 @@ const WMO = {
 };
 const wmo = c => WMO[c] || ['❔','Unknown'];
 const isStormCode = c => [65,66,67,75,82,86,95,96,99].includes(c);
+
+// ---------- Units (metric / imperial) ----------
+let units = localStorage.getItem('sw-units') || 'metric';
+const unitBtn = document.getElementById('unitBtn');
+function applyUnitLabel(){ unitBtn.textContent = units === 'metric' ? '°C' : '°F'; unitBtn.setAttribute('aria-pressed', 'true'); }
+applyUnitLabel();
+const fmt = {
+  temp:  v => units==='metric' ? Math.round(v)+'°C' : Math.round(v*9/5+32)+'°F',
+  speed: v => units==='metric' ? Math.round(v)+' km/h' : Math.round(v*0.621371)+' mph',
+  dist:  v => units==='metric' ? Math.round(v)+' m' : Math.round(v*3.28084)+' ft',
+  km:    v => units==='metric' ? v.toFixed(1)+' km' : (v*0.621371).toFixed(1)+' mi',
+  precip:v => units==='metric' ? v.toFixed(1)+'mm' : (v/25.4).toFixed(2)+'in',
+  press: v => units==='metric' ? Math.round(v)+' hPa' : (v*0.02953).toFixed(2)+' inHg'
+};
+unitBtn.addEventListener('click', ()=>{
+  units = units === 'metric' ? 'imperial' : 'metric';
+  localStorage.setItem('sw-units', units);
+  applyUnitLabel();
+  if(lastWx) render(lastLabel, lastWx, lastAq, lastFromCache, lastTs);
+});
+
+// ---------- Compass ----------
+const COMPASS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const degToCompass = d => COMPASS[Math.round(d/22.5) % 16];
 
 // ---------- Moon phase (computed locally, no API) ----------
 function moonInfo(date, sunrise, sunset){
@@ -322,13 +377,14 @@ document.getElementById('locBtn').addEventListener('click', ()=>{
 // ---------- Main data load ----------
 const content = document.getElementById('content');
 const cacheBanner = document.getElementById('cacheBanner');
+let lastWx=null, lastAq=null, lastLabel='', lastFromCache=false, lastTs=null;
 
 async function loadConditions(lat, lon, label){
   content.innerHTML = '<div class="msg">Reading instruments…</div>';
   cacheBanner.innerHTML = '';
   try{
     const [wx, aq] = await Promise.all([
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,surface_pressure,uv_index&hourly=precipitation_probability,precipitation,surface_pressure,freezing_level_height&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&past_hours=3&timezone=auto`).then(r=>r.json()),
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,cloud_cover,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,surface_pressure,uv_index&hourly=precipitation_probability,precipitation,surface_pressure,freezing_level_height,visibility&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&past_hours=3&timezone=auto`).then(r=>r.json()),
       fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi`).then(r=>r.json()).catch(()=>null)
     ]);
     if(wx.error) throw new Error(wx.reason || 'bad request');
@@ -345,6 +401,7 @@ async function loadConditions(lat, lon, label){
 }
 
 function render(label, wx, aq, fromCache, ts){
+  lastWx=wx; lastAq=aq; lastLabel=label; lastFromCache=fromCache; lastTs=ts;
   const c = wx.current;
   const [icon, desc] = wmo(c.weather_code);
   const sunriseD = new Date(wx.daily.sunrise[0]);
@@ -367,6 +424,9 @@ function render(label, wx, aq, fromCache, ts){
   for(let i=idx; i<Math.min(idx+6, wx.hourly.precipitation.length); i++) precip6h += wx.hourly.precipitation[i];
   const freezeLvl = Math.round(wx.hourly.freezing_level_height[idx]);
   const freezeDelta = freezeLvl - wx.elevation;
+  const visKm = (wx.hourly.visibility[idx] ?? 10000) / 1000;
+  const cloudBase = Math.round(Math.max(0, c.temperature_2m - c.dew_point_2m) * 125);
+  const windDeg = c.wind_direction_10m;
 
   // ---- severe condition alerts ----
   const alerts = [];
@@ -393,19 +453,29 @@ function render(label, wx, aq, fromCache, ts){
     ${alerts.length ? `<div class="alerts">${alerts.map(a=>`<div class="alert">${a}</div>`).join('')}</div>` : ''}
     <div class="hero">
       <div class="place">${label}</div>
-      <div class="alt">${Math.round(wx.elevation)}<span> m elev</span></div>
+      <div class="alt">${units==='metric'?Math.round(wx.elevation):Math.round(wx.elevation*3.28084)}<span> ${units==='metric'?'m':'ft'} elev</span></div>
       <div class="coords">${wx.latitude.toFixed(4)}°, ${wx.longitude.toFixed(4)}° &nbsp;·&nbsp; ${icon} ${desc}</div>
       <div class="updated">Updated ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
     </div>
     <div class="grid">
-      <div class="card"><div class="lbl">Temp</div><div class="val">${Math.round(c.temperature_2m)}<small>°C</small></div></div>
-      <div class="card"><div class="lbl">Feels like</div><div class="val">${Math.round(c.apparent_temperature)}<small>°C</small></div></div>
-      <div class="card"><div class="lbl">Wind</div><div class="val">${Math.round(c.wind_speed_10m)}<small>km/h</small></div></div>
-      <div class="card"><div class="lbl">Gusts</div><div class="val">${Math.round(c.wind_gusts_10m)}<small>km/h</small></div></div>
+      <div class="card"><div class="lbl">Temp</div><div class="val">${fmt.temp(c.temperature_2m)}</div></div>
+      <div class="card"><div class="lbl">Feels like</div><div class="val">${fmt.temp(c.apparent_temperature)}</div></div>
+      <div class="card">
+        <div class="lbl">Wind</div>
+        <div class="wind-row">
+          <svg class="compass" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8">
+            <circle cx="12" cy="12" r="10" stroke="var(--line)"/>
+            <g class="arrow" style="transform:rotate(${windDeg}deg)"><path d="M12 4v14M12 4l-3.2 4M12 4l3.2 4" stroke-linecap="round" stroke-linejoin="round"/></g>
+          </svg>
+          <div class="wind-txt"><div class="val">${fmt.speed(c.wind_speed_10m)}</div><div class="sub2">from ${degToCompass(windDeg)} (${Math.round(windDeg)}°)</div></div>
+        </div>
+      </div>
+      <div class="card"><div class="lbl">Gusts</div><div class="val">${fmt.speed(c.wind_gusts_10m)}</div></div>
       <div class="card"><div class="lbl">Humidity</div><div class="val">${c.relative_humidity_2m}<small>%</small></div></div>
-      <div class="card"><div class="lbl">Pressure</div><div class="val">${Math.round(c.surface_pressure)}<small>hPa</small><span class="trend ${trendClass}">${trendArrow}</span></div><div class="sub2">3h trend</div></div>
-      <div class="card"><div class="lbl">Freezing Level</div><div class="val">${freezeLvl}<small>m</small></div><div class="sub2">${freezeDelta>=0?'+':''}${Math.round(freezeDelta)}m vs your elevation</div></div>
-      <div class="card"><div class="lbl">Precipitation</div><div class="val">${precipChance}<small>% now</small></div><div class="sub2">${precip6h.toFixed(1)}mm next 6h</div></div>
+      <div class="card"><div class="lbl">Pressure</div><div class="val">${fmt.press(c.surface_pressure)}<span class="trend ${trendClass}">${trendArrow}</span></div><div class="sub2">3h trend</div></div>
+      <div class="card"><div class="lbl">Freezing Level</div><div class="val">${fmt.dist(freezeLvl)}</div><div class="sub2">${freezeDelta>=0?'+':''}${fmt.dist(Math.abs(freezeDelta))} vs your elevation</div></div>
+      <div class="card"><div class="lbl">Precipitation</div><div class="val">${precipChance}<small>% now</small></div><div class="sub2">${fmt.precip(precip6h)} next 6h</div></div>
+      <div class="card"><div class="lbl">Visibility</div><div class="val">${fmt.km(visKm)}</div><div class="sub2">cloud base ≈ ${fmt.dist(cloudBase)} · ${c.cloud_cover}% cover</div></div>
       <div class="card"><div class="lbl">UV Index</div><div class="val">${c.uv_index.toFixed(1)}</div></div>
       <div class="card"><div class="lbl">Air Quality</div><div class="val">${aqi !== null ? aqi : '—'}<small>${aqi !== null ? 'AQI':''}</small></div></div>
       <div class="card"><div class="lbl">Sunrise / Sunset</div><div class="val" style="font-size:16px">${sunrise}<br>${sunset}</div></div>
