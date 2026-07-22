@@ -1,408 +1,282 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Everest Memorial &amp; Expedition Archive</title>
-<meta name="description" content="An educational and memorial resource documenting the history, routes, hazards, and climbers of Mount Everest — built with care, respect, and public sources.">
-<meta name="theme-color" content="#0b1220">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icons/icon-192.svg">
+<title>Summit Watch — Mountaineer's Field Console</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+:root{
+  --bg:#0E1B2A; --bg2:#152537; --card:#182B40; --line:#2B4058;
+  --text:#F2F5F8; --sub:#9FB2C4; --accent:#6FA8C9; --warn:#E8783E;
+  --good:#6FBE8E; --shadow:0 8px 24px rgba(0,0,0,.35);
+}
+html[data-theme="light"]{
+  --bg:#EEF2F5; --bg2:#E4EAEE; --card:#FFFFFF; --line:#D3DCE3;
+  --text:#12212F; --sub:#516575; --accent:#1F6E96; --warn:#C4551E;
+  --good:#227A52; --shadow:0 6px 18px rgba(20,40,60,.08);
+}
+html[data-theme="oled"]{
+  --bg:#000000; --bg2:#050505; --card:#0B0B0B; --line:#232323;
+  --text:#F2F5F8; --sub:#8C8C8C; --accent:#5FC2E8; --warn:#FF8A4C;
+  --good:#63E29A; --shadow:none;
+}
+html[data-theme="hc"]{
+  --bg:#000000; --bg2:#000000; --card:#000000; --line:#FFFFFF;
+  --text:#FFFFFF; --sub:#FFFF00; --accent:#00FFFF; --warn:#FF3B3B;
+  --good:#33FF33; --shadow:none;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{
+  margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+  font-family:'Inter',sans-serif;
+  background-image:
+    radial-gradient(circle at 20% 0%, var(--bg2), transparent 60%),
+    repeating-radial-gradient(circle at 50% -20%, transparent 0 60px, var(--line) 61px, transparent 62px);
+  background-attachment:fixed;
+  display:flex; flex-direction:column; min-height:100vh;
+  transition:background-color .25s,color .25s;
+}
+header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 18px; border-bottom:1px solid var(--line); gap:10px;
+}
+.brand{display:flex; align-items:center; gap:10px;}
+.brand svg{width:26px;height:26px;flex:none;}
+.brand h1{
+  font-family:'Oswald',sans-serif; font-size:19px; letter-spacing:.05em;
+  text-transform:uppercase; margin:0; font-weight:600;
+}
+.themes{display:flex; gap:6px;}
+.themes button{
+  width:34px;height:34px;border-radius:9px;border:1px solid var(--line);
+  background:var(--card); color:var(--text); cursor:pointer; font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+}
+.themes button[aria-pressed="true"]{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset;}
 
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/layout.css">
-<link rel="stylesheet" href="css/map.css">
-<link rel="stylesheet" href="css/components.css">
-<link rel="stylesheet" href="css/sections.css">
+main{flex:1; width:100%; max-width:640px; margin:0 auto; padding:16px 16px 8px;}
+
+.search{display:flex; gap:8px; margin-bottom:16px;}
+.search input{
+  flex:1; padding:12px 14px; border-radius:10px; border:1px solid var(--line);
+  background:var(--card); color:var(--text); font-size:15px; font-family:'Inter',sans-serif;
+}
+.search button{
+  border:1px solid var(--line); background:var(--accent); color:#0E1B2A; font-weight:600;
+  border-radius:10px; padding:0 14px; cursor:pointer; font-size:14px;
+}
+.search .locbtn{background:var(--card); color:var(--text);}
+#suggest{list-style:none; margin:-10px 0 16px; padding:0; display:flex; flex-direction:column; gap:6px;}
+#suggest li{
+  padding:10px 12px; border:1px solid var(--line); border-radius:8px; cursor:pointer;
+  background:var(--card); font-size:14px; color:var(--sub);
+}
+
+.hero{
+  background:var(--card); border:1px solid var(--line); border-radius:16px;
+  padding:20px; text-align:center; box-shadow:var(--shadow); margin-bottom:16px;
+}
+.hero .place{font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:.06em; font-size:16px; color:var(--sub);}
+.hero .alt{
+  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:56px; line-height:1;
+  margin:10px 0 2px; color:var(--accent);
+}
+.hero .alt span{font-size:18px; color:var(--sub); font-weight:500;}
+.hero .coords{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--sub);}
+.hero .updated{font-size:11px; color:var(--sub); margin-top:8px;}
+
+.grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px;}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px;
+  box-shadow:var(--shadow);
+}
+.card .lbl{font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--sub); font-family:'Oswald',sans-serif;}
+.card .val{font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:700; margin-top:4px;}
+.card .val small{font-size:13px; color:var(--sub); font-weight:400;}
+
+.forecast{
+  background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px;
+  margin-bottom:20px; box-shadow:var(--shadow);
+}
+.forecast h2{font-family:'Oswald',sans-serif; font-size:13px; text-transform:uppercase; letter-spacing:.07em; color:var(--sub); margin:0 0 10px;}
+.days{display:flex; gap:8px; overflow-x:auto; padding-bottom:2px;}
+.day{
+  flex:0 0 auto; min-width:64px; text-align:center; padding:10px 6px; border-radius:10px;
+  border:1px solid var(--line);
+}
+.day .d{font-size:11px; color:var(--sub); font-family:'Oswald',sans-serif; text-transform:uppercase;}
+.day .ic{font-size:20px; margin:6px 0;}
+.day .hi{font-family:'JetBrains Mono',monospace; font-size:13px;}
+.day .lo{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--sub);}
+
+.msg{text-align:center; color:var(--sub); font-size:14px; padding:30px 10px;}
+
+footer{
+  border-top:1px solid var(--line); padding:16px 10px 22px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; gap:4px; color:var(--sub); font-size:12px;
+}
+footer .sig{font-family:'Oswald',sans-serif; letter-spacing:.03em;}
+
+@media (min-width:520px){
+  .grid{grid-template-columns:repeat(3,1fr);}
+}
+</style>
 </head>
-<body data-theme="dark">
-<a href="#main" class="skip-link">Skip to main content</a>
-<div class="topo-field" aria-hidden="true"></div>
-<div class="offline-banner" id="offlineBanner" role="status">You're offline — showing previously loaded content.</div>
+<body>
 
-<!-- ================= HEADER ================= -->
-<header class="site-header" id="siteHeader">
-  <div class="container header-inner">
-    <a href="#home" class="brand">
-      <svg class="peak-mark" width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M2 22L10 8l3.5 5.5L16 9l10 13H2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 8l1.6 2.6M16 9l-1.3 2" stroke="currentColor" stroke-width="1.2"/></svg>
-      <span>Everest Memorial<br><small>Expedition Archive</small></span>
-    </a>
-    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mainNav" aria-label="Toggle navigation menu">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M2 4h14M2 9h14M2 14h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-    </button>
-    <nav class="main-nav" id="mainNav" aria-label="Primary">
-      <ul>
-        <li><a href="#map" data-nav>Route Map</a></li>
-        <li><a href="#archive" data-nav>Archive</a></li>
-        <li><a href="#timeline" data-nav>Timeline</a></li>
-        <li><a href="#statistics" data-nav>Statistics</a></li>
-        <li><a href="#education" data-nav>Safety &amp; Science</a></li>
-        <li><a href="#memorial" data-nav>Memorial</a></li>
-        <li><a href="#about" data-nav>About &amp; Sources</a></li>
-      </ul>
-    </nav>
-    <div class="header-actions">
-      <button class="theme-toggle" id="themeToggle" aria-label="Switch between light and dark theme">
-        <svg class="icon-moon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M15.5 10.8A6.5 6.5 0 0 1 7.2 2.5a6.5 6.5 0 1 0 8.3 8.3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
-        <svg class="icon-sun" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="3.4" stroke="currentColor" stroke-width="1.4"/><path d="M9 1.5v2M9 14.5v2M16.5 9h-2M3.5 9h-2M14.4 3.6l-1.4 1.4M4.9 13.1l-1.4 1.4M14.4 14.4l-1.4-1.4M4.9 4.9 3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-      </button>
-    </div>
+<header>
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+      <path d="M2 19h20L15.5 7 12 12.5 9.5 9 2 19z"/>
+      <path d="M9.5 9l1 1.4M15.5 7l1.3 1.9"/>
+    </svg>
+    <h1>Summit&nbsp;Watch</h1>
+  </div>
+  <div class="themes" id="themes">
+    <button data-t="light" title="Light">☀</button>
+    <button data-t="dark" title="Dark">☾</button>
+    <button data-t="oled" title="OLED true black">●</button>
+    <button data-t="hc" title="High contrast">◐</button>
   </div>
 </header>
 
-<main id="main">
+<main>
+  <div class="search">
+    <input id="q" type="text" placeholder="Search a peak, town, or region…" autocomplete="off">
+    <button class="locbtn" id="locBtn" title="Use my location">📍</button>
+    <button id="goBtn">Go</button>
+  </div>
+  <ul id="suggest"></ul>
 
-  <!-- ================= HERO ================= -->
-  <section class="hero" id="home">
-    <div class="hero-backdrop" aria-hidden="true">
-      <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#0b1220"/>
-            <stop offset="55%" stop-color="#131f34"/>
-            <stop offset="100%" stop-color="#0b1220"/>
-          </linearGradient>
-          <linearGradient id="peakGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#3a4a63"/>
-            <stop offset="100%" stop-color="#131c2c"/>
-          </linearGradient>
-          <linearGradient id="peakGradFront" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#1c2842"/>
-            <stop offset="100%" stop-color="#0d1420"/>
-          </linearGradient>
-        </defs>
-        <rect width="1440" height="900" fill="url(#skyGrad)"/>
-        <g opacity="0.5" fill="#e3c589">
-          <circle cx="180" cy="120" r="1.2"/><circle cx="340" cy="80" r="1"/><circle cx="520" cy="150" r="1.4"/>
-          <circle cx="760" cy="70" r="1"/><circle cx="980" cy="130" r="1.3"/><circle cx="1180" cy="90" r="1"/>
-          <circle cx="1320" cy="160" r="1.2"/><circle cx="90" cy="220" r="1"/><circle cx="1240" cy="240" r="1"/>
-        </g>
-        <path d="M-50 620 L250 280 L420 460 L620 220 L780 380 L980 180 L1180 440 L1490 300 L1490 900 L-50 900 Z" fill="url(#peakGrad)"/>
-        <path d="M620 220 L680 300 L780 380 L560 380 Z" fill="#e9edf2" opacity="0.85"/>
-        <path d="M980 180 L1040 260 L1180 440 L900 400 Z" fill="#e9edf2" opacity="0.7"/>
-        <path d="M-50 780 L180 520 L360 640 L560 440 L820 660 L1060 480 L1300 700 L1490 600 L1490 900 L-50 900 Z" fill="url(#peakGradFront)"/>
-        <g stroke="#a9c6d6" stroke-width="1" opacity="0.16" fill="none">
-          <path d="M0 500 Q400 460 720 500 T1440 480"/>
-          <path d="M0 560 Q400 520 720 560 T1440 540"/>
-          <path d="M0 620 Q400 580 720 620 T1440 600"/>
-        </g>
-      </svg>
-    </div>
-    <div class="container hero-content">
-      <span class="hero-kicker">A public, educational memorial archive</span>
-      <h1>Remembering those who <em>climbed toward the sky</em>, and never came home.</h1>
-      <p class="hero-lede">An interactive record of Mount Everest's climbing routes, its history, and the documented lives lost in pursuit of its summit — built for education, remembrance, and respect, using only publicly available sources.</p>
-      <div class="hero-actions">
-        <a href="#map" class="btn btn-primary">Explore the route map</a>
-        <a href="#archive" class="btn">Search the archive</a>
-      </div>
-      <div class="hero-stats" id="heroStats">
-        <div class="hero-stat"><span class="num" data-count="0">—</span><span class="label">Documented records</span></div>
-        <div class="hero-stat"><span class="num" data-count="0">—</span><span class="label">Years spanned</span></div>
-        <div class="hero-stat"><span class="num" data-count="0">—</span><span class="label">Nationalities represented</span></div>
-        <div class="hero-stat"><span class="num">2</span><span class="label">Major routes mapped</span></div>
-      </div>
-    </div>
-    <div class="hero-scroll-cue" aria-hidden="true">Scroll <span>↓</span></div>
-  </section>
-
-  <!-- ================= MAP ================= -->
-  <section class="section map-section container" id="map">
-    <div class="section-head">
-      <span class="eyebrow">Interactive route map</span>
-      <h2>South Col &amp; North Ridge, side by side</h2>
-      <p>An illustrated elevation diagram of Everest's two principal climbing routes. Waypoint markers show major camps and landmarks; smaller markers indicate the approximate, publicly documented location associated with a climber record. All positions are stylized and approximate — this is not a survey map or a source of precise coordinates.</p>
-    </div>
-    <div class="map-toolbar">
-      <div class="route-legend" role="group" aria-label="Filter map by route">
-        <button class="legend-chip" aria-pressed="true" data-route-filter="all">All routes</button>
-        <button class="legend-chip" aria-pressed="false" data-route-filter="South Col"><span class="dot dot-south"></span>South Col</button>
-        <button class="legend-chip" aria-pressed="false" data-route-filter="North Ridge"><span class="dot dot-north"></span>North Ridge</button>
-      </div>
-      <label class="legend-chip" style="cursor:pointer;">
-        <input type="checkbox" id="toggleMemorialMarkers" checked style="accent-color: var(--accent);">
-        <span class="dot dot-marker"></span> Show memorial markers
-      </label>
-    </div>
-    <div class="map-frame glass" id="mapFrame">
-      <svg class="map-svg" id="mapSvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Illustrated diagram of Mount Everest's South Col and North Ridge climbing routes with waypoints">
-        <defs>
-          <radialGradient id="massifGradient" cx="55%" cy="10%" r="90%">
-            <stop offset="0%" stop-color="#2a3a55"/>
-            <stop offset="100%" stop-color="#0b1220" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-        <!-- decorative contour rings -->
-        <g class="contour-group" aria-hidden="true"></g>
-        <!-- route paths + waypoints + markers injected by JS -->
-        <g id="routePaths"></g>
-        <g id="waypointsLayer"></g>
-        <g id="markersLayer"></g>
-      </svg>
-      <div class="map-tooltip" id="mapTooltip" role="status"></div>
-      <span class="map-hint">Drag not required — tap or click any marker</span>
-    </div>
-    <p class="map-caption">Elevation positions are illustrative and vertically compressed for readability; horizontal placement separates the South Col (left/lower approach) and North Ridge (right/lower approach) routes for comparison. Locations for individual climber records are approximate, drawn from public reporting, and are not derived from GPS tracking data.</p>
-  </section>
-
-  <hr class="divider container">
-
-  <!-- ================= ARCHIVE ================= -->
-  <section class="section container" id="archive">
-    <div class="section-head">
-      <span class="eyebrow">Searchable archive</span>
-      <h2>Climber records</h2>
-      <p>Search and filter documented fatalities by name, year, nationality, route, cause, and more. Every record links to publicly available sources.</p>
-    </div>
-
-    <div class="explorer-controls glass">
-      <div class="search-row">
-        <div class="search-field">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="5.2" stroke="currentColor" stroke-width="1.4"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-          <input type="search" id="searchInput" placeholder="Search by name…" aria-label="Search climbers by name">
-        </div>
-        <span class="result-count"><strong id="resultCount">0</strong>&nbsp;records shown</span>
-      </div>
-
-      <div class="filter-grid">
-        <div class="filter-field">
-          <label for="filterYear">Year</label>
-          <select id="filterYear"><option value="">All years</option></select>
-        </div>
-        <div class="filter-field">
-          <label for="filterNationality">Nationality</label>
-          <select id="filterNationality"><option value="">All nationalities</option></select>
-        </div>
-        <div class="filter-field">
-          <label for="filterCause">Cause of death</label>
-          <select id="filterCause"><option value="">All causes</option></select>
-        </div>
-        <div class="filter-field">
-          <label for="filterRoute">Route</label>
-          <select id="filterRoute">
-            <option value="">All routes</option>
-            <option value="South Col">South Col</option>
-            <option value="North Ridge">North Ridge</option>
-          </select>
-        </div>
-        <div class="filter-field">
-          <label for="filterExpedition">Expedition</label>
-          <select id="filterExpedition"><option value="">All expeditions</option></select>
-        </div>
-        <div class="filter-field">
-          <label for="filterRecovery">Recovery status</label>
-          <select id="filterRecovery">
-            <option value="">All statuses</option>
-            <option value="Recovered">Recovered</option>
-            <option value="Not Recovered">Not Recovered</option>
-            <option value="Unknown">Unknown</option>
-            <option value="Mixed">Mixed</option>
-          </select>
-        </div>
-        <div class="filter-field" style="grid-column: span 2;">
-          <label for="filterAltitude">Altitude range: <span id="altitudeRangeLabel">up to 8,849 m</span></label>
-          <input type="range" id="filterAltitude" min="5000" max="8849" step="50" value="8849">
-        </div>
-      </div>
-
-      <div class="filter-actions">
-        <div class="active-filters" id="activeFilters" aria-live="polite"></div>
-        <div style="display:flex; gap:0.6rem;">
-          <button class="btn" id="showBookmarksBtn" aria-pressed="false">★ Bookmarked only</button>
-          <button class="btn" id="resetFiltersBtn">Reset filters</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="climber-grid" id="climberGrid" aria-live="polite">
-      <div class="loading-skel">
-        <div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div>
-        <div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div>
-      </div>
-    </div>
-    <div class="load-more-row" id="loadMoreRow" hidden>
-      <button class="btn" id="loadMoreBtn">Show more records</button>
-    </div>
-  </section>
-
-  <hr class="divider container">
-
-  <!-- ================= TIMELINE ================= -->
-  <section class="section section-alt" id="timeline">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">Fatalities by year</span>
-        <h2>A century-long timeline</h2>
-        <p>Each bar represents documented fatalities in the archive for that year. Select a bar to see the individual records.</p>
-      </div>
-      <div class="timeline-wrap glass" style="padding: 1.5rem 1.5rem 0.5rem;">
-        <div class="timeline-track" id="timelineTrack"></div>
-      </div>
-      <div class="timeline-detail glass" id="timelineDetail">
-        <p class="timeline-detail-empty">Select a year on the timeline above to see its records.</p>
-      </div>
-    </div>
-  </section>
-
-  <hr class="divider container">
-
-  <!-- ================= STATISTICS ================= -->
-  <section class="section container" id="statistics">
-    <div class="section-head">
-      <span class="eyebrow">Statistics dashboard</span>
-      <h2>Documented patterns</h2>
-      <p>Aggregate figures drawn from the records in this archive. These reflect only the curated set of documented cases included here, not the full historical total of Everest fatalities.</p>
-    </div>
-    <div class="stats-grid" id="statsTiles"></div>
-    <div class="charts-grid">
-      <div class="chart-card glass"><h3>Deaths by decade</h3><div class="bar-chart" id="chartDecade"></div></div>
-      <div class="chart-card glass"><h3>Deaths by cause</h3><div class="bar-chart" id="chartCause"></div></div>
-      <div class="chart-card glass"><h3>Deaths by nationality</h3><div class="bar-chart" id="chartNationality"></div></div>
-      <div class="chart-card glass"><h3>Deaths by altitude band</h3><div class="bar-chart" id="chartAltitude"></div></div>
-    </div>
-  </section>
-
-  <hr class="divider container">
-
-  <!-- ================= EDUCATION ================= -->
-  <section class="section section-alt" id="education">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">Safety &amp; science</span>
-        <h2>Understanding the mountain's hazards</h2>
-        <p>Everest's dangers are physiological as much as physical. These explainers cover the core hazards that shape every expedition's planning.</p>
-      </div>
-      <div class="education-grid" id="educationGrid"></div>
-      <p class="crisis-note glass">This section is provided for educational purposes about mountaineering safety. If you or someone you know is going through a difficult time, Claude can help you find appropriate support resources — just ask.</p>
-    </div>
-  </section>
-
-  <hr class="divider container">
-
-  <!-- ================= MEMORIAL ================= -->
-  <section class="section container" id="memorial">
-    <div class="memorial-hero">
-      <span class="eyebrow">In memoriam</span>
-      <h2>A wall of remembrance</h2>
-      <p>Every name in this archive represents a life, a family, and a story that extended far beyond the mountain. This page honors each documented climber together, in brief, with the fuller record available in the searchable archive above.</p>
-    </div>
-    <div class="memorial-wall" id="memorialWall"></div>
-  </section>
-
-  <hr class="divider container">
-
-  <!-- ================= ABOUT ================= -->
-  <section class="section container" id="about">
-    <div class="section-head">
-      <span class="eyebrow">About this project</span>
-      <h2>Purpose, sources &amp; preferences</h2>
-    </div>
-    <div class="about-grid">
-      <div>
-        <div class="about-card glass">
-          <h3>Why this archive exists</h3>
-          <p>This project documents the human history of Mount Everest — its routes, its hazards, and the people who have died attempting to climb it — for educational purposes. It is built entirely from publicly available reporting, expedition records, and published mountaineering histories. It does not use, request, or display private or undisclosed location data.</p>
-        </div>
-        <div class="about-card glass">
-          <h3>A note on respect</h3>
-          <p>Every record here represents a real person and a grieving family. Locations are described only in general, publicly reported terms. Where individual details are not part of the public record, this archive says so plainly rather than speculating.</p>
-        </div>
-        <div class="about-card glass">
-          <h3>Sources</h3>
-          <p>Records draw on outlets and archives including the Himalayan Database, the American Alpine Club, the Royal Geographical Society, BBC News, National Geographic, and published first-person mountaineering accounts. Each record lists its specific sources.</p>
-        </div>
-      </div>
-      <div>
-        <div class="about-card glass">
-          <h3>Preferences</h3>
-          <div class="pref-row">
-            <div><div class="pref-label">Dark theme</div><div class="pref-desc">Switch between light and dark appearance</div></div>
-            <label class="switch"><input type="checkbox" id="themeSwitch"><span class="track"><span class="thumb"></span></span></label>
-          </div>
-          <div class="pref-row">
-            <div><div class="pref-label">Reduce motion</div><div class="pref-desc">Minimize animations across the app</div></div>
-            <label class="switch"><input type="checkbox" id="motionSwitch"><span class="track"><span class="thumb"></span></span></label>
-          </div>
-          <div class="pref-row">
-            <div><div class="pref-label">Offline data cached</div><div class="pref-desc" id="cacheStatus">Checking…</div></div>
-            <button class="btn" id="clearBookmarksBtn" style="font-size:0.72rem;">Clear bookmarks</button>
-          </div>
-        </div>
-        <div class="about-card glass">
-          <h3>Install this app</h3>
-          <p>This site is a Progressive Web App and works offline after your first visit. On mobile, use your browser's "Add to Home Screen" option; on desktop, look for the install icon in your address bar.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
+  <div id="content">
+    <div class="msg">Search a location or tap 📍 to load conditions for your position.</div>
+  </div>
 </main>
 
-<!-- ================= DETAIL MODAL ================= -->
-<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-  <div class="modal-panel" id="modalPanel" tabindex="-1"></div>
-</div>
-
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-<!-- ================= FOOTER ================= -->
-<footer class="site-footer">
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-col">
-        <h4>Everest Memorial Archive</h4>
-        <p style="font-size: var(--step--1); color: var(--text-muted); max-width: 32ch;">An educational and memorial resource on Mount Everest's climbing history, built with respect for those documented here.</p>
-      </div>
-      <div class="footer-col">
-        <h4>Explore</h4>
-        <ul>
-          <li><a href="#map">Route map</a></li>
-          <li><a href="#archive">Archive</a></li>
-          <li><a href="#timeline">Timeline</a></li>
-          <li><a href="#statistics">Statistics</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Learn</h4>
-        <ul>
-          <li><a href="#education">Safety &amp; science</a></li>
-          <li><a href="#memorial">Memorial wall</a></li>
-          <li><a href="#about">About &amp; sources</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Data</h4>
-        <ul>
-          <li><span style="font-size:var(--step--1); color:var(--text-muted);">Public sources only</span></li>
-          <li><span style="font-size:var(--step--1); color:var(--text-muted);">No private GPS data</span></li>
-          <li><span style="font-size:var(--step--1); color:var(--text-muted);">Locations are approximate</span></li>
-        </ul>
-      </div>
-    </div>
-    <p class="footer-disclaimer" id="footerDisclaimer"></p>
-    <div class="footer-bottom">
-      <span>Built as an educational resource. Not affiliated with any government, expedition operator, or family association.</span>
-      <span>© 2026</span>
-    </div>
-  </div>
+<footer>
+  <div class="sig">SUMMIT WATCH — FIELD CONSOLE</div>
+  <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
 </footer>
 
-<script src="js/data.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/theme.js"></script>
-<script src="js/map.js"></script>
-<script src="js/filters.js"></script>
-<script src="js/cards.js"></script>
-<script src="js/modal.js"></script>
-<script src="js/timeline.js"></script>
-<script src="js/stats.js"></script>
-<script src="js/education.js"></script>
-<script src="js/memorial.js"></script>
-<script src="js/app.js"></script>
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// ---------- Theme handling ----------
+const themeBtns = document.querySelectorAll('#themes button');
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('sw-theme', t);
+  themeBtns.forEach(b => b.setAttribute('aria-pressed', b.dataset.t === t));
+}
+themeBtns.forEach(b => b.addEventListener('click', () => setTheme(b.dataset.t)));
+setTheme(localStorage.getItem('sw-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
+
+// ---------- Weather code -> icon/text ----------
+const WMO = {
+  0:['☀️','Clear sky'],1:['🌤️','Mainly clear'],2:['⛅','Partly cloudy'],3:['☁️','Overcast'],
+  45:['🌫️','Fog'],48:['🌫️','Rime fog'],51:['🌦️','Light drizzle'],53:['🌦️','Drizzle'],55:['🌧️','Dense drizzle'],
+  61:['🌧️','Light rain'],63:['🌧️','Rain'],65:['🌧️','Heavy rain'],66:['🌧️','Freezing rain'],67:['🌧️','Freezing rain'],
+  71:['🌨️','Light snow'],73:['🌨️','Snow'],75:['❄️','Heavy snow'],77:['❄️','Snow grains'],
+  80:['🌦️','Rain showers'],81:['🌧️','Rain showers'],82:['⛈️','Violent showers'],
+  85:['🌨️','Snow showers'],86:['❄️','Heavy snow showers'],
+  95:['⛈️','Thunderstorm'],96:['⛈️','Thunder + hail'],99:['⛈️','Severe thunder + hail']
+};
+const wmo = c => WMO[c] || ['❔','Unknown'];
+
+// ---------- Geocoding ----------
+const qInput = document.getElementById('q');
+const suggestEl = document.getElementById('suggest');
+let lastResults = [];
+
+async function search(name){
+  if(!name || name.trim().length < 2){ suggestEl.innerHTML=''; return; }
+  try{
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=6&language=en&format=json`);
+    const d = await r.json();
+    lastResults = d.results || [];
+    suggestEl.innerHTML = lastResults.map((p,i)=>
+      `<li data-i="${i}">${p.name}${p.admin1 ? ', '+p.admin1 : ''}, ${p.country} <span style="color:var(--accent)">· ${Math.round(p.elevation)}m</span></li>`
+    ).join('');
+  }catch(e){ suggestEl.innerHTML = '<li>Couldn\'t reach the geocoding service.</li>'; }
+}
+let debounce;
+qInput.addEventListener('input', ()=>{ clearTimeout(debounce); debounce = setTimeout(()=>search(qInput.value), 350); });
+suggestEl.addEventListener('click', e=>{
+  const li = e.target.closest('li'); if(!li || li.dataset.i===undefined) return;
+  const p = lastResults[li.dataset.i];
+  suggestEl.innerHTML=''; qInput.value = p.name;
+  loadConditions(p.latitude, p.longitude, `${p.name}${p.admin1 ? ', '+p.admin1 : ''}, ${p.country}`);
+});
+document.getElementById('goBtn').addEventListener('click', ()=>{
+  if(lastResults[0]) loadConditions(lastResults[0].latitude, lastResults[0].longitude,
+    `${lastResults[0].name}, ${lastResults[0].country}`);
+  else search(qInput.value).then(()=>{ if(lastResults[0]) loadConditions(lastResults[0].latitude, lastResults[0].longitude, `${lastResults[0].name}, ${lastResults[0].country}`); });
+});
+
+document.getElementById('locBtn').addEventListener('click', ()=>{
+  if(!navigator.geolocation){ alert('Geolocation not supported by this browser.'); return; }
+  content.innerHTML = '<div class="msg">Locating…</div>';
+  navigator.geolocation.getCurrentPosition(
+    pos => loadConditions(pos.coords.latitude, pos.coords.longitude, 'Your location'),
+    ()  => content.innerHTML = '<div class="msg">Location access denied. Try searching instead.</div>'
+  );
+});
+
+// ---------- Main data load ----------
+const content = document.getElementById('content');
+
+async function loadConditions(lat, lon, label){
+  content.innerHTML = '<div class="msg">Reading instruments…</div>';
+  try{
+    const [wx, aq] = await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,surface_pressure,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`).then(r=>r.json()),
+      fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi`).then(r=>r.json()).catch(()=>null)
+    ]);
+
+    const c = wx.current;
+    const [icon, desc] = wmo(c.weather_code);
+    const sunrise = new Date(wx.daily.sunrise[0]).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const sunset  = new Date(wx.daily.sunset[0]).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const aqi = aq && aq.current ? aq.current.us_aqi : null;
+
+    const days = wx.daily.time.map((t,i)=>{
+      const [ic] = wmo(wx.daily.weather_code[i]);
+      const dName = new Date(t).toLocaleDateString([], {weekday:'short'});
+      return `<div class="day"><div class="d">${dName}</div><div class="ic">${ic}</div>
+        <div class="hi">${Math.round(wx.daily.temperature_2m_max[i])}°</div>
+        <div class="lo">${Math.round(wx.daily.temperature_2m_min[i])}°</div></div>`;
+    }).join('');
+
+    content.innerHTML = `
+      <div class="hero">
+        <div class="place">${label}</div>
+        <div class="alt">${Math.round(wx.elevation)}<span> m elev</span></div>
+        <div class="coords">${lat.toFixed(4)}°, ${lon.toFixed(4)}° &nbsp;·&nbsp; ${icon} ${desc}</div>
+        <div class="updated">Updated ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <div class="grid">
+        <div class="card"><div class="lbl">Temp</div><div class="val">${Math.round(c.temperature_2m)}<small>°C</small></div></div>
+        <div class="card"><div class="lbl">Feels like</div><div class="val">${Math.round(c.apparent_temperature)}<small>°C</small></div></div>
+        <div class="card"><div class="lbl">Wind</div><div class="val">${Math.round(c.wind_speed_10m)}<small>km/h</small></div></div>
+        <div class="card"><div class="lbl">Gusts</div><div class="val">${Math.round(c.wind_gusts_10m)}<small>km/h</small></div></div>
+        <div class="card"><div class="lbl">Humidity</div><div class="val">${c.relative_humidity_2m}<small>%</small></div></div>
+        <div class="card"><div class="lbl">Pressure</div><div class="val">${Math.round(c.surface_pressure)}<small>hPa</small></div></div>
+        <div class="card"><div class="lbl">UV Index</div><div class="val">${c.uv_index.toFixed(1)}</div></div>
+        <div class="card"><div class="lbl">Air Quality</div><div class="val">${aqi !== null ? aqi : '—'}<small>${aqi !== null ? 'AQI':''}</small></div></div>
+        <div class="card"><div class="lbl">Sunrise / Sunset</div><div class="val" style="font-size:16px">${sunrise}<br>${sunset}</div></div>
+      </div>
+      <div class="forecast">
+        <h2>7-Day Outlook</h2>
+        <div class="days">${days}</div>
+      </div>
+    `;
+  }catch(e){
+    content.innerHTML = '<div class="msg">Couldn\'t fetch conditions. Check your connection and try again.</div>';
+  }
+}
+</script>
 </body>
 </html>
