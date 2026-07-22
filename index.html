@@ -2,1039 +2,407 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Vastu Compass</title>
-<meta name="theme-color" content="#151414">
-<meta name="description" content="A precision Vastu Compass — find true direction and see Vastu Shastra guidance for every zone of your home.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Everest Memorial &amp; Expedition Archive</title>
+<meta name="description" content="An educational and memorial resource documenting the history, routes, hazards, and climbers of Mount Everest — built with care, respect, and public sources.">
+<meta name="theme-color" content="#0b1220">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-<style>
-  :root{
-    --bg-1:#1b1a17;
-    --bg-2:#0d0c0b;
-    --brass:#cb9c4d;
-    --brass-light:#f0d999;
-    --steel:#8a919b;
-    --cream:#f8f1e0;
-    --ink:#241a0d;
-    --danger:#d3341c;
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{height:100%;}
-  body{
-    margin:0;
-    min-height:100vh;
-    background:
-      radial-gradient(ellipse at 50% -10%, #2a2823 0%, var(--bg-1) 45%, var(--bg-2) 100%);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:var(--cream);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    overflow-x:hidden;
-    padding-top:calc(var(--safe-top) + 14px);
-    padding-bottom:calc(var(--safe-bottom) + 14px);
-  }
+<link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.svg">
 
-  .app-title{
-    text-align:center;
-    margin:4px 0 2px;
-  }
-  .app-title h1{
-    font-size:22px;
-    letter-spacing:0.14em;
-    margin:0;
-    font-weight:700;
-    color:var(--brass-light);
-    text-transform:uppercase;
-  }
-  .app-title .sub{
-    font-size:13px;
-    color:#b8ab8a;
-    letter-spacing:0.05em;
-    margin-top:2px;
-  }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-  .compass-stage{
-    position:relative;
-    width:min(82vw, 380px);
-    aspect-ratio:1/1;
-    margin:22px auto 6px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-
-  .rotor{
-    width:100%;
-    height:100%;
-    will-change:transform;
-  }
-  .rotor svg{
-    width:100%;
-    height:100%;
-    display:block;
-  }
-
-  .readout{
-    text-align:center;
-    margin-top:2px;
-  }
-  .readout .deg{
-    font-size:40px;
-    font-weight:700;
-    color:var(--cream);
-    letter-spacing:0.02em;
-  }
-  .readout .deg span{ font-size:22px; color:#c9bd9f; }
-  .readout .zone{
-    font-size:15px;
-    color:var(--brass-light);
-    margin-top:2px;
-    letter-spacing:0.04em;
-  }
-  .readout .zone .sanskrit{
-    color:#e3d3a0;
-    opacity:0.85;
-  }
-
-  .status-msg{
-    font-size:12.5px;
-    color:#a79c86;
-    text-align:center;
-    max-width:320px;
-    margin:8px auto 0;
-    line-height:1.5;
-  }
-
-  button.enable-btn{
-    margin-top:14px;
-    background:linear-gradient(180deg,#eecd7c,#a97a34);
-    color:#241a0d;
-    border:none;
-    padding:12px 26px;
-    border-radius:30px;
-    font-size:15px;
-    font-weight:700;
-    letter-spacing:0.03em;
-    box-shadow:0 4px 14px rgba(0,0,0,0.4);
-  }
-  button.enable-btn:active{ transform:scale(0.97); }
-
-  .guide-toggle{
-    margin-top:20px;
-    background:none;
-    border:1px solid #6b6250;
-    color:#e3d3a0;
-    padding:9px 20px;
-    border-radius:24px;
-    font-size:13.5px;
-    letter-spacing:0.03em;
-  }
-
-  .guide-panel{
-    width:min(92vw,420px);
-    margin:14px auto 0;
-    max-height:0;
-    overflow:hidden;
-    transition:max-height 0.35s ease;
-    border-radius:14px;
-  }
-  .guide-panel.open{ max-height:900px; }
-  .guide-inner{
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:14px;
-    padding:8px;
-  }
-  .guide-row{
-    display:flex;
-    gap:12px;
-    align-items:flex-start;
-    padding:10px 8px;
-    border-bottom:1px solid rgba(255,255,255,0.06);
-  }
-  .guide-row:last-child{ border-bottom:none; }
-  .guide-row.active{
-    background:rgba(240,217,153,0.08);
-    border-radius:10px;
-  }
-  .guide-row .swatch{
-    width:14px;height:14px;border-radius:4px;flex:0 0 auto;margin-top:3px;
-    box-shadow:0 0 0 1px rgba(0,0,0,0.4) inset;
-  }
-  .guide-row .txt b{
-    display:block;
-    font-size:14.5px;
-    color:var(--cream);
-  }
-  .guide-row .txt .dev{
-    font-size:12.5px;
-    color:#c9a95c;
-    margin-left:6px;
-  }
-  .guide-row .txt p{
-    margin:3px 0 0;
-    font-size:12.5px;
-    color:#b3a78d;
-    line-height:1.45;
-  }
-
-  footer{
-    margin-top:auto;
-    padding-top:20px;
-    font-size:11px;
-    color:#5f584a;
-    text-align:center;
-  }
-
-  .header-bar{
-    width:100%;
-    max-width:460px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
-    padding:0 44px;
-  }
-  .settings-btn{
-    position:absolute;
-    right:8px;
-    top:2px;
-    background:none;
-    border:1px solid rgba(240,217,153,0.35);
-    color:var(--brass-light);
-    width:34px;height:34px;
-    border-radius:50%;
-    font-size:16px;
-    line-height:1;
-    display:flex;align-items:center;justify-content:center;
-  }
-
-  .tabbar{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    width:min(94vw,460px);
-    margin:22px auto 0;
-    justify-content:center;
-  }
-  .tab-btn{
-    flex:0 0 auto;
-    background:rgba(255,255,255,0.04);
-    border:1px solid rgba(255,255,255,0.09);
-    color:#c9bd9f;
-    padding:8px 14px;
-    border-radius:20px;
-    font-size:12.5px;
-    white-space:nowrap;
-    letter-spacing:0.02em;
-  }
-  .tab-btn.active{
-    background:linear-gradient(180deg,#eecd7c,#a97a34);
-    color:#241a0d;
-    border-color:transparent;
-    font-weight:700;
-  }
-
-  .panel{
-    display:none;
-    width:min(92vw,440px);
-    margin:14px auto 0;
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:14px;
-    padding:16px;
-  }
-  .panel.active{ display:block; }
-  .panel h2{
-    font-size:14px;
-    margin:0 0 10px;
-    color:var(--brass-light);
-    letter-spacing:0.04em;
-    text-transform:uppercase;
-  }
-  .panel select, .panel input[type=text], .panel input[type=number]{
-    width:100%;
-    background:#1f1d19;
-    border:1px solid #4a4436;
-    color:var(--cream);
-    padding:10px 12px;
-    border-radius:8px;
-    font-size:14px;
-    margin-bottom:10px;
-  }
-  .capture-btn{
-    width:100%;
-    background:linear-gradient(180deg,#eecd7c,#a97a34);
-    color:#241a0d;
-    border:none;
-    padding:11px;
-    border-radius:10px;
-    font-size:14px;
-    font-weight:700;
-    margin-bottom:12px;
-  }
-  .capture-btn:active{ transform:scale(0.98); }
-
-  .result-card{
-    border-radius:10px;
-    padding:12px 14px;
-    font-size:13.5px;
-    line-height:1.5;
-    border:1px solid rgba(255,255,255,0.08);
-  }
-  .result-card.rating-Excellent{ background:rgba(143,174,130,0.16); border-color:rgba(143,174,130,0.4); }
-  .result-card.rating-Good{ background:rgba(159,196,221,0.14); border-color:rgba(159,196,221,0.4); }
-  .result-card.rating-Acceptable{ background:rgba(224,198,117,0.14); border-color:rgba(224,198,117,0.4); }
-  .result-card.rating-Neutral{ background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15); }
-  .result-card.rating-Caution{ background:rgba(219,160,119,0.16); border-color:rgba(219,160,119,0.4); }
-  .result-card.rating-Avoid{ background:rgba(192,122,114,0.18); border-color:rgba(192,122,114,0.45); }
-  .result-card b{ display:block; font-size:15px; margin-bottom:4px; color:var(--cream); }
-  .result-card .rating-tag{
-    display:inline-block;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:0.05em;
-    text-transform:uppercase;
-    padding:2px 8px;
-    border-radius:10px;
-    background:rgba(0,0,0,0.25);
-    margin-left:8px;
-  }
-
-  .room-row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:8px 0;
-    border-bottom:1px solid rgba(255,255,255,0.07);
-  }
-  .room-row:last-child{ border-bottom:none; }
-  .room-row .info{ flex:1; min-width:0; }
-  .room-row .info b{ font-size:13.5px; color:var(--cream); display:block; }
-  .room-row .info span{ font-size:11.5px; color:#a79c86; }
-  .room-row .del-btn{
-    background:none;
-    border:1px solid rgba(192,122,114,0.5);
-    color:#e0a89e;
-    width:26px;height:26px;
-    border-radius:50%;
-    font-size:14px;
-    line-height:1;
-    flex:0 0 auto;
-  }
-  .empty-hint{ font-size:12.5px; color:#8b8069; text-align:center; padding:8px 0; }
-
-  .modal-overlay{
-    display:none;
-    position:fixed; inset:0;
-    background:rgba(0,0,0,0.6);
-    align-items:center;
-    justify-content:center;
-    z-index:50;
-    padding:20px;
-  }
-  .modal-overlay.open{ display:flex; }
-  .modal-box{
-    width:min(92vw,380px);
-    background:#1c1a16;
-    border:1px solid rgba(255,255,255,0.12);
-    border-radius:16px;
-    padding:20px;
-  }
-  .modal-box h3{
-    margin:0 0 12px;
-    font-size:16px;
-    color:var(--brass-light);
-  }
-  .switch-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:12px;
-  }
-  .switch-row label{ font-size:13.5px; color:var(--cream); }
-  .switch{
-    position:relative;
-    width:44px;height:24px;
-    background:#4a4436;
-    border-radius:14px;
-  }
-  .switch input{ display:none; }
-  .switch .knob{
-    position:absolute;
-    top:2px;left:2px;
-    width:20px;height:20px;
-    background:#c9bd9f;
-    border-radius:50%;
-    transition:transform 0.2s;
-  }
-  .switch input:checked + .knob{
-    transform:translateX(20px);
-    background:var(--brass-light);
-  }
-  .modal-note{ font-size:11.5px; color:#8b8069; line-height:1.5; margin-top:4px; }
-  .modal-close{
-    width:100%;
-    margin-top:14px;
-    background:none;
-    border:1px solid rgba(255,255,255,0.2);
-    color:var(--cream);
-    padding:10px;
-    border-radius:10px;
-    font-size:14px;
-  }
-</style>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/map.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/sections.css">
 </head>
-<body>
+<body data-theme="dark">
+<a href="#main" class="skip-link">Skip to main content</a>
+<div class="topo-field" aria-hidden="true"></div>
+<div class="offline-banner" id="offlineBanner" role="status">You're offline — showing previously loaded content.</div>
 
-  <div class="header-bar">
-    <div class="app-title">
-      <h1>Vastu Compass</h1>
-      <div class="sub">वास्तु कम्पास · directional guidance</div>
+<!-- ================= HEADER ================= -->
+<header class="site-header" id="siteHeader">
+  <div class="container header-inner">
+    <a href="#home" class="brand">
+      <svg class="peak-mark" width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M2 22L10 8l3.5 5.5L16 9l10 13H2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 8l1.6 2.6M16 9l-1.3 2" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span>Everest Memorial<br><small>Expedition Archive</small></span>
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mainNav" aria-label="Toggle navigation menu">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M2 4h14M2 9h14M2 14h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+    <nav class="main-nav" id="mainNav" aria-label="Primary">
+      <ul>
+        <li><a href="#map" data-nav>Route Map</a></li>
+        <li><a href="#archive" data-nav>Archive</a></li>
+        <li><a href="#timeline" data-nav>Timeline</a></li>
+        <li><a href="#statistics" data-nav>Statistics</a></li>
+        <li><a href="#education" data-nav>Safety &amp; Science</a></li>
+        <li><a href="#memorial" data-nav>Memorial</a></li>
+        <li><a href="#about" data-nav>About &amp; Sources</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <button class="theme-toggle" id="themeToggle" aria-label="Switch between light and dark theme">
+        <svg class="icon-moon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M15.5 10.8A6.5 6.5 0 0 1 7.2 2.5a6.5 6.5 0 1 0 8.3 8.3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        <svg class="icon-sun" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="3.4" stroke="currentColor" stroke-width="1.4"/><path d="M9 1.5v2M9 14.5v2M16.5 9h-2M3.5 9h-2M14.4 3.6l-1.4 1.4M4.9 13.1l-1.4 1.4M14.4 14.4l-1.4-1.4M4.9 4.9 3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
     </div>
-    <button class="settings-btn" id="settingsBtn" title="Settings" aria-label="Settings">⚙</button>
   </div>
+</header>
 
-  <div class="compass-stage">
-    <div class="rotor" id="rotor">
-      <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+<main id="main">
+
+  <!-- ================= HERO ================= -->
+  <section class="hero" id="home">
+    <div class="hero-backdrop" aria-hidden="true">
+      <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="steelBezel" cx="38%" cy="30%" r="75%">
-            <stop offset="0%" stop-color="#f4f5f7"/><stop offset="18%" stop-color="#d9dde2"/>
-            <stop offset="38%" stop-color="#aab1ba"/><stop offset="55%" stop-color="#7d838d"/>
-            <stop offset="72%" stop-color="#565b63"/><stop offset="88%" stop-color="#33363b"/>
-            <stop offset="100%" stop-color="#1c1e21"/>
-          </radialGradient>
-          <linearGradient id="steelEdgeHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="30%" stop-color="#ffffff" stop-opacity="0.05"/>
-            <stop offset="70%" stop-color="#000000" stop-opacity="0.05"/><stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
+          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#0b1220"/>
+            <stop offset="55%" stop-color="#131f34"/>
+            <stop offset="100%" stop-color="#0b1220"/>
           </linearGradient>
-          <radialGradient id="brassRing" cx="42%" cy="35%" r="70%">
-            <stop offset="0%" stop-color="#fdf1c8"/><stop offset="25%" stop-color="#eecd7c"/>
-            <stop offset="48%" stop-color="#cb9c4d"/><stop offset="70%" stop-color="#a97a34"/>
-            <stop offset="88%" stop-color="#7c5522"/><stop offset="100%" stop-color="#5a3c16"/>
-          </radialGradient>
-          <radialGradient id="dialFace" cx="46%" cy="40%" r="65%">
-            <stop offset="0%" stop-color="#3a3a3d"/><stop offset="45%" stop-color="#1c1c1e"/>
-            <stop offset="75%" stop-color="#0d0d0e"/><stop offset="100%" stop-color="#000000"/>
-          </radialGradient>
-          <radialGradient id="glassLens" cx="35%" cy="28%" r="80%">
-            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/><stop offset="12%" stop-color="#ffffff" stop-opacity="0.35"/>
-            <stop offset="35%" stop-color="#ffffff" stop-opacity="0.06"/><stop offset="70%" stop-color="#cfd8e0" stop-opacity="0.04"/>
-            <stop offset="100%" stop-color="#8fa0ac" stop-opacity="0.10"/>
-          </radialGradient>
-          <linearGradient id="needleRed" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#ff8f6b"/><stop offset="45%" stop-color="#d3341c"/><stop offset="100%" stop-color="#7a1408"/>
+          <linearGradient id="peakGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3a4a63"/>
+            <stop offset="100%" stop-color="#131c2c"/>
           </linearGradient>
-          <linearGradient id="needleBlack" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#6b6f75"/><stop offset="45%" stop-color="#2a2c30"/><stop offset="100%" stop-color="#050506"/>
+          <linearGradient id="peakGradFront" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1c2842"/>
+            <stop offset="100%" stop-color="#0d1420"/>
           </linearGradient>
-          <radialGradient id="pivotMetal" cx="35%" cy="30%" r="75%">
-            <stop offset="0%" stop-color="#ffffff"/><stop offset="30%" stop-color="#e4c98a"/>
-            <stop offset="60%" stop-color="#a9812f"/><stop offset="100%" stop-color="#4a3410"/>
-          </radialGradient>
-          <radialGradient id="screwHead" cx="35%" cy="30%" r="75%">
-            <stop offset="0%" stop-color="#f5f6f8"/><stop offset="40%" stop-color="#b7bcc3"/>
-            <stop offset="75%" stop-color="#6b6f75"/><stop offset="100%" stop-color="#2b2d30"/>
-          </radialGradient>
-          <linearGradient id="innerRimShadow" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#000000" stop-opacity="0.45"/><stop offset="12%" stop-color="#000000" stop-opacity="0"/>
-            <stop offset="88%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity="0.35"/>
-          </linearGradient>
-          <filter id="brushed" x="-20%" y="-20%" width="140%" height="140%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.9 0.02" numOctaves="2" seed="7" result="noise"/>
-            <feColorMatrix in="noise" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0" result="softNoise"/>
-            <feComposite in="softNoise" in2="SourceGraphic" operator="over" result="brushedOver"/>
-            <feBlend in="brushedOver" in2="SourceGraphic" mode="multiply"/>
-          </filter>
-          <filter id="dropShadowBig" x="-40%" y="-40%" width="180%" height="180%">
-            <feDropShadow dx="0" dy="14" stdDeviation="22" flood-color="#000000" flood-opacity="0.45"/>
-          </filter>
-          <filter id="softShadow" x="-40%" y="-40%" width="180%" height="180%">
-            <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.35"/>
-          </filter>
-          <filter id="engrave" x="-20%" y="-20%" width="140%" height="140%">
-            <feOffset in="SourceAlpha" dx="0" dy="1" result="off1"/>
-            <feGaussianBlur in="off1" stdDeviation="0.6" result="blur1"/>
-            <feComposite in="blur1" in2="SourceAlpha" operator="out" result="shadowPart"/>
-            <feFlood flood-color="#000000" flood-opacity="0.55"/>
-            <feComposite in2="shadowPart" operator="in" result="innerShadow"/>
-            <feOffset in="SourceAlpha" dx="0" dy="-1" result="off2"/>
-            <feGaussianBlur in="off2" stdDeviation="0.6" result="blur2"/>
-            <feComposite in="blur2" in2="SourceAlpha" operator="out" result="highlightPart"/>
-            <feFlood flood-color="#ffffff" flood-opacity="0.5"/>
-            <feComposite in2="highlightPart" operator="in" result="innerHighlight"/>
-            <feMerge>
-              <feMergeNode in="SourceGraphic"/><feMergeNode in="innerShadow"/><feMergeNode in="innerHighlight"/>
-            </feMerge>
-          </filter>
-          <clipPath id="dialClip"><circle cx="512" cy="512" r="352"/></clipPath>
-          <style>
-            .tick-minor{stroke:#4a3d22;stroke-width:2;opacity:0.55;}
-            .tick-mid{stroke:#3a2f1a;stroke-width:3;opacity:0.75;}
-            .tick-major{stroke:#241d0f;stroke-width:5;}
-            .label16{font-family:Georgia,'Times New Roman',serif;font-weight:700;fill:#2a2015;}
-            .sanskrit{font-family:'Noto Sans Devanagari','Nirmala UI',serif;font-weight:600;fill:#f6dfa0;stroke:#3a2a10;stroke-width:0.6;}
-            .mainletter{font-family:'Trajan Pro',Georgia,serif;font-weight:700;fill:#e8c874;}
-          </style>
         </defs>
-
-        <g filter="url(#dropShadowBig)">
-          <circle cx="512" cy="512" r="486" fill="url(#steelBezel)"/>
-          <circle cx="512" cy="512" r="486" fill="none" stroke="url(#steelEdgeHighlight)" stroke-width="6"/>
-          <circle cx="512" cy="512" r="486" fill="none" filter="url(#brushed)" opacity="0.5"/>
+        <rect width="1440" height="900" fill="url(#skyGrad)"/>
+        <g opacity="0.5" fill="#e3c589">
+          <circle cx="180" cy="120" r="1.2"/><circle cx="340" cy="80" r="1"/><circle cx="520" cy="150" r="1.4"/>
+          <circle cx="760" cy="70" r="1"/><circle cx="980" cy="130" r="1.3"/><circle cx="1180" cy="90" r="1"/>
+          <circle cx="1320" cy="160" r="1.2"/><circle cx="90" cy="220" r="1"/><circle cx="1240" cy="240" r="1"/>
         </g>
-        <g opacity="0.55"><circle cx="512" cy="512" r="470" fill="none" stroke="#0d0e10" stroke-width="2" stroke-dasharray="3,5"/></g>
-        <circle cx="512" cy="512" r="452" fill="none" stroke="#202225" stroke-width="10"/>
-        <circle cx="512" cy="512" r="452" fill="none" stroke="#8b9096" stroke-width="2" opacity="0.6"/>
-
-        <circle cx="512" cy="512" r="440" fill="url(#brassRing)"/>
-        <circle cx="512" cy="512" r="440" fill="none" filter="url(#brushed)" opacity="0.35"/>
-
-        <g>
-        <path d="M 348.21,116.58 A 428,428 0 0 1 675.79,116.58 L 646.70,186.79 A 352,352 0 0 0 377.30,186.79 Z" fill="#c9d6c4" fill-opacity="0.55"/>
-        <path d="M 675.79,116.58 A 428,428 0 0 1 907.42,348.21 L 837.21,377.30 A 352,352 0 0 0 646.70,186.79 Z" fill="#cfe3ee" fill-opacity="0.55"/>
-        <path d="M 907.42,348.21 A 428,428 0 0 1 907.42,675.79 L 837.21,646.70 A 352,352 0 0 0 837.21,377.30 Z" fill="#f0d999" fill-opacity="0.55"/>
-        <path d="M 907.42,675.79 A 428,428 0 0 1 675.79,907.42 L 646.70,837.21 A 352,352 0 0 0 837.21,646.70 Z" fill="#e8b08e" fill-opacity="0.55"/>
-        <path d="M 675.79,907.42 A 428,428 0 0 1 348.21,907.42 L 377.30,837.21 A 352,352 0 0 0 646.70,837.21 Z" fill="#d9a3a3" fill-opacity="0.55"/>
-        <path d="M 348.21,907.42 A 428,428 0 0 1 116.58,675.79 L 186.79,646.70 A 352,352 0 0 0 377.30,837.21 Z" fill="#c9bcae" fill-opacity="0.55"/>
-        <path d="M 116.58,675.79 A 428,428 0 0 1 116.58,348.21 L 186.79,377.30 A 352,352 0 0 0 186.79,646.70 Z" fill="#a9c3d6" fill-opacity="0.55"/>
-        <path d="M 116.58,348.21 A 428,428 0 0 1 348.21,116.58 L 377.30,186.79 A 352,352 0 0 0 186.79,377.30 Z" fill="#d8d8d8" fill-opacity="0.55"/>
+        <path d="M-50 620 L250 280 L420 460 L620 220 L780 380 L980 180 L1180 440 L1490 300 L1490 900 L-50 900 Z" fill="url(#peakGrad)"/>
+        <path d="M620 220 L680 300 L780 380 L560 380 Z" fill="#e9edf2" opacity="0.85"/>
+        <path d="M980 180 L1040 260 L1180 440 L900 400 Z" fill="#e9edf2" opacity="0.7"/>
+        <path d="M-50 780 L180 520 L360 640 L560 440 L820 660 L1060 480 L1300 700 L1490 600 L1490 900 L-50 900 Z" fill="url(#peakGradFront)"/>
+        <g stroke="#a9c6d6" stroke-width="1" opacity="0.16" fill="none">
+          <path d="M0 500 Q400 460 720 500 T1440 480"/>
+          <path d="M0 560 Q400 520 720 560 T1440 540"/>
+          <path d="M0 620 Q400 580 720 620 T1440 600"/>
         </g>
-
-        <circle cx="512" cy="512" r="428" fill="none" stroke="#5a3c16" stroke-width="2" opacity="0.7"/>
-        <circle cx="512" cy="512" r="352" fill="none" stroke="#5a3c16" stroke-width="3" opacity="0.8"/>
-
-        <g>
-        <line x1="512.00" y1="82.00" x2="512.00" y2="97.00" class="tick-minor"/><line x1="549.48" y1="83.64" x2="548.17" y2="98.58" class="tick-minor"/><line x1="586.67" y1="88.53" x2="584.06" y2="103.30" class="tick-minor"/><line x1="623.29" y1="96.65" x2="619.41" y2="111.14" class="tick-minor"/><line x1="659.07" y1="107.93" x2="653.94" y2="122.03" class="tick-minor"/><line x1="693.73" y1="122.29" x2="687.39" y2="135.88" class="tick-minor"/><line x1="727.00" y1="139.61" x2="719.50" y2="152.60" class="tick-minor"/><line x1="758.64" y1="159.76" x2="750.03" y2="172.05" class="tick-minor"/><line x1="788.40" y1="182.60" x2="778.76" y2="194.09" class="tick-minor"/><line x1="816.06" y1="207.94" x2="805.45" y2="218.55" class="tick-minor"/><line x1="841.40" y1="235.60" x2="829.91" y2="245.24" class="tick-minor"/><line x1="864.24" y1="265.36" x2="851.95" y2="273.97" class="tick-minor"/><line x1="884.39" y1="297.00" x2="871.40" y2="304.50" class="tick-minor"/><line x1="901.71" y1="330.27" x2="888.12" y2="336.61" class="tick-minor"/><line x1="916.07" y1="364.93" x2="901.97" y2="370.06" class="tick-minor"/><line x1="927.35" y1="400.71" x2="912.86" y2="404.59" class="tick-minor"/><line x1="935.47" y1="437.33" x2="920.70" y2="439.94" class="tick-minor"/><line x1="940.36" y1="474.52" x2="925.42" y2="475.83" class="tick-minor"/><line x1="942.00" y1="512.00" x2="927.00" y2="512.00" class="tick-minor"/><line x1="940.36" y1="549.48" x2="925.42" y2="548.17" class="tick-minor"/><line x1="935.47" y1="586.67" x2="920.70" y2="584.06" class="tick-minor"/><line x1="927.35" y1="623.29" x2="912.86" y2="619.41" class="tick-minor"/><line x1="916.07" y1="659.07" x2="901.97" y2="653.94" class="tick-minor"/><line x1="901.71" y1="693.73" x2="888.12" y2="687.39" class="tick-minor"/><line x1="884.39" y1="727.00" x2="871.40" y2="719.50" class="tick-minor"/><line x1="864.24" y1="758.64" x2="851.95" y2="750.03" class="tick-minor"/><line x1="841.40" y1="788.40" x2="829.91" y2="778.76" class="tick-minor"/><line x1="816.06" y1="816.06" x2="805.45" y2="805.45" class="tick-minor"/><line x1="788.40" y1="841.40" x2="778.76" y2="829.91" class="tick-minor"/><line x1="758.64" y1="864.24" x2="750.03" y2="851.95" class="tick-minor"/><line x1="727.00" y1="884.39" x2="719.50" y2="871.40" class="tick-minor"/><line x1="693.73" y1="901.71" x2="687.39" y2="888.12" class="tick-minor"/><line x1="659.07" y1="916.07" x2="653.94" y2="901.97" class="tick-minor"/><line x1="623.29" y1="927.35" x2="619.41" y2="912.86" class="tick-minor"/><line x1="586.67" y1="935.47" x2="584.06" y2="920.70" class="tick-minor"/><line x1="549.48" y1="940.36" x2="548.17" y2="925.42" class="tick-minor"/><line x1="512.00" y1="942.00" x2="512.00" y2="927.00" class="tick-minor"/><line x1="474.52" y1="940.36" x2="475.83" y2="925.42" class="tick-minor"/><line x1="437.33" y1="935.47" x2="439.94" y2="920.70" class="tick-minor"/><line x1="400.71" y1="927.35" x2="404.59" y2="912.86" class="tick-minor"/><line x1="364.93" y1="916.07" x2="370.06" y2="901.97" class="tick-minor"/><line x1="330.27" y1="901.71" x2="336.61" y2="888.12" class="tick-minor"/><line x1="297.00" y1="884.39" x2="304.50" y2="871.40" class="tick-minor"/><line x1="265.36" y1="864.24" x2="273.97" y2="851.95" class="tick-minor"/><line x1="235.60" y1="841.40" x2="245.24" y2="829.91" class="tick-minor"/><line x1="207.94" y1="816.06" x2="218.55" y2="805.45" class="tick-minor"/><line x1="182.60" y1="788.40" x2="194.09" y2="778.76" class="tick-minor"/><line x1="159.76" y1="758.64" x2="172.05" y2="750.03" class="tick-minor"/><line x1="139.61" y1="727.00" x2="152.60" y2="719.50" class="tick-minor"/><line x1="122.29" y1="693.73" x2="135.88" y2="687.39" class="tick-minor"/><line x1="107.93" y1="659.07" x2="122.03" y2="653.94" class="tick-minor"/><line x1="96.65" y1="623.29" x2="111.14" y2="619.41" class="tick-minor"/><line x1="88.53" y1="586.67" x2="103.30" y2="584.06" class="tick-minor"/><line x1="83.64" y1="549.48" x2="98.58" y2="548.17" class="tick-minor"/><line x1="82.00" y1="512.00" x2="97.00" y2="512.00" class="tick-minor"/><line x1="83.64" y1="474.52" x2="98.58" y2="475.83" class="tick-minor"/><line x1="88.53" y1="437.33" x2="103.30" y2="439.94" class="tick-minor"/><line x1="96.65" y1="400.71" x2="111.14" y2="404.59" class="tick-minor"/><line x1="107.93" y1="364.93" x2="122.03" y2="370.06" class="tick-minor"/><line x1="122.29" y1="330.27" x2="135.88" y2="336.61" class="tick-minor"/><line x1="139.61" y1="297.00" x2="152.60" y2="304.50" class="tick-minor"/><line x1="159.76" y1="265.36" x2="172.05" y2="273.97" class="tick-minor"/><line x1="182.60" y1="235.60" x2="194.09" y2="245.24" class="tick-minor"/><line x1="207.94" y1="207.94" x2="218.55" y2="218.55" class="tick-minor"/><line x1="235.60" y1="182.60" x2="245.24" y2="194.09" class="tick-minor"/><line x1="265.36" y1="159.76" x2="273.97" y2="172.05" class="tick-minor"/><line x1="297.00" y1="139.61" x2="304.50" y2="152.60" class="tick-minor"/><line x1="330.27" y1="122.29" x2="336.61" y2="135.88" class="tick-minor"/><line x1="364.93" y1="107.93" x2="370.06" y2="122.03" class="tick-minor"/><line x1="400.71" y1="96.65" x2="404.59" y2="111.14" class="tick-minor"/><line x1="437.33" y1="88.53" x2="439.94" y2="103.30" class="tick-minor"/><line x1="474.52" y1="83.64" x2="475.83" y2="98.58" class="tick-minor"/>
-        </g>
-        <g>
-        <line x1="586.67" y1="88.53" x2="582.85" y2="110.20" class="tick-mid"/><line x1="659.07" y1="107.93" x2="651.54" y2="128.61" class="tick-mid"/><line x1="727.00" y1="139.61" x2="716.00" y2="158.66" class="tick-mid"/><line x1="788.40" y1="182.60" x2="774.26" y2="199.45" class="tick-mid"/><line x1="841.40" y1="235.60" x2="824.55" y2="249.74" class="tick-mid"/><line x1="884.39" y1="297.00" x2="865.34" y2="308.00" class="tick-mid"/><line x1="916.07" y1="364.93" x2="895.39" y2="372.46" class="tick-mid"/><line x1="935.47" y1="437.33" x2="913.80" y2="441.15" class="tick-mid"/><line x1="935.47" y1="586.67" x2="913.80" y2="582.85" class="tick-mid"/><line x1="916.07" y1="659.07" x2="895.39" y2="651.54" class="tick-mid"/><line x1="884.39" y1="727.00" x2="865.34" y2="716.00" class="tick-mid"/><line x1="841.40" y1="788.40" x2="824.55" y2="774.26" class="tick-mid"/><line x1="788.40" y1="841.40" x2="774.26" y2="824.55" class="tick-mid"/><line x1="727.00" y1="884.39" x2="716.00" y2="865.34" class="tick-mid"/><line x1="659.07" y1="916.07" x2="651.54" y2="895.39" class="tick-mid"/><line x1="586.67" y1="935.47" x2="582.85" y2="913.80" class="tick-mid"/><line x1="437.33" y1="935.47" x2="441.15" y2="913.80" class="tick-mid"/><line x1="364.93" y1="916.07" x2="372.46" y2="895.39" class="tick-mid"/><line x1="297.00" y1="884.39" x2="308.00" y2="865.34" class="tick-mid"/><line x1="235.60" y1="841.40" x2="249.74" y2="824.55" class="tick-mid"/><line x1="182.60" y1="788.40" x2="199.45" y2="774.26" class="tick-mid"/><line x1="139.61" y1="727.00" x2="158.66" y2="716.00" class="tick-mid"/><line x1="107.93" y1="659.07" x2="128.61" y2="651.54" class="tick-mid"/><line x1="88.53" y1="586.67" x2="110.20" y2="582.85" class="tick-mid"/><line x1="88.53" y1="437.33" x2="110.20" y2="441.15" class="tick-mid"/><line x1="107.93" y1="364.93" x2="128.61" y2="372.46" class="tick-mid"/><line x1="139.61" y1="297.00" x2="158.66" y2="308.00" class="tick-mid"/><line x1="182.60" y1="235.60" x2="199.45" y2="249.74" class="tick-mid"/><line x1="235.60" y1="182.60" x2="249.74" y2="199.45" class="tick-mid"/><line x1="297.00" y1="139.61" x2="308.00" y2="158.66" class="tick-mid"/><line x1="364.93" y1="107.93" x2="372.46" y2="128.61" class="tick-mid"/><line x1="437.33" y1="88.53" x2="441.15" y2="110.20" class="tick-mid"/>
-        </g>
-
-        <g class="tick-major">
-        <line x1="512.00" y1="82.00" x2="512.00" y2="117.00"/><line x1="676.55" y1="114.73" x2="663.16" y2="147.07"/><line x1="816.06" y1="207.94" x2="791.31" y2="232.69"/><line x1="909.27" y1="347.45" x2="876.93" y2="360.84"/><line x1="942.00" y1="512.00" x2="907.00" y2="512.00"/><line x1="909.27" y1="676.55" x2="876.93" y2="663.16"/><line x1="816.06" y1="816.06" x2="791.31" y2="791.31"/><line x1="676.55" y1="909.27" x2="663.16" y2="876.93"/><line x1="512.00" y1="942.00" x2="512.00" y2="907.00"/><line x1="347.45" y1="909.27" x2="360.84" y2="876.93"/><line x1="207.94" y1="816.06" x2="232.69" y2="791.31"/><line x1="114.73" y1="676.55" x2="147.07" y2="663.16"/><line x1="82.00" y1="512.00" x2="117.00" y2="512.00"/><line x1="114.73" y1="347.45" x2="147.07" y2="360.84"/><line x1="207.94" y1="207.94" x2="232.69" y2="232.69"/><line x1="347.45" y1="114.73" x2="360.84" y2="147.07"/>
-        </g>
-
-        <g class="label16" text-anchor="middle" filter="url(#engrave)">
-          <text x="658.57" y="163" font-size="17">NNE</text><text x="865.85" y="370" font-size="17">ENE</text>
-          <text x="865.85" y="663" font-size="17">ESE</text><text x="658.57" y="871" font-size="17">SSE</text>
-          <text x="365.43" y="871" font-size="17">SSW</text><text x="158.15" y="663" font-size="17">WSW</text>
-          <text x="158.15" y="370" font-size="17">WNW</text><text x="365.43" y="163" font-size="17">NNW</text>
-        </g>
-
-        <g class="sanskrit" text-anchor="middle" font-size="26">
-          <text x="512" y="60">उत्तर</text><text x="838.68" y="193">ईशान</text>
-          <text x="960" y="520">पूर्व</text><text x="838.68" y="850">आग्नेय</text>
-          <text x="512" y="985">दक्षिण</text><text x="185.32" y="850">नैऋत्य</text>
-          <text x="64" y="520">पश्चिम</text><text x="185.32" y="193">वायव्य</text>
-        </g>
-
-        <g filter="url(#softShadow)">
-          <g transform="translate(835.85,188.15)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30"/></g>
-          <g transform="translate(835.85,835.85)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30" transform="rotate(45)"/></g>
-          <g transform="translate(188.15,835.85)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30" transform="rotate(-20)"/></g>
-          <g transform="translate(188.15,188.15)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30" transform="rotate(70)"/></g>
-        </g>
-
-        <g clip-path="url(#dialClip)">
-          <circle cx="512" cy="512" r="352" fill="#000000"/>
-          <circle cx="512" cy="512" r="352" fill="url(#innerRimShadow)"/>
-        </g>
-        <circle cx="512" cy="512" r="352" fill="none" stroke="#c9a355" stroke-width="2"/>
-
-        <g class="mainletter" text-anchor="middle" filter="url(#engrave)">
-          <text x="512.00" y="272" font-size="46" fill="#ff5a44">N</text>
-          <text x="700" y="345" font-size="30">NE</text>
-          <text x="782" y="522" font-size="46">E</text>
-          <text x="700" y="702" font-size="30">SE</text>
-          <text x="512.00" y="795" font-size="46">S</text>
-          <text x="324" y="702" font-size="30">SW</text>
-          <text x="242" y="522" font-size="46">W</text>
-          <text x="324" y="345" font-size="30">NW</text>
-        </g>
-
-
-
-        <g id="needle" filter="url(#softShadow)">
-          <polygon points="512,168 528,512 496,512" fill="url(#needleRed)" stroke="#4a0d05" stroke-width="1.5"/>
-          <polygon points="512,168 524,512 512,512" fill="#ffffff" opacity="0.25"/>
-          <polygon points="512,856 528,512 496,512" fill="url(#needleBlack)" stroke="#000000" stroke-width="1.5"/>
-          <polygon points="512,856 524,512 512,512" fill="#ffffff" opacity="0.12"/>
-        </g>
-        <g filter="url(#softShadow)">
-          <circle cx="512" cy="512" r="34" fill="url(#pivotMetal)" stroke="#3a2a0f" stroke-width="2"/>
-          <circle cx="512" cy="512" r="34" fill="none" stroke="#fff6d8" stroke-width="1" opacity="0.6"/>
-          <rect x="497" y="508" width="30" height="8" rx="2" fill="#2a2010" opacity="0.85"/>
-          <circle cx="500" cy="500" r="9" fill="#ffffff" opacity="0.45"/>
-        </g>
-
       </svg>
     </div>
-  </div>
-
-  <div class="readout">
-    <div class="deg"><span id="degVal">--</span><span>°</span></div>
-    <div class="zone" id="zoneName">Enable compass to begin</div>
-  </div>
-
-  <div class="status-msg" id="statusMsg">Vastu Compass uses your device's magnetic sensor. Hold your phone flat, level with the ground, and away from metal objects for an accurate reading.</div>
-
-  <button class="enable-btn" id="enableBtn">Enable Compass</button>
-  <button class="guide-toggle" id="guideToggle">Show all 16 direction meanings</button>
-
-  <div class="guide-panel" id="guidePanel">
-    <div class="guide-inner" id="guideInner"></div>
-  </div>
-
-  <div class="tabbar" id="tabbar">
-    <button class="tab-btn active" data-panel="sitting">Sitting</button>
-    <button class="tab-btn" data-panel="sleeping">Sleeping</button>
-    <button class="tab-btn" data-panel="door">Main Door</button>
-    <button class="tab-btn" data-panel="roommap">Room Map</button>
-  </div>
-
-  <!-- SITTING DIRECTION ADVISOR -->
-  <div class="panel active" id="panel-sitting">
-    <h2>Sitting Direction Advisor</h2>
-    <select id="sitActivity"></select>
-    <button class="capture-btn" id="sitCapture">Use Current Facing Direction</button>
-    <div class="result-card" id="sitResult" style="display:none;"></div>
-  </div>
-
-  <!-- SLEEPING DIRECTION ADVISOR -->
-  <div class="panel" id="panel-sleeping">
-    <h2>Sleeping Direction Advisor</h2>
-    <div class="status-msg" style="margin:0 0 12px;text-align:left;max-width:none;">Lie down as you normally sleep and hold the phone flat with the top of the phone pointing the same way as the top of your head.</div>
-    <button class="capture-btn" id="sleepCapture">Capture Head Direction</button>
-    <div class="result-card" id="sleepResult" style="display:none;"></div>
-  </div>
-
-  <!-- MAIN DOOR CHECKER -->
-  <div class="panel" id="panel-door">
-    <h2>Main Door Checker</h2>
-    <div class="status-msg" style="margin:0 0 12px;text-align:left;max-width:none;">Stand at your threshold, facing outward through the doorway, then capture the reading.</div>
-    <button class="capture-btn" id="doorCapture">Capture Door Facing</button>
-    <div class="result-card" id="doorResult" style="display:none;"></div>
-  </div>
-
-  <!-- ROOM MAPPING MODE -->
-  <div class="panel" id="panel-roommap">
-    <h2>Room Mapping Mode</h2>
-    <div class="status-msg" style="margin:0 0 12px;text-align:left;max-width:none;">Face each wall of a room in turn and log it, to see which Vastu zone falls where before placing furniture.</div>
-    <input type="text" id="roomLabel" placeholder="Label (e.g. North wall, Bed wall)">
-    <button class="capture-btn" id="roomCapture">Add Wall Reading</button>
-    <div id="roomList"></div>
-    <div class="empty-hint" id="roomEmptyHint">No readings yet — walk to a wall and tap "Add Wall Reading".</div>
-  </div>
-
-  <footer>© Manik Roy 2026 · Vastu Compass</footer>
-
-  <!-- SETTINGS MODAL -->
-  <div class="modal-overlay" id="settingsModal">
-    <div class="modal-box">
-      <h3>Compass Settings</h3>
-      <div class="switch-row">
-        <label for="reverseNeedleToggle">Reverse Needle Direction</label>
-        <label class="switch">
-          <input type="checkbox" id="reverseNeedleToggle" checked>
-          <span class="knob"></span>
-        </label>
+    <div class="container hero-content">
+      <span class="hero-kicker">A public, educational memorial archive</span>
+      <h1>Remembering those who <em>climbed toward the sky</em>, and never came home.</h1>
+      <p class="hero-lede">An interactive record of Mount Everest's climbing routes, its history, and the documented lives lost in pursuit of its summit — built for education, remembrance, and respect, using only publicly available sources.</p>
+      <div class="hero-actions">
+        <a href="#map" class="btn btn-primary">Explore the route map</a>
+        <a href="#archive" class="btn">Search the archive</a>
       </div>
-      <div class="modal-note" style="margin-bottom:14px;">Some phones report compass data flipped. If the needle swings the wrong way when you turn, or doesn't point to real North when you face it, switch this on.</div>
-      <div class="switch-row">
-        <label for="trueNorthToggle">Show True North</label>
-        <label class="switch">
-          <input type="checkbox" id="trueNorthToggle">
-          <span class="knob"></span>
-        </label>
+      <div class="hero-stats" id="heroStats">
+        <div class="hero-stat"><span class="num" data-count="0">—</span><span class="label">Documented records</span></div>
+        <div class="hero-stat"><span class="num" data-count="0">—</span><span class="label">Years spanned</span></div>
+        <div class="hero-stat"><span class="num" data-count="0">—</span><span class="label">Nationalities represented</span></div>
+        <div class="hero-stat"><span class="num">2</span><span class="label">Major routes mapped</span></div>
       </div>
-      <div id="declinationField" style="display:none;">
-        <label style="font-size:12.5px;color:#c9bd9f;">Magnetic declination at your location (degrees, + East / − West)</label>
-        <input type="number" id="declinationInput" value="0" step="0.1">
-        <div class="modal-note">Find your local declination by searching "magnetic declination calculator" for your city (e.g. NOAA's NCEI tool), then enter it here. All readings in the app will be corrected by this amount.</div>
+    </div>
+    <div class="hero-scroll-cue" aria-hidden="true">Scroll <span>↓</span></div>
+  </section>
+
+  <!-- ================= MAP ================= -->
+  <section class="section map-section container" id="map">
+    <div class="section-head">
+      <span class="eyebrow">Interactive route map</span>
+      <h2>South Col &amp; North Ridge, side by side</h2>
+      <p>An illustrated elevation diagram of Everest's two principal climbing routes. Waypoint markers show major camps and landmarks; smaller markers indicate the approximate, publicly documented location associated with a climber record. All positions are stylized and approximate — this is not a survey map or a source of precise coordinates.</p>
+    </div>
+    <div class="map-toolbar">
+      <div class="route-legend" role="group" aria-label="Filter map by route">
+        <button class="legend-chip" aria-pressed="true" data-route-filter="all">All routes</button>
+        <button class="legend-chip" aria-pressed="false" data-route-filter="South Col"><span class="dot dot-south"></span>South Col</button>
+        <button class="legend-chip" aria-pressed="false" data-route-filter="North Ridge"><span class="dot dot-north"></span>North Ridge</button>
       </div>
-      <div class="modal-note" id="magneticNote">Currently showing magnetic north — the direction your phone's sensor detects directly, without correction.</div>
-      <button class="modal-close" id="settingsClose">Close</button>
+      <label class="legend-chip" style="cursor:pointer;">
+        <input type="checkbox" id="toggleMemorialMarkers" checked style="accent-color: var(--accent);">
+        <span class="dot dot-marker"></span> Show memorial markers
+      </label>
+    </div>
+    <div class="map-frame glass" id="mapFrame">
+      <svg class="map-svg" id="mapSvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Illustrated diagram of Mount Everest's South Col and North Ridge climbing routes with waypoints">
+        <defs>
+          <radialGradient id="massifGradient" cx="55%" cy="10%" r="90%">
+            <stop offset="0%" stop-color="#2a3a55"/>
+            <stop offset="100%" stop-color="#0b1220" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <!-- decorative contour rings -->
+        <g class="contour-group" aria-hidden="true"></g>
+        <!-- route paths + waypoints + markers injected by JS -->
+        <g id="routePaths"></g>
+        <g id="waypointsLayer"></g>
+        <g id="markersLayer"></g>
+      </svg>
+      <div class="map-tooltip" id="mapTooltip" role="status"></div>
+      <span class="map-hint">Drag not required — tap or click any marker</span>
+    </div>
+    <p class="map-caption">Elevation positions are illustrative and vertically compressed for readability; horizontal placement separates the South Col (left/lower approach) and North Ridge (right/lower approach) routes for comparison. Locations for individual climber records are approximate, drawn from public reporting, and are not derived from GPS tracking data.</p>
+  </section>
+
+  <hr class="divider container">
+
+  <!-- ================= ARCHIVE ================= -->
+  <section class="section container" id="archive">
+    <div class="section-head">
+      <span class="eyebrow">Searchable archive</span>
+      <h2>Climber records</h2>
+      <p>Search and filter documented fatalities by name, year, nationality, route, cause, and more. Every record links to publicly available sources.</p>
+    </div>
+
+    <div class="explorer-controls glass">
+      <div class="search-row">
+        <div class="search-field">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="5.2" stroke="currentColor" stroke-width="1.4"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          <input type="search" id="searchInput" placeholder="Search by name…" aria-label="Search climbers by name">
+        </div>
+        <span class="result-count"><strong id="resultCount">0</strong>&nbsp;records shown</span>
+      </div>
+
+      <div class="filter-grid">
+        <div class="filter-field">
+          <label for="filterYear">Year</label>
+          <select id="filterYear"><option value="">All years</option></select>
+        </div>
+        <div class="filter-field">
+          <label for="filterNationality">Nationality</label>
+          <select id="filterNationality"><option value="">All nationalities</option></select>
+        </div>
+        <div class="filter-field">
+          <label for="filterCause">Cause of death</label>
+          <select id="filterCause"><option value="">All causes</option></select>
+        </div>
+        <div class="filter-field">
+          <label for="filterRoute">Route</label>
+          <select id="filterRoute">
+            <option value="">All routes</option>
+            <option value="South Col">South Col</option>
+            <option value="North Ridge">North Ridge</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="filterExpedition">Expedition</label>
+          <select id="filterExpedition"><option value="">All expeditions</option></select>
+        </div>
+        <div class="filter-field">
+          <label for="filterRecovery">Recovery status</label>
+          <select id="filterRecovery">
+            <option value="">All statuses</option>
+            <option value="Recovered">Recovered</option>
+            <option value="Not Recovered">Not Recovered</option>
+            <option value="Unknown">Unknown</option>
+            <option value="Mixed">Mixed</option>
+          </select>
+        </div>
+        <div class="filter-field" style="grid-column: span 2;">
+          <label for="filterAltitude">Altitude range: <span id="altitudeRangeLabel">up to 8,849 m</span></label>
+          <input type="range" id="filterAltitude" min="5000" max="8849" step="50" value="8849">
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <div class="active-filters" id="activeFilters" aria-live="polite"></div>
+        <div style="display:flex; gap:0.6rem;">
+          <button class="btn" id="showBookmarksBtn" aria-pressed="false">★ Bookmarked only</button>
+          <button class="btn" id="resetFiltersBtn">Reset filters</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="climber-grid" id="climberGrid" aria-live="polite">
+      <div class="loading-skel">
+        <div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div>
+        <div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div>
+      </div>
+    </div>
+    <div class="load-more-row" id="loadMoreRow" hidden>
+      <button class="btn" id="loadMoreBtn">Show more records</button>
+    </div>
+  </section>
+
+  <hr class="divider container">
+
+  <!-- ================= TIMELINE ================= -->
+  <section class="section section-alt" id="timeline">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Fatalities by year</span>
+        <h2>A century-long timeline</h2>
+        <p>Each bar represents documented fatalities in the archive for that year. Select a bar to see the individual records.</p>
+      </div>
+      <div class="timeline-wrap glass" style="padding: 1.5rem 1.5rem 0.5rem;">
+        <div class="timeline-track" id="timelineTrack"></div>
+      </div>
+      <div class="timeline-detail glass" id="timelineDetail">
+        <p class="timeline-detail-empty">Select a year on the timeline above to see its records.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider container">
+
+  <!-- ================= STATISTICS ================= -->
+  <section class="section container" id="statistics">
+    <div class="section-head">
+      <span class="eyebrow">Statistics dashboard</span>
+      <h2>Documented patterns</h2>
+      <p>Aggregate figures drawn from the records in this archive. These reflect only the curated set of documented cases included here, not the full historical total of Everest fatalities.</p>
+    </div>
+    <div class="stats-grid" id="statsTiles"></div>
+    <div class="charts-grid">
+      <div class="chart-card glass"><h3>Deaths by decade</h3><div class="bar-chart" id="chartDecade"></div></div>
+      <div class="chart-card glass"><h3>Deaths by cause</h3><div class="bar-chart" id="chartCause"></div></div>
+      <div class="chart-card glass"><h3>Deaths by nationality</h3><div class="bar-chart" id="chartNationality"></div></div>
+      <div class="chart-card glass"><h3>Deaths by altitude band</h3><div class="bar-chart" id="chartAltitude"></div></div>
+    </div>
+  </section>
+
+  <hr class="divider container">
+
+  <!-- ================= EDUCATION ================= -->
+  <section class="section section-alt" id="education">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Safety &amp; science</span>
+        <h2>Understanding the mountain's hazards</h2>
+        <p>Everest's dangers are physiological as much as physical. These explainers cover the core hazards that shape every expedition's planning.</p>
+      </div>
+      <div class="education-grid" id="educationGrid"></div>
+      <p class="crisis-note glass">This section is provided for educational purposes about mountaineering safety. If you or someone you know is going through a difficult time, Claude can help you find appropriate support resources — just ask.</p>
+    </div>
+  </section>
+
+  <hr class="divider container">
+
+  <!-- ================= MEMORIAL ================= -->
+  <section class="section container" id="memorial">
+    <div class="memorial-hero">
+      <span class="eyebrow">In memoriam</span>
+      <h2>A wall of remembrance</h2>
+      <p>Every name in this archive represents a life, a family, and a story that extended far beyond the mountain. This page honors each documented climber together, in brief, with the fuller record available in the searchable archive above.</p>
+    </div>
+    <div class="memorial-wall" id="memorialWall"></div>
+  </section>
+
+  <hr class="divider container">
+
+  <!-- ================= ABOUT ================= -->
+  <section class="section container" id="about">
+    <div class="section-head">
+      <span class="eyebrow">About this project</span>
+      <h2>Purpose, sources &amp; preferences</h2>
+    </div>
+    <div class="about-grid">
+      <div>
+        <div class="about-card glass">
+          <h3>Why this archive exists</h3>
+          <p>This project documents the human history of Mount Everest — its routes, its hazards, and the people who have died attempting to climb it — for educational purposes. It is built entirely from publicly available reporting, expedition records, and published mountaineering histories. It does not use, request, or display private or undisclosed location data.</p>
+        </div>
+        <div class="about-card glass">
+          <h3>A note on respect</h3>
+          <p>Every record here represents a real person and a grieving family. Locations are described only in general, publicly reported terms. Where individual details are not part of the public record, this archive says so plainly rather than speculating.</p>
+        </div>
+        <div class="about-card glass">
+          <h3>Sources</h3>
+          <p>Records draw on outlets and archives including the Himalayan Database, the American Alpine Club, the Royal Geographical Society, BBC News, National Geographic, and published first-person mountaineering accounts. Each record lists its specific sources.</p>
+        </div>
+      </div>
+      <div>
+        <div class="about-card glass">
+          <h3>Preferences</h3>
+          <div class="pref-row">
+            <div><div class="pref-label">Dark theme</div><div class="pref-desc">Switch between light and dark appearance</div></div>
+            <label class="switch"><input type="checkbox" id="themeSwitch"><span class="track"><span class="thumb"></span></span></label>
+          </div>
+          <div class="pref-row">
+            <div><div class="pref-label">Reduce motion</div><div class="pref-desc">Minimize animations across the app</div></div>
+            <label class="switch"><input type="checkbox" id="motionSwitch"><span class="track"><span class="thumb"></span></span></label>
+          </div>
+          <div class="pref-row">
+            <div><div class="pref-label">Offline data cached</div><div class="pref-desc" id="cacheStatus">Checking…</div></div>
+            <button class="btn" id="clearBookmarksBtn" style="font-size:0.72rem;">Clear bookmarks</button>
+          </div>
+        </div>
+        <div class="about-card glass">
+          <h3>Install this app</h3>
+          <p>This site is a Progressive Web App and works offline after your first visit. On mobile, use your browser's "Add to Home Screen" option; on desktop, look for the install icon in your address bar.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ================= DETAIL MODAL ================= -->
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-panel" id="modalPanel" tabindex="-1"></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ================= FOOTER ================= -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>Everest Memorial Archive</h4>
+        <p style="font-size: var(--step--1); color: var(--text-muted); max-width: 32ch;">An educational and memorial resource on Mount Everest's climbing history, built with respect for those documented here.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="#map">Route map</a></li>
+          <li><a href="#archive">Archive</a></li>
+          <li><a href="#timeline">Timeline</a></li>
+          <li><a href="#statistics">Statistics</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Learn</h4>
+        <ul>
+          <li><a href="#education">Safety &amp; science</a></li>
+          <li><a href="#memorial">Memorial wall</a></li>
+          <li><a href="#about">About &amp; sources</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Data</h4>
+        <ul>
+          <li><span style="font-size:var(--step--1); color:var(--text-muted);">Public sources only</span></li>
+          <li><span style="font-size:var(--step--1); color:var(--text-muted);">No private GPS data</span></li>
+          <li><span style="font-size:var(--step--1); color:var(--text-muted);">Locations are approximate</span></li>
+        </ul>
+      </div>
+    </div>
+    <p class="footer-disclaimer" id="footerDisclaimer"></p>
+    <div class="footer-bottom">
+      <span>Built as an educational resource. Not affiliated with any government, expedition operator, or family association.</span>
+      <span>© 2026</span>
     </div>
   </div>
+</footer>
 
-<script>
-(function(){
-  var rotor = document.getElementById('rotor');
-  var needle = document.getElementById('needle');
-  var degVal = document.getElementById('degVal');
-  var zoneName = document.getElementById('zoneName');
-  var statusMsg = document.getElementById('statusMsg');
-  var enableBtn = document.getElementById('enableBtn');
-  var guideToggle = document.getElementById('guideToggle');
-  var guidePanel = document.getElementById('guidePanel');
-  var guideInner = document.getElementById('guideInner');
-
-  // 16-point Vastu direction data: name, Sanskrit, ruling force, guidance, color swatch
-  var ZONES = [
-    {n:'North',      ab:'N',   dev:'उत्तर',    ruler:'Kubera',  color:'#8fae82', use:'Wealth zone — best for cash lockers, safes and the main office desk.'},
-    {n:'North-Northeast', ab:'NNE', dev:'—', ruler:'Water support', color:'#a9c1d8', use:'Supports the NE water zone — good for an open, uncluttered space.'},
-    {n:'Northeast',  ab:'NE',  dev:'ईशान',    ruler:'Water / Ishana', color:'#9fc4dd', use:'Most sacred zone — ideal for the prayer room, main entrance or water storage.'},
-    {n:'East-Northeast', ab:'ENE', dev:'—', ruler:'Sun support', color:'#e0c675', use:'Supports morning sunlight — good for a study nook or reading corner.'},
-    {n:'East',       ab:'E',   dev:'पूर्व',    ruler:'Indra / Surya', color:'#e8c25f', use:'Sunrise direction — ideal for the main entrance, living room and windows.'},
-    {n:'East-Southeast', ab:'ESE', dev:'—', ruler:'Fire support', color:'#dba077', use:'Transition zone between sun and fire — suited to a light dining area.'},
-    {n:'Southeast',  ab:'SE',  dev:'आग्नेय',   ruler:'Agni', color:'#d38a5c', use:'Fire element — the traditional placement for the kitchen and stove.'},
-    {n:'South-Southeast', ab:'SSE', dev:'—', ruler:'Fire support', color:'#c98c7a', use:'Good for kitchen storage or a utility extension.'},
-    {n:'South',      ab:'S',   dev:'दक्षिण',   ruler:'Yama', color:'#c07a72', use:'Heavier energy — best for storage and solid furniture, avoid the main entrance here.'},
-    {n:'South-Southwest', ab:'SSW', dev:'—', ruler:'Earth support', color:'#b98f7d', use:'Good for wardrobes and heavy cabinets.'},
-    {n:'Southwest',  ab:'SW',  dev:'नैऋत्य',   ruler:'Rahu / Nirriti', color:'#a99479', use:'Most stable zone — ideal for the master bedroom and heavy furniture.'},
-    {n:'West-Southwest', ab:'WSW', dev:'—', ruler:'Earth support', color:'#9fa591', use:'Suits a secondary bedroom or long-term storage.'},
-    {n:'West',       ab:'W',   dev:'पश्चिम',   ruler:'Varuna', color:'#7fa0bd', use:'Water element — good for the dining room, study or children\u2019s room.'},
-    {n:'West-Northwest', ab:'WNW', dev:'—', ruler:'Air support', color:'#a3aab3', use:'Suits a guest room or dressing area.'},
-    {n:'Northwest',  ab:'NW',  dev:'वायव्य',   ruler:'Vayu', color:'#b7bcc3', use:'Air element — best for the guest room, garage or movable items.'},
-    {n:'North-Northwest', ab:'NNW', dev:'—', ruler:'Air / wealth support', color:'#9fb098', use:'Supports the north wealth zone — keep this area light and open.'}
-  ];
-
-  // build guide list
-  ZONES.forEach(function(z, i){
-    var row = document.createElement('div');
-    row.className = 'guide-row';
-    row.id = 'zone-' + i;
-    row.innerHTML =
-      '<div class="swatch" style="background:'+z.color+'"></div>' +
-      '<div class="txt"><b>'+z.n+' ('+z.ab+')'+(z.dev!=='—' ? '<span class="dev">'+z.dev+'</span>' : '')+'</b><p>'+z.use+'</p></div>';
-    guideInner.appendChild(row);
-  });
-
-  guideToggle.addEventListener('click', function(){
-    var open = guidePanel.classList.toggle('open');
-    guideToggle.textContent = open ? 'Hide direction meanings' : 'Show all 16 direction meanings';
-  });
-
-  function zoneIndexFromHeading(h){
-    return Math.round(h / 22.5) % 16;
-  }
-
-  var EIGHT = ['N','NE','E','SE','S','SW','W','NW'];
-  function eightFromHeading(h){
-    return EIGHT[Math.round(h / 45) % 8];
-  }
-
-  // ===== True North correction =====
-  var trueNorthEnabled = false;
-  var declination = 0;
-  var rawHeading = 0;
-  var currentHeading = 0; // corrected 0-360 heading, used for zone lookups & ratings
-  var needleInverted = true; // default flipped: confirmed the sensor's rotation direction is reversed on this build
-
-  // Continuous (unwrapped) rotor angle so the dial never snaps at the 0/360 seam
-  var targetAngle = 0;   // where the rotor should end up, can grow past 360 or below 0
-  var displayAngle = 0;  // smoothed angle actually rendered each frame
-  var isDragging = false;
-
-  function applyCorrection(){
-    currentHeading = ((rawHeading + (trueNorthEnabled ? declination : 0)) % 360 + 360) % 360;
-    // find the shortest signed path from the current target to the new heading,
-    // then add it, so the rotor keeps spinning the short way even across 360→0
-    var wrapped = ((targetAngle % 360) + 360) % 360;
-    var diff = currentHeading - wrapped;
-    diff = ((diff + 180) % 360 + 360) % 360 - 180;
-    targetAngle += diff;
-    renderHeading();
-  }
-
-  var lastActive = -1;
-  function renderHeading(){
-    var heading = currentHeading;
-    degVal.textContent = Math.round(heading);
-    var idx = zoneIndexFromHeading(heading);
-    var z = ZONES[idx];
-    zoneName.innerHTML = z.n + ' <span class="sanskrit">' + (z.dev!=='—' ? z.dev : '') + '</span>';
-    if(lastActive !== idx){
-      var prev = document.getElementById('zone-' + lastActive);
-      if(prev) prev.classList.remove('active');
-      var cur = document.getElementById('zone-' + idx);
-      if(cur){
-        cur.classList.add('active');
-        if(guidePanel.classList.contains('open')) cur.scrollIntoView({block:'nearest', behavior:'smooth'});
-      }
-      lastActive = idx;
-    }
-  }
-
-  function updateHeading(heading){
-    rawHeading = ((heading % 360) + 360) % 360;
-    applyCorrection();
-  }
-
-  // Smooth 60fps rotor animation: eases toward targetAngle every frame, which both
-  // hides sensor jitter and glides continuously through the 0/360 boundary.
-  function animateRotor(){
-    if(isDragging){
-      displayAngle = targetAngle;
-    } else {
-      displayAngle += (targetAngle - displayAngle) * 0.14;
-    }
-    needle.setAttribute('transform', 'rotate(' + ((needleInverted ? 1 : -1) * displayAngle) + ' 512 512)');
-    requestAnimationFrame(animateRotor);
-  }
-  requestAnimationFrame(animateRotor);
-
-  function handleOrientation(e){
-    var heading;
-    if(typeof e.webkitCompassHeading === 'number'){
-      heading = e.webkitCompassHeading; // iOS: already true compass heading
-    } else if(e.absolute && e.alpha !== null){
-      heading = 360 - e.alpha;
-    } else if(e.alpha !== null){
-      heading = 360 - e.alpha;
-    } else {
-      return;
-    }
-    updateHeading(heading);
-  }
-
-  function startListening(){
-    statusMsg.textContent = 'Reading device orientation…';
-    if('ondeviceorientationabsolute' in window){
-      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-    } else {
-      window.addEventListener('deviceorientation', handleOrientation, true);
-    }
-    enableBtn.style.display = 'none';
-  }
-
-  enableBtn.addEventListener('click', function(){
-    if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
-      DeviceOrientationEvent.requestPermission().then(function(resp){
-        if(resp === 'granted'){
-          startListening();
-        } else {
-          statusMsg.textContent = 'Compass permission was denied. You can re-enable it in your browser settings.';
-        }
-      }).catch(function(){
-        statusMsg.textContent = 'Could not access the compass sensor on this device.';
-      });
-    } else if('DeviceOrientationEvent' in window){
-      startListening();
-    } else {
-      statusMsg.textContent = 'This device or browser does not expose a compass sensor. Try on a mobile phone with Chrome or Safari.';
-    }
-  });
-
-  // Desktop / no-sensor fallback: drag to rotate, for preview and testing
-  var dragging = false, lastAngle = 0, dragHeading = 0;
-  var stage = document.querySelector('.compass-stage');
-
-  function angleFromEvent(evt){
-    var rect = stage.getBoundingClientRect();
-    var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
-    var x = (evt.touches ? evt.touches[0].clientX : evt.clientX) - cx;
-    var y = (evt.touches ? evt.touches[0].clientY : evt.clientY) - cy;
-    return Math.atan2(x, -y) * 180 / Math.PI;
-  }
-
-  function dragStart(evt){
-    if(window.DeviceOrientationEvent && enableBtn.style.display === 'none') return; // sensor active, skip manual drag
-    dragging = true;
-    isDragging = true;
-    lastAngle = angleFromEvent(evt);
-  }
-  function dragMove(evt){
-    if(!dragging) return;
-    var a = angleFromEvent(evt);
-    var delta = a - lastAngle;
-    lastAngle = a;
-    dragHeading = ((dragHeading + delta) % 360 + 360) % 360;
-    updateHeading(dragHeading);
-    evt.preventDefault();
-  }
-  function dragEnd(){ dragging = false; isDragging = false; }
-
-  stage.addEventListener('mousedown', dragStart);
-  window.addEventListener('mousemove', dragMove);
-  window.addEventListener('mouseup', dragEnd);
-  stage.addEventListener('touchstart', dragStart, {passive:true});
-  stage.addEventListener('touchmove', dragMove, {passive:false});
-  stage.addEventListener('touchend', dragEnd);
-
-  // ===== TAB SWITCHING =====
-  var tabButtons = document.querySelectorAll('.tab-btn');
-  var panels = document.querySelectorAll('.panel');
-  tabButtons.forEach(function(btn){
-    btn.addEventListener('click', function(){
-      tabButtons.forEach(function(b){ b.classList.remove('active'); });
-      panels.forEach(function(p){ p.classList.remove('active'); });
-      btn.classList.add('active');
-      document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
-    });
-  });
-
-  // ===== SETTINGS MODAL (True North) =====
-  var settingsBtn = document.getElementById('settingsBtn');
-  var settingsModal = document.getElementById('settingsModal');
-  var settingsClose = document.getElementById('settingsClose');
-  var trueNorthToggle = document.getElementById('trueNorthToggle');
-  var reverseNeedleToggle = document.getElementById('reverseNeedleToggle');
-  var declinationField = document.getElementById('declinationField');
-  var declinationInput = document.getElementById('declinationInput');
-  var magneticNote = document.getElementById('magneticNote');
-
-  reverseNeedleToggle.addEventListener('change', function(){
-    needleInverted = reverseNeedleToggle.checked;
-  });
-
-  settingsBtn.addEventListener('click', function(){ settingsModal.classList.add('open'); });
-  settingsClose.addEventListener('click', function(){ settingsModal.classList.remove('open'); });
-  settingsModal.addEventListener('click', function(e){ if(e.target === settingsModal) settingsModal.classList.remove('open'); });
-
-  trueNorthToggle.addEventListener('change', function(){
-    trueNorthEnabled = trueNorthToggle.checked;
-    declinationField.style.display = trueNorthEnabled ? 'block' : 'none';
-    magneticNote.style.display = trueNorthEnabled ? 'none' : 'block';
-    applyCorrection();
-  });
-  declinationInput.addEventListener('input', function(){
-    declination = parseFloat(declinationInput.value) || 0;
-    applyCorrection();
-  });
-
-  // ===== SITTING DIRECTION ADVISOR =====
-  var SIT_ACTIVITIES = [
-    {key:'work',   label:'Work / study desk', best:['E','N'], acceptable:['NE'], avoid:['S'],
-      tip:'Facing East sharpens focus and decision-making. Facing North supports steady, income-related work. Avoid facing South at your desk.'},
-    {key:'meeting', label:'Meetings / negotiations', best:['N','E'], acceptable:['NE'], avoid:['S','SW'],
-      tip:'Facing North or East while negotiating is considered favourable for reaching good outcomes.'},
-    {key:'eating', label:'Eating meals', best:['E'], acceptable:['W','N'], avoid:['S'],
-      tip:'Facing East while eating is ideal. West and North are acceptable. South is traditionally discouraged at mealtimes.'},
-    {key:'boss', label:'Business owner / head-of-household seat', best:['N','E'], acceptable:['NE'], avoid:['S','SW'],
-      tip:'Sit facing North or East with a solid wall behind you (ideally to the South or West) for authority and stability.'}
-  ];
-  var sitActivitySelect = document.getElementById('sitActivity');
-  SIT_ACTIVITIES.forEach(function(a){
-    var opt = document.createElement('option');
-    opt.value = a.key; opt.textContent = a.label;
-    sitActivitySelect.appendChild(opt);
-  });
-
-  function rateFromLists(dir, best, acceptable, avoid){
-    if(best.indexOf(dir) !== -1) return 'Excellent';
-    if(avoid.indexOf(dir) !== -1) return 'Avoid';
-    if(acceptable && acceptable.indexOf(dir) !== -1) return 'Acceptable';
-    return 'Neutral';
-  }
-
-  document.getElementById('sitCapture').addEventListener('click', function(){
-    var activity = SIT_ACTIVITIES.filter(function(a){ return a.key === sitActivitySelect.value; })[0] || SIT_ACTIVITIES[0];
-    var dir = eightFromHeading(currentHeading);
-    var rating = rateFromLists(dir, activity.best, activity.acceptable, activity.avoid);
-    var card = document.getElementById('sitResult');
-    card.style.display = 'block';
-    card.className = 'result-card rating-' + rating;
-    card.innerHTML = 'Facing ' + dir + ' <span class="rating-tag">' + rating + '</span>' +
-      '<div style="margin-top:6px;">' + activity.tip + '</div>';
-  });
-
-  // ===== SLEEPING DIRECTION ADVISOR =====
-  var SLEEP_RATING = {
-    S:  {rating:'Excellent', note:'Head towards South is considered the most restful position, aligning naturally with the body\u2019s own magnetic field.'},
-    SE: {rating:'Good',      note:'Head towards Southeast is generally comfortable, with only mild restlessness for some sleepers.'},
-    E:  {rating:'Good',      note:'Head towards East favours alertness and is traditionally recommended for students.'},
-    SW: {rating:'Acceptable',note:'Head towards Southwest is stable, though some find it feels heavier than South.'},
-    W:  {rating:'Neutral',   note:'Head towards West is acceptable but not ideal — may cause mild restlessness for some.'},
-    NW: {rating:'Caution',   note:'Head towards Northwest can disturb sleep quality and lead to a restless, unsettled feeling.'},
-    N:  {rating:'Avoid',     note:'Head towards North is traditionally avoided — believed to conflict with the body\u2019s own magnetic field and disturb sleep.'},
-    NE: {rating:'Avoid',     note:'Northeast is considered too energetically active a zone for sleep; better reserved for prayer or meditation.'}
-  };
-  document.getElementById('sleepCapture').addEventListener('click', function(){
-    var dir = eightFromHeading(currentHeading);
-    var info = SLEEP_RATING[dir];
-    var card = document.getElementById('sleepResult');
-    card.style.display = 'block';
-    card.className = 'result-card rating-' + info.rating;
-    card.innerHTML = 'Head direction: ' + dir + ' <span class="rating-tag">' + info.rating + '</span>' +
-      '<div style="margin-top:6px;">' + info.note + '</div>';
-  });
-
-  // ===== MAIN DOOR CHECKER =====
-  var DOOR_RATING = {
-    N:{rating:'Excellent',note:'A North-facing entrance is linked to Kubera, the lord of wealth — considered highly favourable.'},
-    NNE:{rating:'Excellent',note:'Close to the sacred Northeast zone — a favourable entrance direction.'},
-    NE:{rating:'Excellent',note:'The most auspicious entrance direction in Vastu, associated with positive energy and prosperity.'},
-    ENE:{rating:'Good',note:'A good entrance direction, benefiting from morning sunlight.'},
-    E:{rating:'Excellent',note:'An East-facing entrance welcomes the rising sun and is considered highly auspicious.'},
-    ESE:{rating:'Good',note:'A workable entrance direction, though slightly transitional between sun and fire zones.'},
-    SE:{rating:'Caution',note:'The Southeast is ruled by fire (Agni) — traditionally considered less ideal for a main entrance.'},
-    SSE:{rating:'Caution',note:'Similar to Southeast — a fire-influenced zone, less favoured for the main door.'},
-    S:{rating:'Avoid',note:'A South-facing main entrance is traditionally considered weak; if unavoidable, Vastu remedies are often recommended.'},
-    SSW:{rating:'Avoid',note:'Close to the heavy Southwest zone — generally avoided for a main entrance.'},
-    SW:{rating:'Avoid',note:'The Southwest is meant to anchor the whole house — an entrance here is traditionally discouraged.'},
-    WSW:{rating:'Caution',note:'A workable but not ideal entrance direction.'},
-    W:{rating:'Good',note:'A West-facing entrance is generally considered good, linked to steady long-term gains.'},
-    WNW:{rating:'Good',note:'A favourable secondary-entrance direction, linked to the air element.'},
-    NW:{rating:'Good',note:'The Northwest (air element) is a common and acceptable direction for entrances, especially secondary ones.'},
-    NNW:{rating:'Good',note:'Close to the Northwest air zone — an acceptable entrance direction.'}
-  };
-  document.getElementById('doorCapture').addEventListener('click', function(){
-    var idx = zoneIndexFromHeading(currentHeading);
-    var z = ZONES[idx];
-    var info = DOOR_RATING[z.ab];
-    var card = document.getElementById('doorResult');
-    card.style.display = 'block';
-    card.className = 'result-card rating-' + info.rating;
-    card.innerHTML = 'Door faces ' + z.n + ' (' + z.ab + ') <span class="rating-tag">' + info.rating + '</span>' +
-      '<div style="margin-top:6px;">' + info.note + '</div>';
-  });
-
-  // ===== ROOM MAPPING MODE =====
-  var roomReadings = [];
-  var roomList = document.getElementById('roomList');
-  var roomEmptyHint = document.getElementById('roomEmptyHint');
-  var roomLabelInput = document.getElementById('roomLabel');
-  var wallCounter = 0;
-
-  function renderRoomList(){
-    roomList.innerHTML = '';
-    roomEmptyHint.style.display = roomReadings.length ? 'none' : 'block';
-    roomReadings.forEach(function(r, i){
-      var row = document.createElement('div');
-      row.className = 'room-row';
-      row.innerHTML =
-        '<div class="info"><b>' + r.label + '</b><span>' + r.zoneName + ' (' + r.ab + ', ' + Math.round(r.heading) + '\u00B0) — ' + r.use + '</span></div>' +
-        '<button class="del-btn" aria-label="Remove">✕</button>';
-      row.querySelector('.del-btn').addEventListener('click', function(){
-        roomReadings.splice(i, 1);
-        renderRoomList();
-      });
-      roomList.appendChild(row);
-    });
-  }
-
-  document.getElementById('roomCapture').addEventListener('click', function(){
-    wallCounter++;
-    var idx = zoneIndexFromHeading(currentHeading);
-    var z = ZONES[idx];
-    var label = roomLabelInput.value.trim() || ('Wall ' + wallCounter);
-    roomReadings.push({label:label, heading:currentHeading, ab:z.ab, zoneName:z.n, use:z.use});
-    roomLabelInput.value = '';
-    renderRoomList();
-  });
-
-  renderRoomList();
-
-  updateHeading(0);
-
-  if(!(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') && 'DeviceOrientationEvent' in window){
-    // Android/other browsers usually don't need explicit permission
-    statusMsg.textContent = 'Tap "Enable Compass" to start, or drag the dial to explore directions manually.';
-  }
-
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', function(){
-      navigator.serviceWorker.register('service-worker.js').catch(function(){});
-    });
-  }
-})();
-</script>
+<script src="js/data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/map.js"></script>
+<script src="js/filters.js"></script>
+<script src="js/cards.js"></script>
+<script src="js/modal.js"></script>
+<script src="js/timeline.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/education.js"></script>
+<script src="js/memorial.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
