@@ -74,6 +74,23 @@ main{flex:1; width:100%; max-width:640px; margin:0 auto; padding:16px 16px 8px;}
   background:var(--card); font-size:14px; color:var(--sub);
 }
 
+.cache-banner{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background:var(--card); border:1px dashed var(--line); border-radius:10px;
+  padding:8px 12px; font-size:12px; color:var(--sub); margin-bottom:12px;
+}
+.cache-banner button{
+  border:1px solid var(--line); background:transparent; color:var(--accent);
+  border-radius:7px; padding:4px 8px; font-size:12px; cursor:pointer;
+}
+
+.alerts{display:flex; flex-direction:column; gap:6px; margin-bottom:14px;}
+.alert{
+  background:var(--card); border:1px solid var(--warn); color:var(--warn);
+  border-radius:10px; padding:9px 12px; font-size:13px; font-weight:500;
+  display:flex; gap:8px; align-items:center;
+}
+
 .hero{
   background:var(--card); border:1px solid var(--line); border-radius:16px;
   padding:20px; text-align:center; box-shadow:var(--shadow); margin-bottom:16px;
@@ -95,6 +112,9 @@ main{flex:1; width:100%; max-width:640px; margin:0 auto; padding:16px 16px 8px;}
 .card .lbl{font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--sub); font-family:'Oswald',sans-serif;}
 .card .val{font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:700; margin-top:4px;}
 .card .val small{font-size:13px; color:var(--sub); font-weight:400;}
+.card .sub2{font-size:11px; color:var(--sub); margin-top:3px;}
+.trend{font-size:15px; margin-left:4px;}
+.trend.up{color:var(--warn);} .trend.down{color:var(--good);} .trend.flat{color:var(--sub);}
 
 .forecast{
   background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px;
@@ -150,6 +170,7 @@ footer .sig{font-family:'Oswald',sans-serif; letter-spacing:.03em;}
     <button id="goBtn">Go</button>
   </div>
   <ul id="suggest"></ul>
+  <div id="cacheBanner"></div>
 
   <div id="content">
     <div class="msg">Search a location or tap 📍 to load conditions for your position.</div>
@@ -185,6 +206,41 @@ const WMO = {
   95:['⛈️','Thunderstorm'],96:['⛈️','Thunder + hail'],99:['⛈️','Severe thunder + hail']
 };
 const wmo = c => WMO[c] || ['❔','Unknown'];
+const isStormCode = c => [65,66,67,75,82,86,95,96,99].includes(c);
+
+// ---------- Moon phase (computed locally, no API) ----------
+function moonInfo(date, sunrise, sunset){
+  const synodic = 29.530588853;
+  const knownNewMoon = Date.UTC(2000,0,6,18,14) / 86400000;
+  let age = (date.getTime()/86400000 - knownNewMoon) % synodic;
+  if(age < 0) age += synodic;
+  const illum = Math.round((1 - Math.cos(2*Math.PI*age/synodic)) / 2 * 100);
+  const phases = [
+    [1.84566,'New Moon','🌑'],[5.53699,'Waxing Crescent','🌒'],[9.22831,'First Quarter','🌓'],
+    [12.91963,'Waxing Gibbous','🌔'],[16.61096,'Full Moon','🌕'],[20.30228,'Waning Gibbous','🌖'],
+    [23.99361,'Last Quarter','🌗'],[27.68493,'Waning Crescent','🌘'],[Infinity,'New Moon','🌑']
+  ];
+  const [, name, icon] = phases.find(p => age < p[0]);
+  const offsetMin = (age/synodic) * 24 * 60;
+  const rise = new Date(sunrise.getTime() + offsetMin*60000);
+  const set  = new Date(sunset.getTime()  + offsetMin*60000);
+  const fmt = d => d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  return { name, icon, illum, rise: fmt(rise), set: fmt(set) };
+}
+
+// ---------- Local caching (offline support) ----------
+function saveCache(lat, lon, label, wx, aq){
+  try{ localStorage.setItem('sw-cache', JSON.stringify({lat,lon,label,wx,aq,ts:Date.now()})); }catch(e){}
+}
+function loadCache(){
+  try{ return JSON.parse(localStorage.getItem('sw-cache')); }catch(e){ return null; }
+}
+function timeAgo(ts){
+  const min = Math.round((Date.now()-ts)/60000);
+  if(min < 1) return 'just now';
+  if(min < 60) return min+' min ago';
+  return Math.round(min/60)+' hr ago';
+}
 
 // ---------- Geocoding ----------
 const qInput = document.getElementById('q');
@@ -227,55 +283,101 @@ document.getElementById('locBtn').addEventListener('click', ()=>{
 
 // ---------- Main data load ----------
 const content = document.getElementById('content');
+const cacheBanner = document.getElementById('cacheBanner');
 
 async function loadConditions(lat, lon, label){
   content.innerHTML = '<div class="msg">Reading instruments…</div>';
+  cacheBanner.innerHTML = '';
   try{
     const [wx, aq] = await Promise.all([
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,surface_pressure,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`).then(r=>r.json()),
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,surface_pressure,uv_index&hourly=precipitation_probability,precipitation,surface_pressure,freezing_level_height&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&past_hours=3&timezone=auto`).then(r=>r.json()),
       fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi`).then(r=>r.json()).catch(()=>null)
     ]);
-
-    const c = wx.current;
-    const [icon, desc] = wmo(c.weather_code);
-    const sunrise = new Date(wx.daily.sunrise[0]).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-    const sunset  = new Date(wx.daily.sunset[0]).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-    const aqi = aq && aq.current ? aq.current.us_aqi : null;
-
-    const days = wx.daily.time.map((t,i)=>{
-      const [ic] = wmo(wx.daily.weather_code[i]);
-      const dName = new Date(t).toLocaleDateString([], {weekday:'short'});
-      return `<div class="day"><div class="d">${dName}</div><div class="ic">${ic}</div>
-        <div class="hi">${Math.round(wx.daily.temperature_2m_max[i])}°</div>
-        <div class="lo">${Math.round(wx.daily.temperature_2m_min[i])}°</div></div>`;
-    }).join('');
-
-    content.innerHTML = `
-      <div class="hero">
-        <div class="place">${label}</div>
-        <div class="alt">${Math.round(wx.elevation)}<span> m elev</span></div>
-        <div class="coords">${lat.toFixed(4)}°, ${lon.toFixed(4)}° &nbsp;·&nbsp; ${icon} ${desc}</div>
-        <div class="updated">Updated ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
-      </div>
-      <div class="grid">
-        <div class="card"><div class="lbl">Temp</div><div class="val">${Math.round(c.temperature_2m)}<small>°C</small></div></div>
-        <div class="card"><div class="lbl">Feels like</div><div class="val">${Math.round(c.apparent_temperature)}<small>°C</small></div></div>
-        <div class="card"><div class="lbl">Wind</div><div class="val">${Math.round(c.wind_speed_10m)}<small>km/h</small></div></div>
-        <div class="card"><div class="lbl">Gusts</div><div class="val">${Math.round(c.wind_gusts_10m)}<small>km/h</small></div></div>
-        <div class="card"><div class="lbl">Humidity</div><div class="val">${c.relative_humidity_2m}<small>%</small></div></div>
-        <div class="card"><div class="lbl">Pressure</div><div class="val">${Math.round(c.surface_pressure)}<small>hPa</small></div></div>
-        <div class="card"><div class="lbl">UV Index</div><div class="val">${c.uv_index.toFixed(1)}</div></div>
-        <div class="card"><div class="lbl">Air Quality</div><div class="val">${aqi !== null ? aqi : '—'}<small>${aqi !== null ? 'AQI':''}</small></div></div>
-        <div class="card"><div class="lbl">Sunrise / Sunset</div><div class="val" style="font-size:16px">${sunrise}<br>${sunset}</div></div>
-      </div>
-      <div class="forecast">
-        <h2>7-Day Outlook</h2>
-        <div class="days">${days}</div>
-      </div>
-    `;
+    if(wx.error) throw new Error(wx.reason || 'bad request');
+    saveCache(lat, lon, label, wx, aq);
+    render(label, wx, aq, false);
   }catch(e){
-    content.innerHTML = '<div class="msg">Couldn\'t fetch conditions. Check your connection and try again.</div>';
+    const c = loadCache();
+    if(c){
+      render(c.label, c.wx, c.aq, true, c.ts);
+    }else{
+      content.innerHTML = '<div class="msg">Couldn\'t fetch conditions and no saved reading is available. Check your connection and try again.</div>';
+    }
   }
+}
+
+function render(label, wx, aq, fromCache, ts){
+  const c = wx.current;
+  const [icon, desc] = wmo(c.weather_code);
+  const sunriseD = new Date(wx.daily.sunrise[0]);
+  const sunsetD  = new Date(wx.daily.sunset[0]);
+  const sunrise = sunriseD.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const sunset  = sunsetD.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const aqi = aq && aq.current ? aq.current.us_aqi : null;
+  const moon = moonInfo(new Date(), sunriseD, sunsetD);
+
+  // locate current hour index in hourly arrays
+  let idx = wx.hourly.time.indexOf(c.time);
+  if(idx === -1) idx = 3; // fallback: past_hours=3 means index 3 is "now"
+  const pastIdx = Math.max(0, idx - 3);
+  const pTrendDelta = c.surface_pressure - wx.hourly.surface_pressure[pastIdx];
+  const trendClass = pTrendDelta > 1 ? 'up' : pTrendDelta < -1 ? 'down' : 'flat';
+  const trendArrow = pTrendDelta > 1 ? '↑' : pTrendDelta < -1 ? '↓' : '→';
+
+  const precipChance = wx.hourly.precipitation_probability[idx] ?? 0;
+  let precip6h = 0;
+  for(let i=idx; i<Math.min(idx+6, wx.hourly.precipitation.length); i++) precip6h += wx.hourly.precipitation[i];
+  const freezeLvl = Math.round(wx.hourly.freezing_level_height[idx]);
+  const freezeDelta = freezeLvl - wx.elevation;
+
+  // ---- severe condition alerts ----
+  const alerts = [];
+  if(isStormCode(c.weather_code) && c.weather_code >= 95) alerts.push('⚡ Thunderstorm risk in the forecast');
+  if(c.wind_gusts_10m >= 60) alerts.push(`💨 Dangerous gusts up to ${Math.round(c.wind_gusts_10m)} km/h`);
+  if(c.uv_index >= 8) alerts.push('🔆 Extreme UV — cover up and use eye protection');
+  if(Math.abs(freezeDelta) <= 300) alerts.push('🥶 Freezing line is close to your elevation — expect ice underfoot');
+  if(c.apparent_temperature <= -15) alerts.push(`🥶 Extreme cold, feels like ${Math.round(c.apparent_temperature)}°C — frostbite risk`);
+  if(precipChance >= 70) alerts.push(`🌧️ High chance of precipitation (${precipChance}%) in the next hour`);
+
+  cacheBanner.innerHTML = fromCache
+    ? `<div class="cache-banner"><span>📴 Showing last saved reading from ${timeAgo(ts)}. Live data unavailable.</span></div>`
+    : '';
+
+  const days = wx.daily.time.map((t,i)=>{
+    const [ic] = wmo(wx.daily.weather_code[i]);
+    const dName = new Date(t).toLocaleDateString([], {weekday:'short'});
+    return `<div class="day"><div class="d">${dName}</div><div class="ic">${ic}</div>
+      <div class="hi">${Math.round(wx.daily.temperature_2m_max[i])}°</div>
+      <div class="lo">${Math.round(wx.daily.temperature_2m_min[i])}°</div></div>`;
+  }).join('');
+
+  content.innerHTML = `
+    ${alerts.length ? `<div class="alerts">${alerts.map(a=>`<div class="alert">${a}</div>`).join('')}</div>` : ''}
+    <div class="hero">
+      <div class="place">${label}</div>
+      <div class="alt">${Math.round(wx.elevation)}<span> m elev</span></div>
+      <div class="coords">${wx.latitude.toFixed(4)}°, ${wx.longitude.toFixed(4)}° &nbsp;·&nbsp; ${icon} ${desc}</div>
+      <div class="updated">Updated ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="lbl">Temp</div><div class="val">${Math.round(c.temperature_2m)}<small>°C</small></div></div>
+      <div class="card"><div class="lbl">Feels like</div><div class="val">${Math.round(c.apparent_temperature)}<small>°C</small></div></div>
+      <div class="card"><div class="lbl">Wind</div><div class="val">${Math.round(c.wind_speed_10m)}<small>km/h</small></div></div>
+      <div class="card"><div class="lbl">Gusts</div><div class="val">${Math.round(c.wind_gusts_10m)}<small>km/h</small></div></div>
+      <div class="card"><div class="lbl">Humidity</div><div class="val">${c.relative_humidity_2m}<small>%</small></div></div>
+      <div class="card"><div class="lbl">Pressure</div><div class="val">${Math.round(c.surface_pressure)}<small>hPa</small><span class="trend ${trendClass}">${trendArrow}</span></div><div class="sub2">3h trend</div></div>
+      <div class="card"><div class="lbl">Freezing Level</div><div class="val">${freezeLvl}<small>m</small></div><div class="sub2">${freezeDelta>=0?'+':''}${Math.round(freezeDelta)}m vs your elevation</div></div>
+      <div class="card"><div class="lbl">Precipitation</div><div class="val">${precipChance}<small>% now</small></div><div class="sub2">${precip6h.toFixed(1)}mm next 6h</div></div>
+      <div class="card"><div class="lbl">UV Index</div><div class="val">${c.uv_index.toFixed(1)}</div></div>
+      <div class="card"><div class="lbl">Air Quality</div><div class="val">${aqi !== null ? aqi : '—'}<small>${aqi !== null ? 'AQI':''}</small></div></div>
+      <div class="card"><div class="lbl">Sunrise / Sunset</div><div class="val" style="font-size:16px">${sunrise}<br>${sunset}</div></div>
+      <div class="card"><div class="lbl">Moon Phase</div><div class="val" style="font-size:16px">${moon.icon} ${moon.name}</div><div class="sub2">${moon.illum}% lit · rise ${moon.rise} · set ${moon.set} (approx)</div></div>
+    </div>
+    <div class="forecast">
+      <h2>7-Day Outlook</h2>
+      <div class="days">${days}</div>
+    </div>
+  `;
 }
 </script>
 </body>
