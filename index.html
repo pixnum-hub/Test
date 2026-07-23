@@ -1,231 +1,319 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>FLIGHTDECK — Live Air Traffic</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>VaaniLens — Voice & Image Translator</title>
 <style>
 :root{
-  --bg:#0A0E15; --panel:#121826; --panel2:#0D1220; --line:#232C3D;
-  --text:#E7ECF3; --sub:#8B97AC; --accent:#FFA630; --accent2:#5B8DEF;
-  --climb:#4ADE80; --descent:#F87171; --level:#5B8DEF; --ground:#6B7686;
-  --radius:10px; --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
-  --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --bg:#f4f5f7; --surface:#ffffff; --text:#1a1a1e; --sub:#5c5f66;
+  --accent:#5b5bf0; --accent2:#00b894; --border:#dfe1e6; --danger:#e0453c;
 }
-[data-theme="light"]{
-  --bg:#F3F5F9; --panel:#FFFFFF; --panel2:#EDF1F7; --line:#DDE3ED;
-  --text:#141B29; --sub:#5B6577; --accent:#C4620A; --accent2:#2563EB;
-  --climb:#16A34A; --descent:#DC2626; --level:#2563EB; --ground:#8A93A3;
+[data-theme="dark"]{
+  --bg:#14151a; --surface:#1e2027; --text:#eceef1; --sub:#9aa0ab;
+  --accent:#7c7cff; --accent2:#2ecf9e; --border:#2c2f38;
 }
 [data-theme="oled"]{
-  --bg:#000000; --panel:#000000; --panel2:#0A0A0A; --line:#1B1B1B;
-  --text:#F2F2F2; --sub:#8A8A8A; --accent:#FFB03A; --accent2:#63A4FF;
-  --climb:#42E28C; --descent:#FF6B6B; --level:#63A4FF; --ground:#5C5C5C;
+  --bg:#000000; --surface:#0a0a0a; --text:#f0f0f0; --sub:#8a8a8a;
+  --accent:#8080ff; --accent2:#2ecf9e; --border:#1c1c1c;
 }
 [data-theme="hc"]{
-  --bg:#000000; --panel:#000000; --panel2:#000000; --line:#FFFFFF;
-  --text:#FFFFFF; --sub:#FFFFFF; --accent:#FFFF00; --accent2:#00FFFF;
-  --climb:#00FF66; --descent:#FF3333; --level:#00FFFF; --ground:#FFFFFF;
+  --bg:#000000; --surface:#000000; --text:#ffffff; --sub:#ffffff;
+  --accent:#ffff00; --accent2:#00ffff; --border:#ffffff;
 }
-*{box-sizing:border-box;}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);
-  -webkit-tap-highlight-color:transparent;}
-body{min-height:100vh;display:flex;flex-direction:column;}
-a{color:inherit;}
-button,select{font-family:inherit;}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-.app{display:flex;flex-direction:column;min-height:100vh;max-width:720px;margin:0 auto;width:100%;}
-
-header{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--line);}
-.brand{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-weight:700;letter-spacing:2px;font-size:15px;}
-.brand .dot{width:8px;height:8px;border-radius:50%;background:var(--climb);box-shadow:0 0 8px var(--climb);
-  animation:blink 1.6s ease-in-out infinite;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.25;}}
-.clock{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--sub);letter-spacing:1px;}
-.theme-btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);width:34px;height:34px;
-  border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;}
-
-.sweep{position:relative;height:2px;background:var(--line);overflow:hidden;}
-.sweep::after{content:'';position:absolute;top:0;left:-30%;width:30%;height:100%;
-  background:linear-gradient(90deg,transparent,var(--accent),transparent);
-  animation:sweep 2.4s linear infinite;}
-@keyframes sweep{0%{left:-30%;}100%{left:100%;}}
-@media (prefers-reduced-motion:reduce){.sweep::after,.brand .dot{animation:none;}}
-
-.controls{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;align-items:center;}
-.controls button, .controls select{background:var(--panel2);border:1px solid var(--line);color:var(--text);
-  padding:9px 12px;border-radius:8px;font-size:13px;cursor:pointer;}
-.controls button:active{transform:translateY(1px);}
-#status{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--sub);text-align:right;}
-
-main.strips{flex:1;padding:0 12px 12px;overflow-y:auto;}
-.empty{text-align:center;color:var(--sub);padding:40px 20px;font-size:14px;}
-.strip{display:grid;grid-template-columns:5px 1fr auto;gap:0;background:var(--panel);
-  border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;
-  animation:fadein .35s ease both;}
-@keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
-.strip .tab{background:var(--phase-color,var(--level));}
-.strip .main{padding:10px 12px;min-width:0;}
-.strip .call{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:1px;}
-.strip .country{font-size:11px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.strip .data{display:flex;flex-direction:column;justify-content:center;gap:2px;padding:10px 12px;
-  border-left:1px solid var(--line);font-family:var(--mono);font-size:11px;text-align:right;min-width:96px;}
-.strip .data b{font-size:13px;color:var(--text);font-weight:700;}
-.strip .data span{color:var(--sub);}
-
-footer{border-top:1px solid var(--line);padding:16px 12px 20px;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;text-align:center;gap:6px;font-size:12px;color:var(--sub);}
-footer .themes{display:flex;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:1px;}
-footer .themes span{opacity:.55;}
-
-@media (max-width:420px){
-  .brand span{font-size:13px;}
-  .strip .data{min-width:82px;font-size:10px;}
-  .strip .call{font-size:14px;}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--bg); color:var(--text); font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  min-height:100vh; display:flex; flex-direction:column; transition:background .25s,color .25s;
 }
+header{
+  padding:16px; display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg); z-index:5;
+}
+header h1{font-size:1.15rem; margin:0; letter-spacing:.3px}
+header h1 span{color:var(--accent)}
+#themeBtn{
+  background:var(--surface); border:1px solid var(--border); color:var(--text);
+  padding:8px 12px; border-radius:10px; font-size:.85rem; cursor:pointer;
+}
+main{flex:1; width:100%; max-width:640px; margin:0 auto; padding:14px 14px 8px}
+.tabs{display:flex; gap:8px; margin-bottom:14px}
+.tabs button{
+  flex:1; padding:11px; border-radius:12px; border:1px solid var(--border);
+  background:var(--surface); color:var(--sub); font-size:.92rem; font-weight:600; cursor:pointer;
+}
+.tabs button.active{background:var(--accent); color:#fff; border-color:var(--accent)}
+.panel{display:none}
+.panel.active{display:block}
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:16px;
+  padding:16px; margin-bottom:14px;
+}
+.row{display:flex; gap:10px; align-items:center}
+select{
+  flex:1; padding:10px; border-radius:10px; border:1px solid var(--border);
+  background:var(--bg); color:var(--text); font-size:.88rem;
+}
+.swap{
+  background:var(--surface); border:1px solid var(--border); color:var(--accent);
+  width:40px; height:40px; border-radius:50%; font-size:1.1rem; cursor:pointer; flex-shrink:0;
+}
+.big-btn{
+  display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
+  padding:16px; margin-top:14px; border:none; border-radius:14px; font-size:1rem; font-weight:700;
+  background:var(--accent); color:#fff; cursor:pointer;
+}
+.big-btn.listening{background:var(--danger); animation:pulse 1.1s infinite}
+@keyframes pulse{0%{opacity:1}50%{opacity:.6}100%{opacity:1}}
+.big-btn:disabled{opacity:.55; cursor:not-allowed}
+.mic-icon{font-size:1.2rem}
+.result-box{
+  margin-top:12px; padding:12px; border-radius:12px; background:var(--bg);
+  border:1px solid var(--border); min-height:48px; font-size:.98rem; line-height:1.45; white-space:pre-wrap;
+}
+.result-label{font-size:.72rem; text-transform:uppercase; letter-spacing:.6px; color:var(--sub); margin-bottom:6px; display:flex; justify-content:space-between; align-items:center}
+.icon-btn{background:none; border:none; color:var(--accent); cursor:pointer; font-size:1rem}
+#fileInput{display:none}
+.upload-zone{
+  border:2px dashed var(--border); border-radius:14px; padding:26px 14px; text-align:center;
+  color:var(--sub); cursor:pointer; font-size:.9rem;
+}
+.upload-zone img{max-width:100%; max-height:220px; border-radius:10px; margin-top:10px}
+.status{font-size:.8rem; color:var(--sub); text-align:center; margin-top:8px; min-height:16px}
+footer{
+  text-align:center; padding:16px 10px 22px; font-size:.75rem; color:var(--sub);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+}
+@media(min-width:640px){ main{padding-top:22px} }
 </style>
 </head>
-<body>
-<div class="app">
-  <header>
-    <div class="brand"><span class="dot"></span> ✈ <span>FLIGHTDECK</span></div>
-    <div class="clock" id="clock">--:--:-- UTC</div>
-    <button class="theme-btn" id="themeBtn" aria-label="Change theme" title="Change theme">◐</button>
-  </header>
-  <div class="sweep"></div>
-  <div class="controls">
-    <button id="nearBtn">📍 Near me</button>
-    <select id="regionSel" aria-label="Region">
-      <option value="">Region…</option>
-    </select>
-    <span id="status">Loading…</span>
+<body data-theme="dark">
+<header>
+  <h1>Vaani<span>Lens</span></h1>
+  <button id="themeBtn" onclick="cycleTheme()">🌙 Dark</button>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="active" id="tabVoiceBtn" onclick="showTab('voice')">🎙️ Voice</button>
+    <button id="tabImageBtn" onclick="showTab('image')">🖼️ Image</button>
   </div>
-  <main class="strips" id="strips"><div class="empty">Choose a region or use “Near me” to load live flights.</div></main>
-  <footer>
-    <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
-    <div class="themes" id="themeLabel"><span>Data: OpenSky Network (no key)</span></div>
-  </footer>
-</div>
 
+  <!-- VOICE PANEL -->
+  <section id="voicePanel" class="panel active">
+    <div class="card">
+      <div class="row">
+        <select id="srcLangV"></select>
+        <button class="swap" onclick="swapLangs('V')" title="Swap">⇄</button>
+        <select id="tgtLangV"></select>
+      </div>
+      <button class="big-btn" id="micBtn" onclick="toggleListen()">
+        <span class="mic-icon">🎤</span><span id="micLabel">Tap to Speak</span>
+      </button>
+      <div class="status" id="voiceStatus"></div>
+      <div class="result-box" id="heardBox">
+        <div class="result-label">You said</div>
+        <div id="heardText"></div>
+      </div>
+      <div class="result-box" id="voiceOutBox">
+        <div class="result-label">Translation <button class="icon-btn" onclick="speakOut()">🔊</button></div>
+        <div id="voiceOutText"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IMAGE PANEL -->
+  <section id="imagePanel" class="panel">
+    <div class="card">
+      <div class="row">
+        <select id="srcLangI"></select>
+        <button class="swap" onclick="swapLangs('I')" title="Swap">⇄</button>
+        <select id="tgtLangI"></select>
+      </div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        📷 Tap to choose or capture a photo
+        <img id="previewImg" style="display:none">
+      </div>
+      <input type="file" id="fileInput" accept="image/*" capture="environment">
+      <button class="big-btn" id="ocrBtn" onclick="runOCR()" disabled>Extract & Translate</button>
+      <div class="status" id="imgStatus"></div>
+      <div class="result-box" id="ocrBox">
+        <div class="result-label">Detected Text</div>
+        <div id="ocrText"></div>
+      </div>
+      <div class="result-box" id="imgOutBox">
+        <div class="result-label">Translation <button class="icon-btn" onclick="speakImgOut()">🔊</button></div>
+        <div id="imgOutText"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div>© <span id="year"></span> Manik Roy. All Rights Reserved.</div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
 <script>
-const REGIONS = {
-  "North America": [15,-170,72,-50],
-  "Europe": [35,-25,60,40],
-  "East Asia": [18,100,46,146],
-  "South Asia": [5,65,35,92],
-  "Middle East": [12,34,42,63],
-  "Australia": [-44,112,-10,154],
-  "South America": [-56,-82,13,-34],
-  "Global (busy)": [24,-10,60,40]
-};
-const sel = document.getElementById('regionSel');
-Object.keys(REGIONS).forEach(k=>{
-  const o=document.createElement('option'); o.value=k; o.textContent=k; sel.appendChild(o);
-});
-
 document.getElementById('year').textContent = new Date().getFullYear();
 
-// ---- theme cycle ----
-const THEMES = ['dark','light','oled','hc'];
-const NAMES = {dark:'Dark',light:'Light',oled:'OLED Black',hc:'High Contrast'};
-let themeIdx = 0;
-const root = document.documentElement;
-const themeLabel = document.getElementById('themeLabel');
+// ---------- Theme ----------
+const themes = [
+  {id:'dark', label:'🌙 Dark'}, {id:'light', label:'☀️ Light'},
+  {id:'oled', label:'⚫ OLED'}, {id:'hc', label:'◐ HC'}
+];
+let themeIdx = parseInt(localStorage.getItem('vl_theme') || '0');
 function applyTheme(){
-  root.setAttribute('data-theme', THEMES[themeIdx]);
-  themeLabel.querySelector('span').textContent = 'Theme: ' + NAMES[THEMES[themeIdx]];
+  const t = themes[themeIdx];
+  document.body.setAttribute('data-theme', t.id === 'light' ? 'light' : t.id);
+  if(t.id==='light') document.body.removeAttribute('data-theme');
+  document.getElementById('themeBtn').textContent = t.label;
+  localStorage.setItem('vl_theme', themeIdx);
 }
-document.getElementById('themeBtn').addEventListener('click', ()=>{
-  themeIdx = (themeIdx+1) % THEMES.length; applyTheme();
-});
+function cycleTheme(){ themeIdx = (themeIdx+1) % themes.length; applyTheme(); }
 applyTheme();
 
-// ---- clock ----
-function tick(){
-  const d = new Date();
-  document.getElementById('clock').textContent =
-    d.toISOString().substr(11,8) + ' UTC';
+// ---------- Languages (code: [name, speechLocale]) ----------
+const LANGS = {
+  en:['English','en-US'], hi:['Hindi','hi-IN'], bn:['Bengali','bn-IN'], es:['Spanish','es-ES'],
+  fr:['French','fr-FR'], de:['German','de-DE'], zh:['Chinese','zh-CN'], ja:['Japanese','ja-JP'],
+  ko:['Korean','ko-KR'], ar:['Arabic','ar-SA'], ru:['Russian','ru-RU'], pt:['Portuguese','pt-PT'],
+  it:['Italian','it-IT'], ta:['Tamil','ta-IN'], te:['Telugu','te-IN'], mr:['Marathi','mr-IN'],
+  gu:['Gujarati','gu-IN'], pa:['Punjabi','pa-IN'], ur:['Urdu','ur-PK'], nl:['Dutch','nl-NL']
+};
+function fillSelects(srcId, tgtId, srcDefault, tgtDefault){
+  const s = document.getElementById(srcId), t = document.getElementById(tgtId);
+  for(const c in LANGS){
+    s.innerHTML += `<option value="${c}" ${c===srcDefault?'selected':''}>${LANGS[c][0]}</option>`;
+    t.innerHTML += `<option value="${c}" ${c===tgtDefault?'selected':''}>${LANGS[c][0]}</option>`;
+  }
 }
-tick(); setInterval(tick,1000);
+fillSelects('srcLangV','tgtLangV','en','hi');
+fillSelects('srcLangI','tgtLangI','en','hi');
 
-// ---- flight data ----
-const statusEl = document.getElementById('status');
-const stripsEl = document.getElementById('strips');
-let refreshTimer = null;
-let lastBox = null;
+function swapLangs(suffix){
+  const s = document.getElementById('srcLang'+suffix), t = document.getElementById('tgtLang'+suffix);
+  const tmp = s.value; s.value = t.value; t.value = tmp;
+}
 
-async function loadBox(box){
-  lastBox = box;
-  const [lamin,lomin,lamax,lomax] = box;
-  statusEl.textContent = 'Loading…';
+// ---------- Tabs ----------
+function showTab(name){
+  document.getElementById('voicePanel').classList.toggle('active', name==='voice');
+  document.getElementById('imagePanel').classList.toggle('active', name==='image');
+  document.getElementById('tabVoiceBtn').classList.toggle('active', name==='voice');
+  document.getElementById('tabImageBtn').classList.toggle('active', name==='image');
+}
+
+// ---------- Translation via MyMemory (free, no key) ----------
+async function translateText(text, src, tgt){
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${src}|${tgt}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data?.responseData?.translatedText || '(translation failed)';
+}
+
+// ---------- Voice: Speech Recognition ----------
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition, listening = false;
+
+if(SR){
+  recognition = new SR();
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+} 
+
+function toggleListen(){
+  if(!SR){ setStatus('voiceStatus','Speech recognition not supported on this browser.'); return; }
+  if(listening){ recognition.stop(); return; }
+  const srcCode = document.getElementById('srcLangV').value;
+  recognition.lang = LANGS[srcCode][1];
+  recognition.start();
+}
+
+if(SR){
+  recognition.onstart = () => {
+    listening = true;
+    document.getElementById('micBtn').classList.add('listening');
+    document.getElementById('micLabel').textContent = 'Listening… tap to stop';
+    setStatus('voiceStatus','');
+  };
+  recognition.onend = () => {
+    listening = false;
+    document.getElementById('micBtn').classList.remove('listening');
+    document.getElementById('micLabel').textContent = 'Tap to Speak';
+  };
+  recognition.onerror = (e) => setStatus('voiceStatus', 'Mic error: '+e.error);
+  recognition.onresult = async (e) => {
+    const heard = e.results[0][0].transcript;
+    document.getElementById('heardText').textContent = heard;
+    const src = document.getElementById('srcLangV').value;
+    const tgt = document.getElementById('tgtLangV').value;
+    setStatus('voiceStatus','Translating…');
+    const out = await translateText(heard, src, tgt);
+    document.getElementById('voiceOutText').textContent = out;
+    setStatus('voiceStatus','Done');
+  };
+}
+
+function speakOut(){
+  const text = document.getElementById('voiceOutText').textContent;
+  if(!text) return;
+  const tgt = document.getElementById('tgtLangV').value;
+  speak(text, LANGS[tgt][1]);
+}
+function speakImgOut(){
+  const text = document.getElementById('imgOutText').textContent;
+  if(!text) return;
+  const tgt = document.getElementById('tgtLangI').value;
+  speak(text, LANGS[tgt][1]);
+}
+function speak(text, locale){
+  if(!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = locale;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+function setStatus(id, msg){ document.getElementById(id).textContent = msg; }
+
+// ---------- Image OCR + Translate ----------
+let selectedFile = null;
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  selectedFile = e.target.files[0];
+  if(!selectedFile) return;
+  const img = document.getElementById('previewImg');
+  img.src = URL.createObjectURL(selectedFile);
+  img.style.display = 'block';
+  document.getElementById('ocrBtn').disabled = false;
+  document.getElementById('ocrText').textContent = '';
+  document.getElementById('imgOutText').textContent = '';
+});
+
+async function runOCR(){
+  if(!selectedFile) return;
+  const btn = document.getElementById('ocrBtn');
+  btn.disabled = true;
+  setStatus('imgStatus','Reading text from image…');
   try{
-    const url = `https://opensky-network.org/api/states/all?lamin=${lamin}&lomin=${lomin}&lamax=${lamax}&lomax=${lomax}`;
-    const res = await fetch(url);
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json();
-    render(data.states || []);
-    statusEl.textContent = (data.states? data.states.length : 0) + ' aircraft · updated ' +
-      new Date().toLocaleTimeString();
+    const result = await Tesseract.recognize(selectedFile, 'eng', {
+      logger: m => { if(m.status==='recognizing text') setStatus('imgStatus', `Reading… ${Math.round(m.progress*100)}%`); }
+    });
+    const text = result.data.text.trim() || '(no text detected)';
+    document.getElementById('ocrText').textContent = text;
+    const src = document.getElementById('srcLangI').value;
+    const tgt = document.getElementById('tgtLangI').value;
+    setStatus('imgStatus','Translating…');
+    const out = await translateText(text, src, tgt);
+    document.getElementById('imgOutText').textContent = out;
+    setStatus('imgStatus','Done');
   }catch(err){
-    statusEl.textContent = 'Unavailable — retrying…';
+    setStatus('imgStatus','Error reading image.');
+  }finally{
+    btn.disabled = false;
   }
-  if(refreshTimer) clearTimeout(refreshTimer);
-  refreshTimer = setTimeout(()=>loadBox(box), 20000);
 }
-
-function phase(vr){
-  if(vr === null) return {c:'level',l:'LVL'};
-  if(vr > 1) return {c:'climb',l:'CLB'};
-  if(vr < -1) return {c:'descent',l:'DSC'};
-  return {c:'level',l:'LVL'};
-}
-
-function render(states){
-  stripsEl.innerHTML = '';
-  const flying = states.filter(s=>!s[8] && s[5]!=null && s[6]!=null)
-    .sort((a,b)=>(b[9]||0)-(a[9]||0)).slice(0,60);
-  if(flying.length === 0){
-    stripsEl.innerHTML = '<div class="empty">No airborne traffic found in this area right now.</div>';
-    return;
-  }
-  const frag = document.createDocumentFragment();
-  flying.forEach(s=>{
-    const [icao24,callsign,country,,,lon,lat,baroAlt,,velocity,track,vrate] = s;
-    const ph = phase(vrate);
-    const altFt = baroAlt!=null ? Math.round(baroAlt*3.28084).toLocaleString() : '—';
-    const spdKt = velocity!=null ? Math.round(velocity*1.94384) : '—';
-    const hdg = track!=null ? Math.round(track)+'°' : '—';
-    const el = document.createElement('div');
-    el.className = 'strip';
-    el.innerHTML = `
-      <div class="tab" style="--phase-color:var(--${ph.c})"></div>
-      <div class="main">
-        <div class="call">${(callsign||icao24||'—').trim()||'—'}</div>
-        <div class="country">${country||'Unknown origin'}</div>
-      </div>
-      <div class="data">
-        <span>ALT · <b>${altFt}</b> ft</span>
-        <span>SPD · <b>${spdKt}</b> kt · ${ph.l}</span>
-        <span>HDG · <b>${hdg}</b></span>
-      </div>`;
-    frag.appendChild(el);
-  });
-  stripsEl.appendChild(frag);
-}
-
-document.getElementById('nearBtn').addEventListener('click', ()=>{
-  if(!navigator.geolocation){ statusEl.textContent = 'Geolocation unsupported'; return; }
-  statusEl.textContent = 'Locating…';
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const {latitude:lat, longitude:lon} = pos.coords;
-    sel.value = '';
-    loadBox([lat-2.5, lon-2.5, lat+2.5, lon+2.5]);
-  }, ()=>{ statusEl.textContent = 'Location denied — pick a region instead.'; });
-});
-
-sel.addEventListener('change', ()=>{
-  if(sel.value && REGIONS[sel.value]) loadBox(REGIONS[sel.value]);
-});
 </script>
 </body>
 </html>
