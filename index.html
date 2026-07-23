@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Vastu Compass</title>
+<title>Dhruva</title>
 <meta name="theme-color" content="#151414">
-<meta name="description" content="A precision Vastu Compass — find true direction and see Vastu Shastra guidance for every zone of your home.">
+<meta name="description" content="Dhruva — a precision Vastu Compass. Find true direction and see Vastu Shastra guidance for every zone of your home.">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>
@@ -461,7 +461,7 @@
 
   <div class="header-bar">
     <div class="app-title">
-      <h1>Vastu Compass</h1>
+      <h1>Dhruva</h1>
       <div class="sub">वास्तु कम्पास · directional guidance</div>
     </div>
     <button class="settings-btn" id="settingsBtn" title="Settings" aria-label="Settings">⚙</button>
@@ -662,7 +662,7 @@
     <button class="calibrate-btn" id="calibrateBtn">Calibrate</button>
   </div>
 
-  <div class="status-msg" id="statusMsg">Vastu Compass uses your device's magnetic sensor. Hold your phone flat, level with the ground, and away from metal objects for an accurate reading.</div>
+  <div class="status-msg" id="statusMsg">Dhruva uses your device's magnetic sensor. Hold your phone flat, level with the ground, and away from metal objects for an accurate reading.</div>
 
   <button class="enable-btn" id="enableBtn">Enable Compass</button>
   <button class="guide-toggle" id="guideToggle">Show all 16 direction meanings</button>
@@ -693,6 +693,7 @@
     <button class="tab-btn active" data-panel="sitting">Sitting</button>
     <button class="tab-btn" data-panel="sleeping">Sleeping</button>
     <button class="tab-btn" data-panel="door">Main Door</button>
+    <button class="tab-btn" data-panel="family">Daily & Family</button>
     <button class="tab-btn" data-panel="roommap">Room Map</button>
   </div>
 
@@ -720,6 +721,14 @@
     <div class="result-card" id="doorResult" style="display:none;"></div>
   </div>
 
+  <!-- DAILY & FAMILY ACTIVITIES ADVISOR -->
+  <div class="panel" id="panel-family">
+    <h2>Daily & Family Activities</h2>
+    <select id="familyActivity"></select>
+    <button class="capture-btn" id="familyCapture">Use Current Facing Direction</button>
+    <div class="result-card" id="familyResult" style="display:none;"></div>
+  </div>
+
   <!-- ROOM MAPPING MODE -->
   <div class="panel" id="panel-roommap">
     <h2>Room Mapping Mode</h2>
@@ -730,7 +739,7 @@
     <div class="empty-hint" id="roomEmptyHint">No readings yet — walk to a wall and tap "Add Wall Reading".</div>
   </div>
 
-  <footer>© Manik Roy 2026 · Vastu Compass</footer>
+  <footer>© Manik Roy 2026 · Dhruva</footer>
 
   <!-- SETTINGS MODAL -->
   <div class="modal-overlay" id="settingsModal">
@@ -1203,6 +1212,44 @@
       var dir = eightFromHeading(avgHeading);
       var rating = rateFromLists(dir, activity.best, activity.acceptable, activity.avoid);
       var card = document.getElementById('sitResult');
+      card.style.display = 'block';
+      card.className = 'result-card rating-' + rating;
+      card.innerHTML = 'Facing ' + dir + ' <span class="rating-tag">' + rating + '</span>' +
+        '<div style="margin-top:6px;">' + activity.tip + '</div>';
+    });
+  });
+
+  // ===== DAILY & FAMILY ACTIVITIES ADVISOR =====
+  var FAMILY_ACTIVITIES = [
+    {key:'cooking', label:'Cooking at the stove', best:['E'], acceptable:['S'], avoid:['N'],
+      tip:'Facing East while cooking invokes Agni (fire) in its most favourable direction. Facing South is an acceptable alternative; facing North is traditionally avoided at the stove.'},
+    {key:'bathing', label:'Bathing / showering', best:['E','N'], acceptable:[], avoid:['S'],
+      tip:'Facing East or North while bathing is considered refreshing and auspicious. Facing South is traditionally discouraged.'},
+    {key:'childstudy', label:"Children's study direction", best:['E','N'], acceptable:[], avoid:['S'],
+      tip:'Facing East supports concentration, and North is linked to steady long-term memory and career growth. Facing South is best avoided for a child\u2019s study desk.'},
+    {key:'cradle', label:'Newborn cradle direction', best:['S','E'], acceptable:[], avoid:['N'],
+      tip:'A cradle placed so the baby\u2019s head points South or East is considered calming and settled. Head towards North is traditionally avoided, similar to the adult sleeping guidance. This is traditional guidance only, not medical advice — always follow your paediatrician\u2019s safe-sleep recommendations first.'},
+    {key:'elderly', label:'Elderly seating / rest', best:['S','W'], acceptable:['SW'], avoid:['N'],
+      tip:'Facing South or West while resting is associated with stability and security for elders. Facing North is traditionally considered less settling.'},
+    {key:'breastfeeding', label:'Breastfeeding / nursing', best:['E','N'], acceptable:[], avoid:['S'],
+      tip:'Facing East or North while nursing is considered calm and nurturing. There\u2019s no need to be strict about this — comfort for you and your baby always comes first.'},
+    {key:'guests', label:'Receiving guests', best:['E','N'], acceptable:[], avoid:['S'],
+      tip:'A host facing East or North while welcoming guests is considered warm and hospitable. Facing South is traditionally seen as less welcoming.'}
+  ];
+  var familyActivitySelect = document.getElementById('familyActivity');
+  FAMILY_ACTIVITIES.forEach(function(a){
+    var opt = document.createElement('option');
+    opt.value = a.key; opt.textContent = a.label;
+    familyActivitySelect.appendChild(opt);
+  });
+
+  document.getElementById('familyCapture').addEventListener('click', function(){
+    var btn = this;
+    captureAveraged(btn, 1200, function(avgHeading){
+      var activity = FAMILY_ACTIVITIES.filter(function(a){ return a.key === familyActivitySelect.value; })[0] || FAMILY_ACTIVITIES[0];
+      var dir = eightFromHeading(avgHeading);
+      var rating = rateFromLists(dir, activity.best, activity.acceptable, activity.avoid);
+      var card = document.getElementById('familyResult');
       card.style.display = 'block';
       card.className = 'result-card rating-' + rating;
       card.innerHTML = 'Facing ' + dir + ' <span class="rating-tag">' + rating + '</span>' +
