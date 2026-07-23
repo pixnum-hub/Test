@@ -694,6 +694,7 @@
     <button class="tab-btn" data-panel="sleeping">Sleeping</button>
     <button class="tab-btn" data-panel="door">Main Door</button>
     <button class="tab-btn" data-panel="family">Daily & Family</button>
+    <button class="tab-btn" data-panel="work">Work & Money</button>
     <button class="tab-btn" data-panel="roommap">Room Map</button>
   </div>
 
@@ -727,6 +728,14 @@
     <select id="familyActivity"></select>
     <button class="capture-btn" id="familyCapture">Use Current Facing Direction</button>
     <div class="result-card" id="familyResult" style="display:none;"></div>
+  </div>
+
+  <!-- WORK & MONEY ADVISOR -->
+  <div class="panel" id="panel-work">
+    <h2>Work & Money</h2>
+    <select id="workActivity"></select>
+    <button class="capture-btn" id="workCapture">Use Current Facing Direction</button>
+    <div class="result-card" id="workResult" style="display:none;"></div>
   </div>
 
   <!-- ROOM MAPPING MODE -->
@@ -1250,6 +1259,40 @@
       var dir = eightFromHeading(avgHeading);
       var rating = rateFromLists(dir, activity.best, activity.acceptable, activity.avoid);
       var card = document.getElementById('familyResult');
+      card.style.display = 'block';
+      card.className = 'result-card rating-' + rating;
+      card.innerHTML = 'Facing ' + dir + ' <span class="rating-tag">' + rating + '</span>' +
+        '<div style="margin-top:6px;">' + activity.tip + '</div>';
+    });
+  });
+
+  // ===== WORK & MONEY ADVISOR =====
+  var WORK_ACTIVITIES = [
+    {key:'safe', label:'Cash box / safe placement', best:['N'], acceptable:['E'], avoid:['S'],
+      tip:'Keep your safe or cash locker in the North zone, ruled by Kubera, the lord of wealth — or have it open facing North. East is an acceptable alternative. South is traditionally avoided, as it\u2019s believed money won\u2019t stay.'},
+    {key:'shopentrance', label:'Shop / business entrance', best:['N','E'], acceptable:['NE'], avoid:['S'],
+      tip:'A shop or business entrance facing North or East is traditionally linked to strong footfall and prosperity; Northeast is also favourable. A South-facing entrance is considered weaker for business — a remedy is often suggested if it can\u2019t be changed.'},
+    {key:'interview', label:'Job interview seating', best:['E','N'], acceptable:['NE'], avoid:['S'],
+      tip:'Facing East or North during an interview is traditionally linked with clear thinking and confidence. Facing South is best avoided if you get a choice of seat.'},
+    {key:'signing', label:'Signing contracts / documents', best:['E','N'], acceptable:[], avoid:['S','W'],
+      tip:'Facing East or North while signing important documents or contracts is traditionally considered favourable for good outcomes. South and West are best avoided for major agreements.'},
+    {key:'newventure', label:'First day: new job / venture', best:['N','E','NE'], acceptable:[], avoid:['S','SW'],
+      tip:'Stepping out facing North, East, or Northeast on your first day is traditionally considered an auspicious start. South and Southwest are best avoided for a big beginning.'}
+  ];
+  var workActivitySelect = document.getElementById('workActivity');
+  WORK_ACTIVITIES.forEach(function(a){
+    var opt = document.createElement('option');
+    opt.value = a.key; opt.textContent = a.label;
+    workActivitySelect.appendChild(opt);
+  });
+
+  document.getElementById('workCapture').addEventListener('click', function(){
+    var btn = this;
+    captureAveraged(btn, 1200, function(avgHeading){
+      var activity = WORK_ACTIVITIES.filter(function(a){ return a.key === workActivitySelect.value; })[0] || WORK_ACTIVITIES[0];
+      var dir = eightFromHeading(avgHeading);
+      var rating = rateFromLists(dir, activity.best, activity.acceptable, activity.avoid);
+      var card = document.getElementById('workResult');
       card.style.display = 'block';
       card.className = 'result-card rating-' + rating;
       card.innerHTML = 'Facing ' + dir + ' <span class="rating-tag">' + rating + '</span>' +
