@@ -1,383 +1,754 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Vitalis — Medical AI Agent</title>
-<meta name="description" content="A free, no-signup medical information assistant.">
+<meta name="theme-color" content="#0E1B2A" id="themeColorMeta">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Summit Watch — Mountaineer's Field Console</title>
 <style>
-  :root[data-theme="light"]{
-    --bg:#F5F8F8; --surface:#FFFFFF; --surface-2:#EEF3F3; --text:#0E2028; --muted:#5A7078;
-    --accent:#0F7A6E; --accent-ink:#FFFFFF; --border:#DCE6E6; --danger:#B3261E;
-    --bubble-user:#0F7A6E; --bubble-user-text:#FFFFFF; --bubble-agent:#FFFFFF; --bubble-agent-text:#0E2028;
-    --shadow:0 1px 3px rgba(14,32,40,.08);
-  }
-  :root[data-theme="dark"]{
-    --bg:#0E161B; --surface:#152029; --surface-2:#1C2933; --text:#E8F0F1; --muted:#8FA7AD;
-    --accent:#2FD9C4; --accent-ink:#03211D; --border:#26363F; --danger:#FF6B60;
-    --bubble-user:#2FD9C4; --bubble-user-text:#03211D; --bubble-agent:#1C2933; --bubble-agent-text:#E8F0F1;
-    --shadow:0 1px 3px rgba(0,0,0,.4);
-  }
-  :root[data-theme="oled"]{
-    --bg:#000000; --surface:#000000; --surface-2:#0A0A0A; --text:#F2F2F2; --muted:#8A8A8A;
-    --accent:#2FD9C4; --accent-ink:#000000; --border:#1B1B1B; --danger:#FF6B60;
-    --bubble-user:#2FD9C4; --bubble-user-text:#000000; --bubble-agent:#0A0A0A; --bubble-agent-text:#F2F2F2;
-    --shadow:none;
-  }
-  :root[data-theme="hc"]{
-    --bg:#000000; --surface:#000000; --surface-2:#000000; --text:#FFFFFF; --muted:#FFFF00;
-    --accent:#FFFF00; --accent-ink:#000000; --border:#FFFFFF; --danger:#FF3B3B;
-    --bubble-user:#FFFF00; --bubble-user-text:#000000; --bubble-agent:#000000; --bubble-agent-text:#FFFFFF;
-    --shadow:none;
-  }
-  *{box-sizing:border-box;}
-  html,body{height:100%;}
-  body{
-    margin:0; background:var(--bg); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;
-    display:flex; flex-direction:column; min-height:100dvh;
-    transition:background .2s,color .2s;
-  }
-  [data-theme="hc"] *{ border-color:var(--border)!important; }
-  .app{ flex:1; display:flex; flex-direction:column; max-width:640px; width:100%; margin:0 auto; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-  header{
-    position:sticky; top:0; z-index:5; background:var(--surface);
-    border-bottom:1px solid var(--border);
-    padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-  }
-  .brand{ display:flex; align-items:center; gap:10px; min-width:0; }
-  .brand svg{ flex:none; }
-  .brand-text h1{ font-size:17px; margin:0; letter-spacing:.2px; font-weight:800; }
-  .brand-text p{ margin:0; font-size:11px; color:var(--muted); }
-  .ecg{ stroke:var(--accent); stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round;
-    stroke-dasharray:160; stroke-dashoffset:160; animation:draw 2.4s ease-out forwards, pulse 3.6s ease-in-out 2.4s infinite; }
-  @keyframes draw{ to{ stroke-dashoffset:0; } }
-  @keyframes pulse{ 0%,100%{ opacity:1;} 50%{ opacity:.55; } }
-  @media (prefers-reduced-motion:reduce){ .ecg{ animation:none; stroke-dashoffset:0; } }
+:root{
+  --bg:#0E1B2A; --bg2:#152537; --card:#182B40; --line:#2B4058;
+  --text:#F2F5F8; --sub:#9FB2C4; --accent:#6FA8C9; --warn:#E8783E;
+  --good:#6FBE8E; --shadow:0 8px 24px rgba(0,0,0,.35);
+}
+html[data-theme="light"]{
+  --bg:#EEF2F5; --bg2:#E4EAEE; --card:#FFFFFF; --line:#D3DCE3;
+  --text:#12212F; --sub:#516575; --accent:#1F6E96; --warn:#C4551E;
+  --good:#227A52; --shadow:0 6px 18px rgba(20,40,60,.08);
+}
+html[data-theme="oled"]{
+  --bg:#000000; --bg2:#050505; --card:#0B0B0B; --line:#232323;
+  --text:#F2F5F8; --sub:#8C8C8C; --accent:#5FC2E8; --warn:#FF8A4C;
+  --good:#63E29A; --shadow:none;
+}
+html[data-theme="hc"]{
+  --bg:#000000; --bg2:#000000; --card:#000000; --line:#FFFFFF;
+  --text:#FFFFFF; --sub:#FFFF00; --accent:#00FFFF; --warn:#FF3B3B;
+  --good:#33FF33; --shadow:none;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{-webkit-text-size-adjust:100%; text-size-adjust:100%;}
+body{
+  margin:0; min-height:100vh; min-height:100dvh; background:var(--bg); color:var(--text);
+  font-family:'Inter',sans-serif; overflow-x:hidden; width:100%;
+  background-image:
+    radial-gradient(circle at 20% 0%, var(--bg2), transparent 60%),
+    repeating-radial-gradient(circle at 50% -20%, transparent 0 60px, var(--line) 61px, transparent 62px);
+  background-attachment:fixed;
+  display:flex; flex-direction:column; min-height:100vh;
+  transition:background-color .25s,color .25s;
+}
+header{
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
+  padding:calc(14px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left));
+  border-bottom:1px solid var(--line); gap:10px; position:sticky; top:0; background:var(--bg); z-index:10;
+}
+.brand{display:flex; align-items:center; gap:10px; min-width:0;}
+.brand svg{width:24px;height:24px;flex:none;}
+.brand h1{
+  font-family:'Inter',sans-serif; font-size:clamp(15px,4.2vw,19px); letter-spacing:.05em;
+  text-transform:uppercase; margin:0; font-weight:600; white-space:nowrap;
+}
+.themes{display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;}
+.themes button{
+  width:38px;height:38px;border-radius:9px;border:1px solid var(--line);
+  background:var(--card); color:var(--text); cursor:pointer; font-size:15px;
+  display:flex;align-items:center;justify-content:center; touch-action:manipulation;
+}
+.themes button[aria-pressed="true"]{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset;}
+#unitBtn{width:auto; min-width:38px; padding:0 10px; font-family:'Inter',sans-serif; font-weight:600; font-size:12px;}
 
-  #themeBtn{
-    border:1px solid var(--border); background:var(--surface-2); color:var(--text);
-    border-radius:10px; padding:8px 10px; font-size:12px; font-weight:700; cursor:pointer;
-    white-space:nowrap;
-  }
-  #themeBtn:focus-visible, .composer button:focus-visible, .chip:focus-visible{
-    outline:3px solid var(--accent); outline-offset:2px;
-  }
+.wind-row{display:flex; align-items:center; gap:10px;}
+.compass{width:34px; height:34px; flex:none;}
+.compass .arrow{transform-origin:50% 50%; transition:transform .2s;}
+.wind-txt .val{font-size:24px;}
+.wind-txt .sub2{margin-top:0;}
 
-  .disclaimer{
-    margin:10px 14px 0; font-size:11.5px; color:var(--muted); background:var(--surface-2);
-    border:1px solid var(--border); border-radius:10px; padding:8px 10px; line-height:1.4;
-  }
+main{flex:1; width:100%; max-width:640px; margin:0 auto;
+  padding:16px max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));}
 
-  .chips{ display:flex; gap:8px; overflow-x:auto; padding:10px 14px 2px; }
-  .chip{
-    flex:none; border:1px solid var(--border); background:var(--surface); color:var(--text);
-    border-radius:999px; padding:7px 12px; font-size:12.5px; cursor:pointer;
-  }
+.search{display:flex; gap:8px; margin-bottom:16px;}
+.search input{
+  flex:1; min-width:0; padding:12px 14px; border-radius:10px; border:1px solid var(--line);
+  background:var(--card); color:var(--text); font-size:16px; font-family:'Inter',sans-serif;
+  min-height:44px;
+}
+.search button{
+  border:1px solid var(--line); background:var(--accent); color:#0E1B2A; font-weight:600;
+  border-radius:10px; padding:0 14px; cursor:pointer; font-size:14px; min-height:44px; min-width:44px;
+  touch-action:manipulation; flex:none;
+}
+.search .locbtn{background:var(--card); color:var(--text);}
+#suggest{list-style:none; margin:-10px 0 16px; padding:0; display:flex; flex-direction:column; gap:6px;}
+#suggest li{
+  padding:12px; border:1px solid var(--line); border-radius:8px; cursor:pointer;
+  background:var(--card); font-size:14px; color:var(--sub); min-height:44px; display:flex; align-items:center;
+}
 
-  .chat{ flex:1; overflow-y:auto; padding:12px 14px 8px; display:flex; flex-direction:column; gap:10px; }
-  .msg{ max-width:84%; padding:10px 13px; border-radius:16px; font-size:14.5px; line-height:1.45; box-shadow:var(--shadow); }
-  .msg.agent{ align-self:flex-start; background:var(--bubble-agent); color:var(--bubble-agent-text); border:1px solid var(--border); border-bottom-left-radius:4px; }
-  .msg.user{ align-self:flex-end; background:var(--bubble-user); color:var(--bubble-user-text); border-bottom-right-radius:4px; }
-  .msg.emergency{ border:1.5px solid var(--danger); color:var(--danger); font-weight:700; }
-  .msg small{ display:block; margin-top:6px; opacity:.75; font-weight:400; font-size:11px; }
-  .banner{ font-weight:800; font-size:13px; padding:8px 10px; border-radius:10px; margin-bottom:8px; }
-  .u-low{ background:#1FA97A22; color:#1FA97A; border:1px solid #1FA97A; }
-  .u-mid{ background:#E0A50022; color:#C98A00; border:1px solid #C98A00; }
-  .u-high{ background:#E0453522; color:#E04535; border:1px solid #E04535; }
-  [data-theme="hc"] .banner{ background:#000!important; color:var(--accent)!important; border:2px solid var(--accent)!important; }
-  .rank-row{ display:flex; justify-content:space-between; font-size:13.5px; font-weight:700; margin-top:8px; }
-  .rank-row .pct{ font-weight:600; color:var(--muted); font-size:12px; }
-  .bar{ height:5px; background:var(--surface-2); border-radius:4px; overflow:hidden; margin:3px 0; }
-  .bar-fill{ height:100%; background:var(--accent); }
-  .rank-advice{ font-size:12.5px; color:var(--muted); margin-bottom:2px; }
-  .followup{ margin-top:8px; font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; align-items:center; gap:5px; }
-  .fchip{ border:1px solid var(--border); background:var(--surface-2); color:var(--text); border-radius:999px;
-    padding:4px 10px; font-size:11.5px; cursor:pointer; }
-  .typing{ align-self:flex-start; display:flex; gap:4px; padding:12px 14px; }
-  .typing span{ width:6px; height:6px; border-radius:50%; background:var(--muted); animation:bounce 1.1s infinite; }
-  .typing span:nth-child(2){ animation-delay:.15s; } .typing span:nth-child(3){ animation-delay:.3s; }
-  @keyframes bounce{ 0%,60%,100%{ transform:translateY(0);} 30%{ transform:translateY(-5px);} }
+.peaks{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:16px;
+  -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+.peaks::-webkit-scrollbar{display:none;}
+.peak-chip{
+  flex:0 0 auto; padding:10px 13px; border-radius:20px; border:1px solid var(--line);
+  background:var(--card); font-size:12.5px; color:var(--text); cursor:pointer; white-space:nowrap;
+  min-height:40px; touch-action:manipulation;
+}
+.peak-chip:hover, .peak-chip:focus{border-color:var(--accent);}
+.peak-chip .m{color:var(--sub); margin-left:4px;}
 
-  .composer{
-    position:sticky; bottom:0; display:flex; gap:8px; padding:10px 14px calc(env(safe-area-inset-bottom) + 10px);
-    background:var(--surface); border-top:1px solid var(--border);
-  }
-  .composer input{
-    flex:1; border:1px solid var(--border); background:var(--surface-2); color:var(--text);
-    border-radius:12px; padding:12px 14px; font-size:15px; min-width:0;
-  }
-  .composer input:focus-visible{ outline:2px solid var(--accent); }
-  .composer button{
-    border:none; background:var(--accent); color:var(--accent-ink); border-radius:12px;
-    padding:0 18px; font-weight:800; font-size:14px; cursor:pointer;
-  }
+.cache-banner{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background:var(--card); border:1px dashed var(--line); border-radius:10px;
+  padding:8px 12px; font-size:12px; color:var(--sub); margin-bottom:12px;
+}
+.cache-banner button{
+  border:1px solid var(--line); background:transparent; color:var(--accent);
+  border-radius:7px; padding:4px 8px; font-size:12px; cursor:pointer;
+}
 
-  footer{
-    background:var(--surface); border-top:1px solid var(--border);
-    display:flex; align-items:center; justify-content:center; text-align:center;
-    padding:10px 14px calc(env(safe-area-inset-bottom) + 10px);
-  }
-  footer p{ margin:0; font-size:11.5px; color:var(--muted); line-height:1.5; }
+.alerts{display:flex; flex-direction:column; gap:6px; margin-bottom:14px;}
+.alert{
+  background:var(--card); border:1px solid var(--warn); color:var(--warn);
+  border-radius:10px; padding:9px 12px; font-size:13px; font-weight:500;
+  display:flex; gap:8px; align-items:center;
+}
+
+.hero{
+  background:var(--card); border:1px solid var(--line); border-radius:16px;
+  padding:20px; text-align:center; box-shadow:var(--shadow); margin-bottom:16px;
+}
+.hero .place{font-family:'Inter',sans-serif; text-transform:uppercase; letter-spacing:.06em; font-size:16px; color:var(--sub);}
+.hero .alt{
+  font-family:'Inter',sans-serif; font-weight:700; font-size:clamp(38px,13vw,56px); line-height:1;
+  margin:10px 0 2px; color:var(--accent);
+}
+.hero .alt span{font-size:18px; color:var(--sub); font-weight:500;}
+.hero .coords{font-family:'Inter',sans-serif; font-size:12px; color:var(--sub);}
+.hero .updated{font-size:11px; color:var(--sub); margin-top:8px;}
+
+.grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px;}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px;
+  box-shadow:var(--shadow); min-width:0;
+}
+.card .lbl{font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--sub); font-family:'Inter',sans-serif;}
+.card .val{font-family:'Inter',sans-serif; font-size:clamp(18px,5.5vw,24px); font-weight:700; margin-top:4px; word-break:break-word;}
+.card .val small{font-size:13px; color:var(--sub); font-weight:400;}
+.card .sub2{font-size:11px; color:var(--sub); margin-top:3px;}
+.trend{font-size:15px; margin-left:4px;}
+.trend.up{color:var(--warn);} .trend.down{color:var(--good);} .trend.flat{color:var(--sub);}
+
+.forecast{
+  background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px;
+  margin-bottom:20px; box-shadow:var(--shadow);
+}
+.forecast h2{font-family:'Inter',sans-serif; font-size:13px; text-transform:uppercase; letter-spacing:.07em; color:var(--sub); margin:0 0 10px;}
+.days{display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+.days::-webkit-scrollbar{display:none;}
+.day{
+  flex:0 0 auto; min-width:64px; text-align:center; padding:10px 6px; border-radius:10px;
+  border:1px solid var(--line);
+}
+.day .d{font-size:11px; color:var(--sub); font-family:'Inter',sans-serif; text-transform:uppercase;}
+.day .ic{font-size:20px; margin:6px 0;}
+.day .hi{font-family:'Inter',sans-serif; font-size:13px;}
+.day .lo{font-family:'Inter',sans-serif; font-size:12px; color:var(--sub);}
+
+.msg{text-align:center; color:var(--sub); font-size:14px; padding:30px 10px;}
+
+footer{
+  border-top:1px solid var(--line); padding:16px 10px calc(22px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; gap:4px; color:var(--sub); font-size:12px;
+}
+footer .sig{font-family:'Inter',sans-serif; letter-spacing:.03em;}
+
+.wind-row{flex-wrap:wrap;}
+
+.tip{background:var(--card); border:1px solid var(--accent); border-radius:10px; padding:9px 12px; font-size:13px; margin-bottom:10px;}
+.hero .daylight{font-size:12px; color:var(--accent); margin-top:6px;}
+.star-btn{border:1px solid var(--line); background:var(--bg2); color:var(--text); border-radius:8px;
+  padding:6px 12px; font-size:12px; cursor:pointer; margin-top:10px; touch-action:manipulation;}
+.peak-chip.saved{border-color:var(--good);}
+.peak-chip .x{margin-left:6px; color:var(--warn);}
+.day{cursor:pointer;}
+.hour-strip{display:flex; gap:6px; overflow-x:auto; margin-top:10px; padding-top:8px; border-top:1px solid var(--line);
+  -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+.hour-strip::-webkit-scrollbar{display:none;}
+.hour{flex:0 0 auto; min-width:52px; text-align:center; padding:8px 5px; border-radius:9px; border:1px solid var(--line);}
+.hour .t{font-size:10.5px; color:var(--sub);}
+.hour .ic{font-size:15px; margin:4px 0;}
+.hour .v{font-size:12px; font-weight:600;}
+.altcard input{width:64px; background:var(--bg2); border:1px solid var(--line); color:var(--text);
+  border-radius:6px; padding:4px 6px; font-size:13px; margin-top:4px; font-family:'Inter',sans-serif;}
+.compare select{width:100%; padding:10px; border-radius:8px; border:1px solid var(--line);
+  background:var(--card); color:var(--text); font-size:14px; margin-top:6px; min-height:44px;}
+.cmp-table{display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:12px; font-size:12px; text-align:center;}
+.cmp-table .h{font-weight:600; color:var(--sub); font-size:10.5px; text-transform:uppercase;}
+
+.hero-actions{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:10px;}
+.panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:14px; display:flex; flex-direction:column; gap:8px;}
+.panel-row{display:flex; justify-content:space-between; align-items:center; font-size:13px; gap:8px;}
+.panel-row input{width:70px; padding:6px; border-radius:6px; border:1px solid var(--line); background:var(--bg2); color:var(--text); font-family:'Inter',sans-serif;}
+.panel button{align-self:flex-end; border:1px solid var(--line); background:var(--accent); color:#0E1B2A; font-weight:600; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:13px; min-height:36px;}
+.trend-chart{width:100%; height:70px; display:block;}
+.trend-labels{display:flex; justify-content:space-between; font-size:11px; color:var(--sub); margin-top:2px;}
+.route select{width:100%; padding:9px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--text); font-size:13px; min-height:42px;}
+.route-row{display:flex; gap:8px; flex-wrap:wrap;}
+.route-row select{flex:1; min-width:120px;}
+.route button{margin-top:8px; border:1px solid var(--line); background:var(--accent); color:#0E1B2A; font-weight:600; border-radius:8px; padding:9px 14px; cursor:pointer; font-size:13px; min-height:40px;}
+
+@media print{
+  header, .search, .peaks, #suggest, .cache-banner, .panel, .compare, .route, .hour-strip,
+  .hero-actions, footer .sig{ display:none !important; }
+  body{ background:#fff !important; color:#000 !important; }
+  .card, .hero, .forecast, .tip, .alert{ border-color:#ccc !important; box-shadow:none !important; background:#fff !important; color:#000 !important; }
+}
+
+@media (min-width:520px){
+  .grid{grid-template-columns:repeat(3,1fr);}
+}
+@media (max-width:359px){
+  .grid{grid-template-columns:1fr 1fr; gap:8px;}
+  .card{padding:12px;}
+}
 </style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <div class="brand">
-      <svg width="30" height="30" viewBox="0 0 100 40" aria-hidden="true">
-        <polyline class="ecg" points="0,20 20,20 27,5 35,35 42,20 100,20"/>
-      </svg>
-      <div class="brand-text">
-        <h1>Vitalis</h1>
-        <p>Medical AI agent · no signup</p>
-      </div>
-    </div>
-    <button id="themeBtn" type="button" aria-label="Change theme">Theme: Light</button>
-  </header>
 
-  <p class="disclaimer">⚠️ Triage guidance from symptom overlap, not a clinical diagnosis. For emergencies, contact local emergency services immediately.</p>
+<header>
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+      <path d="M2 19h20L15.5 7 12 12.5 9.5 9 2 19z"/>
+      <path d="M9.5 9l1 1.4M15.5 7l1.3 1.9"/>
+    </svg>
+    <h1>Summit&nbsp;Watch</h1>
+  </div>
+  <div class="themes" id="themes">
+    <button data-t="light" title="Light">☀</button>
+    <button data-t="dark" title="Dark">☾</button>
+    <button data-t="oled" title="OLED true black">●</button>
+    <button data-t="hc" title="High contrast">◐</button>
+    <button id="unitBtn" title="Toggle units">°C</button>
+    <button id="settingsBtn" title="Alert thresholds">⚙️</button>
+  </div>
+</header>
 
-  <div class="chips" id="chips">
-    <button class="chip" type="button">fever, cough, sore throat</button>
-    <button class="chip" type="button">headache, nausea, light sensitivity</button>
-    <button class="chip" type="button">stomach pain, vomiting, diarrhea</button>
-    <button class="chip" type="button">drug: ibuprofen</button>
+<main>
+  <div class="search">
+    <input id="q" type="text" placeholder="Search a peak, town, or region…" autocomplete="off"
+      autocapitalize="words" autocorrect="off" spellcheck="false" inputmode="search" enterkeyhint="search">
+    <button class="locbtn" id="locBtn" title="Use my location">📍</button>
+    <button id="goBtn">Go</button>
+  </div>
+  <ul id="suggest"></ul>
+  <div class="peaks" id="peaks"></div>
+  <div id="cacheBanner"></div>
+
+  <div class="panel" id="settingsPanel" hidden>
+    <div class="panel-row"><label for="thGust">Gust alert (km/h)</label><input type="number" id="thGust"></div>
+    <div class="panel-row"><label for="thUv">UV alert (index)</label><input type="number" id="thUv"></div>
+    <div class="panel-row"><label for="thCold">Cold alert (feels-like °C)</label><input type="number" id="thCold"></div>
+    <div class="panel-row"><label for="thPrecip">Precip alert (%)</label><input type="number" id="thPrecip"></div>
+    <button id="thSave">Save thresholds</button>
   </div>
 
-  <main class="chat" id="chat" aria-live="polite"></main>
+  <div id="content">
+    <div class="msg">Search a location or tap 📍 to load conditions for your position.</div>
+  </div>
 
-  <form class="composer" id="composer">
-    <input id="input" type="text" placeholder="Describe symptoms or type 'drug: name'…" autocomplete="off" aria-label="Message">
-    <button type="submit">Send</button>
-  </form>
-</div>
+  <div class="forecast route">
+    <h2>Route Elevation Profile</h2>
+    <div class="route-row">
+      <select id="routeFrom"></select>
+      <select id="routeTo"></select>
+    </div>
+    <button id="routePlot">Plot Route</button>
+    <div id="routeResult"></div>
+  </div>
+</main>
 
 <footer>
-  <p>© <span id="year"></span> Manik Roy. All Rights Reserved.</p>
+  <div class="sig">SUMMIT WATCH — FIELD CONSOLE</div>
+  <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
 </footer>
 
 <script>
-(function(){
-  "use strict";
+document.getElementById('year').textContent = new Date().getFullYear();
+let lastWx=null, lastAq=null, lastLabel='', lastFromCache=false, lastTs=null;
 
-  /* ---------- Theme ---------- */
-  var themes = ["light","dark","oled","hc"];
-  var labels = {light:"Light", dark:"Dark", oled:"OLED", hc:"HC"};
-  var idx = 0;
-  var mql = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
-  if(mql && mql.matches) idx = 1;
-  var root = document.documentElement;
-  var themeBtn = document.getElementById("themeBtn");
-  function applyTheme(){
-    root.setAttribute("data-theme", themes[idx]);
-    themeBtn.textContent = "Theme: " + labels[themes[idx]];
-  }
-  themeBtn.addEventListener("click", function(){
-    idx = (idx + 1) % themes.length;
-    applyTheme();
-  });
-  applyTheme();
+// ---------- Theme handling ----------
+const themeBtns = document.querySelectorAll('#themes button');
+const THEME_COLORS = {dark:'#0E1B2A', light:'#EEF2F5', oled:'#000000', hc:'#000000'};
+const themeColorMeta = document.getElementById('themeColorMeta');
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('sw-theme', t);
+  themeBtns.forEach(b => b.setAttribute('aria-pressed', b.dataset.t === t));
+  themeColorMeta.setAttribute('content', THEME_COLORS[t] || '#0E1B2A');
+}
+themeBtns.forEach(b => b.addEventListener('click', () => setTheme(b.dataset.t)));
+setTheme(localStorage.getItem('sw-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
 
-  /* ---------- Footer year ---------- */
-  document.getElementById("year").textContent = new Date().getFullYear();
+// ---------- Weather code -> icon/text ----------
+const WMO = {
+  0:['☀️','Clear sky'],1:['🌤️','Mainly clear'],2:['⛅','Partly cloudy'],3:['☁️','Overcast'],
+  45:['🌫️','Fog'],48:['🌫️','Rime fog'],51:['🌦️','Light drizzle'],53:['🌦️','Drizzle'],55:['🌧️','Dense drizzle'],
+  61:['🌧️','Light rain'],63:['🌧️','Rain'],65:['🌧️','Heavy rain'],66:['🌧️','Freezing rain'],67:['🌧️','Freezing rain'],
+  71:['🌨️','Light snow'],73:['🌨️','Snow'],75:['❄️','Heavy snow'],77:['❄️','Snow grains'],
+  80:['🌦️','Rain showers'],81:['🌧️','Rain showers'],82:['⛈️','Violent showers'],
+  85:['🌨️','Snow showers'],86:['❄️','Heavy snow showers'],
+  95:['⛈️','Thunderstorm'],96:['⛈️','Thunder + hail'],99:['⛈️','Severe thunder + hail']
+};
+const wmo = c => WMO[c] || ['❔','Unknown'];
+const isStormCode = c => [65,66,67,75,82,86,95,96,99].includes(c);
 
-  /* ---------- Chat plumbing ---------- */
-  var chat = document.getElementById("chat");
-  var form = document.getElementById("composer");
-  var input = document.getElementById("input");
+// ---------- Units (metric / imperial) ----------
+let units = localStorage.getItem('sw-units') || 'metric';
+const unitBtn = document.getElementById('unitBtn');
+function applyUnitLabel(){ unitBtn.textContent = units === 'metric' ? '°C' : '°F'; unitBtn.setAttribute('aria-pressed', 'true'); }
+applyUnitLabel();
+const fmt = {
+  temp:  v => units==='metric' ? Math.round(v)+'°C' : Math.round(v*9/5+32)+'°F',
+  speed: v => units==='metric' ? Math.round(v)+' km/h' : Math.round(v*0.621371)+' mph',
+  dist:  v => units==='metric' ? Math.round(v)+' m' : Math.round(v*3.28084)+' ft',
+  km:    v => units==='metric' ? v.toFixed(1)+' km' : (v*0.621371).toFixed(1)+' mi',
+  precip:v => units==='metric' ? v.toFixed(1)+'mm' : (v/25.4).toFixed(2)+'in',
+  press: v => units==='metric' ? Math.round(v)+' hPa' : (v*0.02953).toFixed(2)+' inHg'
+};
+unitBtn.addEventListener('click', ()=>{
+  units = units === 'metric' ? 'imperial' : 'metric';
+  localStorage.setItem('sw-units', units);
+  applyUnitLabel();
+  if(lastWx) render(lastLabel, lastWx, lastAq, lastFromCache, lastTs);
+});
 
-  function addMsg(text, who, extraClass){
-    var div = document.createElement("div");
-    div.className = "msg " + who + (extraClass ? " " + extraClass : "");
-    div.innerHTML = text;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-    return div;
-  }
-  function addTyping(){
-    var t = document.createElement("div");
-    t.className = "typing"; t.id = "typing-indicator";
-    t.innerHTML = "<span></span><span></span><span></span>";
-    chat.appendChild(t);
-    chat.scrollTop = chat.scrollHeight;
-  }
-  function removeTyping(){
-    var t = document.getElementById("typing-indicator");
-    if(t) t.remove();
-  }
+// ---------- Compass ----------
+const COMPASS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const degToCompass = d => COMPASS[Math.round(d/22.5) % 16];
 
-  addMsg("Hi, I'm Vitalis. List your symptoms (e.g. \"fever, cough, sore throat\") and I'll rank likely possibilities and an urgency level. Type <b>drug: name</b> to look up a medicine. This is triage guidance, not a diagnosis.", "agent");
+// ---------- Beaufort scale ----------
+function beaufort(kmh){
+  const scale = [[1,'Calm'],[5,'Light air'],[11,'Light breeze'],[19,'Gentle breeze'],[28,'Moderate breeze'],
+    [38,'Fresh breeze'],[49,'Strong breeze'],[61,'Near gale'],[74,'Gale'],[88,'Strong gale'],
+    [102,'Storm'],[117,'Violent storm'],[Infinity,'Hurricane']];
+  const i = scale.findIndex(s => kmh < s[0]);
+  return `Beaufort ${i} — ${scale[i][1]}`;
+}
 
-  /* ---------- Emergency keywords (checked first, overrides everything) ---------- */
-  var emergencyWords = ["chest pain","can't breathe","cannot breathe","difficulty breathing",
-    "severe bleeding","suicid","unconscious","stroke","numb face","slurred speech",
-    "overdose","seizure","not breathing","heart attack"];
+// ---------- Custom alert thresholds ----------
+let thresholds = Object.assign({gust:60, uv:8, cold:-15, precip:70}, JSON.parse(localStorage.getItem('sw-thresh') || '{}'));
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsPanel = document.getElementById('settingsPanel');
+const thGust = document.getElementById('thGust'), thUv = document.getElementById('thUv'),
+      thCold = document.getElementById('thCold'), thPrecip = document.getElementById('thPrecip');
+thGust.value = thresholds.gust; thUv.value = thresholds.uv; thCold.value = thresholds.cold; thPrecip.value = thresholds.precip;
+settingsBtn.addEventListener('click', ()=> settingsPanel.hidden = !settingsPanel.hidden);
+document.getElementById('thSave').addEventListener('click', ()=>{
+  thresholds = {gust:+thGust.value, uv:+thUv.value, cold:+thCold.value, precip:+thPrecip.value};
+  localStorage.setItem('sw-thresh', JSON.stringify(thresholds));
+  settingsPanel.hidden = true;
+  if(lastWx) render(lastLabel, lastWx, lastAq, lastFromCache, lastTs);
+});
 
-  /* ---------- Condition knowledge base: weighted differential engine ---------- */
-  /* urgency: 1 self-care, 2 see doctor soon, 3 seek urgent care */
-  var conditions = [
-    { t:"Common cold", u:1, s:["runny nose","congestion","sneezing","sore throat","mild cough","stuffy nose"],
-      advice:"Rest, fluids, and steam inhalation. See a doctor if it worsens after 10 days." },
-    { t:"Influenza (flu)", u:2, s:["fever","chills","body ache","fatigue","cough","headache","sore throat"],
-      advice:"Rest and fluids; antivirals can help if started early. See a doctor if breathing becomes hard or fever is very high." },
-    { t:"Migraine", u:1, s:["headache","nausea","light sensitivity","throbbing","aura","dizzy"],
-      advice:"Rest in a dark quiet room and stay hydrated. See a doctor if headaches are frequent, severe, or new in pattern." },
-    { t:"Tension headache", u:1, s:["headache","neck pain","stress","pressure","fatigue"],
-      advice:"Gentle stretching, hydration, and stress reduction often help. See a doctor if pain is persistent or severe." },
-    { t:"Gastroenteritis (stomach flu)", u:2, s:["nausea","vomiting","diarrhea","stomach pain","fever","abdominal pain"],
-      advice:"Sip oral rehydration fluids and rest the gut with bland food. Seek care if you can't keep fluids down or see blood." },
-    { t:"Urinary tract infection", u:2, s:["burning urination","frequent urination","pelvic pain","cloudy urine","lower abdominal pain"],
-      advice:"Drink plenty of water. See a doctor promptly — UTIs are usually treated with antibiotics." },
-    { t:"Allergic rhinitis", u:1, s:["sneezing","itchy eyes","runny nose","congestion","allerg"],
-      advice:"Antihistamines and avoiding triggers often help. See a doctor if symptoms are persistent or severe." },
-    { t:"Strep throat", u:2, s:["sore throat","fever","swollen glands","difficulty swallowing"],
-      advice:"See a doctor for testing — strep needs antibiotics to prevent complications." },
-    { t:"Anxiety / stress response", u:1, s:["anxious","racing heart","stressed","trouble sleeping","restless","dizzy"],
-      advice:"Slow breathing exercises and talking to someone you trust can help. A mental health professional can offer further support." },
-    { t:"Musculoskeletal back strain", u:1, s:["back pain","stiffness","muscle spasm"],
-      advice:"Gentle movement, heat, and rest usually help. See a doctor if there's numbness, weakness, or bladder changes." },
-    { t:"Dehydration", u:2, s:["dizzy","fatigue","dry mouth","dark urine","headache"],
-      advice:"Rehydrate with water or electrolyte fluids. Seek care if confusion or fainting occurs." },
-    { t:"Allergic skin reaction", u:2, s:["rash","itching","hives","swelling","allerg"],
-      advice:"Antihistamines can ease mild reactions. Seek emergency care if there's facial swelling or breathing trouble." },
-    { t:"Insomnia / sleep disruption", u:1, s:["can't sleep","trouble sleeping","restless","fatigue","stressed"],
-      advice:"Keep a consistent sleep schedule and limit screens before bed. See a doctor if it persists beyond a few weeks." }
+// ---------- Reusable mini SVG line chart ----------
+function buildTrendSVG(values){
+  const w=300, h=70, pad=6;
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = (max - min) || 1;
+  const pts = values.map((v,i)=>{
+    const x = pad + i*(w-2*pad)/Math.max(1,values.length-1);
+    const y = h-pad - (v-min)/range*(h-2*pad);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" class="trend-chart" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>`;
+}
+
+// ---------- Moon phase (computed locally, no API) ----------
+function moonInfo(date, sunrise, sunset){
+  const synodic = 29.530588853;
+  const knownNewMoon = Date.UTC(2000,0,6,18,14) / 86400000;
+  let age = (date.getTime()/86400000 - knownNewMoon) % synodic;
+  if(age < 0) age += synodic;
+  const illum = Math.round((1 - Math.cos(2*Math.PI*age/synodic)) / 2 * 100);
+  const phases = [
+    [1.84566,'New Moon','🌑'],[5.53699,'Waxing Crescent','🌒'],[9.22831,'First Quarter','🌓'],
+    [12.91963,'Waxing Gibbous','🌔'],[16.61096,'Full Moon','🌕'],[20.30228,'Waning Gibbous','🌖'],
+    [23.99361,'Last Quarter','🌗'],[27.68493,'Waning Crescent','🌘'],[Infinity,'New Moon','🌑']
   ];
+  const [, name, icon] = phases.find(p => age < p[0]);
+  const offsetMin = (age/synodic) * 24 * 60;
+  const rise = new Date(sunrise.getTime() + offsetMin*60000);
+  const set  = new Date(sunset.getTime()  + offsetMin*60000);
+  const fmt = d => d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  return { name, icon, illum, rise: fmt(rise), set: fmt(set) };
+}
 
-  function scoreConditions(text){
-    return conditions.map(function(c){
-      var matched = c.s.filter(function(sym){ return text.indexOf(sym) !== -1; });
-      return { c:c, matched:matched, pct:Math.round((matched.length / c.s.length) * 100) };
-    }).filter(function(r){ return r.matched.length > 0; })
-      .sort(function(a,b){ return b.matched.length - a.matched.length || b.pct - a.pct; });
-  }
+// ---------- Local caching (offline support) ----------
+function saveCache(lat, lon, label, wx, aq){
+  try{ localStorage.setItem('sw-cache', JSON.stringify({lat,lon,label,wx,aq,ts:Date.now()})); }catch(e){}
+}
+function loadCache(){
+  try{ return JSON.parse(localStorage.getItem('sw-cache')); }catch(e){ return null; }
+}
+function timeAgo(ts){
+  const min = Math.round((Date.now()-ts)/60000);
+  if(min < 1) return 'just now';
+  if(min < 60) return min+' min ago';
+  return Math.round(min/60)+' hr ago';
+}
 
-  var urgencyText = {1:"Self-care may be sufficient — monitor at home.", 2:"Consider seeing a doctor soon.", 3:"Seek urgent medical care."};
-  var urgencyClass = {1:"u-low", 2:"u-mid", 3:"u-high"};
+// ---------- Quick-select summits ----------
+const PEAKS = [
+  {n:'Everest',      c:'Nepal / China',  lat:27.9881,  lon:86.9250,   m:8849},
+  {n:'K2',           c:'Pakistan',       lat:35.8825,  lon:76.5133,   m:8611},
+  {n:'Kangchenjunga',c:'Nepal / India',  lat:27.7025,  lon:88.1475,   m:8586},
+  {n:'Annapurna I',  c:'Nepal',          lat:28.5959,  lon:83.8203,   m:8091},
+  {n:'Nanga Parbat', c:'Pakistan',       lat:35.2426,  lon:74.5892,   m:8126},
+  {n:'Denali',       c:'USA',            lat:63.0692,  lon:-151.0070, m:6190},
+  {n:'Aconcagua',    c:'Argentina',      lat:-32.6532, lon:-70.0109,  m:6961},
+  {n:'Elbrus',       c:'Russia',         lat:43.3499,  lon:42.4453,   m:5642},
+  {n:'Vinson Massif',c:'Antarctica',     lat:-78.5254, lon:-85.6172,  m:4892},
+  {n:'Puncak Jaya',  c:'Indonesia',      lat:-4.0784,  lon:137.1585,  m:4884},
+  {n:'Kilimanjaro',  c:'Tanzania',       lat:-3.0674,  lon:37.3556,   m:5895},
+  {n:'Mount Kenya',  c:'Kenya',          lat:-0.1521,  lon:37.3084,   m:5199},
+  {n:'Mont Blanc',   c:'France / Italy', lat:45.8326,  lon:6.8652,    m:4808},
+  {n:'Matterhorn',   c:'Switz. / Italy', lat:45.9763,  lon:7.6586,    m:4478},
+  {n:'Mount Fuji',   c:'Japan',          lat:35.3606,  lon:138.7274,  m:3776}
+];
+const peaksEl = document.getElementById('peaks');
+let saved = JSON.parse(localStorage.getItem('sw-saved') || '[]'); // [{n,lat,lon}]
+function isSaved(lat, lon){ return saved.some(s => s.lat === lat && s.lon === lon); }
+function toggleSave(n, lat, lon){
+  const i = saved.findIndex(s => s.lat === lat && s.lon === lon);
+  if(i > -1) saved.splice(i, 1); else { saved.unshift({n, lat, lon}); if(saved.length > 8) saved.pop(); }
+  localStorage.setItem('sw-saved', JSON.stringify(saved));
+  renderPeaksRow();
+}
+function renderPeaksRow(){
+  const savedHtml = saved.map((p,i) => `<button class="peak-chip saved" data-saved="${i}">${p.n}<span class="x" data-rm="${i}">✕</span></button>`).join('');
+  const peakHtml = PEAKS.map((p,i) => `<button class="peak-chip" data-i="${i}">${p.n}<span class="m">${p.m}m</span></button>`).join('');
+  peaksEl.innerHTML = savedHtml + peakHtml;
+}
+renderPeaksRow();
+peaksEl.addEventListener('click', e=>{
+  if(e.target.classList.contains('x')){ saved.splice(+e.target.dataset.rm, 1); localStorage.setItem('sw-saved', JSON.stringify(saved)); renderPeaksRow(); return; }
+  const sb = e.target.closest('[data-saved]');
+  if(sb){ const p = saved[sb.dataset.saved]; loadConditions(p.lat, p.lon, p.n); return; }
+  const btn = e.target.closest('.peak-chip'); if(!btn) return;
+  const p = PEAKS[btn.dataset.i];
+  qInput.value = p.n; suggestEl.innerHTML = '';
+  loadConditions(p.lat, p.lon, `${p.n}, ${p.c}`);
+});
 
-  /* ---------- Drug lookup via openFDA (free, no key) ---------- */
-  function fetchDrug(name){
-    var url = "https://api.fda.gov/drug/label.json?search=openfda.brand_name:%22" +
-      encodeURIComponent(name) + "%22+openfda.generic_name:%22" + encodeURIComponent(name) +
-      "%22&search_operator=OR&limit=1";
-    return fetch(url).then(function(r){
-      if(!r.ok) throw new Error("not found");
-      return r.json();
-    }).then(function(data){
-      var r = data.results && data.results[0];
-      if(!r) throw new Error("not found");
-      function pick(field){ return r[field] && r[field][0] ? r[field][0].slice(0,320) : null; }
-      var purpose = pick("purpose") || pick("indications_and_usage");
-      var warnings = pick("warnings") || pick("warnings_and_cautions");
-      var dosage = pick("dosage_and_administration");
-      var out = "<b>" + name.charAt(0).toUpperCase()+name.slice(1) + "</b><br>";
-      out += purpose ? ("Purpose: " + purpose + "…<br>") : "";
-      out += dosage ? ("Dosage note: " + dosage + "…<br>") : "";
-      out += warnings ? ("Warnings: " + warnings + "…") : "";
-      out += "<small>Source: openFDA drug label database. Always follow your own package insert and pharmacist/doctor advice.</small>";
-      return out;
-    });
-  }
+// ---------- Route elevation profile ----------
+function updateRouteOptions(){
+  const opts = [];
+  if(lastWx) opts.push({n:'📍 '+lastLabel, lat:lastWx.latitude, lon:lastWx.longitude});
+  saved.forEach(s => opts.push({n:'★ '+s.n, lat:s.lat, lon:s.lon}));
+  PEAKS.forEach(p => opts.push({n:p.n, lat:p.lat, lon:p.lon}));
+  const html = opts.map((o,i)=>`<option value="${i}">${o.n}</option>`).join('');
+  document.getElementById('routeFrom').innerHTML = html;
+  document.getElementById('routeTo').innerHTML = html;
+  window._routeOpts = opts;
+}
+updateRouteOptions();
+document.getElementById('routePlot').addEventListener('click', async ()=>{
+  const opts = window._routeOpts;
+  const a = opts[document.getElementById('routeFrom').value];
+  const b = opts[document.getElementById('routeTo').value];
+  const routeResult = document.getElementById('routeResult');
+  if(!a || !b){ routeResult.innerHTML = '<div class="msg">Pick both a start and end point.</div>'; return; }
+  routeResult.innerHTML = '<div class="msg" style="padding:10px">Plotting route…</div>';
+  const N = 10;
+  const lats = [], lons = [];
+  for(let i=0; i<=N; i++){ lats.push(a.lat + (b.lat-a.lat)*i/N); lons.push(a.lon + (b.lon-a.lon)*i/N); }
+  try{
+    const r = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats.join(',')}&longitude=${lons.join(',')}`).then(r=>r.json());
+    const elev = r.elevation;
+    let gain=0, loss=0;
+    for(let i=1;i<elev.length;i++){ const d=elev[i]-elev[i-1]; if(d>0) gain+=d; else loss+=-d; }
+    const R=6371, toRad=d=>d*Math.PI/180;
+    const dLat=toRad(b.lat-a.lat), dLon=toRad(b.lon-a.lon);
+    const hav=Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLon/2)**2;
+    const dist = 2*R*Math.asin(Math.sqrt(hav));
+    routeResult.innerHTML = `${buildTrendSVG(elev)}
+      <div class="sub2">Distance ${dist.toFixed(1)}km · Gain ${fmt.dist(gain)} · Loss ${fmt.dist(loss)}</div>`;
+  }catch(e){ routeResult.innerHTML = '<div class="msg">Could not plot that route.</div>'; }
+});
 
-  /* ---------- Response engine ---------- */
-  function handle(raw){
-    var text = raw.toLowerCase();
+// ---------- Hourly breakdown (tap a forecast day) ----------
+document.addEventListener('click', e=>{
+  const d = e.target.closest('.day'); if(!d || !lastWx) return;
+  const dateStr = lastWx.daily.time[+d.dataset.i];
+  const idxs = [];
+  lastWx.hourly.time.forEach((t,i)=>{ if(t.startsWith(dateStr) && i % 3 === 0) idxs.push(i); });
+  const html = idxs.map(i=>{
+    const [ic] = wmo(lastWx.hourly.weather_code[i]);
+    const hh = new Date(lastWx.hourly.time[i]).toLocaleTimeString([], {hour:'2-digit'});
+    return `<div class="hour"><div class="t">${hh}</div><div class="ic">${ic}</div><div class="v">${fmt.temp(lastWx.hourly.temperature_2m[i])}</div></div>`;
+  }).join('');
+  const strip = document.getElementById('hourStrip');
+  if(strip) strip.innerHTML = html || '<div class="msg" style="padding:6px">No hourly data for that day.</div>';
+});
 
-    for(var e=0;e<emergencyWords.length;e++){
-      if(text.indexOf(emergencyWords[e]) !== -1){
-        return Promise.resolve({
-          html:"🚨 This may be a medical emergency. Please call your local emergency number or go to the nearest emergency room right now. Do not wait for further replies here.",
-          cls:"emergency"
-        });
-      }
+// ---------- Clothing/layering suggestion ----------
+function suggestLayers(feels, wind, precipChance, code){
+  let base = feels <= -10 ? 'insulated parka + base layer + fleece mid-layer'
+    : feels <= 0  ? 'fleece + softshell jacket'
+    : feels <= 10 ? 'light insulating layer + windbreaker'
+    : 'breathable base layer, minimal insulation';
+  const extra = [];
+  if(wind >= 30) extra.push('windproof shell');
+  if(precipChance >= 50 || isStormCode(code)) extra.push('waterproof shell');
+  return base + (extra.length ? ' + ' + extra.join(' + ') : '');
+}
+
+// ---------- Geocoding ----------
+const qInput = document.getElementById('q');
+const suggestEl = document.getElementById('suggest');
+let lastResults = [];
+
+async function search(name){
+  if(!name || name.trim().length < 2){ suggestEl.innerHTML=''; return; }
+  try{
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=6&language=en&format=json`);
+    const d = await r.json();
+    lastResults = d.results || [];
+    suggestEl.innerHTML = lastResults.map((p,i)=>
+      `<li data-i="${i}">${p.name}${p.admin1 ? ', '+p.admin1 : ''}, ${p.country} <span style="color:var(--accent)">· ${Math.round(p.elevation)}m</span></li>`
+    ).join('');
+  }catch(e){ suggestEl.innerHTML = '<li>Couldn\'t reach the geocoding service.</li>'; }
+}
+let debounce;
+qInput.addEventListener('input', ()=>{ clearTimeout(debounce); debounce = setTimeout(()=>search(qInput.value), 350); });
+suggestEl.addEventListener('click', e=>{
+  const li = e.target.closest('li'); if(!li || li.dataset.i===undefined) return;
+  const p = lastResults[li.dataset.i];
+  suggestEl.innerHTML=''; qInput.value = p.name;
+  loadConditions(p.latitude, p.longitude, `${p.name}${p.admin1 ? ', '+p.admin1 : ''}, ${p.country}`);
+});
+document.getElementById('goBtn').addEventListener('click', ()=>{
+  if(lastResults[0]) loadConditions(lastResults[0].latitude, lastResults[0].longitude,
+    `${lastResults[0].name}, ${lastResults[0].country}`);
+  else search(qInput.value).then(()=>{ if(lastResults[0]) loadConditions(lastResults[0].latitude, lastResults[0].longitude, `${lastResults[0].name}, ${lastResults[0].country}`); });
+});
+
+document.getElementById('locBtn').addEventListener('click', ()=>{
+  if(!navigator.geolocation){ alert('Geolocation not supported by this browser.'); return; }
+  content.innerHTML = '<div class="msg">Locating…</div>';
+  navigator.geolocation.getCurrentPosition(
+    pos => loadConditions(pos.coords.latitude, pos.coords.longitude, 'Your location'),
+    ()  => content.innerHTML = '<div class="msg">Location access denied. Try searching instead.</div>'
+  );
+});
+
+// ---------- Main data load ----------
+const content = document.getElementById('content');
+const cacheBanner = document.getElementById('cacheBanner');
+
+async function loadConditions(lat, lon, label){
+  content.innerHTML = '<div class="msg">Reading instruments…</div>';
+  cacheBanner.innerHTML = '';
+  try{
+    const [wx, aq] = await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,cloud_cover,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,surface_pressure,uv_index&hourly=precipitation_probability,precipitation,surface_pressure,freezing_level_height,visibility,temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&past_hours=3&timezone=auto`).then(r=>r.json()),
+      fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi`).then(r=>r.json()).catch(()=>null)
+    ]);
+    if(wx.error) throw new Error(wx.reason || 'bad request');
+    saveCache(lat, lon, label, wx, aq);
+    render(label, wx, aq, false);
+  }catch(e){
+    const c = loadCache();
+    if(c){
+      render(c.label, c.wx, c.aq, true, c.ts);
+    }else{
+      content.innerHTML = '<div class="msg">Couldn\'t fetch conditions and no saved reading is available. Check your connection and try again.</div>';
     }
+  }
+}
 
-    var drugMatch = raw.match(/^\s*(drug|medicine|med)\s*[:\-]\s*(.+)$/i);
-    if(drugMatch){
-      var name = drugMatch[2].trim();
-      return fetchDrug(name).then(function(html){ return {html:html, cls:""}; })
-        .catch(function(){
-          return {html:"I couldn't find label data for \"" + name + "\" in the openFDA database. Double-check the spelling, or consult a pharmacist.", cls:""};
-        });
-    }
+function render(label, wx, aq, fromCache, ts){
+  lastWx=wx; lastAq=aq; lastLabel=label; lastFromCache=fromCache; lastTs=ts;
+  const c = wx.current;
+  const [icon, desc] = wmo(c.weather_code);
+  const sunriseD = new Date(wx.daily.sunrise[0]);
+  const sunsetD  = new Date(wx.daily.sunset[0]);
+  const sunrise = sunriseD.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const sunset  = sunsetD.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const aqi = aq && aq.current ? aq.current.us_aqi : null;
+  const moon = moonInfo(new Date(), sunriseD, sunsetD);
 
-    var ranked = scoreConditions(text);
-    if(ranked.length){
-      var top = ranked.slice(0,4);
-      var worstU = top.reduce(function(m,r){ return Math.max(m, r.c.u); }, 1);
-      var html = "<div class='banner " + urgencyClass[worstU] + "'>" + urgencyText[worstU] + "</div>";
-      html += "<b>Possible considerations, ranked by symptom overlap:</b><br>";
-      top.forEach(function(r,i){
-        html += "<div class='rank-row'><span>" + (i+1) + ". " + r.c.t + "</span><span class='pct'>" + r.pct + "% overlap</span></div>";
-        html += "<div class='bar'><div class='bar-fill' style='width:" + r.pct + "%'></div></div>";
-        html += "<div class='rank-advice'>" + r.c.advice + "</div>";
-      });
-      html += "<small>Ranking reflects keyword overlap with common conditions — not a clinical probability or diagnosis. A licensed clinician is needed to confirm any cause.</small>";
-      html += "<div class='followup'>How long has this lasted? " +
-        "<button class='fchip' data-d='short'>&lt;24 hrs</button>" +
-        "<button class='fchip' data-d='mid'>2–6 days</button>" +
-        "<button class='fchip' data-d='long'>1+ week</button></div>" +
-        "<div class='followup'>How severe does it feel? " +
-        "<button class='fchip' data-s='mild'>Mild</button>" +
-        "<button class='fchip' data-s='moderate'>Moderate</button>" +
-        "<button class='fchip' data-s='severe'>Severe</button></div>";
-      return Promise.resolve({html:html, cls:"", refine:{u:worstU}});
-    }
+  // locate current hour index in hourly arrays
+  let idx = wx.hourly.time.indexOf(c.time);
+  if(idx === -1) idx = 3; // fallback: past_hours=3 means index 3 is "now"
+  const pastIdx = Math.max(0, idx - 3);
+  const pTrendDelta = c.surface_pressure - wx.hourly.surface_pressure[pastIdx];
+  const trendClass = pTrendDelta > 1 ? 'up' : pTrendDelta < -1 ? 'down' : 'flat';
+  const trendArrow = pTrendDelta > 1 ? '↑' : pTrendDelta < -1 ? '↓' : '→';
 
-    return Promise.resolve({
-      html:"I can assess symptoms or look up medicine info — try \"fever, cough, sore throat\" or \"drug: aspirin\".",
-      cls:""
-    });
+  const precipChance = wx.hourly.precipitation_probability[idx] ?? 0;
+  let precip6h = 0;
+  for(let i=idx; i<Math.min(idx+6, wx.hourly.precipitation.length); i++) precip6h += wx.hourly.precipitation[i];
+  const freezeLvl = Math.round(wx.hourly.freezing_level_height[idx]);
+  const freezeDelta = freezeLvl - wx.elevation;
+  const visKm = (wx.hourly.visibility[idx] ?? 10000) / 1000;
+  const cloudBase = Math.round(Math.max(0, c.temperature_2m - c.dew_point_2m) * 125);
+  const windDeg = c.wind_direction_10m;
+
+  // ---- daylight countdown ----
+  const now = new Date();
+  let daylightMsg;
+  if(now < sunriseD){
+    const mins = Math.round((sunriseD - now) / 60000);
+    daylightMsg = `🌙 Night — sunrise in ${Math.floor(mins/60)}h ${mins%60}m`;
+  }else if(now < sunsetD){
+    const mins = Math.round((sunsetD - now) / 60000);
+    daylightMsg = `☀️ ${Math.floor(mins/60)}h ${mins%60}m of daylight left`;
+  }else{
+    const nextSunrise = wx.daily.sunrise[1] ? new Date(wx.daily.sunrise[1]) : new Date(sunriseD.getTime() + 86400000);
+    const mins = Math.round((nextSunrise - now) / 60000);
+    daylightMsg = `🌙 Night — sunrise in ${Math.floor(mins/60)}h ${mins%60}m`;
   }
 
-  /* ---------- Follow-up refinement (duration / severity chips) ---------- */
-  var pendingRefine = null, chosenDuration = null, chosenSeverity = null;
+  // ---- clothing/layering tip ----
+  const layerTip = suggestLayers(c.apparent_temperature, c.wind_speed_10m, precipChance, c.weather_code);
 
-  function tryRefine(msgDiv){
-    if(!pendingRefine || !chosenDuration || !chosenSeverity) return;
-    var u = pendingRefine.u;
-    if(chosenSeverity === "severe") u = Math.max(u, 3);
-    else if(chosenSeverity === "moderate" && chosenDuration === "long") u = Math.max(u, 2);
-    if(chosenDuration === "long") u = Math.max(u, 2);
-    u = Math.min(u, 3);
-    addMsg("<div class='banner " + urgencyClass[u] + "'>Updated guidance: " + urgencyText[u] +
-      "</div><small>Based on duration (" + chosenDuration + ") and severity (" + chosenSeverity +
-      ") you selected. Still not a diagnosis — when in doubt, contact a clinician.</small>", "agent");
-    pendingRefine = null; chosenDuration = null; chosenSeverity = null;
+  // ---- 48h temperature trend ----
+  const trendTemps = [], trendLabels = [];
+  for(let i=idx; i<Math.min(idx+48, wx.hourly.time.length); i+=3){
+    trendTemps.push(wx.hourly.temperature_2m[i]);
+    trendLabels.push(new Date(wx.hourly.time[i]).toLocaleTimeString([], {hour:'2-digit'}));
   }
 
-  function send(text){
-    if(!text.trim()) return;
-    addMsg(text.replace(/</g,"&lt;"), "user");
-    input.value = "";
-    addTyping();
-    handle(text).then(function(res){
-      removeTyping();
-      var div = addMsg(res.html, "agent", res.cls);
-      if(res.refine){ pendingRefine = res.refine; chosenDuration = null; chosenSeverity = null; }
-    });
+  // ---- severe condition alerts ----
+  const alerts = [];
+  if(isStormCode(c.weather_code) && c.weather_code >= 95) alerts.push('⚡ Thunderstorm risk in the forecast');
+  if(c.wind_gusts_10m >= thresholds.gust) alerts.push(`💨 Dangerous gusts up to ${Math.round(c.wind_gusts_10m)} km/h`);
+  if(c.uv_index >= thresholds.uv) alerts.push('🔆 Extreme UV — cover up and use eye protection');
+  if(Math.abs(freezeDelta) <= 300) alerts.push('🥶 Freezing line is close to your elevation — expect ice underfoot');
+  if(c.apparent_temperature <= thresholds.cold) alerts.push(`🥶 Extreme cold, feels like ${Math.round(c.apparent_temperature)}°C — frostbite risk`);
+  if(precipChance >= thresholds.precip) alerts.push(`🌧️ High chance of precipitation (${precipChance}%) in the next hour`);
+
+  cacheBanner.innerHTML = fromCache
+    ? `<div class="cache-banner"><span>📴 Showing last saved reading from ${timeAgo(ts)}. Live data unavailable.</span></div>`
+    : '';
+
+  const days = wx.daily.time.map((t,i)=>{
+    const [ic] = wmo(wx.daily.weather_code[i]);
+    const dName = new Date(t).toLocaleDateString([], {weekday:'short'});
+    return `<div class="day" data-i="${i}"><div class="d">${dName}</div><div class="ic">${ic}</div>
+      <div class="hi">${Math.round(wx.daily.temperature_2m_max[i])}°</div>
+      <div class="lo">${Math.round(wx.daily.temperature_2m_min[i])}°</div></div>`;
+  }).join('');
+
+  content.innerHTML = `
+    <div class="tip">🧥 <strong>Suggested layers:</strong> ${layerTip}</div>
+    ${alerts.length ? `<div class="alerts">${alerts.map(a=>`<div class="alert">${a}</div>`).join('')}</div>` : ''}
+    <div class="hero">
+      <div class="place">${label}</div>
+      <div class="alt">${units==='metric'?Math.round(wx.elevation):Math.round(wx.elevation*3.28084)}<span> ${units==='metric'?'m':'ft'} elev</span></div>
+      <div class="coords">${wx.latitude.toFixed(4)}°, ${wx.longitude.toFixed(4)}° &nbsp;·&nbsp; ${icon} ${desc}</div>
+      <div class="daylight">${daylightMsg}</div>
+      <div class="updated">Updated ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+      <div class="hero-actions">
+        <button class="star-btn" id="starBtn">${isSaved(wx.latitude, wx.longitude) ? '★ Saved' : '☆ Save location'}</button>
+        <button class="star-btn" id="printBtn">🖨️ Print briefing</button>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="lbl">Temp</div><div class="val">${fmt.temp(c.temperature_2m)}</div></div>
+      <div class="card"><div class="lbl">Feels like</div><div class="val">${fmt.temp(c.apparent_temperature)}</div></div>
+      <div class="card">
+        <div class="lbl">Wind</div>
+        <div class="wind-row">
+          <svg class="compass" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8">
+            <circle cx="12" cy="12" r="10" stroke="var(--line)"/>
+            <g class="arrow" style="transform:rotate(${windDeg}deg)"><path d="M12 4v14M12 4l-3.2 4M12 4l3.2 4" stroke-linecap="round" stroke-linejoin="round"/></g>
+          </svg>
+          <div class="wind-txt"><div class="val">${fmt.speed(c.wind_speed_10m)}</div><div class="sub2">from ${degToCompass(windDeg)} (${Math.round(windDeg)}°)</div><div class="sub2">${beaufort(c.wind_speed_10m)}</div></div>
+        </div>
+      </div>
+      <div class="card"><div class="lbl">Gusts</div><div class="val">${fmt.speed(c.wind_gusts_10m)}</div></div>
+      <div class="card"><div class="lbl">Humidity</div><div class="val">${c.relative_humidity_2m}<small>%</small></div></div>
+      <div class="card"><div class="lbl">Pressure</div><div class="val">${fmt.press(c.surface_pressure)}<span class="trend ${trendClass}">${trendArrow}</span></div><div class="sub2">3h trend</div></div>
+      <div class="card"><div class="lbl">Freezing Level</div><div class="val">${fmt.dist(freezeLvl)}</div><div class="sub2">${freezeDelta>=0?'+':''}${fmt.dist(Math.abs(freezeDelta))} vs your elevation</div></div>
+      <div class="card"><div class="lbl">Precipitation</div><div class="val">${precipChance}<small>% now</small></div><div class="sub2">${fmt.precip(precip6h)} next 6h</div></div>
+      <div class="card"><div class="lbl">Visibility</div><div class="val">${fmt.km(visKm)}</div><div class="sub2">cloud base ≈ ${fmt.dist(cloudBase)} · ${c.cloud_cover}% cover</div></div>
+      <div class="card"><div class="lbl">UV Index</div><div class="val">${c.uv_index.toFixed(1)}</div></div>
+      <div class="card"><div class="lbl">Air Quality</div><div class="val">${aqi !== null ? aqi : '—'}<small>${aqi !== null ? 'AQI':''}</small></div></div>
+      <div class="card"><div class="lbl">Sunrise / Sunset</div><div class="val" style="font-size:16px">${sunrise}<br>${sunset}</div></div>
+      <div class="card"><div class="lbl">Moon Phase</div><div class="val" style="font-size:16px">${moon.icon} ${moon.name}</div><div class="sub2">${moon.illum}% lit · rise ${moon.rise} · set ${moon.set} (approx)</div></div>
+      <div class="card altcard"><div class="lbl">Temp @ Altitude</div><div class="val" id="altOut">--</div><div class="sub2">Target: <input type="number" id="altInput" value="${Math.round(wx.elevation)+1000}" step="100"> m</div></div>
+      <div class="card altcard"><div class="lbl">Barometric Altimeter</div><div class="sub2">P <input type="number" id="baroP" value="${Math.round(c.surface_pressure)}"> hPa · Ref <input type="number" id="baroRef" value="1013.25" step="0.01"> hPa</div><div class="val" id="baroOut" style="margin-top:6px">--</div></div>
+    </div>
+    <div class="forecast">
+      <h2>48h Temp Trend</h2>
+      ${buildTrendSVG(trendTemps)}
+      <div class="trend-labels"><span>${trendLabels[0]||''}</span><span>${trendLabels[trendLabels.length-1]||''}</span></div>
+      <div class="sub2">Low ${fmt.temp(Math.min(...trendTemps))} · High ${fmt.temp(Math.max(...trendTemps))}</div>
+    </div>
+    <div class="forecast">
+      <h2>7-Day Outlook <span style="font-weight:400; text-transform:none; letter-spacing:0;">(tap a day for hourly)</span></h2>
+      <div class="days">${days}</div>
+      <div class="hour-strip" id="hourStrip"></div>
+    </div>
+    <div class="forecast compare">
+      <h2>Compare With Another Peak</h2>
+      <select id="compareSel"><option value="">Choose a peak…</option>${PEAKS.map((p,i)=>`<option value="${i}">${p.n} (${p.m}m)</option>`).join('')}</select>
+      <div id="cmpResult"></div>
+    </div>
+  `;
+
+  const starBtn = document.getElementById('starBtn');
+  if(starBtn) starBtn.addEventListener('click', ()=>{ toggleSave(label, wx.latitude, wx.longitude); render(label, wx, aq, fromCache, ts); });
+
+  const printBtn = document.getElementById('printBtn');
+  if(printBtn) printBtn.addEventListener('click', ()=> window.print());
+
+  const altInput = document.getElementById('altInput');
+  function updateAlt(){
+    const target = +altInput.value || wx.elevation;
+    const delta = (target - wx.elevation) / 1000 * 6.5;
+    document.getElementById('altOut').textContent = fmt.temp(c.temperature_2m - delta);
   }
+  if(altInput){ altInput.addEventListener('input', updateAlt); updateAlt(); }
 
-  form.addEventListener("submit", function(e){
-    e.preventDefault();
-    send(input.value);
-  });
+  const baroP = document.getElementById('baroP'), baroRef = document.getElementById('baroRef');
+  function updateBaro(){
+    const p = +baroP.value || c.surface_pressure, ref = +baroRef.value || 1013.25;
+    const h = Math.round(44330 * (1 - Math.pow(p/ref, 1/5.255)));
+    const delta = h - Math.round(wx.elevation);
+    document.getElementById('baroOut').innerHTML = `${h} m <small style="font-size:12px;color:var(--sub)">(Δ${delta>=0?'+':''}${delta}m)</small>`;
+  }
+  if(baroP){ baroP.addEventListener('input', updateBaro); baroRef.addEventListener('input', updateBaro); updateBaro(); }
 
-  document.getElementById("chips").addEventListener("click", function(e){
-    if(e.target.classList.contains("chip")) send(e.target.textContent);
-  });
+  if(typeof updateRouteOptions === 'function') updateRouteOptions();
 
-  chat.addEventListener("click", function(e){
-    if(!e.target.classList.contains("fchip")) return;
-    if(e.target.dataset.d){ chosenDuration = e.target.dataset.d; }
-    if(e.target.dataset.s){ chosenSeverity = e.target.dataset.s; }
-    e.target.style.opacity = "0.5";
-    tryRefine();
+  const compareSel = document.getElementById('compareSel');
+  if(compareSel) compareSel.addEventListener('change', async e=>{
+    const cmpResult = document.getElementById('cmpResult');
+    if(e.target.value === ''){ cmpResult.innerHTML = ''; return; }
+    const p = PEAKS[e.target.value];
+    cmpResult.innerHTML = '<div class="msg" style="padding:10px">Loading…</div>';
+    try{
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,wind_speed_10m,weather_code&timezone=auto`).then(r=>r.json());
+      const [ic2] = wmo(r.current.weather_code);
+      cmpResult.innerHTML = `<div class="cmp-table">
+        <div class="h">Location</div><div class="h">${label}</div><div class="h">${p.n}</div>
+        <div>Elevation</div><div>${fmt.dist(wx.elevation)}</div><div>${fmt.dist(p.m)}</div>
+        <div>Temp</div><div>${fmt.temp(c.temperature_2m)}</div><div>${fmt.temp(r.current.temperature_2m)}</div>
+        <div>Wind</div><div>${fmt.speed(c.wind_speed_10m)}</div><div>${fmt.speed(r.current.wind_speed_10m)}</div>
+        <div>Weather</div><div>${icon}</div><div>${ic2}</div>
+      </div>`;
+    }catch(err){ cmpResult.innerHTML = '<div class="msg">Could not load comparison.</div>'; }
   });
-})();
+}
 </script>
 </body>
 </html>
