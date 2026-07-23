@@ -105,12 +105,18 @@
     padding:12px 14px; cursor:pointer; transition:border-color .15s;
   }
   .card:hover, .card:focus-visible{ border-color:var(--accent); }
+  .card.selected{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
   .card .row1{display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
   .callsign{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.02rem;}
   .country{color:var(--muted); font-size:.75rem;}
   .metrics{display:flex; gap:14px; margin-top:8px; font-size:.78rem; flex-wrap:wrap;}
   .metrics span b{color:var(--accent); font-weight:600;}
   .ground{color:var(--accent2);}
+  .details{margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); font-size:.75rem; color:var(--muted); display:grid; gap:4px;}
+  .details b{color:var(--text);}
+  .live-dot{display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--accent2); margin-right:5px; animation:pulse 1.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.25;}}
+  @media (prefers-reduced-motion:reduce){ .live-dot{animation:none;} }
   .empty, .error{padding:24px; text-align:center; color:var(--muted); font-size:.85rem;}
   .error{color:var(--danger);}
   code{background:var(--bg); padding:1px 5px; border-radius:4px;}
@@ -180,11 +186,7 @@
 (function(){
   "use strict";
 
-  if(typeof L === 'undefined'){
-    document.getElementById('status').textContent = 'Map library failed to load — check your connection and reload.';
-    document.getElementById('list').innerHTML = '<div class="error">Leaflet did not load from the CDN. Please refresh the page.</div>';
-    return;
-  }
+  var MAP_READY = (typeof L !== 'undefined');
 
   /* ---------- Footer year ---------- */
   var startYear = 2026, nowYear = new Date().getFullYear();
@@ -226,7 +228,9 @@
     CAI:{lat:30.1219,lon:31.4056}, MEX:{lat:19.4363,lon:-99.0721}
   };
 
-  /* ---------- Map ---------- */
+  /* ---------- Map (guarded: theme toggle above still works even if this fails) ---------- */
+  try{
+  if(!MAP_READY) throw new Error('Map library failed to load from the CDN.');
   var DEFAULT_CENTER = [51.4700, -0.4543]; // Heathrow, used if geolocation is unavailable
   var map = L.map('map', { zoomControl:true }).setView(DEFAULT_CENTER, 8);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -234,13 +238,16 @@
   }).addTo(map);
 
   var markersLayer = L.layerGroup().addTo(map);
-  var trailLine = L.polyline([], { color:'var(--accent2)', weight:2, opacity:.8 }).addTo(map);
+  var trailLine = L.polyline([], { color:'#35c46b', weight:2, opacity:.8 }).addTo(map);
   var statusEl = document.getElementById('status');
   var listEl = document.getElementById('list');
   var homePoint = null;          // {lat,lon} from geolocation, for the "Nearby" button
   var activeRequest = null;      // describes what fetchActive() should repeat on refresh/interval
   var trailHistory = {};         // hex -> [[lat,lon], ...] recent trail points
   var sortMode = 'alt';          // 'alt' or 'speed'
+  var selectedHex = null;        // hex of the flight currently expanded/tracked
+  var lastAircraftData = [];     // most recently fetched aircraft list, for instant re-render on selection
+  var routeCache = {};           // callsign -> {status:'pending'|'done'|'none', airline, origin, destination}
   var MAX_TRAIL_POINTS = 15;
 
   function planeDivIcon(track, onGround){
@@ -303,18 +310,40 @@
   }
 
   /* ---------- Render ---------- */
-  function render(aircraft, emptyMsg){
+  function fetchRoute(callsign){
+    if(!callsign || routeCache[callsign]) return; // already looked up or in flight
+    routeCache[callsign] = { status:'pending' };
+    fetch('https://api.adsbdb.com/v0/callsign/'+encodeURIComponent(callsign))
+      .then(function(r){ if(!r.ok) throw new Error('not found'); return r.json(); })
+      .then(function(data){
+        var fr = data && data.response && data.response.flightroute;
+        if(!fr){ routeCache[callsign] = { status:'none' }; return; }
+        routeCache[callsign] = {
+          status:'done',
+          airline: fr.airline ? fr.airline.name : null,
+          origin: fr.origin ? (fr.origin.iata_code || fr.origin.icao_code) + ' ' + fr.origin.municipality : null,
+          destination: fr.destination ? (fr.destination.iata_code || fr.destination.icao_code) + ' ' + fr.destination.municipality : null
+        };
+      })
+      .catch(function(){ routeCache[callsign] = { status:'none' }; })
+      .then(function(){ if(selectedHex) render(lastAircraftData, undefined, true); });
+  }
+
+  function render(aircraft, emptyMsg, skipTrailUpdate){
     markersLayer.clearLayers();
     listEl.innerHTML = '';
     aircraft = aircraft.filter(function(a){ return a.lat != null && a.lon != null; });
+    lastAircraftData = aircraft;
 
-    aircraft.forEach(function(a){
-      if(!a.hex) return;
-      var pts = trailHistory[a.hex] || [];
-      pts.push([a.lat, a.lon]);
-      if(pts.length > MAX_TRAIL_POINTS) pts.shift();
-      trailHistory[a.hex] = pts;
-    });
+    if(!skipTrailUpdate){
+      aircraft.forEach(function(a){
+        if(!a.hex) return;
+        var pts = trailHistory[a.hex] || [];
+        pts.push([a.lat, a.lon]);
+        if(pts.length > MAX_TRAIL_POINTS) pts.shift();
+        trailHistory[a.hex] = pts;
+      });
+    }
 
     if(!aircraft.length){
       statusEl.textContent = emptyMsg || 'No aircraft found.';
@@ -327,6 +356,10 @@
       ? function(a,b){ return (b.gs||0) - (a.gs||0); }
       : function(a,b){ return (typeof b.alt_baro==='number'?b.alt_baro:-1) - (typeof a.alt_baro==='number'?a.alt_baro:-1); };
     aircraft.sort(cmp).forEach(function(a){ addFlight(a); });
+
+    if(selectedHex && trailHistory[selectedHex]){
+      trailLine.setLatLngs(trailHistory[selectedHex]);
+    }
   }
 
   function addFlight(a){
@@ -337,17 +370,41 @@
     var alt = (!onGround && typeof a.alt_baro === 'number') ? Math.round(a.alt_baro) : null;
     var speed = a.gs != null ? Math.round(a.gs) : null;
     var track = a.track;
+    var vrate = a.baro_rate;
+    var isSelected = (a.hex === selectedHex);
 
     var marker = L.marker([lat, lon], { icon: planeDivIcon(track, onGround) });
-    marker.bindPopup(
-      '<b>'+escapeHtml(callsign)+'</b><br>'+escapeHtml(detail)+
-      '<br>Alt: '+(alt!=null? alt+' ft':'—')+
-      '<br>Speed: '+(speed!=null? speed+' kt':'—')
-    );
     marker.addTo(markersLayer);
 
     var card = document.createElement('div');
-    card.className = 'card'; card.tabIndex = 0;
+    card.className = 'card' + (isSelected ? ' selected' : ''); card.tabIndex = 0;
+    var detailsHtml = '';
+    if(isSelected){
+      var vrateTxt = vrate == null ? '—' : (vrate > 50 ? '↑ climbing' : vrate < -50 ? '↓ descending' : 'level');
+      var csKey = (a.flight||'').trim();
+      var routeLine = '<div>Route: <b>No callsign broadcast</b></div>';
+      if(csKey){
+        fetchRoute(csKey);
+        var rc = routeCache[csKey];
+        if(!rc || rc.status === 'pending'){
+          routeLine = '<div>Route: <b>Looking up airline &amp; destination…</b></div>';
+        } else if(rc.status === 'none'){
+          routeLine = '<div>Route: <b>Not available for this flight</b></div>';
+        } else {
+          routeLine =
+            '<div>Airline: <b>'+escapeHtml(rc.airline || 'Unknown')+'</b></div>'+
+            '<div>Route: <b>'+escapeHtml(rc.origin || '?')+' → '+escapeHtml(rc.destination || '?')+'</b></div>';
+        }
+      }
+      detailsHtml =
+        '<div class="details">'+
+          '<div><span class="live-dot" aria-hidden="true"></span><b>Live position</b></div>'+
+          routeLine +
+          '<div>Lat/Lon: <b>'+lat.toFixed(4)+', '+lon.toFixed(4)+'</b></div>'+
+          '<div>Vertical: <b>'+vrateTxt+'</b></div>'+
+          '<div>ICAO24: <b>'+escapeHtml(a.hex)+'</b>'+(a.r?' · Reg: <b>'+escapeHtml(a.r)+'</b>':'')+'</div>'+
+        '</div>';
+    }
     card.innerHTML =
       '<div class="row1"><span class="callsign">'+escapeHtml(callsign)+'</span>'+
       '<span class="country">'+escapeHtml(detail)+'</span></div>'+
@@ -355,15 +412,20 @@
         '<span>Alt <b>'+(alt!=null? alt.toLocaleString()+' ft':'—')+'</b></span>'+
         '<span>Spd <b>'+(speed!=null? speed+' kt':'—')+'</b></span>'+
         (onGround ? '<span class="ground">● On ground</span>' : '<span>Hdg <b>'+(track!=null? Math.round(track)+'°':'—')+'</b></span>')+
-      '</div>';
-    function focusFlight(){
+      '</div>' + detailsHtml;
+
+    function selectFlight(){
+      selectedHex = isSelected ? null : a.hex;
       map.flyTo([lat, lon], 10);
-      marker.openPopup();
       trailLine.setLatLngs(trailHistory[a.hex] || []);
+      if(window.matchMedia('(max-width:767px)').matches){
+        document.getElementById('map').scrollIntoView({ behavior:'smooth', block:'start' });
+      }
+      render(lastAircraftData, undefined, true); // redraw immediately with the new selection, no duplicate trail point
     }
-    card.addEventListener('click', focusFlight);
-    card.addEventListener('keydown', function(e){ if(e.key==='Enter') focusFlight(); });
-    marker.on('click', focusFlight);
+    card.addEventListener('click', selectFlight);
+    card.addEventListener('keydown', function(e){ if(e.key==='Enter') selectFlight(); });
+    marker.on('click', selectFlight);
     listEl.appendChild(card);
   }
 
@@ -380,12 +442,14 @@
     var q = document.getElementById('searchInput').value.trim();
     if(!q) return;
     trailLine.setLatLngs([]);
+    selectedHex = null;
     if(mode === 'airport'){ setAirportSearch(q.toUpperCase()); }
     else { setLookup(mode, q); }
   });
   document.getElementById('clearBtn').addEventListener('click', function(){
     document.getElementById('searchInput').value = '';
     trailLine.setLatLngs([]);
+    selectedHex = null;
     if(homePoint) setNearby(homePoint.lat, homePoint.lon);
   });
 
@@ -416,6 +480,11 @@
 
   document.getElementById('refreshBtn').addEventListener('click', fetchActive);
   setInterval(fetchActive, 15000);
+  }catch(mapErr){
+    document.getElementById('status').textContent = 'Map/data features unavailable.';
+    document.getElementById('list').innerHTML = '<div class="error">'+ String(mapErr.message||mapErr) +
+      ' — theme switching still works above, but live tracking needs Leaflet (from cdnjs.cloudflare.com) and network access to load.</div>';
+  }
 })();
 </script>
 </body>
