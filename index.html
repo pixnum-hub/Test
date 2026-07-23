@@ -159,6 +159,19 @@
     <input id="searchInput" type="text" placeholder="e.g. BAW123, G-EUPT, LHR" autocomplete="off">
     <button type="submit">Search</button>
     <button type="button" class="ghost" id="clearBtn">Nearby</button>
+    <select id="regionSelect" aria-label="Region">
+      <option value="">Region…</option>
+      <option value="global">Global (world view)</option>
+      <option value="na">North America</option>
+      <option value="sa">South America</option>
+      <option value="eu">Europe</option>
+      <option value="me">Middle East</option>
+      <option value="af">Africa</option>
+      <option value="in">India</option>
+      <option value="sea">South East Asia</option>
+      <option value="ea">East Asia</option>
+      <option value="oc">Oceania</option>
+    </select>
   </form>
 
   <div class="statusbar">
@@ -184,13 +197,10 @@
 <script>
 (function(){
   "use strict";
-
   var MAP_READY = (typeof L !== 'undefined');
-
   /* ---------- Footer year ---------- */
   var startYear = 2026, nowYear = new Date().getFullYear();
   document.getElementById('yearRange').textContent = nowYear > startYear ? (startYear + '–' + nowYear) : String(startYear);
-
   /* ---------- Theme ---------- */
   var THEME_KEY = 'skytrace-theme';
   function applyTheme(t){
@@ -206,7 +216,6 @@
   var savedTheme = null;
   try{ savedTheme = localStorage.getItem(THEME_KEY); }catch(e){}
   applyTheme(savedTheme || 'dark');
-
   /* ---------- A small built-in airport lookup (no key needed, no external DB) ---------- */
   var AIRPORTS = {
     LHR:{lat:51.4700,lon:-0.4543}, LGW:{lat:51.1481,lon:-0.1903}, JFK:{lat:40.6413,lon:-73.7781},
@@ -226,7 +235,11 @@
     GRU:{lat:-23.4356,lon:-46.4731}, EZE:{lat:-34.8222,lon:-58.5358}, JNB:{lat:-26.1392,lon:28.2460},
     CAI:{lat:30.1219,lon:31.4056}, MEX:{lat:19.4363,lon:-99.0721}
   };
-
+  var REGIONS = {
+    global:{lat:20,lon:0,zoom:2}, na:{lat:39.8,lon:-98.6,zoom:4}, sa:{lat:-14.2,lon:-51.9,zoom:4},
+    eu:{lat:54.5,lon:15.3,zoom:4}, me:{lat:24,lon:45,zoom:5}, af:{lat:1.5,lon:20,zoom:4},
+    in:{lat:22.9,lon:78.7,zoom:5}, sea:{lat:5,lon:105,zoom:5}, ea:{lat:35,lon:115,zoom:4}, oc:{lat:-25,lon:135,zoom:4}
+  };
   /* ---------- Map (guarded: theme toggle above still works even if this fails) ---------- */
   try{
   if(!MAP_READY) throw new Error('Map library failed to load from the CDN.');
@@ -235,7 +248,6 @@
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution:'&copy; OpenStreetMap contributors', maxZoom:12
   }).addTo(map);
-
   var markersLayer = L.layerGroup().addTo(map);
   var trailLine = L.polyline([], { color:'#35c46b', weight:2, opacity:.8 }).addTo(map);
   var statusEl = document.getElementById('status');
@@ -247,15 +259,14 @@
   var selectedHex = null;        // hex of the flight currently expanded/tracked
   var lastAircraftData = [];     // most recently fetched aircraft list, for instant re-render on selection
   var routeCache = {};           // callsign -> {status:'pending'|'done'|'none', airline, origin, destination}
+  var lastMetrics = {};          // hex -> {alt, speed} from the previous poll, for live trend arrows
   var MAX_TRAIL_POINTS = 15;
-
   function planeDivIcon(track, onGround){
     var rot = onGround ? 0 : (track || 0);
     var color = onGround ? 'var(--muted)' : 'var(--accent)';
     var html = '<div class="plane-icon" style="transform:rotate('+rot+'deg); color:'+color+';">✈</div>';
     return L.divIcon({ html:html, className:'', iconSize:[22,22], iconAnchor:[11,11] });
   }
-
   /* ---------- Fetching ---------- */
   function fetchActive(){
     if(!activeRequest) return;
@@ -268,7 +279,6 @@
       render((data && data.ac) || [], activeRequest.emptyMsg);
     }).catch(function(err){ showFetchError(err); });
   }
-
   function showFetchError(err){
     statusEl.textContent = 'Could not load flights. See note below.';
     var isFileOrigin = location.protocol === 'file:';
@@ -280,14 +290,12 @@
           'may be briefly unavailable (no key needed, but it has no uptime guarantee).') +
       '</div>';
   }
-
   function setNearby(lat, lon, label){
     map.setView([lat, lon], 8);
     activeRequest = { url:'https://api.airplanes.live/v2/point/'+lat+'/'+lon+'/100', emptyMsg:'No aircraft currently reporting in this area.' };
     if(label) statusEl.textContent = label;
     fetchActive();
   }
-
   function setAirportSearch(code){
     var ap = AIRPORTS[code];
     if(!ap){
@@ -299,7 +307,6 @@
     activeRequest = { url:'https://api.airplanes.live/v2/point/'+ap.lat+'/'+ap.lon+'/20', emptyMsg:'No aircraft currently near '+code+'.' };
     fetchActive();
   }
-
   function setLookup(mode, query){
     var path = mode === 'callsign' ? 'callsign/'+encodeURIComponent(query)
       : mode === 'reg' ? 'reg/'+encodeURIComponent(query)
@@ -307,7 +314,6 @@
     activeRequest = { url:'https://api.airplanes.live/v2/'+path, emptyMsg:'No aircraft currently transmitting under that '+mode+'.' };
     fetchActive();
   }
-
   /* ---------- Render ---------- */
   function fetchRoute(callsign){
     if(!callsign || routeCache[callsign]) return; // already looked up or in flight
@@ -327,13 +333,11 @@
       .catch(function(){ routeCache[callsign] = { status:'none' }; })
       .then(function(){ if(selectedHex) render(lastAircraftData, undefined, true); });
   }
-
   function render(aircraft, emptyMsg, skipTrailUpdate){
     markersLayer.clearLayers();
     listEl.innerHTML = '';
     aircraft = aircraft.filter(function(a){ return a.lat != null && a.lon != null; });
     lastAircraftData = aircraft;
-
     if(!skipTrailUpdate){
       aircraft.forEach(function(a){
         if(!a.hex) return;
@@ -343,38 +347,34 @@
         trailHistory[a.hex] = pts;
       });
     }
-
     if(!aircraft.length){
       statusEl.textContent = emptyMsg || 'No aircraft found.';
       listEl.innerHTML = '<div class="empty">'+escapeHtml(emptyMsg || 'No flights found. Try refreshing in a moment.')+'</div>';
       return;
     }
     statusEl.innerHTML = '<strong>'+aircraft.length+'</strong> aircraft tracked';
-
     var cmp = sortMode === 'speed'
       ? function(a,b){ return (b.gs||0) - (a.gs||0); }
       : function(a,b){ return (typeof b.alt_baro==='number'?b.alt_baro:-1) - (typeof a.alt_baro==='number'?a.alt_baro:-1); };
     aircraft.sort(cmp).forEach(function(a){ addFlight(a); });
-
     if(selectedHex && trailHistory[selectedHex]){
       trailLine.setLatLngs(trailHistory[selectedHex]);
     }
   }
-
   function addFlight(a){
     var callsign = (a.flight||'').trim() || (a.r||'').trim() || a.hex.toUpperCase();
     var detail = a.t || a.r || a.hex;
     var lat = a.lat, lon = a.lon;
     var onGround = a.alt_baro === 'ground';
     var alt = (!onGround && typeof a.alt_baro === 'number') ? Math.round(a.alt_baro) : null;
-    var speed = a.gs != null ? Math.round(a.gs) : null;
-    var track = a.track;
-    var vrate = a.baro_rate;
+    var speed = a.gs != null ? Math.round(a.gs) : null, track = a.track, vrate = a.baro_rate;
     var isSelected = (a.hex === selectedHex);
-
+    var prevM = lastMetrics[a.hex] || {};
+    var altArrow = (alt!=null && prevM.alt!=null) ? (alt>prevM.alt?' ▲':alt<prevM.alt?' ▼':'') : '';
+    var spdArrow = (speed!=null && prevM.speed!=null) ? (speed>prevM.speed?' ▲':speed<prevM.speed?' ▼':'') : '';
+    lastMetrics[a.hex] = { alt:alt, speed:speed };
     var marker = L.marker([lat, lon], { icon: planeDivIcon(track, onGround) });
     marker.addTo(markersLayer);
-
     var card = document.createElement('div');
     card.className = 'card' + (isSelected ? ' selected' : ''); card.tabIndex = 0;
     var detailsHtml = '';
@@ -408,11 +408,10 @@
       '<div class="row1"><span class="callsign">'+escapeHtml(callsign)+'</span>'+
       '<span class="country">'+escapeHtml(detail)+'</span></div>'+
       '<div class="metrics">'+
-        '<span>Alt <b>'+(alt!=null? alt.toLocaleString()+' ft':'—')+'</b></span>'+
-        '<span>Spd <b>'+(speed!=null? speed+' kt':'—')+'</b></span>'+
+        '<span>Alt <b>'+(alt!=null? alt.toLocaleString()+' ft':'—')+'</b>'+altArrow+'</span>'+
+        '<span>Spd <b>'+(speed!=null? speed+' kt':'—')+'</b>'+spdArrow+'</span>'+
         (onGround ? '<span class="ground">● On ground</span>' : '<span>Hdg <b>'+(track!=null? Math.round(track)+'°':'—')+'</b></span>')+
       '</div>' + detailsHtml;
-
     function selectFlight(){
       selectedHex = isSelected ? null : a.hex;
       map.flyTo([lat, lon], 10);
@@ -427,13 +426,11 @@
     marker.on('click', selectFlight);
     listEl.appendChild(card);
   }
-
   function escapeHtml(str){
     return String(str==null?'':str).replace(/[&<>"']/g, function(c){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
     });
   }
-
   /* ---------- Search form ---------- */
   document.getElementById('searchForm').addEventListener('submit', function(e){
     e.preventDefault();
@@ -451,14 +448,27 @@
     selectedHex = null;
     if(homePoint) setNearby(homePoint.lat, homePoint.lon);
   });
-
+  document.getElementById('regionSelect').addEventListener('change', function(){
+    var key = this.value; if(!key) return;
+    var r = REGIONS[key];
+    trailLine.setLatLngs([]); selectedHex = null;
+    map.setView([r.lat, r.lon], r.zoom);
+    if(key === 'global'){
+      activeRequest = null;
+      statusEl.textContent = 'World view — pick a smaller region, airport, or flight search to load live traffic.';
+      listEl.innerHTML = '<div class="empty">The free API caps each query at 250 nm, so a single global view isn\'t possible — zoom in or pick a region.</div>';
+      return;
+    }
+    activeRequest = { url:'https://api.airplanes.live/v2/point/'+r.lat+'/'+r.lon+'/250',
+      emptyMsg:'No aircraft currently reporting near the center of this region (queries are capped at 250 nm).' };
+    fetchActive();
+  });
   /* ---------- Sort toggle ---------- */
   document.getElementById('sortBtn').addEventListener('click', function(){
     sortMode = sortMode === 'alt' ? 'speed' : 'alt';
     this.textContent = sortMode === 'alt' ? 'Sort: Alt ↓' : 'Sort: Speed ↓';
     fetchActive();
   });
-
   /* ---------- Locate + boot ---------- */
   if(navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
@@ -476,7 +486,6 @@
     homePoint = { lat:DEFAULT_CENTER[0], lon:DEFAULT_CENTER[1] };
     setNearby(homePoint.lat, homePoint.lon);
   }
-
   document.getElementById('refreshBtn').addEventListener('click', fetchActive);
   setInterval(fetchActive, 15000);
   }catch(mapErr){
