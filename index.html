@@ -6,17 +6,6 @@
 <meta name="format-detection" content="telephone=no,date=no,email=no,address=no">
 <meta name="color-scheme" content="dark light">
 <title>SkyTrace — Live Flight Tracker</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#3b82f6">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SkyTrace">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
-<link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -981,19 +970,60 @@ function startProgress(){
 // ═══════════════════════════════════════════════════════════════════════════
 // FETCH
 // ═══════════════════════════════════════════════════════════════════════════
+let _fetchFailCount = 0; // track consecutive fetch failures
+
 async function fetchOne(p){
   const BASE='https://api.airplanes.live/v2/point';
   try{
     const res=await fetch(`${BASE}/${p.lat}/${p.lon}/${p.r}`,{signal:AbortSignal.timeout(10000)});
-    if(res.ok){const d=await res.json();return d.ac||[]}
-  }catch{}
-  return[];
+    if(res.ok){
+      const d=await res.json();
+      _fetchFailCount=0; // reset on success
+      return{ac:d.ac||[],ok:true};
+    }
+    _fetchFailCount++;
+    return{ac:[],ok:false,status:res.status};
+  }catch(e){
+    _fetchFailCount++;
+    return{ac:[],ok:false,err:e.name||e.message};
+  }
 }
 
 function mergeFlights(results){
   const map=new Map();
   for(const ac of results){if(ac.hex)map.set(ac.hex,ac)}
   return[...map.values()];
+}
+
+function showConnectionError(){
+  const isPreview=location.hostname.includes('claudeusercontent.com')||
+                  location.hostname.includes('claude.ai');
+  if(isPreview){
+    showEmpty(`
+      <div style="max-width:320px;margin:0 auto;text-align:left">
+        <div style="font-size:1.5rem;margin-bottom:10px;text-align:center">🔒 Preview Sandbox</div>
+        <div style="font-size:.85rem;color:var(--tx);margin-bottom:12px;text-align:center">
+          Flight API is blocked in Claude's preview.<br>The app works perfectly in your browser.
+        </div>
+        <div style="background:var(--card);border-radius:10px;padding:12px 14px;font-size:.78rem;line-height:1.8">
+          <b>To use SkyTrace:</b><br>
+          1. Download <b>SkyTrace.html</b> from above<br>
+          2. Open it in <b>Chrome / Firefox / Safari</b><br>
+          3. Live flights load instantly ✈
+        </div>
+      </div>
+    `);
+    setStatus('Preview mode — download to use','',true);
+  }else{
+    showEmpty(`
+      <div style="text-align:center">
+        <div style="font-size:1.5rem;margin-bottom:8px">📡 No Connection</div>
+        <div style="font-size:.83rem;margin-bottom:12px">Could not reach airplanes.live</div>
+        <button class="btn" onclick="startCycle()" style="margin:0 auto">🔄 Retry</button>
+      </div>
+    `);
+    setStatus('Connection failed — tap Retry','',true);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1006,13 +1036,21 @@ async function loadFlights(){
   const raw=[];
 
   // ── FIRST BATCH: fire immediately, show results as soon as they land ──────
-  // No delay on first batch — user sees data in ~1-2 seconds
-  const FIRST=Math.min(4,pts.length); // first 4 points fire together
-  if(isFirst){setStatus('Loading…','');showLoader()}
+  const FIRST=Math.min(4,pts.length);
+  if(isFirst){setStatus('Connecting…','');showLoader()}
   startProgress();
 
-  const firstResults=await Promise.all(pts.slice(0,FIRST).map(fetchOne));
-  raw.push(...firstResults.flat());
+  const firstBatch=await Promise.all(pts.slice(0,FIRST).map(fetchOne));
+  const firstOk=firstBatch.filter(r=>r.ok).length;
+  raw.push(...firstBatch.flatMap(r=>r.ac));
+
+  // If ALL first-batch requests failed — connection error
+  if(firstOk===0&&isFirst){
+    showConnectionError();
+    setStatus('Connection failed','',true);
+    refreshTimer=setTimeout(loadFlights,15000); // retry in 15s
+    return;
+  }
 
   // Show first results immediately
   const firstAc=mergeFlights(raw);
@@ -1028,9 +1066,8 @@ async function loadFlights(){
   for(let i=FIRST;i<pts.length;i+=BATCH){
     await new Promise(r=>setTimeout(r,DELAY));
     const br=await Promise.all(pts.slice(i,i+BATCH).map(fetchOne));
-    raw.push(...br.flat());
+    raw.push(...br.flatMap(r=>r.ac));
 
-    // Merge and update incrementally
     const ac=mergeFlights(raw);
     allFlights=ac;flightMap=new Map(ac.map(f=>[f.hex,f]));
     const ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -1049,7 +1086,7 @@ async function loadFlights(){
 
 function startCycle(){
   clearTimeout(refreshTimer);if(rafId)cancelAnimationFrame(rafId);
-  allFlights=[];flightMap=new Map();isFirst=true;loadFlights();
+  allFlights=[];flightMap=new Map();isFirst=true;_fetchFailCount=0;loadFlights();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1694,19 +1731,4 @@ function updateDiversionTracking(flights){
     if(h.headings.length>=5&&!h.baseline)h.baseline=h.headings.slice(0,5).reduce((a,b)=>a+b,0)/5;
     if(h.baseline!=null&&h.headings.length>=5){
       const recent=h.headings.slice(-3);
-      const recentAvg=recent.reduce((a,b)=>a+b,0)/recent.length;
-      let diff=Math.abs(recentAvg-h.baseline);if(diff>180)diff=360-diff;
-      if(diff>25){h.alert=true;alerts.push({f,diff:Math.round(diff),baseline:Math.round(h.baseline),current:Math.round(recentAvg)})}
-      else if(diff<10)h.alert=false;
-    }
-  }
-  renderDiversionPanel(alerts);
-}
-function renderDiversionPanel(alerts){
-  const el=document.getElementById('diversionPanel');if(!el)return;
-  if(!alerts.length){el.innerHTML=`<div class="top5-hdr">⚠️ Diversion Alerts</div><div style="padding:10px 13px;font-size:.84rem;color:var(--mu)">✅ No diversions detected</div>`;return}
-  el.innerHTML=`<div class="top5-hdr">⚠️ Diversion Alerts — ${alerts.length} detected</div>`+
-    alerts.slice(0,8).map(({f,diff,baseline,current})=>{
-      const cs=(f.flight||f.hex||'?').trim();
-      return`<div class="top5-row" onclick="openDetail('${safeHex(f.hex)}')"><div class="top5-cs">${cs}</div><div style="flex:1;min-width:0"><div class="top5-sub">${getAirline(f.flight)||''}</div><div class="top5-sub">Base:${baseline}° Now:${current}° (${diff}° off)</div></div><div class="fbadge fb-divert">⚠️${diff}°</div></div>`;
-    }).join('');
+      const recentAvg=recent.
