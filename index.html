@@ -697,6 +697,8 @@
     <button class="tab-btn" data-panel="work">Work & Money</button>
     <button class="tab-btn" data-panel="wellness">Study & Wellness</button>
     <button class="tab-btn" data-panel="rituals">Rituals & Ceremonies</button>
+    <button class="tab-btn" data-panel="travel">Travel & Vehicle</button>
+    <button class="tab-btn" data-panel="objects">Home Objects</button>
     <button class="tab-btn" data-panel="roommap">Room Map</button>
   </div>
 
@@ -754,6 +756,22 @@
     <select id="ritualsActivity"></select>
     <button class="capture-btn" id="ritualsCapture">Use Current Facing Direction</button>
     <div class="result-card" id="ritualsResult" style="display:none;"></div>
+  </div>
+
+  <!-- TRAVEL & VEHICLE ADVISOR -->
+  <div class="panel" id="panel-travel">
+    <h2>Travel & Vehicle</h2>
+    <select id="travelActivity"></select>
+    <button class="capture-btn" id="travelCapture">Use Current Facing Direction</button>
+    <div class="result-card" id="travelResult" style="display:none;"></div>
+  </div>
+
+  <!-- HOME OBJECTS ADVISOR -->
+  <div class="panel" id="panel-objects">
+    <h2>Home Objects</h2>
+    <select id="objectsActivity"></select>
+    <button class="capture-btn" id="objectsCapture">Use Current Facing Direction</button>
+    <div class="result-card" id="objectsResult" style="display:none;"></div>
   </div>
 
   <!-- ROOM MAPPING MODE -->
@@ -1375,6 +1393,64 @@
       var dir = eightFromHeading(avgHeading);
       var rating = rateFromLists(dir, activity.best, activity.acceptable, activity.avoid);
       var card = document.getElementById('ritualsResult');
+      card.style.display = 'block';
+      card.className = 'result-card rating-' + rating;
+      card.innerHTML = 'Facing ' + dir + ' <span class="rating-tag">' + rating + '</span>' +
+        '<div style="margin-top:6px;">' + activity.tip + '</div>';
+    });
+  });
+
+  // ===== TRAVEL & VEHICLE ADVISOR =====
+  var TRAVEL_ACTIVITIES = [
+    {key:'journey', label:'Starting a journey / road trip', best:['N','E','NE'], acceptable:[], avoid:['S','SW'],
+      tip:'Stepping out to begin a journey facing North, East, or Northeast is traditionally considered auspicious for safe, smooth travel. South and Southwest are best avoided when setting off.'},
+    {key:'parking', label:'Vehicle parking direction', best:['E','N'], acceptable:[], avoid:['S'],
+      tip:'Parking your vehicle so the front faces East or North at home is traditionally considered favourable. Facing South is best avoided where you have a choice.'},
+    {key:'grihapravesh', label:'Housewarming (Griha Pravesh) entry', best:['E','N'], acceptable:[], avoid:['S'],
+      tip:'Entering a new home for the first time facing East or North, stepping in with the right foot first, is a widely followed convention. Facing South is best avoided. The exact rituals, timing (muhurta), and who should enter first vary by community — it\u2019s worth confirming these details with your purohit.'}
+  ];
+  var travelActivitySelect = document.getElementById('travelActivity');
+  TRAVEL_ACTIVITIES.forEach(function(a){
+    var opt = document.createElement('option');
+    opt.value = a.key; opt.textContent = a.label;
+    travelActivitySelect.appendChild(opt);
+  });
+
+  document.getElementById('travelCapture').addEventListener('click', function(){
+    var btn = this;
+    captureAveraged(btn, 1200, function(avgHeading){
+      var activity = TRAVEL_ACTIVITIES.filter(function(a){ return a.key === travelActivitySelect.value; })[0] || TRAVEL_ACTIVITIES[0];
+      var dir = eightFromHeading(avgHeading);
+      var rating = rateFromLists(dir, activity.best, activity.acceptable, activity.avoid);
+      var card = document.getElementById('travelResult');
+      card.style.display = 'block';
+      card.className = 'result-card rating-' + rating;
+      card.innerHTML = 'Facing ' + dir + ' <span class="rating-tag">' + rating + '</span>' +
+        '<div style="margin-top:6px;">' + activity.tip + '</div>';
+    });
+  });
+
+  // ===== HOME OBJECTS ADVISOR =====
+  var OBJECTS_ACTIVITIES = [
+    {key:'mirror', label:'Mirror placement direction', best:['N','E'], acceptable:[], avoid:['S','W'],
+      tip:'Mirrors are traditionally best placed on North or East walls. South and West are best avoided — and regardless of compass direction, a mirror that directly reflects the bed is considered unfavourable and worth repositioning or covering at night.'},
+    {key:'electronics', label:'TV / electronics placement', best:['SE','E'], acceptable:['S'], avoid:['NE'],
+      tip:'Heavy electronics like the TV or router are traditionally placed in the Southeast, ruled by Agni (fire and energy) — East or South are acceptable alternatives. The Northeast, reserved for sacred and prayer purposes, is considered an unsuitable spot for electronics.'}
+  ];
+  var objectsActivitySelect = document.getElementById('objectsActivity');
+  OBJECTS_ACTIVITIES.forEach(function(a){
+    var opt = document.createElement('option');
+    opt.value = a.key; opt.textContent = a.label;
+    objectsActivitySelect.appendChild(opt);
+  });
+
+  document.getElementById('objectsCapture').addEventListener('click', function(){
+    var btn = this;
+    captureAveraged(btn, 1200, function(avgHeading){
+      var activity = OBJECTS_ACTIVITIES.filter(function(a){ return a.key === objectsActivitySelect.value; })[0] || OBJECTS_ACTIVITIES[0];
+      var dir = eightFromHeading(avgHeading);
+      var rating = rateFromLists(dir, activity.best, activity.acceptable, activity.avoid);
+      var card = document.getElementById('objectsResult');
       card.style.display = 'block';
       card.className = 'result-card rating-' + rating;
       card.innerHTML = 'Facing ' + dir + ' <span class="rating-tag">' + rating + '</span>' +
