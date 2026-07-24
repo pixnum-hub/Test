@@ -1,491 +1,674 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="hi" data-theme="dark" data-lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Vastu Compass</title>
+<title>हनुमान चालीसा | Hanuman Chalisa</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1A1006">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hanuman Chalisa">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=Tiro+Bangla&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --dial-size: min(78vw, 360px); --rim: 9px; }
-
-  html[data-theme="dark"]{
-    --bg:#0a0b0f; --bg2:#12141c; --surface:#171a24; --text:#f2ead7; --muted:#9a927e;
-    --gold-hi:#f0d495; --gold:#c9a15a; --gold-lo:#8a6423; --vermillion:#b5432c; --ivory:#efe6d0;
-    --ring:#2a2c38; --sheen:.14; --grain:.05; --shadow:0 18px 40px rgba(0,0,0,.55);
-  }
-  html[data-theme="light"]{
-    --bg:#efe4c8; --bg2:#f7efdc; --surface:#fffaf0; --text:#28211a; --muted:#7a6e56;
-    --gold-hi:#e9cd8f; --gold:#a9803a; --gold-lo:#6f5122; --vermillion:#9c3a26; --ivory:#3a3025;
-    --ring:#d9c79a; --sheen:.22; --grain:.04; --shadow:0 14px 30px rgba(80,60,20,.18);
-  }
-  html[data-theme="oled"]{
-    --bg:#000000; --bg2:#000000; --surface:#060606; --text:#f2ead7; --muted:#847c68;
-    --gold-hi:#eecf8e; --gold:#c9a15a; --gold-lo:#7d5c1e; --vermillion:#b5432c; --ivory:#efe6d0;
-    --ring:#1c1c1c; --sheen:.16; --grain:.05; --shadow:0 18px 44px rgba(0,0,0,.8);
-  }
-  html[data-theme="hc"]{
-    --bg:#000000; --bg2:#000000; --surface:#000000; --text:#ffffff; --muted:#ffffff;
-    --gold-hi:#ffd400; --gold:#ffd400; --gold-lo:#ffd400; --vermillion:#ffd400; --ivory:#ffffff;
-    --ring:#ffffff; --sheen:0; --grain:0; --shadow:none;
-  }
-
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  body{
-    margin:0; min-height:100dvh; color:var(--text);
-    background:radial-gradient(120% 90% at 50% -10%, var(--bg2), var(--bg) 60%);
-    font-family:Optima,'Iowan Old Style',Palatino,'Palatino Linotype',Georgia,serif;
-    display:flex; flex-direction:column; align-items:center; transition:background .3s,color .3s;
-  }
-  .grain{position:fixed; inset:0; pointer-events:none; opacity:var(--grain); mix-blend-mode:overlay;}
-  .app{width:100%; max-width:480px; min-height:100dvh; display:flex; flex-direction:column;
-       padding:20px 20px 10px; position:relative; z-index:1;}
-  .hidden{display:none !important;}
-
-  header{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
-  .brand p{margin:0; font-size:1.02rem; letter-spacing:.16em; text-transform:uppercase; color:var(--gold);}
-  .brand span{display:block; margin-top:3px; font-size:.72rem; font-style:italic; color:var(--muted); font-family:Georgia,serif;}
-  #themeBtn{
-    background:linear-gradient(160deg,var(--surface),var(--bg2)); color:var(--gold);
-    border:1px solid var(--ring); border-radius:999px; padding:7px 15px; font-size:.66rem;
-    letter-spacing:.12em; text-transform:uppercase; font-family:system-ui,sans-serif; cursor:pointer;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 3px 8px rgba(0,0,0,.25);
-  }
-  #themeBtn:active{transform:scale(.96);}
-  #themeBtn:focus-visible, #permBtn:focus-visible, .tab:focus-visible{outline:2px solid var(--gold); outline-offset:3px;}
-
-  .tabs{display:flex; gap:8px; margin-top:16px;}
-  .tab{flex:1; text-align:center; padding:9px 0; border-radius:999px; border:1px solid var(--ring);
-    background:var(--surface); color:var(--muted); font-family:system-ui,sans-serif; font-size:.7rem;
-    letter-spacing:.09em; text-transform:uppercase; cursor:pointer;}
-  .tab.active{background:linear-gradient(160deg,var(--gold-hi),var(--gold)); color:#241a08; border-color:transparent;}
-  html[data-theme="hc"] .tab.active{color:#000;}
-
-  main{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:16px 0;}
-
-  .cal-banner{width:100%; background:var(--surface); border:1px solid var(--gold); border-radius:12px;
-    padding:8px 12px; font-family:system-ui,sans-serif; font-size:.7rem; color:var(--gold); text-align:center;}
-
-  .compass-wrap{position:relative; width:var(--dial-size); height:var(--dial-size);}
-  .acc-ring{position:absolute; inset:-6px; border-radius:50%; border:3px solid var(--ring); pointer-events:none; transition:border-color .3s; z-index:0;}
-  .bezel{
-    width:100%; height:100%; border-radius:50%; padding:var(--rim); position:relative;
-    background:conic-gradient(from 200deg, var(--gold-lo), var(--gold-hi) 25%, var(--gold) 50%, var(--gold-lo) 75%, var(--gold-hi) 100%);
-    box-shadow:var(--shadow), inset 0 0 0 1px rgba(0,0,0,.3);
-  }
-  html[data-theme="hc"] .bezel{background:var(--gold); padding:4px;}
-  .dial{
-    width:100%; height:100%; border-radius:50%; position:relative; overflow:hidden;
-    background:radial-gradient(circle at 34% 28%, var(--surface) 0%, var(--bg2) 72%, var(--surface) 100%);
-    box-shadow:inset 0 0 18px rgba(0,0,0,.5), inset 0 0 0 1px var(--ring);
-  }
-  .sheen{position:absolute; inset:0; border-radius:50%; pointer-events:none;
-    background:linear-gradient(115deg, transparent 32%, rgba(255,255,255,var(--sheen)) 47%, transparent 62%);
-    animation:drift 9s ease-in-out infinite;}
-  @keyframes drift{0%,100%{opacity:.55;} 50%{opacity:1;}}
-  @media (prefers-reduced-motion:reduce){ .sheen{animation:none;} }
-
-  .tick{position:absolute; left:50%; top:8%; width:1px; height:5%; background:var(--muted); opacity:.4; transform-origin:50% 4900%;}
-  .tick.major{width:2px; height:9%; background:var(--gold); opacity:.9;}
-  .dlabel{position:absolute; left:50%; top:50%; font-family:system-ui,sans-serif; font-weight:700;
-    font-size:.76rem; color:var(--gold-hi); transform:translate(-50%,-50%); text-shadow:0 1px 1px rgba(0,0,0,.4);}
-  .dlabel.minor{font-size:.56rem; color:var(--muted); font-weight:600;}
-  html[data-theme="hc"] .dlabel, html[data-theme="hc"] .dlabel.minor{color:#000; background:#fff; padding:0 3px; text-shadow:none;}
-
-  .needle-group{position:absolute; inset:0; z-index:2; pointer-events:none; transition:transform .08s linear;}
-  .needle{position:absolute; left:50%; top:6%; height:88%; width:16px; transform:translateX(-50%);
-    clip-path:polygon(50% 0%, 100% 44%, 60% 50%, 100% 56%, 50% 100%, 0% 56%, 40% 50%, 0% 44%);
-    background:linear-gradient(to bottom, var(--vermillion) 0%, var(--vermillion) 48%, var(--ivory) 52%, var(--ivory) 100%);
-    filter:drop-shadow(0 3px 5px rgba(0,0,0,.45));}
-  html[data-theme="hc"] .needle{background:linear-gradient(to bottom, var(--vermillion) 0%, var(--vermillion) 50%, #fff 50%, #fff 100%); filter:none;}
-  .needle-tip{position:absolute; top:2%; left:50%; transform:translateX(-50%); font-family:system-ui,sans-serif;
-    font-size:.6rem; font-weight:800; color:var(--vermillion); z-index:2;}
-  .hub{position:absolute; left:50%; top:50%; width:16px; height:16px; margin:-8px; border-radius:50%; z-index:5;
-    background:radial-gradient(circle at 35% 30%, var(--gold-hi), var(--gold) 55%, var(--gold-lo));
-    box-shadow:0 2px 4px rgba(0,0,0,.5), inset 0 0 0 1px rgba(0,0,0,.3);}
-
-  .readout{text-align:center;}
-  .degrees{font-size:2.3rem; font-weight:600; color:var(--gold); text-shadow:0 1px 0 rgba(255,255,255,.12), 0 -1px 1px rgba(0,0,0,.45);}
-  html[data-theme="hc"] .degrees{text-shadow:none; color:var(--text);}
-  .facing{font-family:system-ui,sans-serif; font-size:.8rem; color:var(--muted); margin-top:3px;}
-
-  .north-row{display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;}
-  #northBtn, #preciseBtn{background:var(--surface); border:1px solid var(--ring); color:var(--text); border-radius:999px;
-    padding:6px 13px; font-size:.66rem; letter-spacing:.06em; text-transform:uppercase;
-    font-family:system-ui,sans-serif; cursor:pointer;}
-  #preciseBtn:disabled{opacity:.6;}
-  .status-row{display:flex; gap:8px; justify-content:center; flex-wrap:wrap;}
-  .pill{font-family:system-ui,sans-serif; font-size:.64rem; padding:4px 10px; border-radius:999px;
-    border:1px solid var(--ring); color:var(--muted); background:var(--surface);}
-  .pill.good{color:#3ea36b; border-color:#3ea36b;}
-  .pill.fair{color:var(--gold); border-color:var(--gold);}
-  .pill.poor{color:var(--vermillion); border-color:var(--vermillion);}
-  .decl-row{display:none; align-items:center; justify-content:center; gap:10px; font-family:system-ui,sans-serif; font-size:.76rem; color:var(--muted);}
-  .decl-row.show{display:flex;}
-  .decl-row button{width:24px; height:24px; border-radius:50%; border:1px solid var(--ring); background:var(--surface); color:var(--gold); cursor:pointer;}
-
-  #permBtn{background:linear-gradient(160deg, var(--gold-hi), var(--gold) 55%, var(--gold-lo)); color:#241a08;
-    border:none; border-radius:999px; padding:12px 26px; font-size:.76rem; font-family:system-ui,sans-serif;
-    font-weight:700; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
-    box-shadow:0 8px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.5);}
-  #permBtn:active{transform:translateY(1px) scale(.98);}
-  html[data-theme="hc"] #permBtn{color:#000; box-shadow:none;}
-
-  .zone-card{width:100%; background:linear-gradient(180deg, var(--surface), var(--bg2)); border:1px solid var(--ring);
-    border-radius:18px; padding:15px 18px; text-align:center; box-shadow:var(--shadow);}
-  .zone-kicker{font-family:system-ui,sans-serif; font-size:.62rem; letter-spacing:.2em; color:var(--muted); text-transform:uppercase;}
-  .zone-card h2{margin:6px 0 8px; font-size:1.1rem; color:var(--gold);}
-  .rule{width:36px; height:1px; margin:0 auto 8px; background:linear-gradient(90deg,transparent,var(--gold),transparent);}
-  .zone-card p{margin:0; font-family:system-ui,sans-serif; font-size:.82rem; color:var(--muted); line-height:1.5;}
-
-  .room-list{width:100%; display:flex; flex-direction:column; gap:10px;}
-  .room-card{background:linear-gradient(180deg,var(--surface),var(--bg2)); border:1px solid var(--ring);
-    border-radius:14px; padding:12px 14px; font-family:system-ui,sans-serif;}
-  .room-card h3{margin:0 0 5px; font-size:.88rem; color:var(--gold); font-family:Optima,Georgia,serif;}
-  .room-card p{margin:2px 0; font-size:.76rem; color:var(--muted); line-height:1.4;}
-  .room-card b{color:var(--text);}
-
-  footer{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
-    gap:6px; padding:18px 0 8px; font-family:system-ui,sans-serif; font-size:.7rem; color:var(--muted);}
-  .fdiv{width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); opacity:.6;}
-
-  @media (max-width:340px){ .degrees{font-size:1.9rem;} }
+:root{
+  --radius:16px; --shadow:0 8px 24px rgba(0,0,0,.12);
+}
+[data-lang="hi"]{ --font-verse:'Tiro Devanagari Hindi', serif; }
+[data-lang="bn"]{ --font-verse:'Tiro Bangla', serif; }
+[data-theme="light"]{
+  --bg:#FDF8EE; --card:#FFFFFF; --text:#2B1810; --soft:#7A5A42;
+  --accent:#E8871E; --accent2:#8B1E3F; --border:#EEDFC2; --highlight:#FBEAD2;
+}
+[data-theme="dark"]{
+  --bg:#1A1006; --card:#241608; --text:#F3E3C8; --soft:#C9A97C;
+  --accent:#E3A94B; --accent2:#E8703F; --border:#3A2614; --highlight:#3A2C18;
+}
+[data-theme="oled"]{
+  --bg:#000000; --card:#0A0A0A; --text:#E8D5B0; --soft:#8F7A5C;
+  --accent:#D0A23A; --accent2:#E0532F; --border:#1C1C1C; --highlight:#241C0A;
+}
+[data-theme="hc"]{
+  --bg:#000000; --card:#000000; --text:#FFFFFF; --soft:#FFFFFF;
+  --accent:#FFD700; --accent2:#00E5FF; --border:#FFFFFF; --highlight:#332B00;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{background:var(--bg); min-height:100%;}
+body{
+  font-family:'Poppins',sans-serif; color:var(--text);
+  display:flex; flex-direction:column; min-height:100vh;
+  transition:background .3s ease,color .3s ease;
+}
+header{
+  padding:1.1rem 1rem .8rem; text-align:center; position:sticky; top:0; z-index:5;
+  background:var(--bg); border-bottom:1px solid var(--border);
+}
+.brand{display:flex; align-items:center; justify-content:center; gap:.6rem;}
+h1{font-family:var(--font-verse); font-size:1.6rem; color:var(--accent2);}
+.topbar{display:flex; justify-content:center; gap:.5rem; margin-top:.7rem; flex-wrap:wrap;}
+button{
+  font-family:'Poppins',sans-serif; border:1px solid var(--border); background:var(--card);
+  color:var(--text); border-radius:999px; padding:.45rem .9rem; font-size:.78rem;
+  cursor:pointer; display:flex; align-items:center; gap:.35rem; transition:.2s;
+}
+button:hover{border-color:var(--accent);}
+button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+button.active{background:var(--accent); color:#1a1006; border-color:var(--accent); font-weight:600;}
+.vlabel{font-family:var(--font-verse);}
+main{flex:1; max-width:640px; margin:0 auto; width:100%; padding:1rem 1rem 2rem;}
+.doha{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:1rem 1.1rem; margin-bottom:1rem; box-shadow:var(--shadow);
+  border-left:4px solid var(--accent2);
+}
+.chaupai{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:.85rem 1rem; margin-bottom:.65rem; box-shadow:var(--shadow);
+  display:flex; gap:.7rem; align-items:flex-start; transition:background .25s;
+}
+.doha.playing, .chaupai.playing, .jai.playing{border-color:var(--accent); background:var(--highlight); background:color-mix(in srgb, var(--accent) 12%, var(--card));}
+.num{
+  font-family:var(--font-verse); color:var(--accent); font-weight:700;
+  min-width:2rem; text-align:center; font-size:1rem; padding-top:.1rem;
+}
+.lines{font-family:var(--font-verse); line-height:1.85; font-size:calc(1.08rem * var(--font-scale, 1));}
+.lines span{display:block;}
+.lines-wrap{flex:1; min-width:0;}
+.meaning{
+  display:none; margin-top:.4rem; font-family:'Poppins',sans-serif;
+  font-size:.78rem; color:var(--soft); line-height:1.5; font-style:italic;
+}
+[data-meaning="on"] .meaning{display:block;}
+.jai{
+  text-align:center; font-family:var(--font-verse); font-size:1.1rem;
+  color:var(--accent2); margin:1.2rem 0 .3rem; line-height:1.9;
+}
+footer{
+  border-top:1px solid var(--border); padding:.9rem 1rem 1.1rem;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; gap:.2rem; background:var(--bg);
+}
+footer p{font-size:.75rem; color:var(--soft); line-height:1.5;}
+footer strong{color:var(--accent2);}
+@media(min-width:640px){
+  h1{font-size:2rem;} .lines{font-size:calc(1.18rem * var(--font-scale, 1));}
+}
+.tele-overlay{
+  position:fixed; inset:0; background:var(--bg); z-index:50;
+  display:none; flex-direction:column;
+}
+.tele-overlay.active{display:flex;}
+.tele-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+  padding:.7rem .9rem; border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.tele-speed{display:flex; align-items:center; gap:.6rem; font-size:.85rem; color:var(--soft); min-width:64px; justify-content:center;}
+.tele-bar button{padding:.5rem .85rem; font-size:.95rem;}
+.tele-hint{
+  text-align:center; font-size:.7rem; color:var(--soft); opacity:.75;
+  padding:.4rem .8rem; flex-shrink:0; border-bottom:1px solid var(--border);
+}
+.tele-body{flex:1; overflow-y:auto; padding:3rem 1.2rem 75vh; -webkit-overflow-scrolling:touch;}
+.tele-body p{
+  font-family:var(--font-verse); font-size:calc(1.5rem * var(--font-scale, 1)); line-height:2.15;
+  text-align:center; color:var(--text); margin-bottom:1.5rem;
+}
+.tele-num{display:block; color:var(--accent); font-size:.95rem; margin-bottom:.3rem;}
+@media(min-width:640px){.tele-body p{font-size:calc(2rem * var(--font-scale, 1));}}
 </style>
 </head>
 <body>
-<svg class="grain" aria-hidden="true"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<header>
+  <div class="brand"><h1 id="pageTitle">श्री हनुमान चालीसा</h1></div>
+  <div class="topbar">
+    <button id="playBtn" class="vlabel" aria-label="Play recitation">▶ पाठ सुनें</button>
+    <button id="repeatBtn" aria-label="Set repeat count">×1</button>
+    <button id="fontMinus" aria-label="Decrease text size">A−</button>
+    <button id="fontPlus" aria-label="Increase text size">A+</button>
+    <button id="themeBtn" class="vlabel" aria-label="Change theme">🎨 थीम</button>
+    <button id="langBtn" aria-label="Change language">🌐 भाषा</button>
+    <button id="meaningBtn" class="vlabel" aria-label="Toggle meaning">📖 अर्थ</button>
+    <button id="teleBtn" class="vlabel" aria-label="Open teleprompter">📜 प्रॉम्प्टर</button>
+  </div>
+</header>
 
-<div class="app">
-  <header>
-    <div class="brand"><p>Vastu Compass</p><span>Ashtadikpala Direction Guide</span></div>
-    <button id="themeBtn" type="button" aria-label="Change theme">Dark</button>
-  </header>
+<main id="content"></main>
 
-  <nav class="tabs">
-    <button class="tab active" id="tabCompass" type="button">Compass</button>
-    <button class="tab" id="tabRooms" type="button">Room Guide</button>
-  </nav>
-
-  <main id="compassView">
-    <div class="cal-banner hidden" id="calBanner">↻ Wave your phone in a figure-8 to calibrate the sensor</div>
-
-    <div class="compass-wrap">
-      <div class="acc-ring" id="accRing"></div>
-      <div class="bezel">
-        <div class="dial" id="dial"><div class="sheen" aria-hidden="true"></div></div>
-        <div class="needle-group" id="needleGroup">
-          <div class="needle" aria-hidden="true"></div>
-          <div class="needle-tip" aria-hidden="true">N</div>
-        </div>
-        <div class="hub" aria-hidden="true"></div>
-      </div>
+<div id="teleOverlay" class="tele-overlay">
+  <div class="tele-bar">
+    <button id="teleClose" aria-label="Close teleprompter">✕</button>
+    <div class="tele-speed">
+      <button id="teleSlower" aria-label="Slower">−</button>
+      <span id="teleSpeedLabel">1×</span>
+      <button id="teleFaster" aria-label="Faster">+</button>
     </div>
-
-    <div class="readout">
-      <div class="degrees" id="degrees">--°</div>
-      <div class="facing" id="facing">Enable the compass to begin</div>
-    </div>
-
-    <div class="status-row">
-      <span class="pill" id="accPill">Accuracy: —</span>
-      <span class="pill" id="tiltPill">Level: —</span>
-    </div>
-
-    <div class="north-row">
-      <button id="northBtn" type="button">Magnetic North</button>
-      <button id="preciseBtn" type="button">Hold Steady</button>
-    </div>
-    <div class="decl-row" id="declRow">
-      <button id="declMinus" type="button" aria-label="Decrease declination">−</button>
-      <span>Declination <b id="declVal">0.0°</b></span>
-      <button id="declPlus" type="button" aria-label="Increase declination">+</button>
-    </div>
-
-    <button id="permBtn" type="button">Enable Compass</button>
-
-    <div class="zone-card">
-      <div class="zone-kicker">Facing Direction</div>
-      <h2 id="zoneName">—</h2>
-      <div class="rule"></div>
-      <p id="zoneDesc">Point your phone forward and allow motion access to reveal the Vastu significance of that direction.</p>
-    </div>
-  </main>
-
-  <main id="roomView" class="hidden">
-    <div class="room-list" id="roomList"></div>
-  </main>
-
-  <footer>
-    <div class="fdiv"></div>
-    <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
-  </footer>
+    <button id="telePlay" aria-label="Start auto-scroll">▶</button>
+  </div>
+  <div id="teleHint" class="tele-hint">◀ पिछला · मध्य में टैप करें: चलाएं/रोकें · अगला ▶</div>
+  <div id="teleBody" class="tele-body"></div>
 </div>
 
+<footer>
+  <p><strong>© Manik Roy <span id="year"></span>. All Rights Reserved.</strong></p>
+</footer>
+
 <script>
-(function(){
-  var ZONES = [
-    {n:"North", d:"Ruled by Kubera. Governs wealth, career flow and cash storage."},
-    {n:"North-North-East", d:"Transition of water and wealth energy. Keep this area open and uncluttered."},
-    {n:"North-East", d:"The Ishanya corner of divinity. Best for prayer rooms and water elements."},
-    {n:"East-North-East", d:"Ruled by Aditi. Supports health, growth and morning sunlight zones."},
-    {n:"East", d:"Ruled by Indra. Ideal for main entrances, health and fresh beginnings."},
-    {n:"East-South-East", d:"Minor fire influence. Suits utility or auxiliary energy points."},
-    {n:"South-East", d:"The Agni corner. Best suited for kitchens and sources of energy."},
-    {n:"South-South-East", d:"Ruled by Pushan. Good for food storage and nourishment areas."},
-    {n:"South", d:"Ruled by Yama. Favours rest and stability; avoid main entrances here."},
-    {n:"South-South-West", d:"Ancestral Pitru zone. Suited to heavier storage and stillness."},
-    {n:"South-West", d:"The Nairutya corner of strength. Ideal for the master bedroom."},
-    {n:"West-South-West", d:"Ruled by Varuna's edge. Good for water tanks or storage."},
-    {n:"West", d:"Ruled by Varuna. Good for dining areas and steady long-term gains."},
-    {n:"West-North-West", d:"Ruled by Vayu's edge. Suited to movement and guest activity."},
-    {n:"North-West", d:"The Vayu corner of movement. Suited to guest rooms and storage."},
-    {n:"North-North-West", d:"Soma zone of calm. Favours relaxation and quiet corners."}
-  ];
-  var ROOMS = [
-    {r:"Main Entrance", g:"North, East or North-East", a:"South-West corner"},
-    {r:"Kitchen", g:"South-East (Agni corner)", a:"North-East"},
-    {r:"Master Bedroom", g:"South-West", a:"North-East"},
-    {r:"Pooja / Prayer Room", g:"North-East", a:"Under a staircase or South wall"},
-    {r:"Bathroom / Toilet", g:"North-West or West", a:"North-East"},
-    {r:"Staircase", g:"South, South-West or West", a:"Centre or North-East (Brahmasthan)"},
-    {r:"Study Room", g:"North, East or North-East", a:"South"},
-    {r:"Living Room", g:"North, East or North-East", a:"South-West"},
-    {r:"Dining Room", g:"West or South", a:"North-East"}
-  ];
-  var THEMES = ["dark","light","oled","hc"];
-  var LABELS = {dark:"Dark", light:"Light", oled:"OLED", hc:"High Contrast"};
-  var N = 16, STEP = 360 / N;
+const HI_DOHA_OPEN = [
+"श्रीगुरु चरन सरोज रज, निज मनु मुकुरु सुधारि।\nबरनउं रघुबर बिमल जसु, जो दायकु फल चारि॥",
+"बुद्धिहीन तनु जानिके, सुमिरौं पवन-कुमार।\nबल बुद्धि विद्या देहु मोहिं, हरहु कलेश विकार॥"
+];
+const HI_CHAUPAI = [
+"जय हनुमान ज्ञान गुन सागर।\nजय कपीस तिहुं लोक उजागर॥",
+"रामदूत अतुलित बल धामा।\nअंजनि-पुत्र पवनसुत नामा॥",
+"महाबीर बिक्रम बजरंगी।\nकुमति निवार सुमति के संगी॥",
+"कंचन बरन बिराज सुबेसा।\nकानन कुंडल कुंचित केसा॥",
+"हाथ बज्र और ध्वजा बिराजै।\nकांधे मूंज जनेऊ साजै॥",
+"संकर सुवन केसरीनंदन।\nतेज प्रताप महा जग बंदन॥",
+"विद्यावान गुनी अति चातुर।\nराम काज करिबे को आतुर॥",
+"प्रभु चरित्र सुनिबे को रसिया।\nराम लखन सीता मन बसिया॥",
+"सूक्ष्म रूप धरि सियहिं दिखावा।\nबिकट रूप धरि लंक जरावा॥",
+"भीम रूप धरि असुर संहारे।\nरामचंद्र के काज संवारे॥",
+"लाय सजीवन लखन जियाये।\nश्रीरघुबीर हरषि उर लाये॥",
+"रघुपति कीन्ही बहुत बड़ाई।\nतुम मम प्रिय भरतहि सम भाई॥",
+"सहस बदन तुम्हरो जस गावैं।\nअस कहि श्रीपति कंठ लगावैं॥",
+"सनकादिक ब्रह्मादि मुनीसा।\nनारद सारद सहित अहीसा॥",
+"जम कुबेर दिगपाल जहां ते।\nकबि कोबिद कहि सके कहां ते॥",
+"तुम उपकार सुग्रीवहिं कीन्हा।\nराम मिलाय राज पद दीन्हा॥",
+"तुम्हरो मंत्र बिभीषन माना।\nलंकेस्वर भए सब जग जाना॥",
+"जुग सहस्र जोजन पर भानू।\nलील्यो ताहि मधुर फल जानू॥",
+"प्रभु मुद्रिका मेलि मुख माहीं।\nजलधि लांघि गये अचरज नाहीं॥",
+"दुर्गम काज जगत के जेते।\nसुगम अनुग्रह तुम्हरे तेते॥",
+"राम दुआरे तुम रखवारे।\nहोत न आज्ञा बिनु पैसारे॥",
+"सब सुख लहै तुम्हारी सरना।\nतुम रच्छक काहू को डर ना॥",
+"आपन तेज सम्हारो आपै।\nतीनों लोक हांक तें कांपै॥",
+"भूत पिसाच निकट नहिं आवै।\nमहाबीर जब नाम सुनावै॥",
+"नासै रोग हरै सब पीरा।\nजपत निरंतर हनुमत बीरा॥",
+"संकट तें हनुमान छुड़ावै।\nमन क्रम बचन ध्यान जो लावै॥",
+"सब पर राम तपस्वी राजा।\nतिन के काज सकल तुम साजा॥",
+"और मनोरथ जो कोई लावै।\nसोइ अमित जीवन फल पावै॥",
+"चारों जुग परताप तुम्हारा।\nहै परसिद्ध जगत उजियारा॥",
+"साधु संत के तुम रखवारे।\nअसुर निकंदन राम दुलारे॥",
+"अष्ट सिद्धि नौ निधि के दाता।\nअस बर दीन जानकी माता॥",
+"राम रसायन तुम्हरे पासा।\nसदा रहो रघुपति के दासा॥",
+"तुम्हरे भजन राम को पावै।\nजनम जनम के दुख बिसरावै॥",
+"अंतकाल रघुबर पुर जाई।\nजहां जन्म हरि-भक्त कहाई॥",
+"और देवता चित्त न धरई।\nहनुमत सेइ सर्ब सुख करई॥",
+"संकट कटै मिटै सब पीरा।\nजो सुमिरै हनुमत बलबीरा॥",
+"जय जय जय हनुमान गोसाईं।\nकृपा करहु गुरुदेव की नाईं॥",
+"जो सत बार पाठ कर कोई।\nछूटहि बंदि महा सुख होई॥",
+"जो यह पढ़ै हनुमान चालीसा।\nहोय सिद्धि साखी गौरीसा॥",
+"तुलसीदास सदा हरि चेरा।\nकीजै नाथ हृदय महं डेरा॥"
+];
+const HI_DOHA_CLOSE = "पवनतनय संकट हरन, मंगल मूरति रूप।\nराम लखन सीता सहित, हृदय बसहु सुर भूप॥";
+const HI_JAI = "सियावर रामचंद्र की जय। पवनसुत हनुमान की जय।\nबोलो भाई सब संतन की जय॥";
+const HI_NUM = ["१","२","३","४","५","६","७","८","९","१०","११","१२","१३","१४","१५","१६","१७","१८","१९","२०",
+"२१","२२","२३","२४","२५","२६","२७","२८","२९","३०","३१","३२","३३","३४","३५","३६","३७","३८","३९","४०"];
 
-  var dial = document.getElementById('dial');
-  var needleGroup = document.getElementById('needleGroup');
-  var degreesEl = document.getElementById('degrees');
-  var facingEl = document.getElementById('facing');
-  var zoneName = document.getElementById('zoneName');
-  var zoneDesc = document.getElementById('zoneDesc');
-  var permBtn = document.getElementById('permBtn');
-  var themeBtn = document.getElementById('themeBtn');
-  var calBanner = document.getElementById('calBanner');
-  var accRing = document.getElementById('accRing');
-  var accPill = document.getElementById('accPill');
-  var tiltPill = document.getElementById('tiltPill');
-  var preciseBtn = document.getElementById('preciseBtn');
-  var northBtn = document.getElementById('northBtn');
-  var declRow = document.getElementById('declRow');
-  var declVal = document.getElementById('declVal');
+const BN_DOHA_OPEN = [
+"শ্রীগুরু চরন সরোজ রজ, নিজ মন মুকুর সুধারি।\nবরনউঁ রঘুবর বিমল জসু, জো দায়কু ফল চারি॥",
+"বুদ্ধিহীন তনু জানিকে সুমিরৌঁ পবন-কুমার।\nবল বুদ্ধি বিদ্যা দেহু মোহিঁ, হরহু কলেস বিকার॥"
+];
+const BN_CHAUPAI = [
+"জয় হনুমান জ্ঞান গুন সাগর।\nজয় কপীস তিহুঁ লোক উজাগর॥",
+"রাম দূত অতুলিত বল ধামা।\nঅঞ্জনি পুত্র পবনসুত নামা॥",
+"মহাবীর বিক্রম বজরঙ্গী।\nকুমতি নিবার সুমতি কে সঙ্গী॥",
+"কঞ্চন বরন বিরাজ সুবেসা।\nকানন কুণ্ডল কুঞ্চিত কেসা॥",
+"হাত বজ্র ঔ ধ্বজা বিরাজৈ।\nকাঁধে মূঁজ জনেউ সাজৈ॥",
+"সংকর সুবন কেসরীনন্দন।\nতেজ প্রতাপ মহা জগ বন্দন॥",
+"বিদ্যাবান গুণী অতি চাতুর।\nরাম কাজ করিবে কো আতুর॥",
+"প্রভু চরিত্র সুনিবে কো রসিয়া।\nরাম লখন সীতা মন বসিয়া॥",
+"সূক্ষ্ম রূপ ধরি সিয়হিঁ দিখাওয়া।\nবিকট রূপ ধরি লঙ্ক জরাওয়া॥",
+"ভীম রূপ ধরি অসুর সংহারে।\nরামচন্দ্র কে কাজ সওয়ারে॥",
+"লায় সঞ্জীবন লখন জিয়ায়ে।\nশ্রীরঘুবীর হরষি উর লায়ে॥",
+"রঘুপতি কীন্হি বহুত বড়াই।\nতুম মম প্রিয় ভরতহি সম ভাই॥",
+"সহস বদন তুমহারো জস গাবৈ।\nঅস কহি শ্রীপতি কণ্ঠ লগাবৈ॥",
+"সনকাদিক ব্রহ্মাদি মুনীসা।\nনারদ সারদ সহিত অহীসা॥",
+"জম কুবের দিগপাল জহাঁ তে।\nকবি কোবিদ কহি সকে কহাঁ তে॥",
+"তুম উপকার সুগ্রীবহিঁ কীন্হা।\nরাম মিলায় রাজপদ দীন্হা॥",
+"তুমহরো মন্ত্র বিভীষণ মানা।\nলঙ্কেস্বর ভএ সব জগ জানা॥",
+"যুগ সহস্র যোজন পর ভানু।\nলীল্যো তাহি মধুর ফল জানু॥",
+"প্রভু মুদ্রিকা মেলি মুখ মাহিঁ।\nজলধি লাঙ্ঘি গয়ে অচরজ নাহীঁ॥",
+"দুর্গম কাজ জগত কে জেতে।\nসুগম অনুগ্রহ তুমহারে তেতে॥",
+"রাম দুয়ারে তুম রখওয়ারে।\nহোত ন আজ্ঞা বিনু পৈসারে॥",
+"সব সুখ লহে তুমহারী সরনা।\nতুম রচ্ছক কাহু কো ডর না॥",
+"আপন তেজ সম্হারো আপে।\nতিনোঁ লোক হাঁকতে কাঁপে॥",
+"ভূত পিশাচ নিকট নহীঁ আওয়ে।\nমহাবীর জব নাম সুনাওয়ে॥",
+"নাসে রোগ হরে সব পীরা।\nজপত নিরন্তর হনুমত বীরা॥",
+"সংকট তে হনুমান ছুড়াওয়ে।\nমন ক্রম বচন ধ্যান জো লাওয়ে॥",
+"সব পর রাম তপস্বী রাজা।\nতিন কে কাজ সকল তুম সাজা॥",
+"ঔর মনোরথ জো কোই লাওয়ে।\nসোই অমিত জীবন ফল পাৱৈ॥",
+"চারো যুগ পরতাপ তুমহারা।\nহৈ পরসিদ্ধ জগত উজিয়ারা॥",
+"সাধু সন্ত কে তুম রখওয়ারে।\nঅসুর নিকন্দন রাম দুলারে॥",
+"অষ্ট সিদ্ধি নব নিধি কে দাতা।\nঅস বর দীন জানকী মাতা॥",
+"রাম রসায়ন তুমহারে পাসা।\nসদা রহো রঘুপতি কে দাসা॥",
+"তুমহরে ভজন রাম কো পাৱৈ।\nজনম জনম কে দুখ বিসরাৱৈ॥",
+"অন্তকাল রঘুবর পুর জাই।\nজহাঁ জন্ম হরি ভক্ত কহাই॥",
+"ঔর দেবতা চিত্ত ন ধরই।\nহনুমত সেই সর্বসুখ করই॥",
+"সংকট কটে মিটে সব পীড়া।\nজো সুমিরে হনুমত বলবীরা॥",
+"জয় জয় জয় হনুমান গোঁসাই।\nকৃপা করহু গুরুদেব কী নাই॥",
+"জো সত বার পাঠ করে কোই।\nছুটহি বন্দি মহা সুখ হোই॥",
+"জো য়হ পড়ে হনুমান চালিসা।\nহোয় সিদ্ধি সাখী গৌরীসা॥",
+"তুলসীদাস সদা হরি চেরা।\nকীজৈ নাথ হৃদয় মহ ডেরা॥"
+];
+const BN_DOHA_CLOSE = "পবন তনয় সংকট হরন, মঙ্গল মূরতি রূপ।\nরাম লখন সীতা সহিত, হৃদয় বসহু সুর ভূপ॥";
+const BN_JAI = "সিয়াবর রামচন্দ্র কী জয়। পবনসুত হনুমান কী জয়।\nবোলো ভাই সব সন্তন কী জয়॥";
+const BN_NUM = ["১","২","৩","৪","৫","৬","৭","৮","৯","১০","১১","১২","১৩","১৪","১৫","১৬","১৭","১৮","১৯","২০",
+"২১","২২","২৩","২৪","২৫","২৬","২৭","২৮","২৯","৩০","৩১","৩২","৩৩","৩৪","৩৫","৩৬","৩৭","৩৮","৩৯","৪০"];
 
-  document.getElementById('year').textContent = new Date().getFullYear();
+// English meaning, in plain paraphrase — one entry per verse, in speakQueue order:
+// [open doha ×2, chaupai ×40, closing doha, jaikara]
+const MEANING_EN = [
+"Cleansing the mirror of my mind with the dust of my Guru's lotus feet, I recount the pure glory of Sri Rama's greatest devotee, giver of the four fruits of life.",
+"Knowing my body empty of wisdom, I remember the Son of the Wind; grant me strength, wisdom and knowledge, O Hanuman, and remove my afflictions and faults.",
+"Victory to Hanuman, ocean of wisdom and virtue! Victory to the lord of monkeys, who illumines all three worlds.",
+"You are Rama's messenger, abode of matchless strength, known as Anjani's son and child of the Wind-god.",
+"Great hero of immense might, remover of evil thoughts, ever the companion of good sense.",
+"Golden-complexioned, finely adorned, wearing earrings and curly locks.",
+"You hold a thunderbolt mace and a banner, a sacred thread graces your shoulder.",
+"Son of Kesari, child of Shiva, your glory and might are honoured throughout the world.",
+"Wise, virtuous and ever skilful, you are eager to accomplish Rama's every task.",
+"You delight in hearing of the Lord's deeds; Rama, Lakshman and Sita ever dwell in your heart.",
+"Taking a tiny form you appeared before Sita; taking a vast form you set Lanka ablaze.",
+"Taking a fearsome form you destroyed the demons, accomplishing all of Rama's work.",
+"You brought the life-giving herb and revived Lakshman; Rama embraced you with joy.",
+"Rama praised you highly, saying you are as dear to him as his own brother Bharat.",
+"'Let a thousand mouths sing your praises,' said the Lord, drawing you close to his heart.",
+"Sanaka and the great sages, Brahma, Narada, Saraswati and the serpent-king Shesha —",
+"Yama, Kubera, the guardians of every direction, poets and scholars — none can fully describe your glory.",
+"You aided Sugriva greatly, uniting him with Rama and restoring his kingdom.",
+"Vibhishana accepted your counsel, and through it became known as lord of Lanka.",
+"You leapt to seize the sun, thousands of yojanas away, mistaking it for a sweet fruit.",
+"Holding the Lord's ring in your mouth, you crossed the ocean — no wonder it was easy for you.",
+"Whatever difficult task exists in this world becomes effortless through your grace.",
+"You stand as guardian at Rama's door; none may enter without your leave.",
+"All happiness is found by taking refuge in you; under your protection there is nothing to fear.",
+"You alone can contain your own splendour; the three worlds tremble at the sound of your roar.",
+"Ghosts and evil spirits dare not come near one who utters the name of the great hero, Hanuman.",
+"All sickness and every pain vanish for one who ceaselessly chants your name, valiant Hanuman.",
+"Hanuman frees from hardship all who remember him in thought, word and deed.",
+"Rama, king among ascetics, accomplished every task of his through you.",
+"Whoever comes to you with any wish receives it in full measure, four-fold and more.",
+"Your glory spans all four ages, celebrated and renowned throughout the world.",
+"You are the guardian of saints and sages, destroyer of demons, beloved of Rama.",
+"You grant the eight siddhis and nine nidhis, a boon bestowed on you by Mother Sita.",
+"You hold the very elixir of devotion to Rama, and remain forever his servant.",
+"By singing your praises one attains Rama, and sorrows of countless lifetimes are forgotten.",
+"At life's end one journeys to Rama's own realm, reborn there as a devotee of Hari.",
+"One who worships you need turn to no other deity — Hanuman alone grants every joy.",
+"All troubles are cut away and every pain dissolves for one who remembers brave, mighty Hanuman.",
+"Glory, glory, glory to you, Lord Hanuman! Bestow your grace on me as a true Guru would.",
+"Whoever recites this a hundred times over is freed from bondage and finds great joy.",
+"Whoever reads this Hanuman Chalisa attains success — Shiva himself stands witness to it.",
+"Tulsidas, ever a servant of Hari, prays: O Lord, make your home always within my heart.",
+"O son of the Wind, remover of every trouble, embodiment of all that is auspicious — dwell in my heart together with Rama, Lakshman and Sita, the noblest of kings.",
+"Victory to Sita's beloved Ramchandra! Victory to Hanuman, son of the Wind! Join, brothers, in hailing victory to all saints!"
+];
 
-  var names = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
-  for (var i = 0; i < 48; i++) {
-    var a = i * 7.5;
-    var t = document.createElement('div');
-    t.className = 'tick' + (Math.round(a % 22.5) === 0 ? ' major' : '');
-    t.style.transform = 'rotate(' + a + 'deg)';
-    dial.appendChild(t);
-  }
-  for (var k = 0; k < N; k++) {
-    var ang = k * STEP;
-    var lab = document.createElement('div');
-    lab.className = 'dlabel' + (k % 2 === 1 ? ' minor' : '');
-    lab.textContent = names[k];
-    var rad = (ang - 90) * Math.PI / 180;
-    var dist = k % 2 === 0 ? 39 : 35;
-    lab.style.left = 'calc(50% + ' + (Math.cos(rad) * dist) + '%)';
-    lab.style.top = 'calc(50% + ' + (Math.sin(rad) * dist) + '%)';
-    dial.appendChild(lab);
-  }
+const DATA = {
+  hi:{open:HI_DOHA_OPEN, chaupai:HI_CHAUPAI, close:HI_DOHA_CLOSE, jai:HI_JAI, num:HI_NUM, speechLang:"hi", label:"अ हिन्दी", title:"श्री हनुमान चालीसा", subtitle:"Shri Hanuman Chalisa", htmlLang:"hi", playIdle:"▶ पाठ सुनें", playBusy:"⏸ रोकें", noVoice:"इस ब्राउज़र में आवाज़ सुविधा उपलब्ध नहीं है।", teleLabel:"📜 प्रॉम्प्टर", meaningLabel:"📖 अर्थ", teleHint:"◀ पिछला · मध्य में टैप करें: चलाएं/रोकें · अगला ▶"},
+  bn:{open:BN_DOHA_OPEN, chaupai:BN_CHAUPAI, close:BN_DOHA_CLOSE, jai:BN_JAI, num:BN_NUM, speechLang:"bn", label:"অ বাংলা", title:"হনুমান চল্লিশা", subtitle:"Hanuman Challisha", htmlLang:"bn", playIdle:"▶ পাঠ শুনুন", playBusy:"⏸ থামুন", noVoice:"এই ব্রাউজারে ভয়েস সুবিধা নেই।", teleLabel:"📜 প্রম্পটার", meaningLabel:"📖 অর্থ", teleHint:"◀ আগের · মাঝে ট্যাপ করুন: চালান/থামান · পরবর্তী ▶"}
+};
+let curLang = localStorage.getItem("hc-lang") || "hi";
 
-  function zoneForHeading(h){
-    var idx = Math.round(h / STEP) % N;
-    if (idx < 0) idx += N;
-    return ZONES[idx];
-  }
+function meaningDiv(idx){
+  return `<div class="meaning">${MEANING_EN[idx]}</div>`;
+}
+function block(text, num, meaningIdx){
+  const lines = text.split("\n").map(l=>`<span>${l}</span>`).join("");
+  return `<div class="chaupai"><div class="num">${num||""}</div><div class="lines-wrap"><div class="lines">${lines}</div>${meaningDiv(meaningIdx)}</div></div>`;
+}
+function renderContent(){
+  const d = DATA[curLang];
+  let html = `<div class="doha">${d.open.map((x,i)=>`<div class="lines">${x.split("\n").map(l=>`<span>${l}</span>`).join("")}</div>${meaningDiv(i)}`).join("")}</div>`;
+  d.chaupai.forEach((c,i)=>{ html += block(c, `॥${d.num[i]}॥`, 2+i); });
+  html += `<div class="doha"><div class="lines">${d.close.split("\n").map(l=>`<span>${l}</span>`).join("")}</div>${meaningDiv(42)}</div>`;
+  html += `<div class="jai">${d.jai.split("\n").map(l=>`<span>${l}</span>`).join("<br>")}${meaningDiv(43)}</div>`;
+  document.getElementById("content").innerHTML = html;
+  applyFont();
+}
+const langBtn = document.getElementById("langBtn");
+const pageTitle = document.getElementById("pageTitle");
+const meaningBtn = document.getElementById("meaningBtn");
+let showMeaning = localStorage.getItem("hc-meaning") === "on";
+function applyMeaningState(){
+  document.documentElement.setAttribute("data-meaning", showMeaning ? "on" : "off");
+  meaningBtn.classList.toggle("active", showMeaning);
+}
+meaningBtn.addEventListener("click", ()=>{
+  showMeaning = !showMeaning;
+  localStorage.setItem("hc-meaning", showMeaning ? "on" : "off");
+  applyMeaningState();
+});
+function applyLang(){
+  const d = DATA[curLang];
+  langBtn.textContent = curLang === "hi" ? "🌐 বাংলা" : "🌐 हिन्दी";
+  pageTitle.textContent = d.title;
+  document.title = d.title + " | Hanuman Chalisa";
+  document.documentElement.lang = d.htmlLang;
+  document.documentElement.setAttribute("data-lang", curLang);
+  meaningBtn.textContent = d.meaningLabel;
+  applyMeaningState();
+  playBtnUpdateIdle();
+  renderContent();
+  if(typeof teleOverlay !== "undefined" && teleOverlay.classList.contains("active")){ renderTelePrompter(); }
+  if(typeof teleBtn !== "undefined"){ teleBtn.textContent = d.teleLabel; }
+  if(typeof teleHint !== "undefined"){ teleHint.textContent = d.teleHint; }
+  if(typeof applyTheme === "function"){ applyTheme(); }
+  localStorage.setItem("hc-lang", curLang);
+}
+langBtn.addEventListener("click", ()=>{
+  if(speaking){ stopSpeaking(); }
+  curLang = curLang === "hi" ? "bn" : "hi";
+  applyLang();
+});
 
-  // --- Room Guide tab ---
-  var roomList = document.getElementById('roomList');
-  ROOMS.forEach(function(rm){
-    var c = document.createElement('div'); c.className = 'room-card';
-    c.innerHTML = '<h3>' + rm.r + '</h3><p><b>Best:</b> ' + rm.g + '</p><p><b>Avoid:</b> ' + rm.a + '</p>';
-    roomList.appendChild(c);
+document.getElementById("year").textContent = new Date().getFullYear();
+
+const THEMES = ["light","dark","oled","hc"];
+const LABELS = {
+  hi:{light:"☀ लाइट",dark:"🌙 डार्क",oled:"⬛ OLED",hc:"◐ HC"},
+  bn:{light:"☀ লাইট",dark:"🌙 ডার্ক",oled:"⬛ OLED",hc:"◐ HC"}
+};
+const THEME_COLORS = { light:"#FDF8EE", dark:"#1A1006", oled:"#000000", hc:"#000000" };
+const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+const themeBtn = document.getElementById("themeBtn");
+let themeIdx = THEMES.indexOf("dark");
+const saved = localStorage.getItem("hc-theme");
+if(saved && THEMES.includes(saved)){ themeIdx = THEMES.indexOf(saved); }
+function applyTheme(){
+  const t = THEMES[themeIdx];
+  document.documentElement.setAttribute("data-theme", t);
+  themeBtn.textContent = LABELS[curLang][t];
+  localStorage.setItem("hc-theme", t);
+  if(themeColorMeta) themeColorMeta.setAttribute("content", THEME_COLORS[t]);
+}
+themeBtn.addEventListener("click", ()=>{ themeIdx = (themeIdx+1) % THEMES.length; applyTheme(); });
+applyTheme();
+
+let fontScale = parseFloat(localStorage.getItem("hc-font")) || 1;
+function applyFont(){
+  document.documentElement.style.setProperty("--font-scale", fontScale);
+  localStorage.setItem("hc-font", fontScale);
+}
+document.getElementById("fontPlus").addEventListener("click", ()=>{ fontScale=Math.min(1.5, Math.round((fontScale+0.1)*10)/10); applyFont(); });
+document.getElementById("fontMinus").addEventListener("click", ()=>{ fontScale=Math.max(0.8, Math.round((fontScale-0.1)*10)/10); applyFont(); });
+applyFont();
+
+const synth = window.speechSynthesis;
+const playBtn = document.getElementById("playBtn");
+const repeatBtn = document.getElementById("repeatBtn");
+const REPEAT_LEVELS = [1, 5, 11, 108];
+let repeatIdx = REPEAT_LEVELS.indexOf(parseInt(localStorage.getItem("hc-repeat"), 10));
+if(repeatIdx === -1) repeatIdx = 0;
+let repeatTotal = 1;
+let repeatPass = 1;
+function repeatBtnIdleLabel(){ return "×" + REPEAT_LEVELS[repeatIdx]; }
+repeatBtn.textContent = repeatBtnIdleLabel();
+repeatBtn.addEventListener("click", ()=>{
+  if(speaking) return; // avoid changing the count mid-recitation
+  repeatIdx = (repeatIdx + 1) % REPEAT_LEVELS.length;
+  localStorage.setItem("hc-repeat", REPEAT_LEVELS[repeatIdx]);
+  repeatBtn.textContent = repeatBtnIdleLabel();
+});
+let speaking = false;
+let speakQueue = [];
+let speakIndex = 0;
+let chosenVoice = null;
+let keepAliveTimer = null;
+let currentUtterance = null; // kept in scope so Android Chrome can't GC it mid-utterance and cut audio
+
+function getVoicesReady(){
+  return new Promise(resolve=>{
+    let v = synth.getVoices();
+    if(v.length){ resolve(v); return; }
+    const onReady = ()=>{ synth.removeEventListener("voiceschanged", onReady); resolve(synth.getVoices()); };
+    synth.addEventListener("voiceschanged", onReady);
+    setTimeout(()=>{ synth.removeEventListener("voiceschanged", onReady); resolve(synth.getVoices()); }, 1200);
   });
-  var tabCompass = document.getElementById('tabCompass'), tabRooms = document.getElementById('tabRooms');
-  var compassView = document.getElementById('compassView'), roomView = document.getElementById('roomView');
-  tabCompass.addEventListener('click', function(){
-    tabCompass.classList.add('active'); tabRooms.classList.remove('active');
-    compassView.classList.remove('hidden'); roomView.classList.add('hidden');
-  });
-  tabRooms.addEventListener('click', function(){
-    tabRooms.classList.add('active'); tabCompass.classList.remove('active');
-    roomView.classList.remove('hidden'); compassView.classList.add('hidden');
-  });
-
-  // --- True / Magnetic North toggle ---
-  var northMode = 'magnetic', declination = 0;
-  northBtn.addEventListener('click', function(){
-    northMode = northMode === 'magnetic' ? 'true' : 'magnetic';
-    northBtn.textContent = northMode === 'magnetic' ? 'Magnetic North' : 'True North';
-    declRow.classList.toggle('show', northMode === 'true');
-  });
-  document.getElementById('declMinus').addEventListener('click', function(){
-    declination = Math.round((declination - 0.5) * 10) / 10; declVal.textContent = declination.toFixed(1) + '°';
-  });
-  document.getElementById('declPlus').addEventListener('click', function(){
-    declination = Math.round((declination + 0.5) * 10) / 10; declVal.textContent = declination.toFixed(1) + '°';
-  });
-
-  // --- Smoothed heading (circular EMA) + calibration + render ---
-  var smVx = null, smVy = null, gotData = false, calTimer = null;
-  var ALPHA = 0.22; // smoothing factor: lower = smoother, higher = more responsive
-  var cumRot = 0; // unbounded rotation so the dial always turns the shortest way, never spins
-
-  function shortestDelta(curMod, targetMod){
-    var d = (targetMod - curMod) % 360;
-    if (d > 180) d -= 360;
-    if (d < -180) d += 360;
-    return d;
-  }
-
-  function setNeedleRotation(effectiveHeading){
-    var targetMod = (effectiveHeading % 360 + 360) % 360;
-    var curMod = ((cumRot % 360) + 360) % 360;
-    cumRot += shortestDelta(curMod, targetMod);
-    needleGroup.style.transform = 'rotate(' + cumRot + 'deg)';
-  }
-
-  function render(rawHeading){
-    var effective = ((rawHeading + (northMode === 'true' ? declination : 0)) % 360 + 360) % 360;
-    setNeedleRotation(effective);
-    degreesEl.textContent = Math.round(effective) + '°';
-    var z = zoneForHeading(effective);
-    facingEl.textContent = 'Facing ' + z.n;
-    zoneName.textContent = z.n + ' Zone';
-    zoneDesc.textContent = z.d;
-  }
-
-  var calSamples = [], calDone = false;
-  function checkCalibration(rawHeading){
-    calSamples.push(rawHeading);
-    if (calSamples.length > 30) calSamples.shift();
-    if (calSamples.length < 10) return;
-    var mn = Math.min.apply(null, calSamples), mx = Math.max.apply(null, calSamples);
-    var spread = mx - mn; if (spread > 180) spread = 360 - spread;
-    if (spread > 50) {
-      calDone = true;
-      calBanner.textContent = '✓ Calibration looks good';
-      setTimeout(function(){ calBanner.classList.add('hidden'); }, 1200);
-    }
-  }
-
-  var jitterBuf = [], JN = 10;
-  function angDiff(a,b){ var d = Math.abs(a-b) % 360; return d > 180 ? 360-d : d; }
-  function updateAccuracy(raw, smoothed, nativeAcc){
-    var level;
-    if (nativeAcc !== null) { level = nativeAcc <= 8 ? 'good' : nativeAcc <= 20 ? 'fair' : 'poor'; }
-    else {
-      var j = angDiff(raw, smoothed);
-      jitterBuf.push(j); if (jitterBuf.length > JN) jitterBuf.shift();
-      var avg = jitterBuf.reduce(function(s,v){ return s+v; }, 0) / jitterBuf.length;
-      level = avg < 3 ? 'good' : avg < 9 ? 'fair' : 'poor';
-    }
-    accPill.className = 'pill ' + level;
-    accPill.textContent = 'Accuracy: ' + (level==='good'?'High':level==='fair'?'Medium':'Low');
-    accRing.style.borderColor = level==='good' ? '#3ea36b' : level==='fair' ? 'var(--gold)' : 'var(--vermillion)';
-    if (calDone) {
-      if (level === 'poor') { calBanner.textContent = '⚠ Possible magnetic interference — move away from metal or electronics'; calBanner.classList.remove('hidden'); }
-      else { calBanner.classList.add('hidden'); }
-    }
-  }
-
-  function updateTilt(beta, gamma){
-    if (typeof beta !== 'number' || typeof gamma !== 'number') return;
-    var mag = Math.sqrt(beta*beta + gamma*gamma);
-    var lvl = mag < 12 ? 'good' : mag < 30 ? 'fair' : 'poor';
-    tiltPill.className = 'pill ' + lvl;
-    tiltPill.textContent = lvl==='good' ? 'Level: Good' : lvl==='fair' ? 'Level: Tilted' : 'Level: Hold Flat';
-  }
-
-  var precise = {active:false, locked:false, samples:[], startTime:0};
-  function finalizePrecise(){
-    var mx=0, my=0;
-    precise.samples.forEach(function(h){ var r=h*Math.PI/180; mx+=Math.cos(r); my+=Math.sin(r); });
-    var avg = Math.atan2(my, mx) * 180/Math.PI; if (avg < 0) avg += 360;
-    precise.active = false; precise.locked = true;
-    preciseBtn.disabled = false; preciseBtn.textContent = 'Retake Precise Reading';
-    render(avg);
-  }
-  preciseBtn.addEventListener('click', function(){
-    if (precise.locked) { precise.locked = false; preciseBtn.textContent = 'Hold Steady'; return; }
-    precise.active = true; precise.samples = []; precise.startTime = performance.now();
-    preciseBtn.textContent = 'Averaging…'; preciseBtn.disabled = true;
-  });
-
-  function handleOrientation(e, isAbsoluteSrc){
-    var heading, nativeAcc = null;
-    if (typeof e.webkitCompassHeading === 'number') {
-      heading = e.webkitCompassHeading;
-      if (typeof e.webkitCompassAccuracy === 'number' && e.webkitCompassAccuracy >= 0) nativeAcc = e.webkitCompassAccuracy;
-    } else if (e.alpha !== null && e.alpha !== undefined) {
-      if (isAbsoluteSrc) { window._absOK = true; }
-      if (!isAbsoluteSrc && window._absOK) return;
-      heading = 360 - e.alpha;
-    } else { return; }
-
-    var rad = heading * Math.PI / 180, vx = Math.cos(rad), vy = Math.sin(rad);
-    if (smVx === null) { smVx = vx; smVy = vy; }
-    else { smVx += ALPHA * (vx - smVx); smVy += ALPHA * (vy - smVy); }
-    var smoothed = Math.atan2(smVy, smVx) * 180 / Math.PI;
-    if (smoothed < 0) smoothed += 360;
-
-    gotData = true;
-    permBtn.style.display = 'none';
-    if (!calDone) checkCalibration(heading);
-    updateAccuracy(heading, smoothed, nativeAcc);
-    updateTilt(e.beta, e.gamma);
-
-    if (precise.active) {
-      precise.samples.push(smoothed);
-      if (performance.now() - precise.startTime > 2500) finalizePrecise();
+}
+function pickVoice(voices, langPrefix){
+  return voices.find(v=>v.lang && v.lang.toLowerCase().startsWith(langPrefix))
+    || voices.find(v=>v.lang && v.lang.toLowerCase().startsWith("hi"))
+    || voices[0] || null;
+}
+function playBtnUpdateIdle(){
+  playBtn.textContent = DATA[curLang].playIdle;
+  playBtn.classList.remove("active");
+  playBtn.setAttribute("aria-label", "Play recitation");
+}
+function highlightVerse(idx){
+  const kids = document.getElementById("content").children;
+  Array.from(kids).forEach(k=>k.classList.remove("playing"));
+  let childIdx;
+  if(idx <= 1) childIdx = 0;
+  else if(idx <= 41) childIdx = idx - 1;
+  else if(idx === 42) childIdx = 41;
+  else childIdx = 42;
+  const el = kids[childIdx];
+  if(el){ el.classList.add("playing"); el.scrollIntoView({behavior:"smooth", block:"center"}); }
+}
+function clearHighlight(){
+  Array.from(document.getElementById("content").children).forEach(k=>k.classList.remove("playing"));
+}
+function stopSpeaking(){
+  speaking = false;
+  if(keepAliveTimer){ clearInterval(keepAliveTimer); keepAliveTimer = null; }
+  synth.cancel();
+  currentUtterance = null;
+  repeatPass = 1;
+  repeatBtn.textContent = repeatBtnIdleLabel();
+  playBtnUpdateIdle();
+  clearHighlight();
+}
+function speakNext(){
+  if(!speaking) return;
+  if(speakIndex >= speakQueue.length){
+    if(repeatPass < repeatTotal){
+      repeatPass++;
+      speakIndex = 0;
+      if(repeatTotal > 1) repeatBtn.textContent = `${repeatPass}/${repeatTotal}`;
+      speakNext();
       return;
     }
-    if (precise.locked) return;
-    render(smoothed);
+    stopSpeaking();
+    return;
   }
+  highlightVerse(speakIndex);
+  const utter = new SpeechSynthesisUtterance(speakQueue[speakIndex]);
+  if(chosenVoice) utter.voice = chosenVoice;
+  utter.lang = chosenVoice ? chosenVoice.lang : (DATA[curLang].speechLang + "-IN");
+  utter.rate = 0.92;
+  utter.onend = ()=>{ speakIndex++; speakNext(); };
+  utter.onerror = ()=>{ speakIndex++; speakNext(); };
+  currentUtterance = utter; // hold a strong reference until it finishes
+  synth.speak(utter);
+}
+function refreshVoiceLater(langPrefix){
+  getVoicesReady().then(voices=>{
+    const v = pickVoice(voices, langPrefix);
+    if(v) chosenVoice = v;
+  });
+}
+playBtn.addEventListener("click", ()=>{
+  const d = DATA[curLang];
+  if(!("speechSynthesis" in window)){ alert(d.noVoice); return; }
+  if(speaking){ stopSpeaking(); return; }
+  speaking = true;
+  playBtn.textContent = d.playBusy;
+  playBtn.classList.add("active");
+  playBtn.setAttribute("aria-label", "Pause recitation");
+  synth.cancel();
+  const lines = [...d.open, ...d.chaupai, d.close, d.jai].map(t=>t.replace(/॥/g,".").replace(/।/g,",").replace(/\n/g," "));
+  speakQueue = lines;
+  speakIndex = 0;
+  repeatTotal = REPEAT_LEVELS[repeatIdx];
+  repeatPass = 1;
+  if(repeatTotal > 1) repeatBtn.textContent = `${repeatPass}/${repeatTotal}`;
+  const voicesNow = synth.getVoices();
+  chosenVoice = voicesNow.length ? pickVoice(voicesNow, d.speechLang) : null;
+  speakNext();
+  if(!voicesNow.length){ refreshVoiceLater(d.speechLang); }
+  keepAliveTimer = setInterval(()=>{ try{ if(synth.speaking){ synth.pause(); synth.resume(); } }catch(e){} }, 9000);
+});
+if("speechSynthesis" in window){ speechSynthesis.onvoiceschanged = ()=>{}; }
 
-  function startListening(){
-    window.addEventListener('deviceorientationabsolute', function(e){ handleOrientation(e, true); }, true);
-    window.addEventListener('deviceorientation', function(e){ handleOrientation(e, false); }, true);
-    facingEl.textContent = 'Move your phone to calibrate…';
-    calBanner.classList.remove('hidden');
-    calTimer = setTimeout(function(){ calBanner.classList.add('hidden'); }, 8000);
-    setTimeout(function(){
-      if (!gotData) {
-        facingEl.textContent = (location.protocol !== 'https:' && location.hostname !== 'localhost')
-          ? 'Open this page over HTTPS to enable the compass sensor'
-          : 'No compass data received. Check motion sensors are allowed for this site.';
-        calBanner.classList.add('hidden');
-      }
-    }, 3000);
+const teleBtn = document.getElementById("teleBtn");
+const teleOverlay = document.getElementById("teleOverlay");
+const teleBody = document.getElementById("teleBody");
+const teleHint = document.getElementById("teleHint");
+const teleClose = document.getElementById("teleClose");
+const telePlay = document.getElementById("telePlay");
+const teleSlower = document.getElementById("teleSlower");
+const teleFaster = document.getElementById("teleFaster");
+const teleSpeedLabel = document.getElementById("teleSpeedLabel");
+const TELE_LEVELS = [
+  0.05,0.10,0.15,0.20,0.25,0.30,0.35,0.40,0.45,0.50,
+  0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,0.95,1.00,
+  1.10,1.20,1.30,1.40,1.50,
+  2,3,4,5,6,7,8,9,10
+];
+let teleLevelIdx = TELE_LEVELS.findIndex(v=>Math.abs(v-parseFloat(localStorage.getItem("hc-tele-speed")))<0.001);
+if(teleLevelIdx === -1) teleLevelIdx = TELE_LEVELS.indexOf(1);
+function teleSpeedLabelText(){
+  const v = TELE_LEVELS[teleLevelIdx];
+  let s = v.toFixed(2).replace(/0+$/,"").replace(/\.$/,"");
+  return s + "×";
+}
+teleSpeedLabel.textContent = teleSpeedLabelText();
+let teleScrolling = false, teleRAF = null, teleLastTs = null, teleScrollPos = 0;
+
+function renderTelePrompter(){
+  const d = DATA[curLang];
+  let html = d.open.map(x=>`<p>${x.split("\n").join("<br>")}</p>`).join("");
+  d.chaupai.forEach((c,i)=>{ html += `<p><span class="tele-num">॥${d.num[i]}॥</span>${c.split("\n").join("<br>")}</p>`; });
+  html += `<p>${d.close.split("\n").join("<br>")}</p>`;
+  html += `<p>${d.jai.split("\n").join("<br>")}</p>`;
+  teleBody.innerHTML = html;
+}
+function teleParagraphs(){
+  return Array.from(teleBody.querySelectorAll("p"));
+}
+function teleRelativeTop(el){
+  return el.getBoundingClientRect().top - teleBody.getBoundingClientRect().top + teleBody.scrollTop;
+}
+function teleCurrentIndex(){
+  const paras = teleParagraphs();
+  const top = teleBody.scrollTop;
+  let idx = 0;
+  for(let i=0; i<paras.length; i++){
+    if(teleRelativeTop(paras[i]) <= top + 60){ idx = i; } else break;
   }
-
-  permBtn.addEventListener('click', function(){
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-      DeviceOrientationEvent.requestPermission().then(function(state){
-        if (state === 'granted') startListening();
-        else facingEl.textContent = 'Compass permission denied';
-      }).catch(function(){ facingEl.textContent = 'Compass unavailable on this device'; });
-    } else if (window.DeviceOrientationEvent) {
-      startListening();
-    } else {
-      facingEl.textContent = 'Compass unavailable on this device';
+  return idx;
+}
+function teleJumpTo(idx){
+  const paras = teleParagraphs();
+  if(!paras.length) return;
+  idx = Math.max(0, Math.min(paras.length - 1, idx));
+  teleScrollPos = Math.max(0, teleRelativeTop(paras[idx]) - 12);
+  teleBody.scrollTop = teleScrollPos;
+}
+function teleNextVerse(){ teleJumpTo(teleCurrentIndex() + 1); }
+function telePrevVerse(){ teleJumpTo(teleCurrentIndex() - 1); }
+teleBody.addEventListener("click", (e)=>{
+  const rect = teleBody.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const third = rect.width / 3;
+  if(x < third){ telePrevVerse(); }
+  else if(x > third * 2){ teleNextVerse(); }
+  else { teleScrolling ? stopTeleScroll() : startTeleScroll(); }
+});
+let teleTouchStartX = null, teleTouchStartY = null;
+teleBody.addEventListener("touchstart", (e)=>{
+  if(e.touches.length !== 1) return;
+  teleTouchStartX = e.touches[0].clientX;
+  teleTouchStartY = e.touches[0].clientY;
+}, {passive:true});
+teleBody.addEventListener("touchend", (e)=>{
+  if(teleTouchStartX === null) return;
+  const touch = e.changedTouches[0];
+  const dx = touch.clientX - teleTouchStartX;
+  const dy = touch.clientY - teleTouchStartY;
+  teleTouchStartX = null; teleTouchStartY = null;
+  if(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5){
+    if(dx < 0){ teleNextVerse(); } else { telePrevVerse(); }
+  }
+}, {passive:true});
+function stopTeleScroll(){
+  teleScrolling = false; telePlay.textContent = "▶"; telePlay.setAttribute("aria-label", "Start auto-scroll");
+  if(teleRAF) cancelAnimationFrame(teleRAF);
+  releaseWakeLock();
+}
+function teleStep(ts){
+  if(teleLastTs === null) teleLastTs = ts;
+  const dt = (ts - teleLastTs) / 1000;
+  teleLastTs = ts;
+  teleScrollPos += TELE_LEVELS[teleLevelIdx] * 14 * dt;
+  teleBody.scrollTop = teleScrollPos;
+  if(teleScrollPos + teleBody.clientHeight >= teleBody.scrollHeight - 4){ stopTeleScroll(); return; }
+  teleRAF = requestAnimationFrame(teleStep);
+}
+let wakeLock = null;
+async function requestWakeLock(){
+  try{
+    if("wakeLock" in navigator){
+      const lock = await navigator.wakeLock.request("screen");
+      if(!teleScrolling){ lock.release().catch(()=>{}); return; }
+      wakeLock = lock;
+      wakeLock.addEventListener("release", ()=>{ wakeLock = null; });
     }
-  });
+  }catch(e){ wakeLock = null; }
+}
+function releaseWakeLock(){
+  if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock = null; }
+}
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "visible" && teleScrolling && !wakeLock){ requestWakeLock(); }
+});
+function startTeleScroll(){
+  teleScrolling = true; teleLastTs = null; teleScrollPos = teleBody.scrollTop;
+  telePlay.textContent = "⏸"; telePlay.setAttribute("aria-label", "Pause auto-scroll");
+  requestWakeLock();
+  teleRAF = requestAnimationFrame(teleStep);
+}
+teleBtn.addEventListener("click", ()=>{
+  renderTelePrompter();
+  teleOverlay.classList.add("active");
+  teleBody.scrollTop = 0;
+  teleScrollPos = 0;
+  document.body.style.overflow = "hidden";
+});
+document.addEventListener("keydown", (e)=>{
+  if(e.key === "Escape" && teleOverlay.classList.contains("active")){
+    stopTeleScroll();
+    teleOverlay.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+});
+teleClose.addEventListener("click", ()=>{ stopTeleScroll(); teleOverlay.classList.remove("active"); document.body.style.overflow = ""; });
+telePlay.addEventListener("click", ()=>{ teleScrolling ? stopTeleScroll() : startTeleScroll(); });
+teleSlower.addEventListener("click", ()=>{
+  teleLevelIdx = Math.max(0, teleLevelIdx-1);
+  teleSpeedLabel.textContent = teleSpeedLabelText();
+  localStorage.setItem("hc-tele-speed", TELE_LEVELS[teleLevelIdx]);
+});
+teleFaster.addEventListener("click", ()=>{
+  teleLevelIdx = Math.min(TELE_LEVELS.length-1, teleLevelIdx+1);
+  teleSpeedLabel.textContent = teleSpeedLabelText();
+  localStorage.setItem("hc-tele-speed", TELE_LEVELS[teleLevelIdx]);
+});
 
-  var themeIdx = 0;
-  themeBtn.addEventListener('click', function(){
-    themeIdx = (themeIdx + 1) % THEMES.length;
-    var t = THEMES[themeIdx];
-    document.documentElement.setAttribute('data-theme', t);
-    themeBtn.textContent = LABELS[t];
+applyLang();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch((err)=>{ console.warn("SW registration failed:", err); });
   });
-})();
+}
 </script>
 </body>
 </html>
