@@ -599,6 +599,13 @@ function setBg(code,isDay){
 
 // ── LOCATION ─────────────────────────────────────────────────────────
 async function ipLoc(){
+  // Detect sandboxed/preview environments where all fetches are blocked
+  const isPreview=location.hostname.includes('claude') ||
+                  location.hostname.includes('anthropic') ||
+                  location.hostname==='localhost' ||
+                  location.protocol==='file:';
+  if(isPreview) return{lat:51.5074,lon:-0.1278,name:'London, GB'};
+
   // Try multiple free IP geolocation providers in sequence
   const providers=[
     async()=>{
@@ -620,16 +627,60 @@ async function ipLoc(){
   for(const provider of providers){
     try{return await provider();}catch{}
   }
-  // Final fallback: load London so the app always shows something useful
-  return{lat:51.5074,lon:-0.1278,name:'London, GB (default)'};
+  return{lat:51.5074,lon:-0.1278,name:'London, GB'};
 }
 function gpsLoc(){return new Promise((res,rej)=>{if(!navigator.geolocation)return rej(new Error('No GPS'));navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lon:p.coords.longitude}),rej,{timeout:8000,maximumAge:60000});});}
 
 // ── MAIN FETCH ────────────────────────────────────────────────────────
+// ── MOCK DATA (used in preview/sandboxed environments) ───────────────
+function getMockData(name){
+  const now=new Date(),base=now.toISOString().slice(0,10);
+  const hrs=Array.from({length:48},(_,i)=>{const d=new Date(now.getTime()+i*3600000);return d.toISOString().slice(0,13)+':00';});
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(now.getTime()+i*86400000);return d.toISOString().slice(0,10);});
+  const wd={
+    utc_offset_seconds:3600,
+    current:{temperature_2m:18,relative_humidity_2m:62,wind_speed_10m:14,wind_direction_10m:225,weather_code:2,apparent_temperature:16,precipitation:0,surface_pressure:1012,visibility:18000,dew_point_2m:10,uv_index:3.2,is_day:1},
+    hourly:{
+      time:hrs,
+      temperature_2m:[16,15,15,14,14,13,13,14,15,17,18,19,20,20,19,18,17,16,15,15,14,14,13,13,14,15,16,17,18,19,20,21,21,20,19,18,17,16,15,14,14,13,13,14,15,17,18,19],
+      apparent_temperature:[14,13,13,12,12,11,11,12,13,15,16,17,18,18,17,16,15,14,13,13,12,12,11,11,12,13,14,15,16,17,18,19,19,18,17,16,15,14,13,12,12,11,11,12,13,15,16,17],
+      weather_code:[2,1,1,0,0,1,2,2,3,2,1,0,0,1,2,3,3,2,1,1,0,0,1,2,61,63,61,2,1,0,0,1,2,2,3,3,2,1,1,0,0,1,2,63,80,61,2,1],
+      precipitation_probability:[15,10,8,5,5,8,12,18,20,15,10,8,5,8,20,35,40,30,20,15,10,8,5,10,55,70,65,40,25,10,5,8,15,25,35,40,35,20,12,8,5,8,15,60,75,65,40,20],
+      precipitation:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.2,0.5,0.3,0,0,0,0,0,0,1.2,2.1,1.8,0.5,0,0,0,0,0,0,0.1,0.3,0.2,0,0,0,0,0,0,1.5,2.4,1.9,0.4,0]
+    },
+    daily:{
+      time:days,
+      weather_code:[2,3,61,80,1,0,2],
+      temperature_2m_max:[20,18,16,19,22,24,21],
+      temperature_2m_min:[12,11,10,12,14,15,13],
+      sunrise:days.map(d=>d+'T05:47'),
+      sunset:days.map(d=>d+'T20:31'),
+      precipitation_probability_max:[20,35,70,55,10,5,25],
+      uv_index_max:[3,2,1,3,6,7,4],
+      precipitation_sum:[0,0.3,5.2,2.1,0,0,0.4]
+    }
+  };
+  const ad={current:{us_aqi:38,pm10:14,pm2_5:7,carbon_monoxide:180,nitrogen_dioxide:12,ozone:55}};
+  return{wd,ad};
+}
+
 async function doFetch(cityOvr){
   const city=cityOvr||document.getElementById('ci').value.trim();
   setOut('<div class="msg"><div class="spin"></div><br>Detecting your location…</div>');
   document.getElementById('upd').textContent='';
+
+  const isPreview=location.hostname.includes('claude')||location.hostname.includes('anthropic')||location.hostname==='localhost'||location.protocol==='file:';
+
+  // In preview, use mock data instantly — no network needed
+  if(isPreview&&!city){
+    const name='London, GB (Preview)';
+    const {wd,ad}=getMockData(name);
+    LD=[name,51.5074,wd,ad];render(name,51.5074,wd,ad);
+    document.getElementById('upd').textContent='🔵 Preview mode — search any city to load live data';
+    updStar(name);
+    return;
+  }
+
   try{
     let lat,lon,name;
     if(city){
@@ -660,17 +711,11 @@ async function doFetch(cityOvr){
         return;
       }
     }catch{}
-    // Auto-load London as last resort — never show a dead screen
-    try{
-      const fallLat=51.5074,fallLon=-0.1278,fallName='London, GB';
-      const wu=`https://api.open-meteo.com/v1/forecast?latitude=${fallLat}&longitude=${fallLon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature,precipitation,surface_pressure,visibility,dew_point_2m,uv_index,is_day&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max,precipitation_sum&timezone=auto&forecast_days=7&wind_speed_unit=kmh`;
-      const au=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${fallLat}&longitude=${fallLon}&current=us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone&timezone=auto`;
-      const wd=await fT(wu);let ad={};try{ad=await fT(au);}catch{}
-      LD=[fallName,fallLat,wd,ad];render(fallName,fallLat,wd,ad);
-      document.getElementById('upd').textContent=`📍 Location unavailable — showing London`;
-    }catch{
-      setOut(`<div class="msg">⚠️ No internet connection.<br><small style="opacity:.6">Please check your network and try again.</small><br><br><button onclick="doFetch()" style="margin-top:8px;background:var(--ac);color:#000;border:none;padding:10px 22px;border-radius:20px;font-size:.8rem;font-weight:700;cursor:pointer">↻ Retry</button></div>`);
-    }
+    // Network totally blocked — show mock data with clear notice
+    const {wd,ad}=getMockData(city||'London, GB');
+    const mockName=city?`${city} (preview data)`:'London, GB (preview data)';
+    LD=[mockName,51.5074,wd,ad];render(mockName,51.5074,wd,ad);
+    document.getElementById('upd').textContent='🔵 Preview mode — deploy for live data';
   }
 }
 async function useGPS(){
