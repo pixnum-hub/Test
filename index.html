@@ -625,28 +625,51 @@ function setBg(code,isDay){
 
 // ── LOCATION ─────────────────────────────────────────────────────────
 // GPS is tried first (most accurate). If permission is denied, unsupported,
-// or the device can't get a fix in time, we fall back to IP-based lookup.
+// or the device can't get a fix in time, we fall back to IP-based lookup
+// (which is only city-level accurate, sometimes off by a whole region).
 let lastGpsError=null;
 
-function gpsLoc(){
+// A single getCurrentPosition() call often returns a fast, coarse
+// network/Wi-Fi-based fix instead of a true GPS lock. We sample readings
+// for up to `timeoutMs` and keep the most precise one (smallest accuracy
+// radius), exiting early once we get a good (<=30m) fix.
+function gpsLoc(timeoutMs=12000){
   return new Promise((res,rej)=>{
     if(!navigator.geolocation)return rej(new Error('GPS not supported by this browser'));
-    navigator.geolocation.getCurrentPosition(
-      p=>res({lat:p.coords.latitude,lon:p.coords.longitude}),
+    let best=null,watchId=null,settled=false;
+    const finish=()=>{
+      if(settled)return;
+      settled=true;
+      if(watchId!=null)navigator.geolocation.clearWatch(watchId);
+      if(best)res(best);
+      else rej(new Error('Could not get a GPS fix. Try again outdoors or check device settings.'));
+    };
+    watchId=navigator.geolocation.watchPosition(
+      p=>{
+        const acc=p.coords.accuracy??99999;
+        if(!best||acc<best.accuracy){
+          best={lat:p.coords.latitude,lon:p.coords.longitude,accuracy:Math.round(acc)};
+        }
+        if(acc<=30)finish(); // good enough — stop draining battery/time
+      },
       err=>{
+        if(best)return; // already have a usable fix, ignore later errors
+        settled=true;
+        if(watchId!=null)navigator.geolocation.clearWatch(watchId);
         const msgs={1:'Location permission denied. Enable it in your browser/app settings.',2:'GPS position unavailable. Try again outdoors or check your device settings.',3:'GPS request timed out. Try again.'};
         rej(new Error(msgs[err.code]||'Could not get GPS location.'));
       },
-      {enableHighAccuracy:true,timeout:8000,maximumAge:60000}
+      {enableHighAccuracy:true,timeout:timeoutMs,maximumAge:0}
     );
+    setTimeout(finish,timeoutMs);
   });
 }
 
 async function reverseGeocode(lat,lon){
   try{
-    const rev=await fT(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,6000,false);
+    const rev=await fT(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=12`,6000,false);
     const a=rev.address||{};
-    return `${a.city||a.town||a.village||a.county||a.state||'Your Location'}, ${(a.country_code||'').toUpperCase()}`;
+    return `${a.city||a.town||a.village||a.municipality||a.county||a.state||'Your Location'}, ${(a.country_code||'').toUpperCase()}`;
   }catch{return 'Your Location';}
 }
 
@@ -678,12 +701,16 @@ async function ipLoc(){
   try{
     const pos=await gpsLoc();
     const name=await reverseGeocode(pos.lat,pos.lon);
-    return{lat:pos.lat,lon:pos.lon,name};
+    return{lat:pos.lat,lon:pos.lon,name,source:'gps',accuracy:pos.accuracy};
   }catch(gpsErr){
     lastGpsError=gpsErr.message;
   }
-  // 2. GPS denied/unavailable/timed out — fall back to IP-based geolocation
-  try{return await ipFallback();}catch{}
+  // 2. GPS denied/unavailable/timed out — fall back to IP-based geolocation.
+  // Note: IP location is approximate (city/ISP-level) and can be off by miles.
+  try{
+    const r=await ipFallback();
+    return{...r,source:'ip',gpsError:lastGpsError};
+  }catch{}
   // 3. Last resort: ask user to search manually
   throw new Error(lastGpsError||'Could not detect your location. Please search a city above.');
 }
@@ -691,10 +718,10 @@ async function ipLoc(){
 // ── MAIN FETCH ────────────────────────────────────────────────────────
 async function doFetch(cityOvr){
   const city=cityOvr||document.getElementById('ci').value.trim();
-  setOut(`<div class="msg"><div class="spin"></div><br>${city?'Loading weather…':'Detecting your location via GPS…'}</div>`);
+  setOut(`<div class="msg"><div class="spin"></div><br>${city?'Loading weather…':'Detecting your precise location…'}</div>`);
   document.getElementById('upd').textContent='';
   try{
-    let lat,lon,name;
+    let lat,lon,name,locMeta={source:'search'};
     if(city){
       const results=await geocodeCity(city,1);
       if(!results.length)throw new Error('City not found. Try another name.');
@@ -703,21 +730,22 @@ async function doFetch(cityOvr){
     }else{
       const loc=await ipLoc();
       lat=loc.lat;lon=loc.lon;name=loc.name;
+      locMeta={source:loc.source,accuracy:loc.accuracy,gpsError:loc.gpsError};
     }
     const wurl=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature,precipitation,surface_pressure,visibility,dew_point_2m,uv_index,is_day&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max,precipitation_sum&timezone=auto&forecast_days=7&wind_speed_unit=kmh`;
     const aurl=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone&timezone=auto`;
     const wd=await fT(wurl);
     let ad={};try{ad=await fT(aurl);}catch{}
-    try{localStorage.setItem('vcache',JSON.stringify({name,lat,wd,ad,ts:Date.now()}));}catch{}
-    LD=[name,lat,wd,ad];render(name,lat,wd,ad);
+    try{localStorage.setItem('vcache',JSON.stringify({name,lat,wd,ad,locMeta,ts:Date.now()}));}catch{}
+    LD=[name,lat,wd,ad,locMeta];render(name,lat,wd,ad,locMeta);
     document.getElementById('upd').textContent=`↻ Updated ${new Date().toLocaleTimeString()}`;
     updStar(name);
   }catch(e){
     try{
       const cached=JSON.parse(localStorage.getItem('vcache')||'{}');
       if(cached.wd){
-        LD=[cached.name,cached.lat,cached.wd,cached.ad];
-        render(cached.name,cached.lat,cached.wd,cached.ad);
+        LD=[cached.name,cached.lat,cached.wd,cached.ad,cached.locMeta];
+        render(cached.name,cached.lat,cached.wd,cached.ad,cached.locMeta);
         document.getElementById('upd').textContent=`📦 Cached · ${cached.ts?new Date(cached.ts).toLocaleTimeString():'–'}`;
         return;
       }
@@ -727,15 +755,16 @@ async function doFetch(cityOvr){
 }
 
 async function useGPS(){
-  setOut('<div class="msg"><div class="spin"></div><br>Getting GPS location…</div>');
+  setOut('<div class="msg"><div class="spin"></div><br>Getting precise GPS location…</div>');
   try{
     const loc=await gpsLoc();
     const name=await reverseGeocode(loc.lat,loc.lon);
+    const locMeta={source:'gps',accuracy:loc.accuracy};
     const wurl=`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature,precipitation,surface_pressure,visibility,dew_point_2m,uv_index,is_day&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max,precipitation_sum&timezone=auto&forecast_days=7&wind_speed_unit=kmh`;
     const aurl=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${loc.lat}&longitude=${loc.lon}&current=us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone&timezone=auto`;
     const wd=await fT(wurl);let ad={};try{ad=await fT(aurl);}catch{}
-    try{localStorage.setItem('vcache',JSON.stringify({name,lat:loc.lat,wd,ad,ts:Date.now()}));}catch{}
-    LD=[name,loc.lat,wd,ad];render(name,loc.lat,wd,ad);
+    try{localStorage.setItem('vcache',JSON.stringify({name,lat:loc.lat,wd,ad,locMeta,ts:Date.now()}));}catch{}
+    LD=[name,loc.lat,wd,ad,locMeta];render(name,loc.lat,wd,ad,locMeta);
     document.getElementById('upd').textContent=`↻ Updated ${new Date().toLocaleTimeString()}`;
     updStar(name);
   }catch(e){
@@ -745,9 +774,18 @@ async function useGPS(){
 function doRefresh(){doFetch(document.getElementById('ci').value.trim()||undefined);}
 
 // ── RENDER ────────────────────────────────────────────────────────────
-function render(name,lat,wd,ad){
+function render(name,lat,wd,ad,locMeta){
   const c=wd.current,d=wd.daily,h=wd.hourly,now=new Date();
   setBg(c.weather_code,c.is_day);
+  // Location source badge — tells the user how precise the detected location is
+  let locBadge='';
+  if(locMeta?.source==='gps'){
+    const acc=locMeta.accuracy;
+    const good=acc!=null&&acc<=50;
+    locBadge=`<div style="font-size:.72rem;color:${good?'var(--gn)':'var(--mu)'};margin-top:2px">🎯 GPS${acc!=null?` · ±${acc}m`:''}${good?'':' · refine for better accuracy'}</div>`;
+  }else if(locMeta?.source==='ip'){
+    locBadge=`<div style="font-size:.72rem;color:var(--yn);margin-top:2px">📡 Approximate (IP-based) · <span style="text-decoration:underline;cursor:pointer" onclick="useGPS()">use precise GPS</span></div>${locMeta.gpsError?`<div style="font-size:.68rem;color:var(--mu);margin-top:1px">⚠️ ${locMeta.gpsError}</div>`:''}`;
+  }
   const dateStr=now.toLocaleDateString('en',{weekday:'long',day:'numeric',month:'short'});
   const pressure=Math.round(c.surface_pressure??1013);
   const vis=(Number(c.visibility??10000)/1000).toFixed(1);
@@ -857,6 +895,7 @@ function render(name,lat,wd,ad){
     <div class="card hero" style="animation-delay:0s">
       <div class="cname">${name}<button class="star${isFav?' on':''}" id="starbtn" onclick="togFav('${esc(name)}')">${isFav?'⭐':'☆'}</button></div>
       <div class="dline">${dateStr} · ${c.is_day?'☀️ Day':'🌙 Night'}</div>
+      ${locBadge}
       <div class="ltime">🕐 Local Time: ${localTime}</div>
       <div class="tbig" style="margin-top:8px">${useF?C2F(c.temperature_2m):Math.round(c.temperature_2m)}<sup>${useF?'°F':'°C'}</sup></div>
       <div class="cond">${WI[c.weather_code]||'🌡️'} ${WD[c.weather_code]||''} · Feels ${tF(c.apparent_temperature)}</div>
