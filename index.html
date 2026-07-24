@@ -170,6 +170,36 @@ main{width:100%;max-width:520px;padding:12px 10px;flex:1;display:flex;flex-direc
 .flo{color:var(--mu)}
 
 
+
+/* FEATURE 17: Emoji Summary Bar */
+.emojisummary{background:var(--s2);border-radius:12px;padding:10px 14px;font-size:.88rem;letter-spacing:.5px;text-align:center;border:1px solid var(--bd);word-break:break-all}
+
+/* FEATURE 18: Feels-Like Badge */
+.flbadge{display:inline-flex;align-items:center;gap:6px;background:var(--s2);border-radius:20px;padding:5px 14px;font-size:.84rem;font-weight:700;border:1px solid var(--bd);margin-top:6px}
+
+/* FEATURE 16: Local Time */
+.ltime{font-size:.78rem;color:var(--mu);font-family:var(--f);margin-top:2px}
+
+/* FEATURE 11: Twilight rows */
+.twrow{display:flex;gap:7px;flex-wrap:wrap}
+.twc{flex:1;min-width:80px;background:var(--s2);border-radius:11px;padding:9px 8px;text-align:center;border:1px solid var(--bd)}
+.twico{font-size:1.2rem}
+.twv{font-size:.84rem;font-weight:700;margin:3px 0 2px}
+.twk{font-size:.65rem;color:var(--mu);text-transform:uppercase;letter-spacing:.8px}
+
+/* FEATURE 6: Shake indicator */
+#shakeHint{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--s1);border:1px solid var(--bd);border-radius:20px;padding:7px 16px;font-size:.72rem;color:var(--mu);opacity:0;transition:opacity .4s;pointer-events:none;z-index:99;white-space:nowrap}
+
+/* FEATURE 24: Unit panel */
+.unit-panel{background:var(--s2);border-radius:12px;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px solid var(--bd)}
+.unit-grp{display:flex;gap:4px;align-items:center;font-size:.72rem;color:var(--mu)}
+.unit-grp span{font-weight:700;color:var(--tx)}
+.ubtn{background:var(--s1);border:1px solid var(--bd);color:var(--tx);font-size:.65rem;padding:3px 8px;border-radius:12px;cursor:pointer;transition:all .2s}
+.ubtn.uon{background:var(--ac);color:#000;border-color:var(--ac)}
+
+/* FEATURE 23: Battery saver */
+@media (prefers-reduced-motion:reduce){.card{animation:none}*{transition:none!important}}
+
 /* SPARKLINE */
 .spark-wrap{background:var(--s2);border-radius:12px;padding:12px 14px;border:1px solid var(--bd);margin-top:0}
 .spark-lbl{font-size:.78rem;text-transform:uppercase;letter-spacing:2px;color:var(--mu);margin-bottom:8px}
@@ -198,6 +228,7 @@ footer strong{color:var(--ac)}
   <div class="hrow">
     <button class="btn" id="ub" onclick="toggleF()">°C</button>
     <button class="btn" onclick="doRefresh()">↻</button>
+    <button class="btn" id="impbtn" onclick="toggleImperial()" title="Toggle metric/imperial">MI</button>
     <button class="btn" onclick="setT('dark')" id="td">DARK</button>
     <button class="btn" onclick="setT('light')" id="tl">LITE</button>
     <button class="btn" onclick="setT('oled')" id="to">OLED</button>
@@ -216,6 +247,7 @@ footer strong{color:var(--ac)}
   <div id="out"><div class="msg"><div class="spin"></div><br>Loading weather…</div></div>
   <div id="upd" class="upd"></div>
 </main>
+<div id="shakeHint">📳 Refreshing…</div>
 <footer>© <strong>Manik Roy</strong> <span id="yr"></span> · All Rights Reserved</footer>
 
 <script>
@@ -436,6 +468,129 @@ function rainTrend(precipArr){
   return{t:'Clearing',icon:'🌤️',c:'#5ec97a'};
 }
 
+
+// ── FEATURE 16: Local City Time ─────────────────────────────────────
+function cityTime(tzOffset){
+  // Open-Meteo returns utc_offset_seconds in wd.utc_offset_seconds
+  const utcMs=Date.now()+(new Date().getTimezoneOffset()*60000);
+  const cityMs=utcMs+(tzOffset||0)*1000;
+  const d=new Date(cityMs);
+  const h=d.getUTCHours()%12||12,m=String(d.getUTCMinutes()).padStart(2,'0'),a=d.getUTCHours()>=12?'PM':'AM';
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return`${days[d.getUTCDay()]} ${h}:${m} ${a}`;
+}
+
+// ── FEATURE 17: Emoji Weather Summary ───────────────────────────────
+function emojiSummary(temp,code,wind,rain,aqi,useF){
+  const t=useF?Math.round(temp*9/5+32):Math.round(temp);
+  const tu=useF?'°F':'°C';
+  const wi=Math.round(wind);
+  const wu=useF?'mph':'km/h';
+  const ws=useF?Math.round(wind*0.621)+'mph':wi+'km/h';
+  const ico=WI[code]||'🌡️';
+  const aqiIco=aqi>150?'😷':aqi>100?'😐':aqi>50?'🙂':'😊';
+  return`${ico} ${t}${tu} 💨${ws} 💧${rain}mm ${aqiIco}AQI`;
+}
+
+// ── FEATURE 18: Feels-Like Badge ────────────────────────────────────
+function feelsBadge(fl){
+  if(fl<=-10)return{ico:'🥶',l:'Extreme Cold',c:'#4db8f0'};
+  if(fl<0)return{ico:'❄️',l:'Freezing',c:'#81d4fa'};
+  if(fl<10)return{ico:'🧥',l:'Very Cold',c:'#90caf9'};
+  if(fl<16)return{ico:'🌬️',l:'Cold',c:'#a5d6a7'};
+  if(fl<22)return{ico:'😊',l:'Comfortable',c:'#5ec97a'};
+  if(fl<28)return{ico:'☀️',l:'Warm',c:'#f0c040'};
+  if(fl<35)return{ico:'🥵',l:'Hot',c:'#f08040'};
+  return{ico:'🔥',l:'Extreme Heat',c:'#e85555'};
+}
+
+// ── FEATURE 11: Twilight Times ───────────────────────────────────────
+function twilightTimes(rise,set){
+  if(!rise||!set)return null;
+  const r=new Date(rise),s=new Date(set);
+  const fmt=d=>{const h=d.getHours()%12||12,m=String(d.getMinutes()).padStart(2,'0'),a=d.getHours()>=12?'PM':'AM';return`${h}:${m}${a}`;};
+  // Civil: 6° below horizon (~30 min before/after)
+  // Nautical: 12° below (~60 min)
+  // Astronomical: 18° below (~90 min)
+  return{
+    astroDawn: fmt(new Date(r.getTime()-90*60000)),
+    nautDawn:  fmt(new Date(r.getTime()-60*60000)),
+    civilDawn: fmt(new Date(r.getTime()-30*60000)),
+    sunrise:   fmt(r),
+    sunset:    fmt(s),
+    civilDusk: fmt(new Date(s.getTime()+30*60000)),
+    nautDusk:  fmt(new Date(s.getTime()+60*60000)),
+    astroDusk: fmt(new Date(s.getTime()+90*60000)),
+  };
+}
+
+// ── FEATURE 24: Full Unit Conversion Helpers ─────────────────────────
+// Extended unit state (beyond just C/F)
+let useImperial=localStorage.getItem('vimperial')==='1';
+function applyUnits(val,type){
+  switch(type){
+    case 'speed': return useImperial?Math.round(val*0.621)+' mph':Math.round(val)+' km/h';
+    case 'press': return useImperial?(val*0.02953).toFixed(2)+' inHg':Math.round(val)+' hPa';
+    case 'dist':  return useImperial?(val*0.621).toFixed(1)+' mi':val+' km';
+    case 'rain':  return useImperial?(val*0.0394).toFixed(2)+' in':val+' mm';
+    default: return val;
+  }
+}
+function toggleImperial(){
+  useImperial=!useImperial;
+  localStorage.setItem('vimperial',useImperial?'1':'0');
+  document.getElementById('impbtn')?.classList.toggle('uon',useImperial);
+  if(LD)render(...LD);
+}
+
+// ── FEATURE 23: Battery Saver Mode ──────────────────────────────────
+let batterySaver=false;
+async function initBattery(){
+  try{
+    const bat=await navigator.getBattery?.();
+    if(!bat)return;
+    const check=()=>{
+      batterySaver=bat.level<0.2&&!bat.charging;
+      document.body.classList.toggle('bsave',batterySaver);
+      const b=document.getElementById('batbtn');
+      if(b){b.textContent=batterySaver?'🔋 Saver ON':'🔋';b.classList.toggle('uon',batterySaver);}
+    };
+    check();
+    bat.addEventListener('levelchange',check);
+    bat.addEventListener('chargingchange',check);
+  }catch{}
+}
+
+// ── FEATURE 6: Shake to Refresh ─────────────────────────────────────
+function initShake(){
+  if(!window.DeviceMotionEvent)return;
+  let last=0,lx=0,ly=0,lz=0;
+  const handler=e=>{
+    const acc=e.accelerationIncludingGravity||e.acceleration;
+    if(!acc)return;
+    const now=Date.now();
+    if(now-last<100)return;
+    last=now;
+    const dx=Math.abs((acc.x||0)-lx),dy=Math.abs((acc.y||0)-ly),dz=Math.abs((acc.z||0)-lz);
+    lx=acc.x||0;ly=acc.y||0;lz=acc.z||0;
+    if(dx+dy+dz>40){
+      const hint=document.getElementById('shakeHint');
+      if(hint){hint.style.opacity='1';setTimeout(()=>hint.style.opacity='0',1500);}
+      doRefresh();
+    }
+  };
+  // iOS 13+ needs permission
+  if(typeof DeviceMotionEvent.requestPermission==='function'){
+    // Add button to request
+    const btn=document.createElement('button');
+    btn.className='btn';btn.textContent='📳 Shake';btn.title='Enable shake to refresh';
+    btn.onclick=()=>{DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted'){window.addEventListener('devicemotion',handler);btn.remove();}});};
+    document.querySelector('.hrow')?.prepend(btn);
+  }else{
+    window.addEventListener('devicemotion',handler,{passive:true});
+  }
+}
+
 // ── BACKGROUND GLOW ───────────────────────────────────────────────────
 function setBg(code,isDay){
   const g={0:isDay?'rgba(255,200,50,.15)':'rgba(10,20,80,.5)',1:isDay?'rgba(200,230,255,.12)':'rgba(20,30,70,.4)',2:'rgba(150,170,210,.1)',3:'rgba(100,110,130,.12)',61:'rgba(50,100,200,.15)',63:'rgba(50,100,210,.18)',80:'rgba(50,120,220,.15)',95:'rgba(60,30,100,.2)'};
@@ -484,7 +639,7 @@ async function doFetch(cityOvr){
       name=`${geo.results[0].name}, ${geo.results[0].country_code}`;
     }else{const loc=await ipLoc();lat=loc.lat;lon=loc.lon;name=loc.name;}
 
-    const wurl=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature,precipitation,surface_pressure,visibility,dew_point_2m,uv_index,is_day&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max,precipitation_sum&timezone=auto&forecast_days=7&wind_speed_unit=kmh`;
+    const wurl=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature,precipitation,surface_pressure,visibility,dew_point_2m,uv_index,is_day&timeformat=iso8601&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max,precipitation_sum&timezone=auto&forecast_days=7&wind_speed_unit=kmh`;
     const aurl=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone&timezone=auto`;
 
     const wd=await fT(wurl);
@@ -505,7 +660,7 @@ async function useGPS(){
     const loc=await gpsLoc();
     const rev=await fT(`https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lon}&format=json`);
     const name=(rev.address?.city||rev.address?.town||rev.address?.village||'Your Location')+', '+(rev.address?.country_code||'').toUpperCase();
-    const wurl=`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature,precipitation,surface_pressure,visibility,dew_point_2m,uv_index,is_day&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max,precipitation_sum&timezone=auto&forecast_days=7&wind_speed_unit=kmh`;
+    const wurl=`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature,precipitation,surface_pressure,visibility,dew_point_2m,uv_index,is_day&timeformat=iso8601&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max,precipitation_sum&timezone=auto&forecast_days=7&wind_speed_unit=kmh`;
     const aurl=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${loc.lat}&longitude=${loc.lon}&current=us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone&timezone=auto`;
     const wd=await fT(wurl);let ad={};try{ad=await fT(aurl);}catch{}
     LD=[name,loc.lat,wd,ad];render(name,loc.lat,wd,ad);
@@ -527,6 +682,27 @@ function render(name,lat,wd,ad){
   const rise=d.sunrise?.[0],set=d.sunset?.[0];
   const moon=moonPhase();
   const isFav=gF().includes(name);
+
+  // ── NEW FEATURES ──────────────────────────────────────────────────
+  // Feature 16: Local city time
+  const tzOff=wd.utc_offset_seconds??0;
+  const localTime=cityTime(tzOff);
+
+  // Feature 17: Emoji summary
+  const emSum=emojiSummary(c.temperature_2m,c.weather_code,c.wind_speed_10m,c.precipitation,aqi,useF);
+
+  // Feature 18: Feels-like badge
+  const fb=feelsBadge(c.apparent_temperature);
+
+  // Feature 11: Twilight times
+  const tw=twilightTimes(rise,set);
+
+  // Feature 24: Unit-aware speed/pressure/dist/rain
+  const windSpd=applyUnits(c.wind_speed_10m,'speed');
+  const pressDisp=applyUnits(pressure,'press');
+  const visDisp=applyUnits(Number(vis),'dist');
+  const rainDisp=applyUnits(c.precipitation,'rain');
+
   const nI=Math.max(0,h.time.findIndex(t=>new Date(t)>=now));
   const sH=h.time.slice(nI,nI+12),sT=h.temperature_2m.slice(nI,nI+12),sW=h.weather_code.slice(nI,nI+12),sR=(h.precipitation_probability||[]).slice(nI,nI+12),sPR=(h.precipitation||[]).slice(nI,nI+12);
 
@@ -606,12 +782,15 @@ function render(name,lat,wd,ad){
     <div class="card hero" style="animation-delay:0s">
       <div class="cname">${name}<button class="star${isFav?' on':''}" id="starbtn" onclick="togFav('${esc(name)}')">${isFav?'⭐':'☆'}</button></div>
       <div class="dline">${dateStr} · ${c.is_day?'☀️ Day':'🌙 Night'}</div>
-      <div class="tbig">${useF?C2F(c.temperature_2m):Math.round(c.temperature_2m)}<sup>${useF?'°F':'°C'}</sup></div>
+      <div class="ltime">🕐 Local Time: ${localTime}</div>
+      <div class="tbig" style="margin-top:8px">${useF?C2F(c.temperature_2m):Math.round(c.temperature_2m)}<sup>${useF?'°F':'°C'}</sup></div>
       <div class="cond">${WI[c.weather_code]||'🌡️'} ${WD[c.weather_code]||''} · Feels ${tF(c.apparent_temperature)}</div>
-      <div class="srow3">
+      <div style="display:flex;justify-content:center"><div class="flbadge" style="color:${fb.c};border-color:${fb.c}44">${fb.ico} ${fb.l}</div></div>
+      <div class="emojisummary" style="margin-top:10px">${emSum}</div>
+      <div class="srow3" style="margin-top:12px">
         <div class="st"><div class="sv">${c.relative_humidity_2m}%</div><div class="sk">Humidity</div></div>
-        <div class="st"><div class="sv">${Math.round(c.wind_speed_10m)}</div><div class="sk">km/h Wind</div></div>
-        <div class="st"><div class="sv">${c.precipitation}</div><div class="sk">mm Rain</div></div>
+        <div class="st"><div class="sv">${windSpd}</div><div class="sk">Wind</div></div>
+        <div class="st"><div class="sv">${rainDisp}</div><div class="sk">Rain</div></div>
       </div>
     </div>
 
@@ -625,12 +804,28 @@ function render(name,lat,wd,ad){
       </div>
     </div>
 
+    ${tw?`<div class="card" style="animation-delay:.08s">
+      <div class="slbl">🌅 Twilight Stages</div>
+      <div class="twrow">
+        <div class="twc"><div class="twico">🌌</div><div class="twv">${tw.astroDawn}</div><div class="twk">Astro Dawn</div></div>
+        <div class="twc"><div class="twico">🌃</div><div class="twv">${tw.nautDawn}</div><div class="twk">Nautical Dawn</div></div>
+        <div class="twc"><div class="twico">🌆</div><div class="twv">${tw.civilDawn}</div><div class="twk">Civil Dawn</div></div>
+        <div class="twc"><div class="twico">☀️</div><div class="twv">${tw.sunrise}</div><div class="twk">Sunrise</div></div>
+      </div>
+      <div class="twrow" style="margin-top:7px">
+        <div class="twc"><div class="twico">🌇</div><div class="twv">${tw.sunset}</div><div class="twk">Sunset</div></div>
+        <div class="twc"><div class="twico">🌆</div><div class="twv">${tw.civilDusk}</div><div class="twk">Civil Dusk</div></div>
+        <div class="twc"><div class="twico">🌃</div><div class="twv">${tw.nautDusk}</div><div class="twk">Nautical Dusk</div></div>
+        <div class="twc"><div class="twico">🌌</div><div class="twv">${tw.astroDusk}</div><div class="twk">Astro Dusk</div></div>
+      </div>
+    </div>`:''}
+
     <div class="card" style="animation-delay:.09s">
       <div class="slbl">Atmospheric Details</div>
       <div class="mgrid">
-        <div class="met"><div class="mv">${vis} km</div><div class="mk">Visibility</div></div>
+        <div class="met"><div class="mv">${visDisp}</div><div class="mk">Visibility</div></div>
         <div class="met"><div class="mv">${tF(dew)}</div><div class="mk">Dew Point</div></div>
-        <div class="met"><div class="mv">${pressure} hPa</div><div class="mk">Pressure</div></div>
+        <div class="met"><div class="mv">${pressDisp}</div><div class="mk">Pressure</div></div>
         <div class="met"><div class="mv">${wdg} ${c.wind_direction_10m??0}°</div><div class="mk">Wind Dir.</div></div>
         <div class="met"><div class="mv">${anomTxt}</div><div class="mk">Temp Anomaly</div></div>
       </div>
@@ -770,6 +965,10 @@ if('serviceWorker' in navigator){
   });
 }
 
+initShake();
+initBattery();
+// Sync imperial button state
+if(useImperial)document.getElementById('impbtn')?.classList.add('uon');
 doFetch();
 </script>
 </body>
