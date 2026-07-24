@@ -2,1413 +2,289 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Dhruva</title>
-<meta name="theme-color" content="#151414">
-<meta name="description" content="Dhruva — a precision Vastu Compass. Find true direction and see Vastu Shastra guidance for every zone of your home.">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DikSutra — Vastu Direction Guide</title>
 <style>
-  :root{
-    --bg-1:#1b1a17;
-    --bg-2:#0d0c0b;
-    --brass:#cb9c4d;
-    --brass-light:#f0d999;
-    --steel:#8a919b;
-    --cream:#f8f1e0;
-    --ink:#241a0d;
-    --danger:#d3341c;
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{height:100%;}
-  body{
-    margin:0;
-    min-height:100vh;
-    background:
-      radial-gradient(ellipse at 50% -10%, #2a2823 0%, var(--bg-1) 45%, var(--bg-2) 100%);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:var(--cream);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    overflow-x:hidden;
-    padding-top:calc(var(--safe-top) + 14px);
-    padding-bottom:calc(var(--safe-bottom) + 14px);
-  }
+:root{
+  --ivory:#F3EEDD; --ink:#221C16; --sindoor:#A63D2F; --gold:#C99A34; --teal:#22434B;
+  --bg:var(--ivory); --surface:#FFFDF6; --text:var(--ink); --muted:#6B6152;
+  --accent:var(--sindoor); --accent2:var(--gold); --line:#E1D8C2;
+  --good:#3E7A4A; --ok:#B08A2E; --bad:#B0402F;
+  --radius:14px;
+}
+[data-theme="dark"]{
+  --bg:#181410; --surface:#221C16; --text:#F0E9DA; --muted:#B8A98F; --line:#3A2F25;
+  --accent:#E08A6B; --accent2:#E3B255; --good:#6FBF7E; --ok:#E3B255; --bad:#E27C6B;
+}
+[data-theme="oled"]{
+  --bg:#000000; --surface:#0A0A0A; --text:#EDEDED; --muted:#9A9A9A; --line:#1E1E1E;
+  --accent:#E08A6B; --accent2:#E3B255; --good:#6FBF7E; --ok:#E3B255; --bad:#E27C6B;
+}
+[data-theme="hc"]{
+  --bg:#000000; --surface:#000000; --text:#FFFFFF; --muted:#FFFFFF; --line:#FFFFFF;
+  --accent:#FFD400; --accent2:#FFD400; --good:#00FF6A; --ok:#FFD400; --bad:#FF5A5A;
+  --radius:4px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0;}
+body{
+  background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  min-height:100vh; display:flex; flex-direction:column; align-items:center;
+  transition:background .25s,color .25s; padding:0 0 env(safe-area-inset-bottom);
+}
+.wrap{width:100%; max-width:640px; padding:0 18px;}
+header{width:100%; padding:22px 0 8px; text-align:center;}
+.eyebrow{font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); font-weight:700;}
+h1{font-family:Georgia,"Times New Roman",serif; font-size:34px; margin:6px 0 2px; letter-spacing:.01em;}
+h1 span{color:var(--accent);}
+.tagline{color:var(--muted); font-size:14px; margin:0 0 10px;}
+.themebar{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:10px 0 6px;}
+.themebtn{
+  border:1px solid var(--line); background:var(--surface); color:var(--text);
+  padding:6px 12px; border-radius:999px; font-size:12px; cursor:pointer;
+}
+.themebtn[aria-pressed="true"]{background:var(--accent); color:var(--surface); border-color:var(--accent); font-weight:700;}
 
-  .app-title{
-    text-align:center;
-    margin:4px 0 2px;
-  }
-  .app-title h1{
-    font-size:22px;
-    letter-spacing:0.14em;
-    margin:0;
-    font-weight:700;
-    color:var(--brass-light);
-    text-transform:uppercase;
-  }
-  .app-title .sub{
-    font-size:13px;
-    color:#b8ab8a;
-    letter-spacing:0.05em;
-    margin-top:2px;
-  }
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:18px; margin:14px 0;
+}
+.cardtitle{display:flex; align-items:center; gap:8px; font-family:Georgia,serif; font-size:19px; margin:0 0 6px;}
+.cardsub{color:var(--muted); font-size:13px; margin:0 0 14px;}
 
-  .compass-stage{
-    position:relative;
-    width:min(82vw, 380px);
-    aspect-ratio:1/1;
-    margin:22px auto 6px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
+/* --- sun finder --- */
+.sunbox{display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+.sunwheel{width:96px; height:96px; flex:0 0 auto; position:relative;}
+.sunwheel svg{width:100%; height:100%; display:block;}
+.sunwheel .ray{transform-origin:48px 48px; animation:spin 14s linear infinite;}
+[data-theme="hc"] .sunwheel .ray{animation:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.sunresult{flex:1 1 180px; min-width:180px;}
+.sunresult .row{display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px dashed var(--line); font-size:14px;}
+.sunresult .row:last-child{border-bottom:none;}
+.sunresult .label{color:var(--muted);}
+.btn{
+  width:100%; margin-top:14px; padding:13px; border:none; border-radius:10px;
+  background:var(--accent); color:var(--surface); font-size:15px; font-weight:700; cursor:pointer;
+}
+.btn:active{opacity:.85;}
+.note{font-size:12.5px; color:var(--muted); margin-top:10px; line-height:1.5;}
+.note b{color:var(--text);}
 
-  .rotor{
-    width:100%;
-    height:100%;
-    will-change:transform;
-  }
-  .rotor svg{
-    width:100%;
-    height:100%;
-    display:block;
-  }
+/* --- score --- */
+.scorewrap{display:flex; align-items:center; gap:14px;}
+.scorenum{font-family:Georgia,serif; font-size:38px; color:var(--accent); min-width:70px;}
+.scorebar{flex:1; height:8px; background:var(--line); border-radius:99px; overflow:hidden;}
+.scorebar i{display:block; height:100%; background:var(--accent); width:0%; transition:width .4s;}
+.scorelabel{font-size:12px; color:var(--muted); margin-top:6px;}
 
-  .readout{
-    text-align:center;
-    margin-top:2px;
-  }
-  .readout .deg{
-    font-size:40px;
-    font-weight:700;
-    color:var(--cream);
-    letter-spacing:0.02em;
-  }
-  .readout .deg span{ font-size:22px; color:#c9bd9f; }
-  .readout .zone{
-    font-size:15px;
-    color:var(--brass-light);
-    margin-top:2px;
-    letter-spacing:0.04em;
-  }
-  .readout .zone .sanskrit{
-    color:#e3d3a0;
-    opacity:0.85;
-  }
-  .accuracy-row{
-    display:flex;
-    justify-content:center;
-    gap:14px;
-    margin-top:6px;
-    font-size:11.5px;
-    color:#9a8f77;
-  }
-  .accuracy-row #interferenceText{ font-weight:600; }
-  .accuracy-row #interferenceText.warn{ color:#e08a6a; }
-  .accuracy-row #interferenceText.ok{ color:#8fae82; }
+/* --- rooms --- */
+.room{
+  display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px;
+  padding:12px 0; border-bottom:1px solid var(--line);
+}
+.room:last-child{border-bottom:none;}
+.roomname{font-size:15px; font-weight:600;}
+.roomideal{font-size:11.5px; color:var(--muted); margin-top:2px;}
+select{
+  background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px;
+  padding:9px 10px; font-size:14px; min-width:118px;
+}
+.status{grid-column:1 / -1; font-size:12.5px; margin-top:-2px; padding:8px 10px; border-radius:8px; display:none;}
+.status.show{display:block;}
+.status.good{background:color-mix(in srgb, var(--good) 16%, transparent); color:var(--good);}
+.status.ok{background:color-mix(in srgb, var(--ok) 16%, transparent); color:var(--ok);}
+.status.bad{background:color-mix(in srgb, var(--bad) 16%, transparent); color:var(--bad);}
 
-  .level-cal-row{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:16px;
-    margin-top:14px;
-  }
-  .bubble-level{
-    position:relative;
-    width:46px;height:46px;
-    border-radius:50%;
-    background:radial-gradient(circle at 40% 35%,#2a2822,#141310);
-    border:1px solid rgba(255,255,255,0.15);
-  }
-  .level-ring{
-    position:absolute;
-    inset:6px;
-    border-radius:50%;
-    border:1px dashed rgba(240,217,153,0.35);
-  }
-  .level-dot{
-    position:absolute;
-    width:12px;height:12px;
-    border-radius:50%;
-    background:radial-gradient(circle at 35% 30%,#f0d999,#a97a34);
-    top:50%; left:50%;
-    transform:translate(-50%,-50%);
-    box-shadow:0 0 5px rgba(0,0,0,0.5);
-    transition:background 0.2s;
-  }
-  .level-dot.flat{ background:radial-gradient(circle at 35% 30%,#c9e0b8,#7fae66); }
-
-  .calibrate-btn{
-    background:none;
-    border:1px solid rgba(240,217,153,0.4);
-    color:var(--brass-light);
-    padding:10px 18px;
-    border-radius:20px;
-    font-size:13px;
-    font-weight:600;
-  }
-
-  .cal-figure8{ display:flex; justify-content:center; margin-bottom:10px; }
-  .cal-progress-track{
-    width:100%;
-    height:8px;
-    background:rgba(255,255,255,0.08);
-    border-radius:6px;
-    overflow:hidden;
-  }
-  .cal-progress-fill{
-    height:100%;
-    width:0%;
-    background:linear-gradient(90deg,#eecd7c,#a97a34);
-    transition:width 0.1s linear;
-  }
-
-  .status-msg{
-    font-size:12.5px;
-    color:#a79c86;
-    text-align:center;
-    max-width:320px;
-    margin:8px auto 0;
-    line-height:1.5;
-  }
-
-  button.enable-btn{
-    margin-top:14px;
-    background:linear-gradient(180deg,#eecd7c,#a97a34);
-    color:#241a0d;
-    border:none;
-    padding:12px 26px;
-    border-radius:30px;
-    font-size:15px;
-    font-weight:700;
-    letter-spacing:0.03em;
-    box-shadow:0 4px 14px rgba(0,0,0,0.4);
-  }
-  button.enable-btn:active{ transform:scale(0.97); }
-
-  .guide-toggle{
-    margin-top:20px;
-    background:none;
-    border:1px solid #6b6250;
-    color:#e3d3a0;
-    padding:9px 20px;
-    border-radius:24px;
-    font-size:13.5px;
-    letter-spacing:0.03em;
-  }
-
-  .guide-panel{
-    width:min(92vw,420px);
-    margin:14px auto 0;
-    max-height:0;
-    overflow:hidden;
-    transition:max-height 0.35s ease;
-    border-radius:14px;
-  }
-  .guide-panel.open{ max-height:900px; }
-  .guide-inner{
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:14px;
-    padding:8px;
-  }
-  .guide-row{
-    display:flex;
-    gap:12px;
-    align-items:flex-start;
-    padding:10px 8px;
-    border-bottom:1px solid rgba(255,255,255,0.06);
-  }
-  .guide-row:last-child{ border-bottom:none; }
-  .guide-row.active{
-    background:rgba(240,217,153,0.08);
-    border-radius:10px;
-  }
-  .guide-row .swatch{
-    width:14px;height:14px;border-radius:4px;flex:0 0 auto;margin-top:3px;
-    box-shadow:0 0 0 1px rgba(0,0,0,0.4) inset;
-  }
-  .guide-row .txt b{
-    display:block;
-    font-size:14.5px;
-    color:var(--cream);
-  }
-  .guide-row .txt .dev{
-    font-size:12.5px;
-    color:#c9a95c;
-    margin-left:6px;
-  }
-  .guide-row .txt p{
-    margin:3px 0 0;
-    font-size:12.5px;
-    color:#b3a78d;
-    line-height:1.45;
-  }
-
-  footer{
-    margin-top:auto;
-    padding-top:20px;
-    font-size:11px;
-    color:#5f584a;
-    text-align:center;
-  }
-
-  .header-bar{
-    width:100%;
-    max-width:460px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
-    padding:0 44px;
-  }
-  .settings-btn{
-    position:absolute;
-    right:8px;
-    top:2px;
-    background:none;
-    border:1px solid rgba(240,217,153,0.35);
-    color:var(--brass-light);
-    width:34px;height:34px;
-    border-radius:50%;
-    font-size:16px;
-    line-height:1;
-    display:flex;align-items:center;justify-content:center;
-  }
-
-  .tabbar{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    width:min(94vw,460px);
-    margin:22px auto 0;
-    justify-content:center;
-  }
-  .tab-btn{
-    flex:0 0 auto;
-    background:rgba(255,255,255,0.04);
-    border:1px solid rgba(255,255,255,0.09);
-    color:#c9bd9f;
-    padding:8px 14px;
-    border-radius:20px;
-    font-size:12.5px;
-    white-space:nowrap;
-    letter-spacing:0.02em;
-  }
-  .tab-btn.active{
-    background:linear-gradient(180deg,#eecd7c,#a97a34);
-    color:#241a0d;
-    border-color:transparent;
-    font-weight:700;
-  }
-
-  .panel{
-    display:none;
-    width:min(92vw,440px);
-    margin:14px auto 0;
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:14px;
-    padding:16px;
-  }
-  .panel.active{ display:block; }
-  .panel h2{
-    font-size:14px;
-    margin:0 0 10px;
-    color:var(--brass-light);
-    letter-spacing:0.04em;
-    text-transform:uppercase;
-  }
-  .panel select, .panel input[type=text], .panel input[type=number]{
-    width:100%;
-    background:#1f1d19;
-    border:1px solid #4a4436;
-    color:var(--cream);
-    padding:10px 12px;
-    border-radius:8px;
-    font-size:14px;
-    margin-bottom:10px;
-  }
-  .capture-btn{
-    width:100%;
-    background:linear-gradient(180deg,#eecd7c,#a97a34);
-    color:#241a0d;
-    border:none;
-    padding:11px;
-    border-radius:10px;
-    font-size:14px;
-    font-weight:700;
-    margin-bottom:12px;
-  }
-  .capture-btn:active{ transform:scale(0.98); }
-
-  .result-card{
-    border-radius:10px;
-    padding:12px 14px;
-    font-size:13.5px;
-    line-height:1.5;
-    border:1px solid rgba(255,255,255,0.08);
-  }
-  .result-card.rating-Excellent{ background:rgba(143,174,130,0.16); border-color:rgba(143,174,130,0.4); }
-  .result-card.rating-Good{ background:rgba(159,196,221,0.14); border-color:rgba(159,196,221,0.4); }
-  .result-card.rating-Acceptable{ background:rgba(224,198,117,0.14); border-color:rgba(224,198,117,0.4); }
-  .result-card.rating-Neutral{ background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15); }
-  .result-card.rating-Caution{ background:rgba(219,160,119,0.16); border-color:rgba(219,160,119,0.4); }
-  .result-card.rating-Avoid{ background:rgba(192,122,114,0.18); border-color:rgba(192,122,114,0.45); }
-  .result-card b{ display:block; font-size:15px; margin-bottom:4px; color:var(--cream); }
-  .result-card .rating-tag{
-    display:inline-block;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:0.05em;
-    text-transform:uppercase;
-    padding:2px 8px;
-    border-radius:10px;
-    background:rgba(0,0,0,0.25);
-    margin-left:8px;
-  }
-
-  .room-row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:8px 0;
-    border-bottom:1px solid rgba(255,255,255,0.07);
-  }
-  .room-row:last-child{ border-bottom:none; }
-  .room-row .info{ flex:1; min-width:0; }
-  .room-row .info b{ font-size:13.5px; color:var(--cream); display:block; }
-  .room-row .info span{ font-size:11.5px; color:#a79c86; }
-  .room-row .del-btn{
-    background:none;
-    border:1px solid rgba(192,122,114,0.5);
-    color:#e0a89e;
-    width:26px;height:26px;
-    border-radius:50%;
-    font-size:14px;
-    line-height:1;
-    flex:0 0 auto;
-  }
-  .empty-hint{ font-size:12.5px; color:#8b8069; text-align:center; padding:8px 0; }
-
-  .modal-overlay{
-    display:none;
-    position:fixed; inset:0;
-    background:rgba(0,0,0,0.6);
-    align-items:center;
-    justify-content:center;
-    z-index:50;
-    padding:20px;
-  }
-  .modal-overlay.open{ display:flex; }
-  .modal-box{
-    width:min(92vw,380px);
-    background:#1c1a16;
-    border:1px solid rgba(255,255,255,0.12);
-    border-radius:16px;
-    padding:20px;
-  }
-  .modal-box h3{
-    margin:0 0 12px;
-    font-size:16px;
-    color:var(--brass-light);
-  }
-  .switch-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:12px;
-  }
-  .switch-row label{ font-size:13.5px; color:var(--cream); }
-  .switch{
-    position:relative;
-    width:44px;height:24px;
-    background:#4a4436;
-    border-radius:14px;
-  }
-  .switch input{ display:none; }
-  .switch .knob{
-    position:absolute;
-    top:2px;left:2px;
-    width:20px;height:20px;
-    background:#c9bd9f;
-    border-radius:50%;
-    transition:transform 0.2s;
-  }
-  .switch input:checked + .knob{
-    transform:translateX(20px);
-    background:var(--brass-light);
-  }
-  .modal-note{ font-size:11.5px; color:#8b8069; line-height:1.5; margin-top:4px; }
-  .modal-close{
-    width:100%;
-    margin-top:14px;
-    background:none;
-    border:1px solid rgba(255,255,255,0.2);
-    color:var(--cream);
-    padding:10px;
-    border-radius:10px;
-    font-size:14px;
-  }
+footer{
+  width:100%; max-width:640px; padding:26px 18px 30px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  color:var(--muted); font-size:12px; margin-top:auto;
+}
+footer .rose{opacity:.5; margin-bottom:4px;}
+@media (min-width:520px){
+  .sunbox{flex-wrap:nowrap;}
+}
 </style>
 </head>
-<body>
-
-  <div class="header-bar">
-    <div class="app-title">
-      <h1>Dhruva</h1>
-      <div class="sub">वास्तु कम्पास · directional guidance</div>
+<body data-theme="light">
+<div class="wrap">
+  <header>
+    <div class="eyebrow">No Compass Needed</div>
+    <h1>Dik<span>Sutra</span></h1>
+    <p class="tagline">Find your directions by the sun. Check every room against Vastu Shastra.</p>
+    <div class="themebar" role="group" aria-label="Theme">
+      <button class="themebtn" data-t="light">Light</button>
+      <button class="themebtn" data-t="dark">Dark</button>
+      <button class="themebtn" data-t="oled">OLED</button>
+      <button class="themebtn" data-t="hc">HC</button>
     </div>
-    <button class="settings-btn" id="settingsBtn" title="Settings" aria-label="Settings">⚙</button>
-  </div>
+  </header>
 
-  <div class="compass-stage">
-    <div class="rotor" id="rotor">
-      <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="steelBezel" cx="38%" cy="30%" r="75%">
-            <stop offset="0%" stop-color="#f4f5f7"/><stop offset="18%" stop-color="#d9dde2"/>
-            <stop offset="38%" stop-color="#aab1ba"/><stop offset="55%" stop-color="#7d838d"/>
-            <stop offset="72%" stop-color="#565b63"/><stop offset="88%" stop-color="#33363b"/>
-            <stop offset="100%" stop-color="#1c1e21"/>
-          </radialGradient>
-          <linearGradient id="steelEdgeHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="30%" stop-color="#ffffff" stop-opacity="0.05"/>
-            <stop offset="70%" stop-color="#000000" stop-opacity="0.05"/><stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
-          </linearGradient>
-          <radialGradient id="brassRing" cx="42%" cy="35%" r="70%">
-            <stop offset="0%" stop-color="#fdf1c8"/><stop offset="25%" stop-color="#eecd7c"/>
-            <stop offset="48%" stop-color="#cb9c4d"/><stop offset="70%" stop-color="#a97a34"/>
-            <stop offset="88%" stop-color="#7c5522"/><stop offset="100%" stop-color="#5a3c16"/>
-          </radialGradient>
-          <radialGradient id="dialFace" cx="46%" cy="40%" r="65%">
-            <stop offset="0%" stop-color="#3a3a3d"/><stop offset="45%" stop-color="#1c1c1e"/>
-            <stop offset="75%" stop-color="#0d0d0e"/><stop offset="100%" stop-color="#000000"/>
-          </radialGradient>
-          <radialGradient id="glassLens" cx="35%" cy="28%" r="80%">
-            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/><stop offset="12%" stop-color="#ffffff" stop-opacity="0.35"/>
-            <stop offset="35%" stop-color="#ffffff" stop-opacity="0.06"/><stop offset="70%" stop-color="#cfd8e0" stop-opacity="0.04"/>
-            <stop offset="100%" stop-color="#8fa0ac" stop-opacity="0.10"/>
-          </radialGradient>
-          <linearGradient id="needleRed" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#ff8f6b"/><stop offset="45%" stop-color="#d3341c"/><stop offset="100%" stop-color="#7a1408"/>
-          </linearGradient>
-          <linearGradient id="needleBlack" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#6b6f75"/><stop offset="45%" stop-color="#2a2c30"/><stop offset="100%" stop-color="#050506"/>
-          </linearGradient>
-          <radialGradient id="pivotMetal" cx="35%" cy="30%" r="75%">
-            <stop offset="0%" stop-color="#ffffff"/><stop offset="30%" stop-color="#e4c98a"/>
-            <stop offset="60%" stop-color="#a9812f"/><stop offset="100%" stop-color="#4a3410"/>
-          </radialGradient>
-          <radialGradient id="screwHead" cx="35%" cy="30%" r="75%">
-            <stop offset="0%" stop-color="#f5f6f8"/><stop offset="40%" stop-color="#b7bcc3"/>
-            <stop offset="75%" stop-color="#6b6f75"/><stop offset="100%" stop-color="#2b2d30"/>
-          </radialGradient>
-          <linearGradient id="innerRimShadow" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#000000" stop-opacity="0.45"/><stop offset="12%" stop-color="#000000" stop-opacity="0"/>
-            <stop offset="88%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity="0.35"/>
-          </linearGradient>
-          <filter id="brushed" x="-20%" y="-20%" width="140%" height="140%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.9 0.02" numOctaves="2" seed="7" result="noise"/>
-            <feColorMatrix in="noise" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0" result="softNoise"/>
-            <feComposite in="softNoise" in2="SourceGraphic" operator="over" result="brushedOver"/>
-            <feBlend in="brushedOver" in2="SourceGraphic" mode="multiply"/>
-          </filter>
-          <filter id="dropShadowBig" x="-40%" y="-40%" width="180%" height="180%">
-            <feDropShadow dx="0" dy="14" stdDeviation="22" flood-color="#000000" flood-opacity="0.45"/>
-          </filter>
-          <filter id="softShadow" x="-40%" y="-40%" width="180%" height="180%">
-            <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.35"/>
-          </filter>
-          <filter id="engrave" x="-20%" y="-20%" width="140%" height="140%">
-            <feOffset in="SourceAlpha" dx="0" dy="1" result="off1"/>
-            <feGaussianBlur in="off1" stdDeviation="0.6" result="blur1"/>
-            <feComposite in="blur1" in2="SourceAlpha" operator="out" result="shadowPart"/>
-            <feFlood flood-color="#000000" flood-opacity="0.55"/>
-            <feComposite in2="shadowPart" operator="in" result="innerShadow"/>
-            <feOffset in="SourceAlpha" dx="0" dy="-1" result="off2"/>
-            <feGaussianBlur in="off2" stdDeviation="0.6" result="blur2"/>
-            <feComposite in="blur2" in2="SourceAlpha" operator="out" result="highlightPart"/>
-            <feFlood flood-color="#ffffff" flood-opacity="0.5"/>
-            <feComposite in2="highlightPart" operator="in" result="innerHighlight"/>
-            <feMerge>
-              <feMergeNode in="SourceGraphic"/><feMergeNode in="innerShadow"/><feMergeNode in="innerHighlight"/>
-            </feMerge>
-          </filter>
-          <clipPath id="dialClip"><circle cx="512" cy="512" r="352"/></clipPath>
-          <style>
-            .tick-minor{stroke:#4a3d22;stroke-width:2;opacity:0.55;}
-            .tick-mid{stroke:#3a2f1a;stroke-width:3;opacity:0.75;}
-            .tick-major{stroke:#241d0f;stroke-width:5;}
-            .label16{font-family:Georgia,'Times New Roman',serif;font-weight:700;fill:#2a2015;}
-            .sanskrit{font-family:'Noto Sans Devanagari','Nirmala UI',serif;font-weight:600;fill:#f6dfa0;stroke:#3a2a10;stroke-width:0.6;}
-            .mainletter{font-family:'Trajan Pro',Georgia,serif;font-weight:700;fill:#e8c874;}
-          </style>
-        </defs>
-
-        <g filter="url(#dropShadowBig)">
-          <circle cx="512" cy="512" r="486" fill="url(#steelBezel)"/>
-          <circle cx="512" cy="512" r="486" fill="none" stroke="url(#steelEdgeHighlight)" stroke-width="6"/>
-          <circle cx="512" cy="512" r="486" fill="none" filter="url(#brushed)" opacity="0.5"/>
-        </g>
-        <g opacity="0.55"><circle cx="512" cy="512" r="470" fill="none" stroke="#0d0e10" stroke-width="2" stroke-dasharray="3,5"/></g>
-        <circle cx="512" cy="512" r="452" fill="none" stroke="#202225" stroke-width="10"/>
-        <circle cx="512" cy="512" r="452" fill="none" stroke="#8b9096" stroke-width="2" opacity="0.6"/>
-
-        <circle cx="512" cy="512" r="440" fill="url(#brassRing)"/>
-        <circle cx="512" cy="512" r="440" fill="none" filter="url(#brushed)" opacity="0.35"/>
-
-        <g>
-        <path d="M 348.21,116.58 A 428,428 0 0 1 675.79,116.58 L 646.70,186.79 A 352,352 0 0 0 377.30,186.79 Z" fill="#c9d6c4" fill-opacity="0.55"/>
-        <path d="M 675.79,116.58 A 428,428 0 0 1 907.42,348.21 L 837.21,377.30 A 352,352 0 0 0 646.70,186.79 Z" fill="#cfe3ee" fill-opacity="0.55"/>
-        <path d="M 907.42,348.21 A 428,428 0 0 1 907.42,675.79 L 837.21,646.70 A 352,352 0 0 0 837.21,377.30 Z" fill="#f0d999" fill-opacity="0.55"/>
-        <path d="M 907.42,675.79 A 428,428 0 0 1 675.79,907.42 L 646.70,837.21 A 352,352 0 0 0 837.21,646.70 Z" fill="#e8b08e" fill-opacity="0.55"/>
-        <path d="M 675.79,907.42 A 428,428 0 0 1 348.21,907.42 L 377.30,837.21 A 352,352 0 0 0 646.70,837.21 Z" fill="#d9a3a3" fill-opacity="0.55"/>
-        <path d="M 348.21,907.42 A 428,428 0 0 1 116.58,675.79 L 186.79,646.70 A 352,352 0 0 0 377.30,837.21 Z" fill="#c9bcae" fill-opacity="0.55"/>
-        <path d="M 116.58,675.79 A 428,428 0 0 1 116.58,348.21 L 186.79,377.30 A 352,352 0 0 0 186.79,646.70 Z" fill="#a9c3d6" fill-opacity="0.55"/>
-        <path d="M 116.58,348.21 A 428,428 0 0 1 348.21,116.58 L 377.30,186.79 A 352,352 0 0 0 186.79,377.30 Z" fill="#d8d8d8" fill-opacity="0.55"/>
-        </g>
-
-        <circle cx="512" cy="512" r="428" fill="none" stroke="#5a3c16" stroke-width="2" opacity="0.7"/>
-        <circle cx="512" cy="512" r="352" fill="none" stroke="#5a3c16" stroke-width="3" opacity="0.8"/>
-
-        <g>
-        <line x1="512.00" y1="82.00" x2="512.00" y2="97.00" class="tick-minor"/><line x1="549.48" y1="83.64" x2="548.17" y2="98.58" class="tick-minor"/><line x1="586.67" y1="88.53" x2="584.06" y2="103.30" class="tick-minor"/><line x1="623.29" y1="96.65" x2="619.41" y2="111.14" class="tick-minor"/><line x1="659.07" y1="107.93" x2="653.94" y2="122.03" class="tick-minor"/><line x1="693.73" y1="122.29" x2="687.39" y2="135.88" class="tick-minor"/><line x1="727.00" y1="139.61" x2="719.50" y2="152.60" class="tick-minor"/><line x1="758.64" y1="159.76" x2="750.03" y2="172.05" class="tick-minor"/><line x1="788.40" y1="182.60" x2="778.76" y2="194.09" class="tick-minor"/><line x1="816.06" y1="207.94" x2="805.45" y2="218.55" class="tick-minor"/><line x1="841.40" y1="235.60" x2="829.91" y2="245.24" class="tick-minor"/><line x1="864.24" y1="265.36" x2="851.95" y2="273.97" class="tick-minor"/><line x1="884.39" y1="297.00" x2="871.40" y2="304.50" class="tick-minor"/><line x1="901.71" y1="330.27" x2="888.12" y2="336.61" class="tick-minor"/><line x1="916.07" y1="364.93" x2="901.97" y2="370.06" class="tick-minor"/><line x1="927.35" y1="400.71" x2="912.86" y2="404.59" class="tick-minor"/><line x1="935.47" y1="437.33" x2="920.70" y2="439.94" class="tick-minor"/><line x1="940.36" y1="474.52" x2="925.42" y2="475.83" class="tick-minor"/><line x1="942.00" y1="512.00" x2="927.00" y2="512.00" class="tick-minor"/><line x1="940.36" y1="549.48" x2="925.42" y2="548.17" class="tick-minor"/><line x1="935.47" y1="586.67" x2="920.70" y2="584.06" class="tick-minor"/><line x1="927.35" y1="623.29" x2="912.86" y2="619.41" class="tick-minor"/><line x1="916.07" y1="659.07" x2="901.97" y2="653.94" class="tick-minor"/><line x1="901.71" y1="693.73" x2="888.12" y2="687.39" class="tick-minor"/><line x1="884.39" y1="727.00" x2="871.40" y2="719.50" class="tick-minor"/><line x1="864.24" y1="758.64" x2="851.95" y2="750.03" class="tick-minor"/><line x1="841.40" y1="788.40" x2="829.91" y2="778.76" class="tick-minor"/><line x1="816.06" y1="816.06" x2="805.45" y2="805.45" class="tick-minor"/><line x1="788.40" y1="841.40" x2="778.76" y2="829.91" class="tick-minor"/><line x1="758.64" y1="864.24" x2="750.03" y2="851.95" class="tick-minor"/><line x1="727.00" y1="884.39" x2="719.50" y2="871.40" class="tick-minor"/><line x1="693.73" y1="901.71" x2="687.39" y2="888.12" class="tick-minor"/><line x1="659.07" y1="916.07" x2="653.94" y2="901.97" class="tick-minor"/><line x1="623.29" y1="927.35" x2="619.41" y2="912.86" class="tick-minor"/><line x1="586.67" y1="935.47" x2="584.06" y2="920.70" class="tick-minor"/><line x1="549.48" y1="940.36" x2="548.17" y2="925.42" class="tick-minor"/><line x1="512.00" y1="942.00" x2="512.00" y2="927.00" class="tick-minor"/><line x1="474.52" y1="940.36" x2="475.83" y2="925.42" class="tick-minor"/><line x1="437.33" y1="935.47" x2="439.94" y2="920.70" class="tick-minor"/><line x1="400.71" y1="927.35" x2="404.59" y2="912.86" class="tick-minor"/><line x1="364.93" y1="916.07" x2="370.06" y2="901.97" class="tick-minor"/><line x1="330.27" y1="901.71" x2="336.61" y2="888.12" class="tick-minor"/><line x1="297.00" y1="884.39" x2="304.50" y2="871.40" class="tick-minor"/><line x1="265.36" y1="864.24" x2="273.97" y2="851.95" class="tick-minor"/><line x1="235.60" y1="841.40" x2="245.24" y2="829.91" class="tick-minor"/><line x1="207.94" y1="816.06" x2="218.55" y2="805.45" class="tick-minor"/><line x1="182.60" y1="788.40" x2="194.09" y2="778.76" class="tick-minor"/><line x1="159.76" y1="758.64" x2="172.05" y2="750.03" class="tick-minor"/><line x1="139.61" y1="727.00" x2="152.60" y2="719.50" class="tick-minor"/><line x1="122.29" y1="693.73" x2="135.88" y2="687.39" class="tick-minor"/><line x1="107.93" y1="659.07" x2="122.03" y2="653.94" class="tick-minor"/><line x1="96.65" y1="623.29" x2="111.14" y2="619.41" class="tick-minor"/><line x1="88.53" y1="586.67" x2="103.30" y2="584.06" class="tick-minor"/><line x1="83.64" y1="549.48" x2="98.58" y2="548.17" class="tick-minor"/><line x1="82.00" y1="512.00" x2="97.00" y2="512.00" class="tick-minor"/><line x1="83.64" y1="474.52" x2="98.58" y2="475.83" class="tick-minor"/><line x1="88.53" y1="437.33" x2="103.30" y2="439.94" class="tick-minor"/><line x1="96.65" y1="400.71" x2="111.14" y2="404.59" class="tick-minor"/><line x1="107.93" y1="364.93" x2="122.03" y2="370.06" class="tick-minor"/><line x1="122.29" y1="330.27" x2="135.88" y2="336.61" class="tick-minor"/><line x1="139.61" y1="297.00" x2="152.60" y2="304.50" class="tick-minor"/><line x1="159.76" y1="265.36" x2="172.05" y2="273.97" class="tick-minor"/><line x1="182.60" y1="235.60" x2="194.09" y2="245.24" class="tick-minor"/><line x1="207.94" y1="207.94" x2="218.55" y2="218.55" class="tick-minor"/><line x1="235.60" y1="182.60" x2="245.24" y2="194.09" class="tick-minor"/><line x1="265.36" y1="159.76" x2="273.97" y2="172.05" class="tick-minor"/><line x1="297.00" y1="139.61" x2="304.50" y2="152.60" class="tick-minor"/><line x1="330.27" y1="122.29" x2="336.61" y2="135.88" class="tick-minor"/><line x1="364.93" y1="107.93" x2="370.06" y2="122.03" class="tick-minor"/><line x1="400.71" y1="96.65" x2="404.59" y2="111.14" class="tick-minor"/><line x1="437.33" y1="88.53" x2="439.94" y2="103.30" class="tick-minor"/><line x1="474.52" y1="83.64" x2="475.83" y2="98.58" class="tick-minor"/>
-        </g>
-        <g>
-        <line x1="586.67" y1="88.53" x2="582.85" y2="110.20" class="tick-mid"/><line x1="659.07" y1="107.93" x2="651.54" y2="128.61" class="tick-mid"/><line x1="727.00" y1="139.61" x2="716.00" y2="158.66" class="tick-mid"/><line x1="788.40" y1="182.60" x2="774.26" y2="199.45" class="tick-mid"/><line x1="841.40" y1="235.60" x2="824.55" y2="249.74" class="tick-mid"/><line x1="884.39" y1="297.00" x2="865.34" y2="308.00" class="tick-mid"/><line x1="916.07" y1="364.93" x2="895.39" y2="372.46" class="tick-mid"/><line x1="935.47" y1="437.33" x2="913.80" y2="441.15" class="tick-mid"/><line x1="935.47" y1="586.67" x2="913.80" y2="582.85" class="tick-mid"/><line x1="916.07" y1="659.07" x2="895.39" y2="651.54" class="tick-mid"/><line x1="884.39" y1="727.00" x2="865.34" y2="716.00" class="tick-mid"/><line x1="841.40" y1="788.40" x2="824.55" y2="774.26" class="tick-mid"/><line x1="788.40" y1="841.40" x2="774.26" y2="824.55" class="tick-mid"/><line x1="727.00" y1="884.39" x2="716.00" y2="865.34" class="tick-mid"/><line x1="659.07" y1="916.07" x2="651.54" y2="895.39" class="tick-mid"/><line x1="586.67" y1="935.47" x2="582.85" y2="913.80" class="tick-mid"/><line x1="437.33" y1="935.47" x2="441.15" y2="913.80" class="tick-mid"/><line x1="364.93" y1="916.07" x2="372.46" y2="895.39" class="tick-mid"/><line x1="297.00" y1="884.39" x2="308.00" y2="865.34" class="tick-mid"/><line x1="235.60" y1="841.40" x2="249.74" y2="824.55" class="tick-mid"/><line x1="182.60" y1="788.40" x2="199.45" y2="774.26" class="tick-mid"/><line x1="139.61" y1="727.00" x2="158.66" y2="716.00" class="tick-mid"/><line x1="107.93" y1="659.07" x2="128.61" y2="651.54" class="tick-mid"/><line x1="88.53" y1="586.67" x2="110.20" y2="582.85" class="tick-mid"/><line x1="88.53" y1="437.33" x2="110.20" y2="441.15" class="tick-mid"/><line x1="107.93" y1="364.93" x2="128.61" y2="372.46" class="tick-mid"/><line x1="139.61" y1="297.00" x2="158.66" y2="308.00" class="tick-mid"/><line x1="182.60" y1="235.60" x2="199.45" y2="249.74" class="tick-mid"/><line x1="235.60" y1="182.60" x2="249.74" y2="199.45" class="tick-mid"/><line x1="297.00" y1="139.61" x2="308.00" y2="158.66" class="tick-mid"/><line x1="364.93" y1="107.93" x2="372.46" y2="128.61" class="tick-mid"/><line x1="437.33" y1="88.53" x2="441.15" y2="110.20" class="tick-mid"/>
-        </g>
-
-        <g class="tick-major">
-        <line x1="512.00" y1="82.00" x2="512.00" y2="117.00"/><line x1="676.55" y1="114.73" x2="663.16" y2="147.07"/><line x1="816.06" y1="207.94" x2="791.31" y2="232.69"/><line x1="909.27" y1="347.45" x2="876.93" y2="360.84"/><line x1="942.00" y1="512.00" x2="907.00" y2="512.00"/><line x1="909.27" y1="676.55" x2="876.93" y2="663.16"/><line x1="816.06" y1="816.06" x2="791.31" y2="791.31"/><line x1="676.55" y1="909.27" x2="663.16" y2="876.93"/><line x1="512.00" y1="942.00" x2="512.00" y2="907.00"/><line x1="347.45" y1="909.27" x2="360.84" y2="876.93"/><line x1="207.94" y1="816.06" x2="232.69" y2="791.31"/><line x1="114.73" y1="676.55" x2="147.07" y2="663.16"/><line x1="82.00" y1="512.00" x2="117.00" y2="512.00"/><line x1="114.73" y1="347.45" x2="147.07" y2="360.84"/><line x1="207.94" y1="207.94" x2="232.69" y2="232.69"/><line x1="347.45" y1="114.73" x2="360.84" y2="147.07"/>
-        </g>
-
-        <g class="label16" text-anchor="middle" filter="url(#engrave)">
-          <text x="658.57" y="163" font-size="17">NNE</text><text x="865.85" y="370" font-size="17">ENE</text>
-          <text x="865.85" y="663" font-size="17">ESE</text><text x="658.57" y="871" font-size="17">SSE</text>
-          <text x="365.43" y="871" font-size="17">SSW</text><text x="158.15" y="663" font-size="17">WSW</text>
-          <text x="158.15" y="370" font-size="17">WNW</text><text x="365.43" y="163" font-size="17">NNW</text>
-        </g>
-
-        <g class="sanskrit" text-anchor="middle" font-size="26">
-          <text x="512" y="60">उत्तर</text><text x="838.68" y="193">ईशान</text>
-          <text x="960" y="520">पूर्व</text><text x="838.68" y="850">आग्नेय</text>
-          <text x="512" y="985">दक्षिण</text><text x="185.32" y="850">नैऋत्य</text>
-          <text x="64" y="520">पश्चिम</text><text x="185.32" y="193">वायव्य</text>
-        </g>
-
-        <g filter="url(#softShadow)">
-          <g transform="translate(835.85,188.15)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30"/></g>
-          <g transform="translate(835.85,835.85)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30" transform="rotate(45)"/></g>
-          <g transform="translate(188.15,835.85)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30" transform="rotate(-20)"/></g>
-          <g transform="translate(188.15,188.15)"><circle r="16" fill="url(#screwHead)"/><circle r="16" fill="none" stroke="#15161a" stroke-width="1.5"/><rect x="-11" y="-2" width="22" height="4" rx="1" fill="#2a2c30" transform="rotate(70)"/></g>
-        </g>
-
-        <g clip-path="url(#dialClip)">
-          <circle cx="512" cy="512" r="352" fill="#000000"/>
-          <circle cx="512" cy="512" r="352" fill="url(#innerRimShadow)"/>
-        </g>
-        <circle cx="512" cy="512" r="352" fill="none" stroke="#c9a355" stroke-width="2"/>
-
-        <g class="mainletter" text-anchor="middle" filter="url(#engrave)">
-          <text x="512.00" y="272" font-size="46" fill="#ff5a44">N</text>
-          <text x="700" y="345" font-size="30">NE</text>
-          <text x="782" y="522" font-size="46">E</text>
-          <text x="700" y="702" font-size="30">SE</text>
-          <text x="512.00" y="795" font-size="46">S</text>
-          <text x="324" y="702" font-size="30">SW</text>
-          <text x="242" y="522" font-size="46">W</text>
-          <text x="324" y="345" font-size="30">NW</text>
-        </g>
-
-
-
-        <g id="needle" filter="url(#softShadow)">
-          <polygon points="512,168 528,512 496,512" fill="url(#needleRed)" stroke="#4a0d05" stroke-width="1.5"/>
-          <polygon points="512,168 524,512 512,512" fill="#ffffff" opacity="0.25"/>
-          <polygon points="512,856 528,512 496,512" fill="url(#needleBlack)" stroke="#000000" stroke-width="1.5"/>
-          <polygon points="512,856 524,512 512,512" fill="#ffffff" opacity="0.12"/>
-        </g>
-        <g filter="url(#softShadow)">
-          <circle cx="512" cy="512" r="34" fill="url(#pivotMetal)" stroke="#3a2a0f" stroke-width="2"/>
-          <circle cx="512" cy="512" r="34" fill="none" stroke="#fff6d8" stroke-width="1" opacity="0.6"/>
-          <rect x="497" y="508" width="30" height="8" rx="2" fill="#2a2010" opacity="0.85"/>
-          <circle cx="500" cy="500" r="9" fill="#ffffff" opacity="0.45"/>
-        </g>
-
-      </svg>
-    </div>
-  </div>
-
-  <div class="readout">
-    <div class="deg"><span id="degVal">--</span><span>°</span></div>
-    <div class="zone" id="zoneName">Enable compass to begin</div>
-    <div class="accuracy-row" id="accuracyRow" style="display:none;">
-      <span id="accuracyText">Accuracy: —</span>
-      <span id="interferenceText"></span>
-    </div>
-  </div>
-
-  <div class="level-cal-row">
-    <div class="bubble-level" id="bubbleLevel" title="Tilt level">
-      <div class="level-ring"></div>
-      <div class="level-dot" id="levelDot"></div>
-    </div>
-    <button class="calibrate-btn" id="calibrateBtn">Calibrate</button>
-  </div>
-
-  <div class="status-msg" id="statusMsg">Dhruva uses your device's magnetic sensor. Hold your phone flat, level with the ground, and away from metal objects for an accurate reading.</div>
-
-  <button class="enable-btn" id="enableBtn">Enable Compass</button>
-  <button class="guide-toggle" id="guideToggle">Show all 16 direction meanings</button>
-
-  <div class="guide-panel" id="guidePanel">
-    <div class="guide-inner" id="guideInner"></div>
-  </div>
-
-  <!-- CALIBRATION WIZARD MODAL -->
-  <div class="modal-overlay" id="calibrateModal">
-    <div class="modal-box">
-      <h3>Calibrate Compass</h3>
-      <div class="cal-figure8" id="calFigure8">
-        <svg viewBox="0 0 120 70" width="120" height="70">
-          <path d="M20,35 C20,15 50,15 60,35 C70,55 100,55 100,35 C100,15 70,15 60,35 C50,55 20,55 20,35 Z"
-                fill="none" stroke="#eecd7c" stroke-width="4" stroke-linecap="round"/>
+  <section class="card">
+    <h2 class="cardtitle">☀️ Find East Without a Compass</h2>
+    <p class="cardsub">Stand facing the rising sun tomorrow morning — that direction is East. We'll fetch today's exact sunrise time for your location.</p>
+    <div class="sunbox">
+      <div class="sunwheel">
+        <svg viewBox="0 0 96 96">
+          <circle cx="48" cy="48" r="44" fill="none" stroke="var(--line)" stroke-width="2"/>
+          <g class="ray">
+            <circle cx="48" cy="14" r="5" fill="var(--accent2)"/>
+          </g>
+          <text x="48" y="10" text-anchor="middle" font-size="9" fill="var(--muted)">N</text>
+          <text x="90" y="51" text-anchor="middle" font-size="9" fill="var(--muted)">E</text>
+          <text x="48" y="92" text-anchor="middle" font-size="9" fill="var(--muted)">S</text>
+          <text x="6" y="51" text-anchor="middle" font-size="9" fill="var(--muted)">W</text>
         </svg>
       </div>
-      <div class="modal-note" style="text-align:center;margin-bottom:14px;">Slowly move your phone in a figure-8 motion, away from metal and electronics, for a few seconds.</div>
-      <div class="cal-progress-track"><div class="cal-progress-fill" id="calProgressFill"></div></div>
-      <div class="modal-note" id="calStatusText" style="text-align:center;margin-top:10px;">Tap start when ready.</div>
-      <button class="capture-btn" id="calStartBtn" style="margin-top:14px;">Start Calibration</button>
-      <button class="modal-close" id="calCloseBtn">Close</button>
+      <div class="sunresult" id="sunResult">
+        <div class="row"><span class="label">Sunrise</span><span id="srTime">—</span></div>
+        <div class="row"><span class="label">Sunset</span><span id="ssTime">—</span></div>
+        <div class="row"><span class="label">Location</span><span id="locTime">—</span></div>
+      </div>
     </div>
-  </div>
+    <button class="btn" id="sunBtn">Get Today's Sunrise</button>
+    <p class="note" id="sunNote"><b>Tip:</b> Face the sunrise point and stretch both arms out — right hand points South, left hand points North, and directly behind you is West.</p>
+  </section>
 
-  <div class="tabbar" id="tabbar">
-    <button class="tab-btn active" data-panel="sitting">Sitting</button>
-    <button class="tab-btn" data-panel="sleeping">Sleeping</button>
-    <button class="tab-btn" data-panel="door">Main Door</button>
-    <button class="tab-btn" data-panel="family">Daily & Family</button>
-    <button class="tab-btn" data-panel="work">Work & Money</button>
-    <button class="tab-btn" data-panel="roommap">Room Map</button>
-  </div>
+  <section class="card">
+    <h2 class="cardtitle">Vastu Score</h2>
+    <p class="cardsub">Set each room's actual direction below to see how your home aligns with Vastu Shastra.</p>
+    <div class="scorewrap">
+      <div class="scorenum" id="scoreNum">—</div>
+      <div style="flex:1">
+        <div class="scorebar"><i id="scoreBar"></i></div>
+        <div class="scorelabel" id="scoreLabel">Set room directions to calculate</div>
+      </div>
+    </div>
+  </section>
 
-  <!-- SITTING DIRECTION ADVISOR -->
-  <div class="panel active" id="panel-sitting">
-    <h2>Sitting Direction Advisor</h2>
-    <select id="sitActivity"></select>
-    <button class="capture-btn" id="sitCapture">Use Current Facing Direction</button>
-    <div class="result-card" id="sitResult" style="display:none;"></div>
-  </div>
-
-  <!-- SLEEPING DIRECTION ADVISOR -->
-  <div class="panel" id="panel-sleeping">
-    <h2>Sleeping Direction Advisor</h2>
-    <div class="status-msg" style="margin:0 0 12px;text-align:left;max-width:none;">Lie down as you normally sleep and hold the phone flat with the top of the phone pointing the same way as the top of your head.</div>
-    <button class="capture-btn" id="sleepCapture">Capture Head Direction</button>
-    <div class="result-card" id="sleepResult" style="display:none;"></div>
-  </div>
-
-  <!-- MAIN DOOR CHECKER -->
-  <div class="panel" id="panel-door">
-    <h2>Main Door Checker</h2>
-    <div class="status-msg" style="margin:0 0 12px;text-align:left;max-width:none;">Stand at your threshold, facing outward through the doorway, then capture the reading.</div>
-    <button class="capture-btn" id="doorCapture">Capture Door Facing</button>
-    <div class="result-card" id="doorResult" style="display:none;"></div>
-  </div>
-
-  <!-- DAILY & FAMILY ACTIVITIES ADVISOR -->
-  <div class="panel" id="panel-family">
-    <h2>Daily & Family Activities</h2>
-    <select id="familyActivity"></select>
-    <button class="capture-btn" id="familyCapture">Use Current Facing Direction</button>
-    <div class="result-card" id="familyResult" style="display:none;"></div>
-  </div>
-
-  <!-- WORK & MONEY ADVISOR -->
-  <div class="panel" id="panel-work">
-    <h2>Work & Money</h2>
-    <select id="workActivity"></select>
-    <button class="capture-btn" id="workCapture">Use Current Facing Direction</button>
-    <div class="result-card" id="workResult" style="display:none;"></div>
-  </div>
-
-  <!-- ROOM MAPPING MODE -->
-  <div class="panel" id="panel-roommap">
-    <h2>Room Mapping Mode</h2>
-    <div class="status-msg" style="margin:0 0 12px;text-align:left;max-width:none;">Face each wall of a room in turn and log it, to see which Vastu zone falls where before placing furniture.</div>
-    <input type="text" id="roomLabel" placeholder="Label (e.g. North wall, Bed wall)">
-    <button class="capture-btn" id="roomCapture">Add Wall Reading</button>
+  <section class="card">
+    <h2 class="cardtitle">Room-by-Room Check</h2>
+    <p class="cardsub">Choose the direction each room actually faces (from the centre of your home).</p>
     <div id="roomList"></div>
-    <div class="empty-hint" id="roomEmptyHint">No readings yet — walk to a wall and tap "Add Wall Reading".</div>
-  </div>
+  </section>
 
-  <footer>© Manik Roy 2026 · Dhruva</footer>
-
-  <!-- SETTINGS MODAL -->
-  <div class="modal-overlay" id="settingsModal">
-    <div class="modal-box">
-      <h3>Compass Settings</h3>
-      <div class="switch-row">
-        <label for="reverseNeedleToggle">Reverse Needle Direction</label>
-        <label class="switch">
-          <input type="checkbox" id="reverseNeedleToggle" checked>
-          <span class="knob"></span>
-        </label>
-      </div>
-      <div class="modal-note" style="margin-bottom:14px;">Some phones report compass data flipped. If the needle swings the wrong way when you turn, or doesn't point to real North when you face it, switch this on.</div>
-      <div class="switch-row">
-        <label for="trueNorthToggle">Show True North</label>
-        <label class="switch">
-          <input type="checkbox" id="trueNorthToggle">
-          <span class="knob"></span>
-        </label>
-      </div>
-      <div id="declinationField" style="display:none;">
-        <label style="font-size:12.5px;color:#c9bd9f;">Magnetic declination at your location (degrees, + East / − West)</label>
-        <input type="number" id="declinationInput" value="0" step="0.1">
-        <button class="capture-btn" id="autoDeclinationBtn" style="margin-bottom:6px;">Auto-detect from my location</button>
-        <div class="modal-note" id="declinationNote">Uses your device's location with a built-in offline geomagnetic model — accurate to roughly ±1–3° in most places. For precision work, cross-check with NOAA's online declination calculator.</div>
-      </div>
-      <div class="modal-note" id="magneticNote">Currently showing magnetic north — the direction your phone's sensor detects directly, without correction.</div>
-      <button class="modal-close" id="settingsClose">Close</button>
-    </div>
-  </div>
+  <footer>
+    <svg class="rose" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.5 8.5L23 12l-8.5 1.5L12 22l-2.5-8.5L1 12l8.5-1.5L12 2z" fill="var(--accent)"/></svg>
+    <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
+  </footer>
+</div>
 
 <script>
-(function(){
-  var rotor = document.getElementById('rotor');
-  var needle = document.getElementById('needle');
-  var degVal = document.getElementById('degVal');
-  var zoneName = document.getElementById('zoneName');
-  var statusMsg = document.getElementById('statusMsg');
-  var enableBtn = document.getElementById('enableBtn');
-  var guideToggle = document.getElementById('guideToggle');
-  var guidePanel = document.getElementById('guidePanel');
-  var guideInner = document.getElementById('guideInner');
+// ---------- Theme ----------
+const THEMES=["light","dark","oled","hc"];
+function setTheme(t){
+  document.body.setAttribute("data-theme",t);
+  document.querySelectorAll(".themebtn").forEach(b=>b.setAttribute("aria-pressed", b.dataset.t===t));
+  localStorage.setItem("diksutra-theme",t);
+}
+document.querySelectorAll(".themebtn").forEach(b=>b.addEventListener("click",()=>setTheme(b.dataset.t)));
+setTheme(localStorage.getItem("diksutra-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark":"light"));
 
-  // 16-point Vastu direction data: name, Sanskrit, ruling force, guidance, color swatch
-  var ZONES = [
-    {n:'North',      ab:'N',   dev:'उत्तर',    ruler:'Kubera',  color:'#8fae82', use:'Wealth zone — best for cash lockers, safes and the main office desk.'},
-    {n:'North-Northeast', ab:'NNE', dev:'—', ruler:'Water support', color:'#a9c1d8', use:'Supports the NE water zone — good for an open, uncluttered space.'},
-    {n:'Northeast',  ab:'NE',  dev:'ईशान',    ruler:'Water / Ishana', color:'#9fc4dd', use:'Most sacred zone — ideal for the prayer room, main entrance or water storage.'},
-    {n:'East-Northeast', ab:'ENE', dev:'—', ruler:'Sun support', color:'#e0c675', use:'Supports morning sunlight — good for a study nook or reading corner.'},
-    {n:'East',       ab:'E',   dev:'पूर्व',    ruler:'Indra / Surya', color:'#e8c25f', use:'Sunrise direction — ideal for the main entrance, living room and windows.'},
-    {n:'East-Southeast', ab:'ESE', dev:'—', ruler:'Fire support', color:'#dba077', use:'Transition zone between sun and fire — suited to a light dining area.'},
-    {n:'Southeast',  ab:'SE',  dev:'आग्नेय',   ruler:'Agni', color:'#d38a5c', use:'Fire element — the traditional placement for the kitchen and stove.'},
-    {n:'South-Southeast', ab:'SSE', dev:'—', ruler:'Fire support', color:'#c98c7a', use:'Good for kitchen storage or a utility extension.'},
-    {n:'South',      ab:'S',   dev:'दक्षिण',   ruler:'Yama', color:'#c07a72', use:'Heavier energy — best for storage and solid furniture, avoid the main entrance here.'},
-    {n:'South-Southwest', ab:'SSW', dev:'—', ruler:'Earth support', color:'#b98f7d', use:'Good for wardrobes and heavy cabinets.'},
-    {n:'Southwest',  ab:'SW',  dev:'नैऋत्य',   ruler:'Rahu / Nirriti', color:'#a99479', use:'Most stable zone — ideal for the master bedroom and heavy furniture.'},
-    {n:'West-Southwest', ab:'WSW', dev:'—', ruler:'Earth support', color:'#9fa591', use:'Suits a secondary bedroom or long-term storage.'},
-    {n:'West',       ab:'W',   dev:'पश्चिम',   ruler:'Varuna', color:'#7fa0bd', use:'Water element — good for the dining room, study or children\u2019s room.'},
-    {n:'West-Northwest', ab:'WNW', dev:'—', ruler:'Air support', color:'#a3aab3', use:'Suits a guest room or dressing area.'},
-    {n:'Northwest',  ab:'NW',  dev:'वायव्य',   ruler:'Vayu', color:'#b7bcc3', use:'Air element — best for the guest room, garage or movable items.'},
-    {n:'North-Northwest', ab:'NNW', dev:'—', ruler:'Air / wealth support', color:'#9fb098', use:'Supports the north wealth zone — keep this area light and open.'}
-  ];
+// ---------- Footer year ----------
+document.getElementById("year").textContent = new Date().getFullYear();
 
-  // build guide list
-  ZONES.forEach(function(z, i){
-    var row = document.createElement('div');
-    row.className = 'guide-row';
-    row.id = 'zone-' + i;
-    row.innerHTML =
-      '<div class="swatch" style="background:'+z.color+'"></div>' +
-      '<div class="txt"><b>'+z.n+' ('+z.ab+')'+(z.dev!=='—' ? '<span class="dev">'+z.dev+'</span>' : '')+'</b><p>'+z.use+'</p></div>';
-    guideInner.appendChild(row);
-  });
-
-  guideToggle.addEventListener('click', function(){
-    var open = guidePanel.classList.toggle('open');
-    guideToggle.textContent = open ? 'Hide direction meanings' : 'Show all 16 direction meanings';
-  });
-
-  function zoneIndexFromHeading(h){
-    return Math.round(h / 22.5) % 16;
+// ---------- Sun finder (sunrise-sunset.org, free, no key) ----------
+const sunBtn=document.getElementById("sunBtn");
+sunBtn.addEventListener("click",()=>{
+  if(!navigator.geolocation){
+    document.getElementById("sunNote").innerHTML="<b>Location unavailable.</b> Your browser doesn't support geolocation.";
+    return;
   }
-
-  var EIGHT = ['N','NE','E','SE','S','SW','W','NW'];
-  function eightFromHeading(h){
-    return EIGHT[Math.round(h / 45) % 8];
-  }
-
-  // ===== Circular statistics (headings wrap at 360°, so plain averaging/std-dev is wrong) =====
-  function circularMean(arr){
-    var sx=0, sy=0;
-    for(var i=0;i<arr.length;i++){ var r=arr[i]*Math.PI/180; sx+=Math.cos(r); sy+=Math.sin(r); }
-    var mean = Math.atan2(sy/arr.length, sx/arr.length) * 180/Math.PI;
-    return ((mean % 360) + 360) % 360;
-  }
-  function circularConcentration(arr){
-    // R close to 1 = readings tightly clustered (stable); R close to 0 = scattered (noisy/interference)
-    var sx=0, sy=0;
-    for(var i=0;i<arr.length;i++){ var r=arr[i]*Math.PI/180; sx+=Math.cos(r); sy+=Math.sin(r); }
-    return Math.sqrt(sx*sx+sy*sy) / arr.length;
-  }
-  function circularStdDevDeg(arr){
-    var R = Math.min(Math.max(circularConcentration(arr), 0.0001), 0.9999);
-    return Math.sqrt(-2 * Math.log(R)) * 180/Math.PI;
-  }
-
-  // Collects live headings for `durationMs` and hands back their circular mean —
-  // used so a single capture (door / sitting / sleeping / room wall) isn't thrown
-  // off by one noisy instantaneous reading.
-  function captureAveraged(button, durationMs, callback){
-    var samples = [];
-    var originalText = button.textContent;
-    button.disabled = true;
-    button.textContent = 'Hold steady…';
-    var start = Date.now();
-    var iv = setInterval(function(){
-      samples.push(currentHeading);
-      if(Date.now() - start >= (durationMs || 1200)){
-        clearInterval(iv);
-        button.disabled = false;
-        button.textContent = originalText;
-        callback(samples.length ? circularMean(samples) : currentHeading);
-      }
-    }, 100);
-  }
-
-  // ===== True North correction =====
-  var trueNorthEnabled = false;
-  var declination = 0;
-  var rawHeading = 0;
-  var currentHeading = 0; // corrected 0-360 heading, used for zone lookups & ratings
-  var needleInverted = true; // default flipped: confirmed the sensor's rotation direction is reversed on this build
-
-  // Continuous (unwrapped) rotor angle so the dial never snaps at the 0/360 seam
-  var targetAngle = 0;   // where the rotor should end up, can grow past 360 or below 0
-  var displayAngle = 0;  // smoothed angle actually rendered each frame
-  var isDragging = false;
-
-  function applyCorrection(){
-    currentHeading = ((rawHeading + (trueNorthEnabled ? declination : 0)) % 360 + 360) % 360;
-    // find the shortest signed path from the current target to the new heading,
-    // then add it, so the rotor keeps spinning the short way even across 360→0
-    var wrapped = ((targetAngle % 360) + 360) % 360;
-    var diff = currentHeading - wrapped;
-    diff = ((diff + 180) % 360 + 360) % 360 - 180;
-    targetAngle += diff;
-    renderHeading();
-  }
-
-  var lastActive = -1;
-  function renderHeading(){
-    var heading = currentHeading;
-    degVal.textContent = Math.round(heading);
-    var idx = zoneIndexFromHeading(heading);
-    var z = ZONES[idx];
-    zoneName.innerHTML = z.n + ' <span class="sanskrit">' + (z.dev!=='—' ? z.dev : '') + '</span>';
-    if(lastActive !== idx){
-      var prev = document.getElementById('zone-' + lastActive);
-      if(prev) prev.classList.remove('active');
-      var cur = document.getElementById('zone-' + idx);
-      if(cur){
-        cur.classList.add('active');
-        if(guidePanel.classList.contains('open')) cur.scrollIntoView({block:'nearest', behavior:'smooth'});
-      }
-      lastActive = idx;
-    }
-  }
-
-  function updateHeading(heading){
-    rawHeading = ((heading % 360) + 360) % 360;
-    applyCorrection();
-  }
-
-  // Smooth 60fps rotor animation: eases toward targetAngle every frame, which both
-  // hides sensor jitter and glides continuously through the 0/360 boundary.
-  function animateRotor(){
-    if(isDragging){
-      displayAngle = targetAngle;
-    } else {
-      displayAngle += (targetAngle - displayAngle) * 0.14;
-    }
-    needle.setAttribute('transform', 'rotate(' + ((needleInverted ? 1 : -1) * displayAngle) + ' 512 512)');
-    requestAnimationFrame(animateRotor);
-  }
-  requestAnimationFrame(animateRotor);
-
-  // ===== Bubble level (uses the same beta/gamma tilt data as the compass sensor) =====
-  var levelDot = document.getElementById('levelDot');
-  function updateBubbleLevel(beta, gamma){
-    if(beta === null || gamma === null) return;
-    var maxTilt = 30, maxOffset = 15; // px
-    var ox = Math.max(-maxTilt, Math.min(maxTilt, gamma)) / maxTilt * maxOffset;
-    var oy = Math.max(-maxTilt, Math.min(maxTilt, beta)) / maxTilt * maxOffset;
-    levelDot.style.transform = 'translate(calc(-50% + ' + ox.toFixed(1) + 'px), calc(-50% + ' + oy.toFixed(1) + 'px))';
-    var flat = Math.abs(beta) < 4 && Math.abs(gamma) < 4;
-    levelDot.classList.toggle('flat', flat);
-  }
-
-  // ===== Rolling accuracy / interference estimate from live heading stability =====
-  var headingBuffer = [];
-  var accuracyRow = document.getElementById('accuracyRow');
-  var accuracyText = document.getElementById('accuracyText');
-  var interferenceText = document.getElementById('interferenceText');
-  var magnetometerSensor = null;
-  var magnetometerReading = null; // {magnitude} in µT, if the Generic Sensor API is available
-
-  function updateAccuracyDisplay(){
-    var now = Date.now();
-    headingBuffer = headingBuffer.filter(function(s){ return now - s.t < 1500; });
-    if(headingBuffer.length < 4) return;
-    var vals = headingBuffer.map(function(s){ return s.h; });
-    var stdDev = circularStdDevDeg(vals);
-    accuracyRow.style.display = 'flex';
-    accuracyText.textContent = 'Accuracy: ±' + Math.max(1, Math.round(stdDev)) + '°';
-
-    if(magnetometerReading){
-      var mag = magnetometerReading.magnitude;
-      var interference = mag < 20 || mag > 80;
-      interferenceText.textContent = interference ? 'Magnetic interference detected' : 'Field strength OK';
-      interferenceText.className = interference ? 'warn' : 'ok';
-    } else if(stdDev > 15){
-      interferenceText.textContent = 'Unstable reading — move away from metal/electronics';
-      interferenceText.className = 'warn';
-    } else {
-      interferenceText.textContent = 'Field OK';
-      interferenceText.className = 'ok';
-    }
-  }
-
-  function tryStartMagnetometer(){
-    if(typeof Magnetometer === 'undefined') return; // not supported by this browser
+  sunBtn.textContent="Locating…";
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const {latitude,longitude}=pos.coords;
+    sunBtn.textContent="Fetching sunrise…";
     try{
-      magnetometerSensor = new Magnetometer({frequency: 10});
-      magnetometerSensor.addEventListener('reading', function(){
-        var x = magnetometerSensor.x || 0, y = magnetometerSensor.y || 0, z = magnetometerSensor.z || 0;
-        magnetometerReading = { magnitude: Math.sqrt(x*x + y*y + z*z) };
-      });
-      magnetometerSensor.addEventListener('error', function(){ magnetometerReading = null; });
-      magnetometerSensor.start();
-    } catch(err){ magnetometerReading = null; }
-  }
-
-  function handleOrientation(e){
-    var heading;
-    if(typeof e.webkitCompassHeading === 'number'){
-      heading = e.webkitCompassHeading; // iOS Safari: already tilt-compensated true compass heading
-    } else if(e.alpha !== null){
-      heading = 360 - e.alpha; // Android: compass heading from alpha (accurate when held reasonably flat)
-    } else {
-      return;
+      const res=await fetch(`https://api.sunrise-sunset.org/json?lat=${latitude}&lng=${longitude}&formatted=0`);
+      const data=await res.json();
+      const sr=new Date(data.results.sunrise);
+      const ss=new Date(data.results.sunset);
+      const fmt=d=>d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      document.getElementById("srTime").textContent=fmt(sr);
+      document.getElementById("ssTime").textContent=fmt(ss);
+      document.getElementById("locTime").textContent=`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+      document.getElementById("sunNote").innerHTML=`<b>Tomorrow's sunrise is ${fmt(sr)}.</b> Step outside at that time and face the glow on the horizon — that is due East. Mark it, then use it to orient every room below.`;
+    }catch(e){
+      document.getElementById("sunNote").innerHTML="<b>Couldn't reach the sunrise service.</b> Check your connection and try again.";
     }
-    updateBubbleLevel(e.beta, e.gamma);
-    updateHeading(heading);
-    headingBuffer.push({t: Date.now(), h: currentHeading});
-    updateAccuracyDisplay();
+    sunBtn.textContent="Get Today's Sunrise";
+  }, ()=>{
+    document.getElementById("sunNote").innerHTML="<b>Location permission denied.</b> Allow location access to fetch your local sunrise time.";
+    sunBtn.textContent="Get Today's Sunrise";
+  });
+});
+
+// ---------- Vastu data ----------
+const DIRS=["N","NE","E","SE","S","SW","W","NW"];
+const DIRNAMES={N:"North",NE:"North-East",E:"East",SE:"South-East",S:"South",SW:"South-West",W:"West",NW:"North-West"};
+const ROOMS=[
+ {id:"entrance",name:"Main Entrance", ideal:["N","NE","E"], ok:[], remedy:"A South-West entrance is considered weak; keep the threshold brightly lit and clutter-free."},
+ {id:"kitchen",name:"Kitchen", ideal:["SE"], ok:["NW"], remedy:"Avoid cooking facing North-East or South-West; keep a small copper vessel of water on the counter."},
+ {id:"masterbed",name:"Master Bedroom", ideal:["SW"], ok:["S","W"], remedy:"A North-East master bedroom can unsettle sleep and savings; use grounding earth tones here."},
+ {id:"kidsbed",name:"Children's Bedroom", ideal:["W","NW"], ok:["E"], remedy:"Add a study desk facing East to support focus and calm sleep."},
+ {id:"pooja",name:"Pooja / Prayer Room", ideal:["NE"], ok:["N","E"], remedy:"Keep idols facing East or West, never South; avoid placing this room in the South-West."},
+ {id:"bath",name:"Bathroom / Toilet", ideal:["NW","W"], ok:[], remedy:"A North-East toilet is a major concern; keep the door shut and a bowl of sea salt inside to absorb energy."},
+ {id:"study",name:"Study Room", ideal:["E","N","NE"], ok:["W"], remedy:"Face East or North while studying to support clarity and concentration."},
+ {id:"living",name:"Living Room", ideal:["N","E","NE"], ok:["W"], remedy:"Keep seating open and uncluttered to welcome guests and opportunity."},
+ {id:"dining",name:"Dining Room", ideal:["W","S"], ok:["N","E"], remedy:"Face East while eating; avoid a dining table directly beneath a ceiling beam."},
+ {id:"stairs",name:"Staircase", ideal:["S","W","SW"], ok:[], remedy:"A North-East staircase is discouraged; keep it well-lit with a plant at the base."},
+ {id:"water",name:"Water Tank / Borewell", ideal:["NE","N"], ok:[], remedy:"South-West water storage is considered inauspicious for prosperity."},
+ {id:"store",name:"Store Room", ideal:["SW","W"], ok:[], remedy:"Heavy, full storage in the South-West helps stabilise the home."},
+];
+
+const roomList=document.getElementById("roomList");
+ROOMS.forEach(r=>{
+  const el=document.createElement("div");
+  el.className="room";
+  el.innerHTML=`
+    <div>
+      <div class="roomname">${r.name}</div>
+      <div class="roomideal">Ideal: ${r.ideal.map(d=>DIRNAMES[d]).join(", ")}</div>
+    </div>
+    <select data-id="${r.id}">
+      <option value="">Select…</option>
+      ${DIRS.map(d=>`<option value="${d}">${DIRNAMES[d]}</option>`).join("")}
+    </select>
+    <div class="status" id="status-${r.id}"></div>
+  `;
+  roomList.appendChild(el);
+});
+
+const chosen={};
+roomList.addEventListener("change", e=>{
+  if(e.target.tagName!=="SELECT") return;
+  const id=e.target.dataset.id;
+  const dir=e.target.value;
+  const room=ROOMS.find(r=>r.id===id);
+  const statusEl=document.getElementById(`status-${id}`);
+  if(!dir){ delete chosen[id]; statusEl.className="status"; updateScore(); return; }
+  chosen[id]=dir;
+  let cls, msg, pts;
+  if(room.ideal.includes(dir)){ cls="good"; msg=`Ideal placement for ${room.name}.`; pts=2; }
+  else if(room.ok.includes(dir)){ cls="ok"; msg=`Acceptable, though ${room.ideal.map(d=>DIRNAMES[d]).join(" or ")} is preferred.`; pts=1; }
+  else { cls="bad"; msg=room.remedy; pts=0; }
+  statusEl.className=`status show ${cls}`;
+  statusEl.textContent=msg;
+  chosen[id]=pts;
+  updateScore();
+});
+
+function updateScore(){
+  const vals=Object.values(chosen);
+  const scoreNum=document.getElementById("scoreNum");
+  const scoreBar=document.getElementById("scoreBar");
+  const scoreLabel=document.getElementById("scoreLabel");
+  if(!vals.length){
+    scoreNum.textContent="—"; scoreBar.style.width="0%";
+    scoreLabel.textContent="Set room directions to calculate"; return;
   }
-
-  function startListening(){
-    statusMsg.textContent = 'Reading device orientation…';
-    if('ondeviceorientationabsolute' in window){
-      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-    } else {
-      window.addEventListener('deviceorientation', handleOrientation, true);
-    }
-    tryStartMagnetometer();
-    enableBtn.style.display = 'none';
-  }
-
-  enableBtn.addEventListener('click', function(){
-    if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
-      DeviceOrientationEvent.requestPermission().then(function(resp){
-        if(resp === 'granted'){
-          startListening();
-        } else {
-          statusMsg.textContent = 'Compass permission was denied. You can re-enable it in your browser settings.';
-        }
-      }).catch(function(){
-        statusMsg.textContent = 'Could not access the compass sensor on this device.';
-      });
-    } else if('DeviceOrientationEvent' in window){
-      startListening();
-    } else {
-      statusMsg.textContent = 'This device or browser does not expose a compass sensor. Try on a mobile phone with Chrome or Safari.';
-    }
-  });
-
-  // Desktop / no-sensor fallback: drag to rotate, for preview and testing
-  var dragging = false, lastAngle = 0, dragHeading = 0;
-  var stage = document.querySelector('.compass-stage');
-
-  function angleFromEvent(evt){
-    var rect = stage.getBoundingClientRect();
-    var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
-    var x = (evt.touches ? evt.touches[0].clientX : evt.clientX) - cx;
-    var y = (evt.touches ? evt.touches[0].clientY : evt.clientY) - cy;
-    return Math.atan2(x, -y) * 180 / Math.PI;
-  }
-
-  function dragStart(evt){
-    if(window.DeviceOrientationEvent && enableBtn.style.display === 'none') return; // sensor active, skip manual drag
-    dragging = true;
-    isDragging = true;
-    lastAngle = angleFromEvent(evt);
-  }
-  function dragMove(evt){
-    if(!dragging) return;
-    var a = angleFromEvent(evt);
-    var delta = a - lastAngle;
-    lastAngle = a;
-    dragHeading = ((dragHeading + delta) % 360 + 360) % 360;
-    updateHeading(dragHeading);
-    evt.preventDefault();
-  }
-  function dragEnd(){ dragging = false; isDragging = false; }
-
-  stage.addEventListener('mousedown', dragStart);
-  window.addEventListener('mousemove', dragMove);
-  window.addEventListener('mouseup', dragEnd);
-  stage.addEventListener('touchstart', dragStart, {passive:true});
-  stage.addEventListener('touchmove', dragMove, {passive:false});
-  stage.addEventListener('touchend', dragEnd);
-
-  // ===== TAB SWITCHING =====
-  var tabButtons = document.querySelectorAll('.tab-btn');
-  var panels = document.querySelectorAll('.panel');
-  tabButtons.forEach(function(btn){
-    btn.addEventListener('click', function(){
-      tabButtons.forEach(function(b){ b.classList.remove('active'); });
-      panels.forEach(function(p){ p.classList.remove('active'); });
-      btn.classList.add('active');
-      document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
-    });
-  });
-
-  // ===== SETTINGS MODAL (True North) =====
-  var settingsBtn = document.getElementById('settingsBtn');
-  var settingsModal = document.getElementById('settingsModal');
-  var settingsClose = document.getElementById('settingsClose');
-  var trueNorthToggle = document.getElementById('trueNorthToggle');
-  var reverseNeedleToggle = document.getElementById('reverseNeedleToggle');
-  var declinationField = document.getElementById('declinationField');
-  var declinationInput = document.getElementById('declinationInput');
-  var magneticNote = document.getElementById('magneticNote');
-
-  reverseNeedleToggle.addEventListener('change', function(){
-    needleInverted = reverseNeedleToggle.checked;
-  });
-
-  settingsBtn.addEventListener('click', function(){ settingsModal.classList.add('open'); });
-  settingsClose.addEventListener('click', function(){ settingsModal.classList.remove('open'); });
-  settingsModal.addEventListener('click', function(e){ if(e.target === settingsModal) settingsModal.classList.remove('open'); });
-
-  trueNorthToggle.addEventListener('change', function(){
-    trueNorthEnabled = trueNorthToggle.checked;
-    declinationField.style.display = trueNorthEnabled ? 'block' : 'none';
-    magneticNote.style.display = trueNorthEnabled ? 'none' : 'block';
-    applyCorrection();
-  });
-  declinationInput.addEventListener('input', function(){
-    declination = parseFloat(declinationInput.value) || 0;
-    applyCorrection();
-  });
-
-  // ===== Offline declination approximation (geomagnetic dipole pole model) =====
-  // Not the full WMM spherical-harmonic model (that needs a large offline coefficient
-  // table), but a lightweight great-circle bearing to the geomagnetic pole — typically
-  // within a few degrees, good enough for direction planning without any network call.
-  function approximateDeclination(lat, lon){
-    var poleLat = 80.7, poleLon = -72.68; // approx. north geomagnetic dipole pole, ~2025 epoch
-    var φ1 = lat * Math.PI/180, φ2 = poleLat * Math.PI/180;
-    var Δλ = (poleLon - lon) * Math.PI/180;
-    var y = Math.sin(Δλ) * Math.cos(φ2);
-    var x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
-    var θ = Math.atan2(y, x) * 180/Math.PI;
-    θ = ((θ + 360) % 360);
-    return θ > 180 ? θ - 360 : θ; // signed, + East / − West
-  }
-
-  var autoDeclinationBtn = document.getElementById('autoDeclinationBtn');
-  var declinationNote = document.getElementById('declinationNote');
-  autoDeclinationBtn.addEventListener('click', function(){
-    if(!('geolocation' in navigator)){
-      declinationNote.textContent = 'Location services are not available in this browser — enter your declination manually instead.';
-      return;
-    }
-    autoDeclinationBtn.disabled = true;
-    autoDeclinationBtn.textContent = 'Locating…';
-    navigator.geolocation.getCurrentPosition(function(pos){
-      var dec = approximateDeclination(pos.coords.latitude, pos.coords.longitude);
-      declinationInput.value = dec.toFixed(1);
-      declination = dec;
-      applyCorrection();
-      autoDeclinationBtn.disabled = false;
-      autoDeclinationBtn.textContent = 'Auto-detect from my location';
-      declinationNote.textContent = 'Estimated from your location using a built-in offline model — accurate to roughly ±1–3° in most places. For precision work, cross-check with NOAA\u2019s online declination calculator.';
-    }, function(){
-      autoDeclinationBtn.disabled = false;
-      autoDeclinationBtn.textContent = 'Auto-detect from my location';
-      declinationNote.textContent = 'Could not access your location. Check location permissions, or enter your declination manually.';
-    }, {timeout: 10000});
-  });
-
-  // ===== CALIBRATION WIZARD =====
-  var calibrateBtn = document.getElementById('calibrateBtn');
-  var calibrateModal = document.getElementById('calibrateModal');
-  var calCloseBtn = document.getElementById('calCloseBtn');
-  var calStartBtn = document.getElementById('calStartBtn');
-  var calProgressFill = document.getElementById('calProgressFill');
-  var calStatusText = document.getElementById('calStatusText');
-  var calRunning = false;
-
-  calibrateBtn.addEventListener('click', function(){ calibrateModal.classList.add('open'); });
-  calCloseBtn.addEventListener('click', function(){ calibrateModal.classList.remove('open'); });
-  calibrateModal.addEventListener('click', function(e){ if(e.target === calibrateModal) calibrateModal.classList.remove('open'); });
-
-  calStartBtn.addEventListener('click', function(){
-    if(calRunning) return;
-    calRunning = true;
-    calStartBtn.disabled = true;
-    calStatusText.textContent = 'Move your phone in a figure-8…';
-    var samples = [];
-    var durationMs = 6000, start = Date.now();
-    var iv = setInterval(function(){
-      var elapsed = Date.now() - start;
-      calProgressFill.style.width = Math.min(100, (elapsed/durationMs)*100) + '%';
-      samples.push(currentHeading);
-      if(elapsed >= durationMs){
-        clearInterval(iv);
-        var stdDev = samples.length > 3 ? circularStdDevDeg(samples) : 99;
-        var label, advice;
-        if(stdDev < 5){ label = 'High confidence (±' + Math.round(stdDev) + '°)'; advice = 'Your compass is well calibrated.'; }
-        else if(stdDev < 15){ label = 'Medium confidence (±' + Math.round(stdDev) + '°)'; advice = 'Usable, but move further from metal objects for best results.'; }
-        else { label = 'Low confidence (±' + Math.round(stdDev) + '°)'; advice = 'Try again in an open area, away from metal, magnets, and electronics.'; }
-        calStatusText.textContent = label + ' — ' + advice;
-        calStartBtn.disabled = false;
-        calRunning = false;
-      }
-    }, 150);
-  });
-
-  // ===== SITTING DIRECTION ADVISOR =====
-  var SIT_ACTIVITIES = [
-    {key:'work',   label:'Work / study desk', best:['E','N'], acceptable:['NE'], avoid:['S'],
-      tip:'Facing East sharpens focus and decision-making. Facing North supports steady, income-related work. Avoid facing South at your desk.'},
-    {key:'meeting', label:'Meetings / negotiations', best:['N','E'], acceptable:['NE'], avoid:['S','SW'],
-      tip:'Facing North or East while negotiating is considered favourable for reaching good outcomes.'},
-    {key:'eating', label:'Eating meals', best:['E'], acceptable:['W','N'], avoid:['S'],
-      tip:'Facing East while eating is ideal. West and North are acceptable. South is traditionally discouraged at mealtimes.'},
-    {key:'boss', label:'Business owner / head-of-household seat', best:['N','E'], acceptable:['NE'], avoid:['S','SW'],
-      tip:'Sit facing North or East with a solid wall behind you (ideally to the South or West) for authority and stability.'}
-  ];
-  var sitActivitySelect = document.getElementById('sitActivity');
-  SIT_ACTIVITIES.forEach(function(a){
-    var opt = document.createElement('option');
-    opt.value = a.key; opt.textContent = a.label;
-    sitActivitySelect.appendChild(opt);
-  });
-
-  function rateFromLists(dir, best, acceptable, avoid){
-    if(best.indexOf(dir) !== -1) return 'Excellent';
-    if(avoid.indexOf(dir) !== -1) return 'Avoid';
-    if(acceptable && acceptable.indexOf(dir) !== -1) return 'Acceptable';
-    return 'Neutral';
-  }
-
-  document.getElementById('sitCapture').addEventListener('click', function(){
-    var btn = this;
-    captureAveraged(btn, 1200, function(avgHeading){
-      var activity = SIT_ACTIVITIES.filter(function(a){ return a.key === sitActivitySelect.value; })[0] || SIT_ACTIVITIES[0];
-      var dir = eightFromHeading(avgHeading);
-      var rating = rateFromLists(dir, activity.best, activity.acceptable, activity.avoid);
-      var card = document.getElementById('sitResult');
-      card.style.display = 'block';
-      card.className = 'result-card rating-' + rating;
-      card.innerHTML = 'Facing ' + dir + ' <span class="rating-tag">' + rating + '</span>' +
-        '<div style="margin-top:6px;">' + activity.tip + '</div>';
-    });
-  });
-
-  // ===== DAILY & FAMILY ACTIVITIES ADVISOR =====
-  var FAMILY_ACTIVITIES = [
-    {key:'cooking', label:'Cooking at the stove', best:['E'], acceptable:['S'], avoid:['N'],
-      tip:'Facing East while cooking invokes Agni (fire) in its most favourable direction. Facing South is an acceptable alternative; facing North is traditionally avoided at the stove.'},
-    {key:'bathing', label:'Bathing / showering', best:['E','N'], acceptable:[], avoid:['S'],
-      tip:'Facing East or North while bathing is considered refreshing and auspicious. Facing South is traditionally discouraged.'},
-    {key:'childstudy', label:"Children's study direction", best:['E','N'], acceptable:[], avoid:['S'],
-      tip:'Facing East supports concentration, and North is linked to steady long-term memory and career growth. Facing South is best avoided for a child\u2019s study desk.'},
-    {key:'cradle', label:'Newborn cradle direction', best:['S','E'], acceptable:[], avoid:['N'],
-      tip:'A cradle placed so the baby\u2019s head points South or East is considered calming and settled. Head towards North is traditionally avoided, similar to the adult sleeping guidance. This is traditional guidance only, not medical advice — always follow your paediatrician\u2019s safe-sleep recommendations first.'},
-    {key:'elderly', label:'Elderly seating / rest', best:['S','W'], acceptable:['SW'], avoid:['N'],
-      tip:'Facing South or West while resting is associated with stability and security for elders. Facing North is traditionally considered less settling.'},
-    {key:'breastfeeding', label:'Breastfeeding / nursing', best:['E','N'], acceptable:[], avoid:['S'],
-      tip:'Facing East or North while nursing is considered calm and nurturing. There\u2019s no need to be strict about this — comfort for you and your baby always comes first.'},
-    {key:'guests', label:'Receiving guests', best:['E','N'], acceptable:[], avoid:['S'],
-      tip:'A host facing East or North while welcoming guests is considered warm and hospitable. Facing South is traditionally seen as less welcoming.'}
-  ];
-  var familyActivitySelect = document.getElementById('familyActivity');
-  FAMILY_ACTIVITIES.forEach(function(a){
-    var opt = document.createElement('option');
-    opt.value = a.key; opt.textContent = a.label;
-    familyActivitySelect.appendChild(opt);
-  });
-
-  document.getElementById('familyCapture').addEventListener('click', function(){
-    var btn = this;
-    captureAveraged(btn, 1200, function(avgHeading){
-      var activity = FAMILY_ACTIVITIES.filter(function(a){ return a.key === familyActivitySelect.value; })[0] || FAMILY_ACTIVITIES[0];
-      var dir = eightFromHeading(avgHeading);
-      var rating = rateFromLists(dir, activity.best, activity.acceptable, activity.avoid);
-      var card = document.getElementById('familyResult');
-      card.style.display = 'block';
-      card.className = 'result-card rating-' + rating;
-      card.innerHTML = 'Facing ' + dir + ' <span class="rating-tag">' + rating + '</span>' +
-        '<div style="margin-top:6px;">' + activity.tip + '</div>';
-    });
-  });
-
-  // ===== WORK & MONEY ADVISOR =====
-  var WORK_ACTIVITIES = [
-    {key:'safe', label:'Cash box / safe placement', best:['N'], acceptable:['E'], avoid:['S'],
-      tip:'Keep your safe or cash locker in the North zone, ruled by Kubera, the lord of wealth — or have it open facing North. East is an acceptable alternative. South is traditionally avoided, as it\u2019s believed money won\u2019t stay.'},
-    {key:'shopentrance', label:'Shop / business entrance', best:['N','E'], acceptable:['NE'], avoid:['S'],
-      tip:'A shop or business entrance facing North or East is traditionally linked to strong footfall and prosperity; Northeast is also favourable. A South-facing entrance is considered weaker for business — a remedy is often suggested if it can\u2019t be changed.'},
-    {key:'interview', label:'Job interview seating', best:['E','N'], acceptable:['NE'], avoid:['S'],
-      tip:'Facing East or North during an interview is traditionally linked with clear thinking and confidence. Facing South is best avoided if you get a choice of seat.'},
-    {key:'signing', label:'Signing contracts / documents', best:['E','N'], acceptable:[], avoid:['S','W'],
-      tip:'Facing East or North while signing important documents or contracts is traditionally considered favourable for good outcomes. South and West are best avoided for major agreements.'},
-    {key:'newventure', label:'First day: new job / venture', best:['N','E','NE'], acceptable:[], avoid:['S','SW'],
-      tip:'Stepping out facing North, East, or Northeast on your first day is traditionally considered an auspicious start. South and Southwest are best avoided for a big beginning.'}
-  ];
-  var workActivitySelect = document.getElementById('workActivity');
-  WORK_ACTIVITIES.forEach(function(a){
-    var opt = document.createElement('option');
-    opt.value = a.key; opt.textContent = a.label;
-    workActivitySelect.appendChild(opt);
-  });
-
-  document.getElementById('workCapture').addEventListener('click', function(){
-    var btn = this;
-    captureAveraged(btn, 1200, function(avgHeading){
-      var activity = WORK_ACTIVITIES.filter(function(a){ return a.key === workActivitySelect.value; })[0] || WORK_ACTIVITIES[0];
-      var dir = eightFromHeading(avgHeading);
-      var rating = rateFromLists(dir, activity.best, activity.acceptable, activity.avoid);
-      var card = document.getElementById('workResult');
-      card.style.display = 'block';
-      card.className = 'result-card rating-' + rating;
-      card.innerHTML = 'Facing ' + dir + ' <span class="rating-tag">' + rating + '</span>' +
-        '<div style="margin-top:6px;">' + activity.tip + '</div>';
-    });
-  });
-
-  // ===== SLEEPING DIRECTION ADVISOR =====
-  var SLEEP_RATING = {
-    S:  {rating:'Excellent', note:'Head towards South is considered the most restful position, aligning naturally with the body\u2019s own magnetic field.'},
-    SE: {rating:'Good',      note:'Head towards Southeast is generally comfortable, with only mild restlessness for some sleepers.'},
-    E:  {rating:'Good',      note:'Head towards East favours alertness and is traditionally recommended for students.'},
-    SW: {rating:'Acceptable',note:'Head towards Southwest is stable, though some find it feels heavier than South.'},
-    W:  {rating:'Neutral',   note:'Head towards West is acceptable but not ideal — may cause mild restlessness for some.'},
-    NW: {rating:'Caution',   note:'Head towards Northwest can disturb sleep quality and lead to a restless, unsettled feeling.'},
-    N:  {rating:'Avoid',     note:'Head towards North is traditionally avoided — believed to conflict with the body\u2019s own magnetic field and disturb sleep.'},
-    NE: {rating:'Avoid',     note:'Northeast is considered too energetically active a zone for sleep; better reserved for prayer or meditation.'}
-  };
-  document.getElementById('sleepCapture').addEventListener('click', function(){
-    var btn = this;
-    captureAveraged(btn, 1200, function(avgHeading){
-      var dir = eightFromHeading(avgHeading);
-      var info = SLEEP_RATING[dir];
-      var card = document.getElementById('sleepResult');
-      card.style.display = 'block';
-      card.className = 'result-card rating-' + info.rating;
-      card.innerHTML = 'Head direction: ' + dir + ' <span class="rating-tag">' + info.rating + '</span>' +
-        '<div style="margin-top:6px;">' + info.note + '</div>';
-    });
-  });
-
-  // ===== MAIN DOOR CHECKER =====
-  var DOOR_RATING = {
-    N:{rating:'Excellent',note:'A North-facing entrance is linked to Kubera, the lord of wealth — considered highly favourable.'},
-    NNE:{rating:'Excellent',note:'Close to the sacred Northeast zone — a favourable entrance direction.'},
-    NE:{rating:'Excellent',note:'The most auspicious entrance direction in Vastu, associated with positive energy and prosperity.'},
-    ENE:{rating:'Good',note:'A good entrance direction, benefiting from morning sunlight.'},
-    E:{rating:'Excellent',note:'An East-facing entrance welcomes the rising sun and is considered highly auspicious.'},
-    ESE:{rating:'Good',note:'A workable entrance direction, though slightly transitional between sun and fire zones.'},
-    SE:{rating:'Caution',note:'The Southeast is ruled by fire (Agni) — traditionally considered less ideal for a main entrance.'},
-    SSE:{rating:'Caution',note:'Similar to Southeast — a fire-influenced zone, less favoured for the main door.'},
-    S:{rating:'Avoid',note:'A South-facing main entrance is traditionally considered weak; if unavoidable, Vastu remedies are often recommended.'},
-    SSW:{rating:'Avoid',note:'Close to the heavy Southwest zone — generally avoided for a main entrance.'},
-    SW:{rating:'Avoid',note:'The Southwest is meant to anchor the whole house — an entrance here is traditionally discouraged.'},
-    WSW:{rating:'Caution',note:'A workable but not ideal entrance direction.'},
-    W:{rating:'Good',note:'A West-facing entrance is generally considered good, linked to steady long-term gains.'},
-    WNW:{rating:'Good',note:'A favourable secondary-entrance direction, linked to the air element.'},
-    NW:{rating:'Good',note:'The Northwest (air element) is a common and acceptable direction for entrances, especially secondary ones.'},
-    NNW:{rating:'Good',note:'Close to the Northwest air zone — an acceptable entrance direction.'}
-  };
-  document.getElementById('doorCapture').addEventListener('click', function(){
-    var btn = this;
-    captureAveraged(btn, 1200, function(avgHeading){
-      var idx = zoneIndexFromHeading(avgHeading);
-      var z = ZONES[idx];
-      var info = DOOR_RATING[z.ab];
-      var card = document.getElementById('doorResult');
-      card.style.display = 'block';
-      card.className = 'result-card rating-' + info.rating;
-      card.innerHTML = 'Door faces ' + z.n + ' (' + z.ab + ') <span class="rating-tag">' + info.rating + '</span>' +
-        '<div style="margin-top:6px;">' + info.note + '</div>';
-    });
-  });
-
-  // ===== ROOM MAPPING MODE =====
-  var roomReadings = [];
-  var roomList = document.getElementById('roomList');
-  var roomEmptyHint = document.getElementById('roomEmptyHint');
-  var roomLabelInput = document.getElementById('roomLabel');
-  var wallCounter = 0;
-
-  function renderRoomList(){
-    roomList.innerHTML = '';
-    roomEmptyHint.style.display = roomReadings.length ? 'none' : 'block';
-    roomReadings.forEach(function(r, i){
-      var row = document.createElement('div');
-      row.className = 'room-row';
-      row.innerHTML =
-        '<div class="info"><b>' + r.label + '</b><span>' + r.zoneName + ' (' + r.ab + ', ' + Math.round(r.heading) + '\u00B0) — ' + r.use + '</span></div>' +
-        '<button class="del-btn" aria-label="Remove">✕</button>';
-      row.querySelector('.del-btn').addEventListener('click', function(){
-        roomReadings.splice(i, 1);
-        renderRoomList();
-      });
-      roomList.appendChild(row);
-    });
-  }
-
-  document.getElementById('roomCapture').addEventListener('click', function(){
-    var btn = this;
-    captureAveraged(btn, 1200, function(avgHeading){
-      wallCounter++;
-      var idx = zoneIndexFromHeading(avgHeading);
-      var z = ZONES[idx];
-      var label = roomLabelInput.value.trim() || ('Wall ' + wallCounter);
-      roomReadings.push({label:label, heading:avgHeading, ab:z.ab, zoneName:z.n, use:z.use});
-      roomLabelInput.value = '';
-      renderRoomList();
-    });
-  });
-
-  renderRoomList();
-
-  updateHeading(0);
-
-  if(!(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') && 'DeviceOrientationEvent' in window){
-    // Android/other browsers usually don't need explicit permission
-    statusMsg.textContent = 'Tap "Enable Compass" to start, or drag the dial to explore directions manually.';
-  }
-
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', function(){
-      navigator.serviceWorker.register('service-worker.js').catch(function(){});
-    });
-  }
-})();
+  const pct=Math.round((vals.reduce((a,b)=>a+b,0)/(vals.length*2))*100);
+  scoreNum.textContent=pct+"%";
+  scoreBar.style.width=pct+"%";
+  scoreLabel.textContent = pct>=75 ? "Strongly Vastu-aligned" : pct>=45 ? "Fairly aligned — some remedies suggested" : "Several rooms need remedies";
+}
 </script>
 </body>
 </html>
