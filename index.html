@@ -71,6 +71,25 @@ h1 span{color:var(--accent);}
 .note{font-size:12.5px; color:var(--muted); margin-top:10px; line-height:1.5;}
 .note b{color:var(--text);}
 
+.tabbar{display:flex; gap:6px; overflow-x:auto; margin-bottom:14px; padding-bottom:2px;}
+.tabbtn{
+  flex:0 0 auto; border:1px solid var(--line); background:var(--bg); color:var(--muted);
+  padding:8px 13px; border-radius:999px; font-size:12.5px; cursor:pointer; white-space:nowrap;
+}
+.tabbtn[aria-selected="true"]{background:var(--accent); color:var(--surface); border-color:var(--accent); font-weight:700;}
+.panel[hidden]{display:none;}
+.manual{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line);}
+.manualrow{display:flex; gap:8px; flex-wrap:wrap;}
+.manualrow input{
+  flex:1 1 100px; min-width:100px; background:var(--bg); color:var(--text); border:1px solid var(--line);
+  border-radius:8px; padding:9px 10px; font-size:14px;
+}
+.btn.small{width:auto; flex:0 0 auto; margin-top:0; padding:9px 16px; font-size:13px;}
+.linkbtn{
+  background:none; border:none; color:var(--accent); font-size:12.5px; text-decoration:underline;
+  cursor:pointer; padding:0; margin-top:10px;
+}
+
 /* --- score --- */
 .scorewrap{display:flex; align-items:center; gap:14px;}
 .scorenum{font-family:Georgia,serif; font-size:38px; color:var(--accent); min-width:70px;}
@@ -78,23 +97,40 @@ h1 span{color:var(--accent);}
 .scorebar i{display:block; height:100%; background:var(--accent); width:0%; transition:width .4s;}
 .scorelabel{font-size:12px; color:var(--muted); margin-top:6px;}
 
-/* --- rooms --- */
-.room{
-  display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px;
-  padding:12px 0; border-bottom:1px solid var(--line);
-}
-.room:last-child{border-bottom:none;}
-.roomname{font-size:15px; font-weight:600;}
-.roomideal{font-size:11.5px; color:var(--muted); margin-top:2px;}
 select{
   background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px;
   padding:9px 10px; font-size:14px; min-width:118px;
 }
-.status{grid-column:1 / -1; font-size:12.5px; margin-top:-2px; padding:8px 10px; border-radius:8px; display:none;}
-.status.show{display:block;}
-.status.good{background:color-mix(in srgb, var(--good) 16%, transparent); color:var(--good);}
-.status.ok{background:color-mix(in srgb, var(--ok) 16%, transparent); color:var(--ok);}
-.status.bad{background:color-mix(in srgb, var(--bad) 16%, transparent); color:var(--bad);}
+
+/* --- floor plan grid --- */
+.plotrow{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:6px;}
+.plotrow label{font-size:12.5px; color:var(--muted);}
+.plotrow select{flex:1; min-width:140px;}
+.floortabs{display:flex; gap:6px; overflow-x:auto; margin:14px 0 12px; padding-bottom:2px;}
+.addfloor{
+  flex:0 0 auto; border:1px dashed var(--line); background:transparent; color:var(--accent);
+  border-radius:999px; padding:8px 13px; font-size:12.5px; cursor:pointer; white-space:nowrap;
+}
+.grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;}
+.cell{
+  background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:8px;
+  min-height:96px; display:flex; flex-direction:column; gap:6px;
+}
+.cell.center{background:color-mix(in srgb, var(--accent2) 14%, var(--bg));}
+.cell .zone{font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:700;}
+.cell select{width:100%; min-width:0; padding:6px; font-size:11.5px;}
+.cell select.cornersel{font-size:10.5px; padding:5px;}
+.dot{font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:6px; align-self:flex-start;}
+.dot.good{background:color-mix(in srgb, var(--good) 18%, transparent); color:var(--good);}
+.dot.ok{background:color-mix(in srgb, var(--ok) 18%, transparent); color:var(--ok);}
+.dot.bad{background:color-mix(in srgb, var(--bad) 18%, transparent); color:var(--bad);}
+.addroom{display:flex; gap:8px; margin-top:2px;}
+.addroom input{
+  flex:1; background:var(--bg); color:var(--text); border:1px solid var(--line);
+  border-radius:8px; padding:9px 10px; font-size:13px;
+}
+.notelist{margin-top:12px; display:flex; flex-direction:column; gap:6px;}
+.notelist .item{font-size:12.5px; padding:8px 10px; border-radius:8px; background:color-mix(in srgb, var(--bad) 12%, transparent); color:var(--bad); line-height:1.45;}
 
 footer{
   width:100%; max-width:640px; padding:26px 18px 30px; text-align:center;
@@ -110,7 +146,6 @@ footer .rose{opacity:.5; margin-bottom:4px;}
 <body data-theme="light">
 <div class="wrap">
   <header>
-    <div class="eyebrow">No Compass Needed</div>
     <h1>Dik<span>Sutra</span></h1>
     <p class="tagline">Find your directions by the sun. Check every room against Vastu Shastra.</p>
     <div class="themebar" role="group" aria-label="Theme">
@@ -122,47 +157,96 @@ footer .rose{opacity:.5; margin-bottom:4px;}
   </header>
 
   <section class="card">
-    <h2 class="cardtitle">☀️ Find East Without a Compass</h2>
-    <p class="cardsub">Stand facing the rising sun tomorrow morning — that direction is East. We'll fetch today's exact sunrise time for your location.</p>
-    <div class="sunbox">
-      <div class="sunwheel">
-        <svg viewBox="0 0 96 96">
-          <circle cx="48" cy="48" r="44" fill="none" stroke="var(--line)" stroke-width="2"/>
-          <g class="ray">
-            <circle cx="48" cy="14" r="5" fill="var(--accent2)"/>
-          </g>
-          <text x="48" y="10" text-anchor="middle" font-size="9" fill="var(--muted)">N</text>
-          <text x="90" y="51" text-anchor="middle" font-size="9" fill="var(--muted)">E</text>
-          <text x="48" y="92" text-anchor="middle" font-size="9" fill="var(--muted)">S</text>
-          <text x="6" y="51" text-anchor="middle" font-size="9" fill="var(--muted)">W</text>
-        </svg>
+    <h2 class="cardtitle">Find Your Directions Without a Compass</h2>
+    <p class="cardsub">Four traditional methods, matched to the time of day you're checking.</p>
+
+    <div class="tabbar" role="tablist">
+      <button class="tabbtn" data-m="sunrise" aria-selected="true">Sunrise</button>
+      <button class="tabbtn" data-m="shadow" aria-selected="false">Shadow-Stick</button>
+      <button class="tabbtn" data-m="sunset" aria-selected="false">Sunset</button>
+      <button class="tabbtn" data-m="pole" aria-selected="false">Pole Star</button>
+    </div>
+
+    <div class="panel" data-p="sunrise">
+      <div class="sunbox">
+        <div class="sunwheel">
+          <svg viewBox="0 0 96 96">
+            <circle cx="48" cy="48" r="44" fill="none" stroke="var(--line)" stroke-width="2"/>
+            <g class="ray"><circle cx="48" cy="14" r="5" fill="var(--accent2)"/></g>
+            <text x="48" y="10" text-anchor="middle" font-size="9" fill="var(--muted)">N</text>
+            <text x="90" y="51" text-anchor="middle" font-size="9" fill="var(--muted)">E</text>
+            <text x="48" y="92" text-anchor="middle" font-size="9" fill="var(--muted)">S</text>
+            <text x="6" y="51" text-anchor="middle" font-size="9" fill="var(--muted)">W</text>
+          </svg>
+        </div>
+        <div class="sunresult">
+          <div class="row"><span class="label">Sunrise</span><span id="srTime">—</span></div>
+          <div class="row"><span class="label">Solar Noon</span><span id="noonTime">—</span></div>
+          <div class="row"><span class="label">Sunset</span><span id="ssTime">—</span></div>
+          <div class="row"><span class="label">Location</span><span id="locTime">—</span></div>
+        </div>
       </div>
-      <div class="sunresult" id="sunResult">
-        <div class="row"><span class="label">Sunrise</span><span id="srTime">—</span></div>
-        <div class="row"><span class="label">Sunset</span><span id="ssTime">—</span></div>
-        <div class="row"><span class="label">Location</span><span id="locTime">—</span></div>
+      <p class="note" id="sunNote">Tap the button below to fetch tomorrow's sunrise for your location.</p>
+    </div>
+
+    <div class="panel" data-p="shadow" hidden>
+      <p class="note" id="shadowNote">Fetch your times to see today's solar noon for the shadow-stick method.</p>
+    </div>
+
+    <div class="panel" data-p="sunset" hidden>
+      <p class="note" id="sunsetNote">Fetch your times to see today's exact sunset.</p>
+    </div>
+
+    <div class="panel" data-p="pole" hidden>
+      <p class="note" id="poleNote">Fetch your location to check whether Polaris is visible from where you are.</p>
+    </div>
+
+    <button class="btn" id="sunBtn">Get My Sun &amp; Star Times</button>
+    <button class="linkbtn" id="manualToggle">Enter coordinates manually instead</button>
+    <div class="manual" id="manualWrap" hidden>
+      <div class="manualrow">
+        <input type="number" id="manLat" placeholder="Latitude" step="0.0001">
+        <input type="number" id="manLon" placeholder="Longitude" step="0.0001">
+        <button class="btn small" id="manBtn">Use Coordinates</button>
       </div>
     </div>
-    <button class="btn" id="sunBtn">Get Today's Sunrise</button>
-    <p class="note" id="sunNote"><b>Tip:</b> Face the sunrise point and stretch both arms out — right hand points South, left hand points North, and directly behind you is West.</p>
   </section>
 
   <section class="card">
     <h2 class="cardtitle">Vastu Score</h2>
-    <p class="cardsub">Set each room's actual direction below to see how your home aligns with Vastu Shastra.</p>
+    <p class="cardsub">Weighted by importance — entrance, kitchen and master bedroom count most.</p>
     <div class="scorewrap">
       <div class="scorenum" id="scoreNum">—</div>
       <div style="flex:1">
         <div class="scorebar"><i id="scoreBar"></i></div>
-        <div class="scorelabel" id="scoreLabel">Set room directions to calculate</div>
+        <div class="scorelabel" id="scoreLabel">Place rooms on the floor plan below to calculate</div>
       </div>
     </div>
   </section>
 
   <section class="card">
-    <h2 class="cardtitle">Room-by-Room Check</h2>
-    <p class="cardsub">Choose the direction each room actually faces (from the centre of your home).</p>
-    <div id="roomList"></div>
+    <h2 class="cardtitle">Floor Plan Check</h2>
+    <p class="cardsub">Sketch each floor by assigning a room to its zone — the grid mirrors your home seen from above, centre included.</p>
+
+    <div class="plotrow">
+      <label for="plotShape">Plot shape</label>
+      <select id="plotShape">
+        <option value="square">Square</option>
+        <option value="rectangular">Rectangular</option>
+        <option value="irregular">Irregular / Cut</option>
+      </select>
+    </div>
+    <p class="note" id="plotNote"></p>
+
+    <div class="floortabs" id="floorTabs"></div>
+    <div class="grid3" id="grid"></div>
+
+    <div class="addroom">
+      <input type="text" id="customName" placeholder="Add a custom room (e.g. Home Office)">
+      <button class="btn small" id="addRoomBtn">Add</button>
+    </div>
+
+    <div class="notelist" id="relNotes"></div>
   </section>
 
   <footer>
@@ -185,106 +269,263 @@ setTheme(localStorage.getItem("diksutra-theme") || (matchMedia("(prefers-color-s
 // ---------- Footer year ----------
 document.getElementById("year").textContent = new Date().getFullYear();
 
-// ---------- Sun finder (sunrise-sunset.org, free, no key) ----------
+// ---------- Tabs ----------
+document.querySelectorAll(".tabbtn").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tabbtn").forEach(b=>b.setAttribute("aria-selected", b===t));
+  document.querySelectorAll(".panel").forEach(p=>p.hidden = p.dataset.p!==t.dataset.m);
+}));
+
+// ---------- Sun & star finder (sunrise-sunset.org, free, no key) ----------
 const sunBtn=document.getElementById("sunBtn");
+const manualToggle=document.getElementById("manualToggle");
+const manualWrap=document.getElementById("manualWrap");
+const manBtn=document.getElementById("manBtn");
+let lastCoords=null, watchId=null;
+
+manualToggle.addEventListener("click",()=> manualWrap.hidden = !manualWrap.hidden);
+
+function distKm(lat1,lon1,lat2,lon2){
+  const R=6371, toRad=d=>d*Math.PI/180;
+  const dLat=toRad(lat2-lat1), dLon=toRad(lon2-lon1);
+  const a=Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+async function loadFor(lat,lon){
+  const res=await fetch(`https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&formatted=0`);
+  const data=await res.json();
+  render(lat,lon,data.results);
+  lastCoords={lat,lon};
+}
+
+function render(lat,lon,r){
+  const fmt=d=>new Date(d).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  document.getElementById("srTime").textContent=fmt(r.sunrise);
+  document.getElementById("noonTime").textContent=fmt(r.solar_noon);
+  document.getElementById("ssTime").textContent=fmt(r.sunset);
+  document.getElementById("locTime").textContent=`${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+
+  document.getElementById("sunNote").innerHTML=`<b>Tomorrow's sunrise is ${fmt(r.sunrise)}.</b> Face the glow on the horizon at that time — that is due East. Stretch both arms out: right hand South, left hand North, directly behind you West.`;
+
+  document.getElementById("shadowNote").innerHTML=`<b>Today's solar noon is ${fmt(r.solar_noon)}.</b> Plant a straight 3ft stick upright in open sun and mark its shadow tip every 10 minutes for 30 minutes either side of that time. The shortest shadow points due ${lat>=0?"South":"North"} — draw a line through the marks for a true North-South axis.`;
+
+  document.getElementById("sunsetNote").innerHTML=`<b>Today's sunset is ${fmt(r.sunset)}.</b> Face the point where the sun disappears below the horizon — that is due West, directly opposite your sunrise reading. Good as a second check.`;
+
+  const north = lat>=0;
+  document.getElementById("poleNote").innerHTML = north
+    ? `<b>You're in the Northern Hemisphere (lat ${lat.toFixed(1)}°), so Polaris is visible after dark.</b> Find the Big Dipper; the two stars at the outer edge of its "cup" point straight to Polaris, the North Star — it barely moves through the night and sits almost exactly due North.`
+    : `<b>You're in the Southern Hemisphere (lat ${lat.toFixed(1)}°) — there's no bright pole star here.</b> Instead, find the Southern Cross after dark; extend its long axis roughly 4.5 times its own length toward the horizon to locate due South.`;
+}
+
+function startWatch(){
+  if(!navigator.geolocation || watchId!==null) return;
+  watchId=navigator.geolocation.watchPosition(pos=>{
+    const {latitude,longitude}=pos.coords;
+    if(lastCoords && distKm(lastCoords.lat,lastCoords.lon,latitude,longitude) > 1){
+      loadFor(latitude,longitude).catch(()=>{});
+    }
+  }, ()=>{}, {enableHighAccuracy:false, maximumAge:60000});
+}
+
 sunBtn.addEventListener("click",()=>{
   if(!navigator.geolocation){
-    document.getElementById("sunNote").innerHTML="<b>Location unavailable.</b> Your browser doesn't support geolocation.";
+    manualWrap.hidden=false;
+    document.getElementById("sunNote").innerHTML="<b>Location unavailable.</b> Your browser doesn't support geolocation — enter coordinates manually below.";
     return;
   }
   sunBtn.textContent="Locating…";
   navigator.geolocation.getCurrentPosition(async pos=>{
-    const {latitude,longitude}=pos.coords;
-    sunBtn.textContent="Fetching sunrise…";
+    sunBtn.textContent="Fetching…";
     try{
-      const res=await fetch(`https://api.sunrise-sunset.org/json?lat=${latitude}&lng=${longitude}&formatted=0`);
-      const data=await res.json();
-      const sr=new Date(data.results.sunrise);
-      const ss=new Date(data.results.sunset);
-      const fmt=d=>d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-      document.getElementById("srTime").textContent=fmt(sr);
-      document.getElementById("ssTime").textContent=fmt(ss);
-      document.getElementById("locTime").textContent=`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
-      document.getElementById("sunNote").innerHTML=`<b>Tomorrow's sunrise is ${fmt(sr)}.</b> Step outside at that time and face the glow on the horizon — that is due East. Mark it, then use it to orient every room below.`;
+      await loadFor(pos.coords.latitude, pos.coords.longitude);
+      startWatch();
     }catch(e){
       document.getElementById("sunNote").innerHTML="<b>Couldn't reach the sunrise service.</b> Check your connection and try again.";
     }
-    sunBtn.textContent="Get Today's Sunrise";
+    sunBtn.textContent="Get My Sun & Star Times";
   }, ()=>{
-    document.getElementById("sunNote").innerHTML="<b>Location permission denied.</b> Allow location access to fetch your local sunrise time.";
-    sunBtn.textContent="Get Today's Sunrise";
+    manualWrap.hidden=false;
+    document.getElementById("sunNote").innerHTML="<b>Location permission denied.</b> Enter your coordinates manually below to continue.";
+    sunBtn.textContent="Get My Sun & Star Times";
   });
 });
 
+manBtn.addEventListener("click", async ()=>{
+  const lat=parseFloat(document.getElementById("manLat").value);
+  const lon=parseFloat(document.getElementById("manLon").value);
+  if(isNaN(lat)||isNaN(lon)||lat<-90||lat>90||lon<-180||lon>180){
+    document.getElementById("sunNote").innerHTML="<b>Enter a valid latitude (-90 to 90) and longitude (-180 to 180).</b>";
+    return;
+  }
+  manBtn.textContent="Fetching…";
+  try{ await loadFor(lat,lon); }
+  catch(e){ document.getElementById("sunNote").innerHTML="<b>Couldn't reach the sunrise service.</b> Check your connection and try again."; }
+  manBtn.textContent="Use Coordinates";
+});
+
 // ---------- Vastu data ----------
-const DIRS=["N","NE","E","SE","S","SW","W","NW"];
-const DIRNAMES={N:"North",NE:"North-East",E:"East",SE:"South-East",S:"South",SW:"South-West",W:"West",NW:"North-West"};
+const POS=["NW","N","NE","W","C","E","SW","S","SE"];
+const ZONE_LABEL={NW:"North-West",N:"North",NE:"North-East",W:"West",C:"Centre",E:"East",SW:"South-West",S:"South",SE:"South-East"};
+const ADJ=[[1,3],[0,2,4],[1,5],[0,4,6],[1,3,5,7],[2,4,8],[3,7],[4,6,8],[5,7]];
 const ROOMS=[
- {id:"entrance",name:"Main Entrance", ideal:["N","NE","E"], ok:[], remedy:"A South-West entrance is considered weak; keep the threshold brightly lit and clutter-free."},
- {id:"kitchen",name:"Kitchen", ideal:["SE"], ok:["NW"], remedy:"Avoid cooking facing North-East or South-West; keep a small copper vessel of water on the counter."},
- {id:"masterbed",name:"Master Bedroom", ideal:["SW"], ok:["S","W"], remedy:"A North-East master bedroom can unsettle sleep and savings; use grounding earth tones here."},
- {id:"kidsbed",name:"Children's Bedroom", ideal:["W","NW"], ok:["E"], remedy:"Add a study desk facing East to support focus and calm sleep."},
- {id:"pooja",name:"Pooja / Prayer Room", ideal:["NE"], ok:["N","E"], remedy:"Keep idols facing East or West, never South; avoid placing this room in the South-West."},
- {id:"bath",name:"Bathroom / Toilet", ideal:["NW","W"], ok:[], remedy:"A North-East toilet is a major concern; keep the door shut and a bowl of sea salt inside to absorb energy."},
- {id:"study",name:"Study Room", ideal:["E","N","NE"], ok:["W"], remedy:"Face East or North while studying to support clarity and concentration."},
- {id:"living",name:"Living Room", ideal:["N","E","NE"], ok:["W"], remedy:"Keep seating open and uncluttered to welcome guests and opportunity."},
- {id:"dining",name:"Dining Room", ideal:["W","S"], ok:["N","E"], remedy:"Face East while eating; avoid a dining table directly beneath a ceiling beam."},
- {id:"stairs",name:"Staircase", ideal:["S","W","SW"], ok:[], remedy:"A North-East staircase is discouraged; keep it well-lit with a plant at the base."},
- {id:"water",name:"Water Tank / Borewell", ideal:["NE","N"], ok:[], remedy:"South-West water storage is considered inauspicious for prosperity."},
- {id:"store",name:"Store Room", ideal:["SW","W"], ok:[], remedy:"Heavy, full storage in the South-West helps stabilise the home."},
+ {id:"entrance",name:"Main Entrance", ideal:["N","NE","E"], ok:[], weight:3, remedy:"A South-West entrance is considered weak; keep the threshold brightly lit and clutter-free."},
+ {id:"kitchen",name:"Kitchen", ideal:["SE"], ok:["NW"], weight:3, remedy:"Avoid cooking facing North-East or South-West; keep a small copper vessel of water on the counter."},
+ {id:"masterbed",name:"Master Bedroom", ideal:["SW"], ok:["S","W"], weight:3, remedy:"A North-East master bedroom can unsettle sleep and savings; use grounding earth tones here."},
+ {id:"kidsbed",name:"Children's Bedroom", ideal:["W","NW"], ok:["E"], weight:1, remedy:"Add a study desk facing East to support focus and calm sleep."},
+ {id:"pooja",name:"Pooja / Prayer Room", ideal:["NE"], ok:["N","E"], weight:2, remedy:"Keep idols facing East or West, never South; avoid placing this room in the South-West."},
+ {id:"bath",name:"Bathroom / Toilet", ideal:["NW","W"], ok:[], weight:1, remedy:"A North-East toilet is a major concern; keep the door shut and a bowl of sea salt inside to absorb energy."},
+ {id:"study",name:"Study Room", ideal:["E","N","NE"], ok:["W"], weight:1, remedy:"Face East or North while studying to support clarity and concentration."},
+ {id:"living",name:"Living Room", ideal:["N","E","NE"], ok:["W"], weight:2, remedy:"Keep seating open and uncluttered to welcome guests and opportunity."},
+ {id:"dining",name:"Dining Room", ideal:["W","S"], ok:["N","E"], weight:1, remedy:"Face East while eating; avoid a dining table directly beneath a ceiling beam."},
+ {id:"stairs",name:"Staircase", ideal:["S","W","SW"], ok:[], weight:2, remedy:"A North-East staircase is discouraged; keep it well-lit with a plant at the base."},
+ {id:"water",name:"Water Tank / Borewell", ideal:["NE","N"], ok:[], weight:2, remedy:"South-West water storage is considered inauspicious for prosperity."},
+ {id:"store",name:"Store Room", ideal:["SW","W"], ok:[], weight:1, remedy:"Heavy, full storage in the South-West helps stabilise the home."},
 ];
+let customRooms=[];
+const allRooms=()=>[...ROOMS, ...customRooms];
 
-const roomList=document.getElementById("roomList");
-ROOMS.forEach(r=>{
-  const el=document.createElement("div");
-  el.className="room";
-  el.innerHTML=`
-    <div>
-      <div class="roomname">${r.name}</div>
-      <div class="roomideal">Ideal: ${r.ideal.map(d=>DIRNAMES[d]).join(", ")}</div>
-    </div>
-    <select data-id="${r.id}">
-      <option value="">Select…</option>
-      ${DIRS.map(d=>`<option value="${d}">${DIRNAMES[d]}</option>`).join("")}
-    </select>
-    <div class="status" id="status-${r.id}"></div>
-  `;
-  roomList.appendChild(el);
+const RULES=[
+ {a:"kitchen", b:"bath", msg:"Kitchen and Bathroom are adjacent — fire and water elements clash here; add a buffer wall or plant between them."},
+ {a:"kitchen", b:"pooja", msg:"Kitchen adjoins the Pooja room — keep at least one room between fire and sacred space."},
+ {a:"entrance", b:"bath", msg:"The main entrance opens near a Bathroom — screen the view with a partition or curtain."},
+ {a:"entrance", b:"masterbed", msg:"Master Bedroom sits directly by the entrance — add a buffer for privacy and restful sleep."},
+];
+const CORNER_NOTES={
+ NE:{cut:"A cut North-East corner weakens prosperity and clarity — keep this zone especially clean, bright and uncluttered to compensate.", extended:"An extended North-East corner is highly auspicious — it amplifies growth and positive energy."},
+ SW:{cut:"A cut South-West corner is a serious stability concern — avoid it if possible, or fill with heavy furniture to compensate.", extended:"An extended South-West corner can bring instability — heavy, grounding storage helps counter it."},
+ SE:{cut:"A cut South-East corner may affect finances tied to energy and fire — keep the kitchen zone extra well-maintained.", extended:"An extended South-East corner is generally neutral to mildly favourable."},
+ NW:{cut:"A cut North-West corner can affect support from relationships and travel — a wind chime or extra light helps here.", extended:"An extended North-West corner is generally favourable for support and movement."},
+};
+const PLOT_NOTES={
+ square:"A square plot is considered the most balanced and stable shape in Vastu, ideal for even energy distribution.",
+ rectangular:"A rectangular plot is auspicious provided the ratio isn't too elongated; keep the layout as symmetric as possible.",
+ irregular:"Irregular plots are more likely to have cut or extended corners — flag any below and follow the suggested remedies.",
+};
+
+function newFloor(name){ return {name, cells:Array(9).fill(null).map(()=>({room:null})), corners:{NE:"normal",SE:"normal",SW:"normal",NW:"normal"}}; }
+let floors=[newFloor("Ground Floor")];
+let currentFloor=0;
+
+function renderFloorTabs(){
+  const wrap=document.getElementById("floorTabs");
+  wrap.innerHTML="";
+  floors.forEach((f,i)=>{
+    const b=document.createElement("button");
+    b.className="tabbtn"; b.textContent=f.name; b.setAttribute("aria-selected", i===currentFloor);
+    b.addEventListener("click",()=>{ currentFloor=i; renderAll(); });
+    wrap.appendChild(b);
+  });
+  const add=document.createElement("button");
+  add.className="addfloor"; add.textContent="+ Floor";
+  add.addEventListener("click",()=>{
+    floors.push(newFloor("Floor "+floors.length));
+    currentFloor=floors.length-1;
+    renderAll();
+  });
+  wrap.appendChild(add);
+}
+
+function statusFor(room, zone){
+  if(!room || room.weight===0 || zone==="C") return null;
+  if(room.ideal.includes(zone)) return {cls:"good", label:"Ideal"};
+  if(room.ok.includes(zone)) return {cls:"ok", label:"OK"};
+  return {cls:"bad", label:"Avoid"};
+}
+
+function renderGrid(){
+  const grid=document.getElementById("grid");
+  grid.innerHTML="";
+  const floor=floors[currentFloor];
+  const rooms=allRooms();
+  POS.forEach((zone,i)=>{
+    const cell=floor.cells[i];
+    const div=document.createElement("div");
+    div.className="cell"+(zone==="C"?" center":"");
+    let html=`<div class="zone">${ZONE_LABEL[zone]}</div>
+      <select data-i="${i}"><option value="">Empty</option>
+      ${rooms.map(r=>`<option value="${r.id}" ${cell.room===r.id?"selected":""}>${r.name}</option>`).join("")}
+      </select>`;
+    const st=statusFor(rooms.find(r=>r.id===cell.room), zone);
+    if(st) html+=`<span class="dot ${st.cls}">${st.label}</span>`;
+    if(["NE","SE","SW","NW"].includes(zone)){
+      html+=`<select class="cornersel" data-corner="${zone}">
+        <option value="normal" ${floor.corners[zone]==="normal"?"selected":""}>Normal corner</option>
+        <option value="cut" ${floor.corners[zone]==="cut"?"selected":""}>Cut / missing</option>
+        <option value="extended" ${floor.corners[zone]==="extended"?"selected":""}>Extended</option>
+      </select>`;
+    }
+    div.innerHTML=html;
+    grid.appendChild(div);
+  });
+}
+
+document.getElementById("grid").addEventListener("change", e=>{
+  const floor=floors[currentFloor];
+  if(e.target.dataset.i!==undefined){
+    floor.cells[+e.target.dataset.i].room=e.target.value || null;
+  } else if(e.target.dataset.corner){
+    floor.corners[e.target.dataset.corner]=e.target.value;
+  } else return;
+  renderAll();
 });
 
-const chosen={};
-roomList.addEventListener("change", e=>{
-  if(e.target.tagName!=="SELECT") return;
-  const id=e.target.dataset.id;
-  const dir=e.target.value;
-  const room=ROOMS.find(r=>r.id===id);
-  const statusEl=document.getElementById(`status-${id}`);
-  if(!dir){ delete chosen[id]; statusEl.className="status"; updateScore(); return; }
-  chosen[id]=dir;
-  let cls, msg, pts;
-  if(room.ideal.includes(dir)){ cls="good"; msg=`Ideal placement for ${room.name}.`; pts=2; }
-  else if(room.ok.includes(dir)){ cls="ok"; msg=`Acceptable, though ${room.ideal.map(d=>DIRNAMES[d]).join(" or ")} is preferred.`; pts=1; }
-  else { cls="bad"; msg=room.remedy; pts=0; }
-  statusEl.className=`status show ${cls}`;
-  statusEl.textContent=msg;
-  chosen[id]=pts;
-  updateScore();
+document.getElementById("addRoomBtn").addEventListener("click",()=>{
+  const input=document.getElementById("customName");
+  const name=input.value.trim();
+  if(!name) return;
+  customRooms.push({id:"custom_"+Date.now(), name, ideal:[], ok:[], weight:0});
+  input.value="";
+  renderAll();
 });
+
+const plotSel=document.getElementById("plotShape");
+function renderPlotNote(){ document.getElementById("plotNote").textContent=PLOT_NOTES[plotSel.value]; }
+plotSel.addEventListener("change", renderPlotNote);
+
+function renderRelNotes(){
+  const floor=floors[currentFloor];
+  const idAt=i=>floor.cells[i].room;
+  const msgs=[];
+  RULES.forEach(rule=>{
+    for(let i=0;i<9;i++){
+      if(idAt(i)!==rule.a) continue;
+      ADJ[i].forEach(j=>{ if(idAt(j)===rule.b) msgs.push(rule.msg); });
+    }
+  });
+  const centerId=idAt(4);
+  if(centerId){
+    const heavy=["bath","stairs","store"];
+    const rm=ROOMS.find(r=>r.id===centerId);
+    msgs.push(heavy.includes(centerId)
+      ? `${rm.name} occupies the centre (Brahmasthan) — this core zone should stay open and light; relocate if possible.`
+      : "The centre (Brahmasthan) is occupied — ideally keep this zone open, or use it only for light-filled shared space.");
+  }
+  ["NE","SE","SW","NW"].forEach(c=>{ if(floor.corners[c]!=="normal") msgs.push(CORNER_NOTES[c][floor.corners[c]]); });
+  document.getElementById("relNotes").innerHTML=[...new Set(msgs)].map(m=>`<div class="item">${m}</div>`).join("");
+}
 
 function updateScore(){
-  const vals=Object.values(chosen);
-  const scoreNum=document.getElementById("scoreNum");
-  const scoreBar=document.getElementById("scoreBar");
-  const scoreLabel=document.getElementById("scoreLabel");
-  if(!vals.length){
-    scoreNum.textContent="—"; scoreBar.style.width="0%";
-    scoreLabel.textContent="Set room directions to calculate"; return;
-  }
-  const pct=Math.round((vals.reduce((a,b)=>a+b,0)/(vals.length*2))*100);
-  scoreNum.textContent=pct+"%";
-  scoreBar.style.width=pct+"%";
+  let sum=0, max=0;
+  floors.forEach(f=>{
+    POS.forEach((zone,i)=>{
+      if(zone==="C") return;
+      const room=ROOMS.find(r=>r.id===f.cells[i].room);
+      if(!room || room.weight===0) return;
+      max+=room.weight*2;
+      if(room.ideal.includes(zone)) sum+=room.weight*2;
+      else if(room.ok.includes(zone)) sum+=room.weight;
+    });
+  });
+  const scoreNum=document.getElementById("scoreNum"), scoreBar=document.getElementById("scoreBar"), scoreLabel=document.getElementById("scoreLabel");
+  if(!max){ scoreNum.textContent="—"; scoreBar.style.width="0%"; scoreLabel.textContent="Place rooms on the floor plan below to calculate"; return; }
+  const pct=Math.round(sum/max*100);
+  scoreNum.textContent=pct+"%"; scoreBar.style.width=pct+"%";
   scoreLabel.textContent = pct>=75 ? "Strongly Vastu-aligned" : pct>=45 ? "Fairly aligned — some remedies suggested" : "Several rooms need remedies";
 }
+
+function renderAll(){ renderFloorTabs(); renderGrid(); renderRelNotes(); updateScore(); }
+renderPlotNote();
+renderAll();
 </script>
 </body>
 </html>
