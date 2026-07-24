@@ -639,7 +639,7 @@ async function doFetch(cityOvr){
       name=`${geo.results[0].name}, ${geo.results[0].country_code}`;
     }else{const loc=await ipLoc();lat=loc.lat;lon=loc.lon;name=loc.name;}
 
-    const wurl=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature,precipitation,surface_pressure,visibility,dew_point_2m,uv_index,is_day&timeformat=iso8601&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max,precipitation_sum&timezone=auto&forecast_days=7&wind_speed_unit=kmh`;
+    const wurl=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature,precipitation,surface_pressure,visibility,dew_point_2m,uv_index,is_day&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max,precipitation_sum&timezone=auto&forecast_days=7&wind_speed_unit=kmh`;
     const aurl=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone&timezone=auto`;
 
     const wd=await fT(wurl);
@@ -650,8 +650,27 @@ async function doFetch(cityOvr){
     document.getElementById('upd').textContent=`↻ Updated ${new Date().toLocaleTimeString()}`;
     updStar(name);
   }catch(e){
-    try{const c=JSON.parse(localStorage.getItem('vcache')||'{}');if(c.wd){LD=[c.name,c.lat,c.wd,c.ad];render(c.name,c.lat,c.wd,c.ad);document.getElementById('upd').textContent=`Cached · ${c.ts?new Date(c.ts).toLocaleTimeString():"–"}`;return;}}catch{}
-    setOut(`<div class="msg">⚠️ ${e.message||'Network error'}<br><small style="opacity:.6">Search a city above.</small><br><br><button onclick="useGPS()" style="margin-top:8px;background:var(--ac);color:#000;border:none;padding:8px 18px;border-radius:20px;font-size:.7rem;cursor:pointer">📍 Use GPS</button></div>`);
+    // Try cache first
+    try{
+      const cached=JSON.parse(localStorage.getItem('vcache')||'{}');
+      if(cached.wd){
+        LD=[cached.name,cached.lat,cached.wd,cached.ad];
+        render(cached.name,cached.lat,cached.wd,cached.ad);
+        document.getElementById('upd').textContent=`📦 Cached · ${cached.ts?new Date(cached.ts).toLocaleTimeString():'–'}`;
+        return;
+      }
+    }catch{}
+    // Auto-load London as last resort — never show a dead screen
+    try{
+      const fallLat=51.5074,fallLon=-0.1278,fallName='London, GB';
+      const wu=`https://api.open-meteo.com/v1/forecast?latitude=${fallLat}&longitude=${fallLon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature,precipitation,surface_pressure,visibility,dew_point_2m,uv_index,is_day&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max,precipitation_sum&timezone=auto&forecast_days=7&wind_speed_unit=kmh`;
+      const au=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${fallLat}&longitude=${fallLon}&current=us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone&timezone=auto`;
+      const wd=await fT(wu);let ad={};try{ad=await fT(au);}catch{}
+      LD=[fallName,fallLat,wd,ad];render(fallName,fallLat,wd,ad);
+      document.getElementById('upd').textContent=`📍 Location unavailable — showing London`;
+    }catch{
+      setOut(`<div class="msg">⚠️ No internet connection.<br><small style="opacity:.6">Please check your network and try again.</small><br><br><button onclick="doFetch()" style="margin-top:8px;background:var(--ac);color:#000;border:none;padding:10px 22px;border-radius:20px;font-size:.8rem;font-weight:700;cursor:pointer">↻ Retry</button></div>`);
+    }
   }
 }
 async function useGPS(){
@@ -660,12 +679,14 @@ async function useGPS(){
     const loc=await gpsLoc();
     const rev=await fT(`https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lon}&format=json`);
     const name=(rev.address?.city||rev.address?.town||rev.address?.village||'Your Location')+', '+(rev.address?.country_code||'').toUpperCase();
-    const wurl=`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature,precipitation,surface_pressure,visibility,dew_point_2m,uv_index,is_day&timeformat=iso8601&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max,precipitation_sum&timezone=auto&forecast_days=7&wind_speed_unit=kmh`;
+    const wurl=`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,apparent_temperature,precipitation,surface_pressure,visibility,dew_point_2m,uv_index,is_day&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max,precipitation_sum&timezone=auto&forecast_days=7&wind_speed_unit=kmh`;
     const aurl=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${loc.lat}&longitude=${loc.lon}&current=us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone&timezone=auto`;
     const wd=await fT(wurl);let ad={};try{ad=await fT(aurl);}catch{}
     LD=[name,loc.lat,wd,ad];render(name,loc.lat,wd,ad);
     document.getElementById('upd').textContent=`↻ Updated ${new Date().toLocaleTimeString()}`;
-  }catch{setOut('<div class="msg">⚠️ GPS denied. Search a city above.</div>');}
+  }catch(e){
+    setOut(`<div class="msg">📍 GPS access denied by browser.<br><small style="opacity:.6">Search a city in the box above, or enable location in browser settings.</small><br><br><button onclick="doFetch()" style="margin-top:8px;background:var(--ac);color:#000;border:none;padding:10px 22px;border-radius:20px;font-size:.8rem;font-weight:700;cursor:pointer">↻ Try Auto-Detect</button></div>`);
+  }
 }
 function doRefresh(){doFetch(document.getElementById('ci').value.trim()||undefined);}
 
