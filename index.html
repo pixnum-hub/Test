@@ -850,7 +850,20 @@ function render(name,lat,wd,ad,locMeta){
   const frostWarn=nightT<3&&dew<4;
   const umbrellaP=(sR.length>0?Math.max(...sR.slice(0,6).map(Number)):-1)>50;
   const laundry=c.wind_speed_10m>8&&c.relative_humidity_2m<70&&[0,1,2].includes(c.weather_code);
-  const bestI=d.temperature_2m_max.reduce((bi,v,i)=>(v<32&&(d.precipitation_probability_max?.[i]??0)<20&&v>d.temperature_2m_max[bi])?i:bi,0);
+  // Best Day: score every day on comfort (mild temp, low rain, low UV, clear
+  // weather code) instead of just "warmest day that happens to beat index 0" —
+  // the old reduce() never actually evaluated day 0 against the criteria, so
+  // today could win by default even if it was raining.
+  let bestI=0,bestScore=-Infinity;
+  for(let i=0;i<d.temperature_2m_max.length;i++){
+    const tmax=d.temperature_2m_max[i];
+    const precip=Number(d.precipitation_probability_max?.[i]??0);
+    const uvMax=Number(d.uv_index_max?.[i]??0);
+    const badWx=[45,48,51,53,55,61,63,65,71,73,75,77,80,81,82,95,96,99].includes(d.weather_code[i]);
+    const tempScore=10-Math.abs(tmax-24)*0.4; // comfort peaks ~24°C, falls off either side
+    const score=tempScore-(precip*0.12)-(badWx?3:0)-(uvMax>8?1:0);
+    if(score>bestScore){bestScore=score;bestI=i;}
+  }
   const anom=Math.round(c.temperature_2m-(lat>0?lat*.2-5:-(lat*.2)-5));
   const anomTxt=anom>2?`+${anom}° above avg`:anom<-2?`${anom}° below avg`:'Near avg';
 
