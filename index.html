@@ -3,199 +3,571 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SKYSCOPE — Live Flight Tracker</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<title>Vastu Compass</title>
 <style>
-:root{--radius:10px;--mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;--sans:'Inter',system-ui,-apple-system,sans-serif;}
-[data-theme="dark"]{--bg:#0a0f14;--panel:#111a22;--panel2:#0d151c;--border:#20303c;--text:#e6eef2;--muted:#7f97a3;--accent:#39ff8a;--accent2:#ffb454;--danger:#ff5c5c;}
-[data-theme="light"]{--bg:#f1f4f2;--panel:#ffffff;--panel2:#e8edea;--border:#cfd9d3;--text:#0f1a1c;--muted:#4f6360;--accent:#0c8a4b;--accent2:#a85e08;--danger:#c23b3b;}
-[data-theme="oled"]{--bg:#000000;--panel:#050708;--panel2:#000000;--border:#161c1e;--text:#f0f2f2;--muted:#7a8688;--accent:#00ff85;--accent2:#ffc24b;--danger:#ff4747;}
-[data-theme="hc"]{--bg:#000000;--panel:#000000;--panel2:#000000;--border:#ffffff;--text:#ffffff;--muted:#ffe600;--accent:#00fdff;--accent2:#ffe600;--danger:#ff2b2b;}
-*{box-sizing:border-box;}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-tap-highlight-color:transparent;}
-body{display:flex;flex-direction:column;min-height:100dvh;}
-header{display:flex;align-items:center;gap:.6rem;padding:.7rem .9rem;border-bottom:1px solid var(--border);background:var(--panel);position:sticky;top:0;z-index:1000;}
-.brand{display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-weight:700;letter-spacing:.06em;font-size:1rem;}
-.sweep{position:relative;width:16px;height:16px;border-radius:50%;border:1px solid var(--accent);overflow:hidden;flex:none;}
-.sweep::after{content:"";position:absolute;inset:0;background:conic-gradient(from 0deg,var(--accent) 0deg,transparent 60deg);animation:spin 2.4s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.live{margin-left:auto;display:flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.72rem;color:var(--muted);}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 1.6s ease-in-out infinite;}
-@keyframes pulse{50%{opacity:.25;}}
-.themebtn{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.4rem .6rem;font-family:var(--mono);font-size:.68rem;cursor:pointer;}
-main{flex:1;display:flex;flex-direction:column;min-height:0;}
-#map{flex:1;min-height:44vh;background:var(--panel2);}
-[data-theme="dark"] .leaflet-tile-pane,[data-theme="oled"] .leaflet-tile-pane,[data-theme="hc"] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.93) contrast(.9) saturate(.8);}
-.plane-icon{color:var(--accent);filter:drop-shadow(0 0 3px var(--accent));}
-aside{background:var(--panel);border-top:1px solid var(--border);display:flex;flex-direction:column;max-height:46vh;}
-.controls{display:flex;gap:.5rem;padding:.7rem .8rem;border-bottom:1px solid var(--border);}
-.controls input{flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.5rem .7rem;font-family:var(--mono);font-size:.85rem;min-width:0;}
-.controls button{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.5rem .7rem;font-size:.85rem;cursor:pointer;flex:none;}
-.controls button.primary{background:var(--accent);color:#03130a;border-color:var(--accent);font-weight:700;}
-#status{padding:.3rem .8rem;font-family:var(--mono);font-size:.72rem;color:var(--muted);}
-#list{overflow-y:auto;flex:1;}
-.row{display:flex;justify-content:space-between;gap:.6rem;padding:.6rem .8rem;border-bottom:1px solid var(--border);cursor:pointer;font-family:var(--mono);font-size:.78rem;}
-.row:active,.row:hover{background:var(--panel2);}
-.row b{color:var(--accent2);}
-.row span.sub{color:var(--muted);}
-#detail{border-top:1px solid var(--border);padding:.7rem .8rem;font-family:var(--mono);font-size:.78rem;display:none;}
-#detail.show{display:grid;grid-template-columns:1fr 1fr;gap:.3rem .8rem;}
-#detail div span{color:var(--muted);display:block;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;}
-#detail div b{color:var(--accent);font-size:.9rem;}
-footer{border-top:1px solid var(--border);background:var(--panel);padding:.8rem;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:.25rem;font-size:.72rem;color:var(--muted);}
-footer strong{color:var(--text);}
-@media(min-width:820px){
- main{flex-direction:row;}
- #map{min-height:auto;height:100%;}
- aside{max-height:none;width:340px;border-top:none;border-left:1px solid var(--border);}
-}
+  :root{ --dial-size: min(78vw, 360px); --rim: 9px; }
+
+  html[data-theme="dark"]{
+    --bg:#0a0b0f; --bg2:#12141c; --surface:#171a24; --text:#f2ead7; --muted:#9a927e;
+    --gold-hi:#f0d495; --gold:#c9a15a; --gold-lo:#8a6423; --vermillion:#b5432c; --ivory:#efe6d0;
+    --ring:#2a2c38; --sheen:.14; --grain:.05; --shadow:0 18px 40px rgba(0,0,0,.55);
+  }
+  html[data-theme="light"]{
+    --bg:#efe4c8; --bg2:#f7efdc; --surface:#fffaf0; --text:#28211a; --muted:#7a6e56;
+    --gold-hi:#e9cd8f; --gold:#a9803a; --gold-lo:#6f5122; --vermillion:#9c3a26; --ivory:#3a3025;
+    --ring:#d9c79a; --sheen:.22; --grain:.04; --shadow:0 14px 30px rgba(80,60,20,.18);
+  }
+  html[data-theme="oled"]{
+    --bg:#000000; --bg2:#000000; --surface:#060606; --text:#f2ead7; --muted:#847c68;
+    --gold-hi:#eecf8e; --gold:#c9a15a; --gold-lo:#7d5c1e; --vermillion:#b5432c; --ivory:#efe6d0;
+    --ring:#1c1c1c; --sheen:.16; --grain:.05; --shadow:0 18px 44px rgba(0,0,0,.8);
+  }
+  html[data-theme="hc"]{
+    --bg:#000000; --bg2:#000000; --surface:#000000; --text:#ffffff; --muted:#ffffff;
+    --gold-hi:#ffd400; --gold:#ffd400; --gold-lo:#ffd400; --vermillion:#ffd400; --ivory:#ffffff;
+    --ring:#ffffff; --sheen:0; --grain:0; --shadow:none;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; min-height:100dvh; color:var(--text);
+    background:radial-gradient(120% 90% at 50% -10%, var(--bg2), var(--bg) 60%);
+    font-family:Optima,'Iowan Old Style',Palatino,'Palatino Linotype',Georgia,serif;
+    display:flex; flex-direction:column; align-items:center; transition:background .3s,color .3s;
+  }
+  .grain{position:fixed; inset:0; pointer-events:none; opacity:var(--grain); mix-blend-mode:overlay;}
+  .app{width:100%; max-width:480px; min-height:100dvh; display:flex; flex-direction:column;
+       padding:20px 20px 10px; position:relative; z-index:1;}
+  .hidden{display:none !important;}
+
+  header{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .brand p{margin:0; font-size:1.02rem; letter-spacing:.16em; text-transform:uppercase; color:var(--gold);}
+  .brand span{display:block; margin-top:3px; font-size:.72rem; font-style:italic; color:var(--muted); font-family:Georgia,serif;}
+  #themeBtn, #langBtn{
+    background:linear-gradient(160deg,var(--surface),var(--bg2)); color:var(--gold);
+    border:1px solid var(--ring); border-radius:999px; padding:7px 15px; font-size:.66rem;
+    letter-spacing:.12em; text-transform:uppercase; font-family:system-ui,sans-serif; cursor:pointer;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 3px 8px rgba(0,0,0,.25);
+  }
+  #themeBtn:active, #langBtn:active{transform:scale(.96);}
+  #themeBtn:focus-visible, #permBtn:focus-visible, .tab:focus-visible{outline:2px solid var(--gold); outline-offset:3px;}
+
+  .tabs{display:flex; gap:8px; margin-top:16px;}
+  .tab{flex:1; text-align:center; padding:9px 0; border-radius:999px; border:1px solid var(--ring);
+    background:var(--surface); color:var(--muted); font-family:system-ui,sans-serif; font-size:.7rem;
+    letter-spacing:.09em; text-transform:uppercase; cursor:pointer;}
+  .tab.active{background:linear-gradient(160deg,var(--gold-hi),var(--gold)); color:#241a08; border-color:transparent;}
+  html[data-theme="hc"] .tab.active{color:#000;}
+
+  main{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:16px 0;}
+
+  .cal-banner{width:100%; background:var(--surface); border:1px solid var(--gold); border-radius:12px;
+    padding:8px 12px; font-family:system-ui,sans-serif; font-size:.7rem; color:var(--gold); text-align:center;}
+
+  .compass-wrap{position:relative; width:var(--dial-size); height:var(--dial-size);}
+  .acc-ring{position:absolute; inset:-6px; border-radius:50%; border:3px solid var(--ring); pointer-events:none; transition:border-color .3s; z-index:0;}
+  .bezel{
+    width:100%; height:100%; border-radius:50%; padding:var(--rim); position:relative;
+    background:conic-gradient(from 200deg, var(--gold-lo), var(--gold-hi) 25%, var(--gold) 50%, var(--gold-lo) 75%, var(--gold-hi) 100%);
+    box-shadow:var(--shadow), inset 0 0 0 1px rgba(0,0,0,.3);
+  }
+  html[data-theme="hc"] .bezel{background:var(--gold); padding:4px;}
+  .dial{
+    width:100%; height:100%; border-radius:50%; position:relative; overflow:hidden;
+    background:radial-gradient(circle at 34% 28%, var(--surface) 0%, var(--bg2) 72%, var(--surface) 100%);
+    box-shadow:inset 0 0 18px rgba(0,0,0,.5), inset 0 0 0 1px var(--ring);
+  }
+  .sheen{position:absolute; inset:0; border-radius:50%; pointer-events:none;
+    background:linear-gradient(115deg, transparent 32%, rgba(255,255,255,var(--sheen)) 47%, transparent 62%);
+    animation:drift 9s ease-in-out infinite;}
+  @keyframes drift{0%,100%{opacity:.55;} 50%{opacity:1;}}
+  @media (prefers-reduced-motion:reduce){ .sheen{animation:none;} }
+
+  .tick{position:absolute; left:50%; top:8%; width:1px; height:5%; background:var(--muted); opacity:.4; transform-origin:50% 4900%;}
+  .tick.major{width:2px; height:9%; background:var(--gold); opacity:.9;}
+  .dlabel{position:absolute; left:50%; top:50%; font-family:system-ui,sans-serif; font-weight:700;
+    font-size:.76rem; color:var(--gold-hi); transform:translate(-50%,-50%); text-shadow:0 1px 1px rgba(0,0,0,.4);}
+  .dlabel.minor{font-size:.56rem; color:var(--muted); font-weight:600;}
+  html[data-theme="hc"] .dlabel, html[data-theme="hc"] .dlabel.minor{color:#000; background:#fff; padding:0 3px; text-shadow:none;}
+
+  .needle-group{position:absolute; inset:0; z-index:2; pointer-events:none; transition:transform .08s linear;}
+  .needle{position:absolute; left:50%; top:6%; height:88%; width:16px; transform:translateX(-50%);
+    clip-path:polygon(50% 0%, 100% 44%, 60% 50%, 100% 56%, 50% 100%, 0% 56%, 40% 50%, 0% 44%);
+    background:linear-gradient(to bottom, var(--vermillion) 0%, var(--vermillion) 48%, var(--ivory) 52%, var(--ivory) 100%);
+    filter:drop-shadow(0 3px 5px rgba(0,0,0,.45));}
+  html[data-theme="hc"] .needle{background:linear-gradient(to bottom, var(--vermillion) 0%, var(--vermillion) 50%, #fff 50%, #fff 100%); filter:none;}
+  .needle-tip{position:absolute; top:2%; left:50%; transform:translateX(-50%); font-family:system-ui,sans-serif;
+    font-size:.6rem; font-weight:800; color:var(--vermillion); z-index:2;}
+  .hub{position:absolute; left:50%; top:50%; width:16px; height:16px; margin:-8px; border-radius:50%; z-index:5;
+    background:radial-gradient(circle at 35% 30%, var(--gold-hi), var(--gold) 55%, var(--gold-lo));
+    box-shadow:0 2px 4px rgba(0,0,0,.5), inset 0 0 0 1px rgba(0,0,0,.3);}
+
+  .horizon{position:absolute; left:14%; right:14%; top:50%; height:2px; z-index:4; pointer-events:none;
+    background:var(--muted); opacity:.55; transition:transform .1s linear, background-color .2s, opacity .2s;
+    transform-origin:50% 50%; border-radius:2px;}
+  .horizon::before, .horizon::after{content:''; position:absolute; top:-4px; width:2px; height:10px; background:inherit; opacity:inherit;}
+  .horizon::before{left:0;} .horizon::after{right:0;}
+  .horizon.level{background:var(--green, #3ea36b); opacity:.9;}
+
+  .readout{text-align:center;}
+  .degrees{font-size:2.3rem; font-weight:600; color:var(--gold); text-shadow:0 1px 0 rgba(255,255,255,.12), 0 -1px 1px rgba(0,0,0,.45);}
+  html[data-theme="hc"] .degrees{text-shadow:none; color:var(--text);}
+  .facing{font-family:system-ui,sans-serif; font-size:.8rem; color:var(--muted); margin-top:3px;}
+
+  .north-row{display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;}
+  #northBtn, #preciseBtn{background:var(--surface); border:1px solid var(--ring); color:var(--text); border-radius:999px;
+    padding:6px 13px; font-size:.66rem; letter-spacing:.06em; text-transform:uppercase;
+    font-family:system-ui,sans-serif; cursor:pointer;}
+  #preciseBtn:disabled{opacity:.6;}
+  .status-row{display:flex; gap:8px; justify-content:center; flex-wrap:wrap;}
+  .pill{font-family:system-ui,sans-serif; font-size:.64rem; padding:4px 10px; border-radius:999px;
+    border:1px solid var(--ring); color:var(--muted); background:var(--surface);}
+  .pill.good{color:#3ea36b; border-color:#3ea36b;}
+  .pill.fair{color:var(--gold); border-color:var(--gold);}
+  .pill.poor{color:var(--vermillion); border-color:var(--vermillion);}
+  .decl-row{display:none; align-items:center; justify-content:center; gap:10px; font-family:system-ui,sans-serif; font-size:.76rem; color:var(--muted);}
+  .decl-row.show{display:flex;}
+  .decl-row button{width:24px; height:24px; border-radius:50%; border:1px solid var(--ring); background:var(--surface); color:var(--gold); cursor:pointer;}
+
+  #permBtn{background:linear-gradient(160deg, var(--gold-hi), var(--gold) 55%, var(--gold-lo)); color:#241a08;
+    border:none; border-radius:999px; padding:12px 26px; font-size:.76rem; font-family:system-ui,sans-serif;
+    font-weight:700; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
+    box-shadow:0 8px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.5);}
+  #permBtn:active{transform:translateY(1px) scale(.98);}
+  html[data-theme="hc"] #permBtn{color:#000; box-shadow:none;}
+
+  .zone-card{width:100%; background:linear-gradient(180deg, var(--surface), var(--bg2)); border:1px solid var(--ring);
+    border-radius:18px; padding:15px 18px; text-align:center; box-shadow:var(--shadow);}
+  .zone-kicker{font-family:system-ui,sans-serif; font-size:.62rem; letter-spacing:.2em; color:var(--muted); text-transform:uppercase;}
+  .zone-card h2{margin:6px 0 8px; font-size:1.1rem; color:var(--gold);}
+  .rule{width:36px; height:1px; margin:0 auto 8px; background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+  .zone-card p{margin:0; font-family:system-ui,sans-serif; font-size:.82rem; color:var(--muted); line-height:1.5;}
+
+  .room-list{width:100%; display:flex; flex-direction:column; gap:10px;}
+  .room-card{background:linear-gradient(180deg,var(--surface),var(--bg2)); border:1px solid var(--ring);
+    border-radius:14px; padding:12px 14px; font-family:system-ui,sans-serif;}
+  .room-card h3{margin:0 0 5px; font-size:.88rem; color:var(--gold); font-family:Optima,Georgia,serif;}
+  .room-card p{margin:2px 0; font-size:.76rem; color:var(--muted); line-height:1.4;}
+  .room-card b{color:var(--text);}
+
+  footer{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    gap:6px; padding:18px 0 8px; font-family:system-ui,sans-serif; font-size:.7rem; color:var(--muted);}
+  .fdiv{width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); opacity:.6;}
+
+  @media (max-width:340px){ .degrees{font-size:1.9rem;} }
 </style>
 </head>
 <body>
-<header>
- <div class="brand"><span class="sweep"></span>SKYSCOPE</div>
- <div class="live"><span class="dot"></span><span id="liveText">CONNECTING…</span></div>
- <button class="themebtn" id="themeBtn" aria-label="Cycle theme">DARK</button>
-</header>
-<main>
- <div id="map" role="application" aria-label="Live aircraft map"></div>
- <aside>
-  <div class="controls">
-   <input id="search" type="text" placeholder="Filter by callsign…" autocomplete="off">
-   <button id="locateBtn" class="primary">📍 Near me</button>
-  </div>
-  <div id="status">Loading nearby aircraft…</div>
-  <div id="detail"></div>
-  <div id="list"></div>
- </aside>
-</main>
-<footer>
- <div><strong>SKYSCOPE</strong> — live positions via OpenSky Network</div>
- <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
-</footer>
+<svg class="grain" aria-hidden="true"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<div class="app">
+  <header>
+    <div class="brand"><p id="brandTitle">Vastu Compass</p><span id="brandSub">Ashtadikpala Direction Guide</span></div>
+    <div style="display:flex; gap:6px;">
+      <button id="langBtn" type="button" aria-label="Change language">EN</button>
+      <button id="themeBtn" type="button" aria-label="Change theme">Dark</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" id="tabCompass" type="button">Compass</button>
+    <button class="tab" id="tabRooms" type="button">Room Guide</button>
+  </nav>
+
+  <main id="compassView">
+    <div class="cal-banner hidden" id="calBanner">↻ Wave your phone in a figure-8 to calibrate the sensor</div>
+
+    <div class="compass-wrap">
+      <div class="acc-ring" id="accRing"></div>
+      <div class="bezel">
+        <div class="dial" id="dial"><div class="sheen" aria-hidden="true"></div></div>
+        <div class="needle-group" id="needleGroup">
+          <div class="needle" aria-hidden="true"></div>
+          <div class="needle-tip" aria-hidden="true">N</div>
+        </div>
+        <div class="hub" aria-hidden="true"></div>
+        <div class="horizon" id="horizon" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div class="readout">
+      <div class="degrees" id="degrees">--°</div>
+      <div class="facing" id="facing">Enable the compass to begin</div>
+    </div>
+
+    <div class="status-row">
+      <span class="pill" id="accPill">Accuracy: —</span>
+      <span class="pill" id="tiltPill">Level: —</span>
+    </div>
+
+    <div class="north-row">
+      <button id="northBtn" type="button">Magnetic North</button>
+      <button id="preciseBtn" type="button">Hold Steady</button>
+    </div>
+    <div class="decl-row" id="declRow">
+      <button id="declMinus" type="button" aria-label="Decrease declination">−</button>
+      <span>Declination <b id="declVal">0.0°</b></span>
+      <button id="declPlus" type="button" aria-label="Increase declination">+</button>
+    </div>
+
+    <button id="permBtn" type="button">Enable Compass</button>
+
+    <div class="zone-card">
+      <div class="zone-kicker" id="zoneKicker">Facing Direction</div>
+      <h2 id="zoneName">—</h2>
+      <div class="rule"></div>
+      <p id="zoneDesc">Point your phone forward and allow motion access to reveal the Vastu significance of that direction.</p>
+    </div>
+  </main>
+
+  <main id="roomView" class="hidden">
+    <div class="room-list" id="roomList"></div>
+  </main>
+
+  <footer>
+    <div class="fdiv"></div>
+    <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
+  </footer>
+</div>
+
 <script>
-document.getElementById('year').textContent = new Date().getFullYear();
+(function(){
+  var ZONES = [
+    {n:"North", d:"Ruled by Kubera. Governs wealth, career flow and cash storage."},
+    {n:"North-North-East", d:"Transition of water and wealth energy. Keep this area open and uncluttered."},
+    {n:"North-East", d:"The Ishanya corner of divinity. Best for prayer rooms and water elements."},
+    {n:"East-North-East", d:"Ruled by Aditi. Supports health, growth and morning sunlight zones."},
+    {n:"East", d:"Ruled by Indra. Ideal for main entrances, health and fresh beginnings."},
+    {n:"East-South-East", d:"Minor fire influence. Suits utility or auxiliary energy points."},
+    {n:"South-East", d:"The Agni corner. Best suited for kitchens and sources of energy."},
+    {n:"South-South-East", d:"Ruled by Pushan. Good for food storage and nourishment areas."},
+    {n:"South", d:"Ruled by Yama. Favours rest and stability; avoid main entrances here."},
+    {n:"South-South-West", d:"Ancestral Pitru zone. Suited to heavier storage and stillness."},
+    {n:"South-West", d:"The Nairutya corner of strength. Ideal for the master bedroom."},
+    {n:"West-South-West", d:"Ruled by Varuna's edge. Good for water tanks or storage."},
+    {n:"West", d:"Ruled by Varuna. Good for dining areas and steady long-term gains."},
+    {n:"West-North-West", d:"Ruled by Vayu's edge. Suited to movement and guest activity."},
+    {n:"North-West", d:"The Vayu corner of movement. Suited to guest rooms and storage."},
+    {n:"North-North-West", d:"Soma zone of calm. Favours relaxation and quiet corners."}
+  ];
+  var ROOMS = [
+    {r:"Main Entrance", g:"North, East or North-East", a:"South-West corner"},
+    {r:"Kitchen", g:"South-East (Agni corner)", a:"North-East"},
+    {r:"Master Bedroom", g:"South-West", a:"North-East"},
+    {r:"Pooja / Prayer Room", g:"North-East", a:"Under a staircase or South wall"},
+    {r:"Bathroom / Toilet", g:"North-West or West", a:"North-East"},
+    {r:"Staircase", g:"South, South-West or West", a:"Centre or North-East (Brahmasthan)"},
+    {r:"Study Room", g:"North, East or North-East", a:"South"},
+    {r:"Living Room", g:"North, East or North-East", a:"South-West"},
+    {r:"Dining Room", g:"West or South", a:"North-East"}
+  ];
 
-/* ---------- Theme ---------- */
-const THEMES=['dark','light','oled','hc'];
-const html=document.documentElement, themeBtn=document.getElementById('themeBtn');
-let themeIdx=0;
-function applyTheme(){
- html.setAttribute('data-theme',THEMES[themeIdx]);
- themeBtn.textContent=THEMES[themeIdx].toUpperCase();
-}
-themeBtn.addEventListener('click',()=>{themeIdx=(themeIdx+1)%THEMES.length;applyTheme();});
-applyTheme();
+  var I18N = {
+    en:{ title:"Vastu Compass", sub:"Ashtadikpala Direction Guide", tabC:"Compass", tabR:"Room Guide",
+      enable:"Enable Compass", facingPrefix:"Facing ", kicker:"Facing Direction", zoneWord:"Zone",
+      zoneDefault:"Point your phone forward and allow motion access to reveal the Vastu significance of that direction.",
+      magNorth:"Magnetic North", trueNorth:"True North", holdSteady:"Hold Steady",
+      accPrefix:"Accuracy: ", levelPrefix:"Level: ", best:"Best: ", avoid:"Avoid: ",
+      accWords:{good:"High",fair:"Medium",poor:"Low"}, tiltWords:{good:"Good",fair:"Tilted",poor:"Hold Flat"},
+      zoneNames:["North","North-North-East","North-East","East-North-East","East","East-South-East","South-East",
+        "South-South-East","South","South-South-West","South-West","West-South-West","West","West-North-West","North-West","North-North-West"],
+      roomNames:["Main Entrance","Kitchen","Master Bedroom","Pooja / Prayer Room","Bathroom / Toilet","Staircase","Study Room","Living Room","Dining Room"]
+    },
+    hi:{ title:"वास्तु कम्पास", sub:"अष्टदिक्पाल दिशा मार्गदर्शिका", tabC:"कम्पास", tabR:"कक्ष मार्गदर्शिका",
+      enable:"कम्पास सक्षम करें", facingPrefix:"दिशा: ", kicker:"सम्मुख दिशा", zoneWord:"क्षेत्र",
+      zoneDefault:"कृपया फ़ोन को आगे की ओर रखें और गति एक्सेस की अनुमति दें, ताकि उस दिशा का वास्तु महत्व दिखाया जा सके।",
+      magNorth:"चुंबकीय उत्तर", trueNorth:"वास्तविक उत्तर", holdSteady:"स्थिर रखें",
+      accPrefix:"सटीकता: ", levelPrefix:"स्तर: ", best:"श्रेष्ठ: ", avoid:"बचें: ",
+      accWords:{good:"उच्च",fair:"मध्यम",poor:"कम"}, tiltWords:{good:"ठीक",fair:"झुका हुआ",poor:"समतल रखें"},
+      zoneNames:["उत्तर","उत्तर-उत्तर-पूर्व","उत्तर-पूर्व","पूर्व-उत्तर-पूर्व","पूर्व","पूर्व-दक्षिण-पूर्व","दक्षिण-पूर्व",
+        "दक्षिण-दक्षिण-पूर्व","दक्षिण","दक्षिण-दक्षिण-पश्चिम","दक्षिण-पश्चिम","पश्चिम-दक्षिण-पश्चिम","पश्चिम","पश्चिम-उत्तर-पश्चिम","उत्तर-पश्चिम","उत्तर-उत्तर-पश्चिम"],
+      roomNames:["मुख्य प्रवेश द्वार","रसोई","मुख्य शयनकक्ष","पूजा कक्ष","स्नानघर / शौचालय","सीढ़ियाँ","अध्ययन कक्ष","बैठक कक्ष","भोजन कक्ष"]
+    },
+    bn:{ title:"বাস্তু কম্পাস", sub:"অষ্টদিকপাল দিক নির্দেশিকা", tabC:"কম্পাস", tabR:"কক্ষ নির্দেশিকা",
+      enable:"কম্পাস সক্রিয় করুন", facingPrefix:"মুখ: ", kicker:"সম্মুখ দিক", zoneWord:"অঞ্চল",
+      zoneDefault:"আপনার ফোনটি সামনের দিকে ধরুন এবং সেই দিকের বাস্তু গুরুত্ব দেখতে গতির অনুমতি দিন।",
+      magNorth:"চৌম্বক উত্তর", trueNorth:"প্রকৃত উত্তর", holdSteady:"স্থির রাখুন",
+      accPrefix:"নির্ভুলতা: ", levelPrefix:"স্তর: ", best:"সর্বোত্তম: ", avoid:"এড়িয়ে চলুন: ",
+      accWords:{good:"উচ্চ",fair:"মাঝারি",poor:"কম"}, tiltWords:{good:"ঠিক",fair:"হেলানো",poor:"সমতল রাখুন"},
+      zoneNames:["উত্তর","উত্তর-উত্তর-পূর্ব","উত্তর-পূর্ব","পূর্ব-উত্তর-পূর্ব","পূর্ব","পূর্ব-দক্ষিণ-পূর্ব","দক্ষিণ-পূর্ব",
+        "দক্ষিণ-দক্ষিণ-পূর্ব","দক্ষিণ","দক্ষিণ-দক্ষিণ-পশ্চিম","দক্ষিণ-পশ্চিম","পশ্চিম-দক্ষিণ-পশ্চিম","পশ্চিম","পশ্চিম-উত্তর-পশ্চিম","উত্তর-পশ্চিম","উত্তর-উত্তর-পশ্চিম"],
+      roomNames:["প্রধান প্রবেশদ্বার","রান্নাঘর","প্রধান শয়নকক্ষ","পূজার ঘর","স্নানঘর / শৌচাগার","সিঁড়ি","পড়ার ঘর","বসার ঘর","খাবার ঘর"]
+    }
+  };
+  var LANG = 'en';
+  function tr(key){ return I18N[LANG][key]; }
+  var THEMES = ["dark","light","oled","hc"];
+  var LABELS = {dark:"Dark", light:"Light", oled:"OLED", hc:"High Contrast"};
+  var N = 16, STEP = 360 / N;
 
-/* ---------- Map ---------- */
-const map=L.map('map',{zoomControl:true}).setView([28.6,77.2],6);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
- maxZoom:19,attribution:'&copy; OpenStreetMap contributors'
-}).addTo(map);
+  var dial = document.getElementById('dial');
+  var needleGroup = document.getElementById('needleGroup');
+  var degreesEl = document.getElementById('degrees');
+  var facingEl = document.getElementById('facing');
+  var zoneName = document.getElementById('zoneName');
+  var zoneDesc = document.getElementById('zoneDesc');
+  var permBtn = document.getElementById('permBtn');
+  var themeBtn = document.getElementById('themeBtn');
+  var calBanner = document.getElementById('calBanner');
+  var accRing = document.getElementById('accRing');
+  var accPill = document.getElementById('accPill');
+  var tiltPill = document.getElementById('tiltPill');
+  var preciseBtn = document.getElementById('preciseBtn');
+  var northBtn = document.getElementById('northBtn');
+  var declRow = document.getElementById('declRow');
+  var declVal = document.getElementById('declVal');
+  var langBtn = document.getElementById('langBtn');
+  var zoneKicker = document.getElementById('zoneKicker');
+  var tabCompass = document.getElementById('tabCompass'), tabRooms = document.getElementById('tabRooms');
 
-const markers={};
-let planes=[];
-let selected=null;
-const statusEl=document.getElementById('status');
-const liveText=document.getElementById('liveText');
-const listEl=document.getElementById('list');
-const detailEl=document.getElementById('detail');
-const searchEl=document.getElementById('search');
+  document.getElementById('year').textContent = new Date().getFullYear();
 
-function planeSVG(rot){
- return `<svg class="plane-icon" width="26" height="26" viewBox="0 0 24 24" style="transform:rotate(${rot}deg)"><path fill="currentColor" d="M12 2l2 6 7 4v2l-7-2-1 5 3 2v2l-4-1-4 1v-2l3-2-1-5-7 2v-2l7-4z"/></svg>`;
-}
-
-function fmtNum(n,unit,dec=0){return (n===null||n===undefined)?'—':n.toFixed(dec)+unit;}
-
-function renderList(){
- const q=searchEl.value.trim().toUpperCase();
- const filtered=planes.filter(p=>!q||(p.callsign||'').toUpperCase().includes(q));
- statusEl.textContent=`${filtered.length} aircraft in view`;
- listEl.innerHTML=filtered.slice(0,150).map(p=>`
-  <div class="row" data-icao="${p.icao24}">
-   <span><b>${p.callsign||'UNKNOWN'}</b> <span class="sub">${p.origin||''}</span></span>
-   <span class="sub">${fmtNum(p.altFt,' ft')} · ${fmtNum(p.spdKt,' kt')}</span>
-  </div>`).join('') || '<div style="padding:.8rem;color:var(--muted);font-family:var(--mono);font-size:.78rem">No aircraft match.</div>';
-}
-
-function showDetail(p){
- selected=p;
- detailEl.classList.add('show');
- detailEl.innerHTML=`
-  <div><span>Callsign</span><b>${p.callsign||'—'}</b></div>
-  <div><span>Country</span><b>${p.origin||'—'}</b></div>
-  <div><span>Altitude</span><b>${fmtNum(p.altFt,' ft')}</b></div>
-  <div><span>Speed</span><b>${fmtNum(p.spdKt,' kt')}</b></div>
-  <div><span>Heading</span><b>${fmtNum(p.track,'°')}</b></div>
-  <div><span>ICAO24</span><b>${p.icao24}</b></div>`;
- map.flyTo([p.lat,p.lon],8,{duration:.6});
-}
-
-function updateMarkers(){
- const seen=new Set();
- planes.forEach(p=>{
-  if(p.lat===null||p.lon===null)return;
-  seen.add(p.icao24);
-  const icon=L.divIcon({className:'',html:planeSVG(p.track||0),iconSize:[26,26],iconAnchor:[13,13]});
-  if(markers[p.icao24]){
-   markers[p.icao24].setLatLng([p.lat,p.lon]);
-   markers[p.icao24].setIcon(icon);
-  }else{
-   const m=L.marker([p.lat,p.lon],{icon}).addTo(map);
-   m.bindTooltip(p.callsign||p.icao24,{direction:'top',offset:[0,-10]});
-   m.on('click',()=>showDetail(p));
-   markers[p.icao24]=m;
+  var names = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  for (var i = 0; i < 48; i++) {
+    var a = i * 7.5;
+    var t = document.createElement('div');
+    t.className = 'tick' + (Math.round(a % 22.5) === 0 ? ' major' : '');
+    t.style.transform = 'rotate(' + a + 'deg)';
+    dial.appendChild(t);
   }
- });
- Object.keys(markers).forEach(id=>{
-  if(!seen.has(id)){map.removeLayer(markers[id]);delete markers[id];}
- });
-}
+  for (var k = 0; k < N; k++) {
+    var ang = k * STEP;
+    var lab = document.createElement('div');
+    lab.className = 'dlabel' + (k % 2 === 1 ? ' minor' : '');
+    lab.textContent = names[k];
+    var rad = (ang - 90) * Math.PI / 180;
+    var dist = k % 2 === 0 ? 39 : 35;
+    lab.style.left = 'calc(50% + ' + (Math.cos(rad) * dist) + '%)';
+    lab.style.top = 'calc(50% + ' + (Math.sin(rad) * dist) + '%)';
+    dial.appendChild(lab);
+  }
 
-async function fetchPlanes(){
- const b=map.getBounds();
- const url=`https://opensky-network.org/api/states/all?lamin=${b.getSouth()}&lomin=${b.getWest()}&lamax=${b.getNorth()}&lomax=${b.getEast()}`;
- try{
-  const res=await fetch(url);
-  if(!res.ok)throw new Error('HTTP '+res.status);
-  const data=await res.json();
-  planes=(data.states||[]).map(s=>({
-   icao24:s[0],callsign:(s[1]||'').trim(),origin:s[2],
-   lon:s[5],lat:s[6],altFt:s[7]!==null?s[7]*3.28084:null,
-   spdKt:s[9]!==null?s[9]*1.94384:null,track:s[10]
-  })).filter(p=>p.lat!==null&&p.lon!==null);
-  liveText.textContent='LIVE · '+new Date().toLocaleTimeString();
-  updateMarkers();
-  renderList();
- }catch(e){
-  liveText.textContent='RETRYING…';
-  statusEl.textContent='Could not reach OpenSky right now — retrying shortly.';
- }
-}
+  // --- Room Guide tab ---
+  var roomList = document.getElementById('roomList');
+  function renderRoomList(){
+    roomList.innerHTML = ROOMS.map(function(rm, i){
+      return '<div class="room-card"><h3>' + I18N[LANG].roomNames[i] + '</h3><p><b>' + tr('best') + '</b>' + rm.g +
+        '</p><p><b>' + tr('avoid') + '</b>' + rm.a + '</p></div>';
+    }).join('');
+  }
+  renderRoomList();
+  var compassView = document.getElementById('compassView'), roomView = document.getElementById('roomView');
+  tabCompass.addEventListener('click', function(){
+    tabCompass.classList.add('active'); tabRooms.classList.remove('active');
+    compassView.classList.remove('hidden'); roomView.classList.add('hidden');
+  });
+  tabRooms.addEventListener('click', function(){
+    tabRooms.classList.add('active'); tabCompass.classList.remove('active');
+    roomView.classList.remove('hidden'); compassView.classList.add('hidden');
+  });
 
-/* ---------- Interactions ---------- */
-listEl.addEventListener('click',e=>{
- const row=e.target.closest('.row');
- if(!row)return;
- const p=planes.find(pl=>pl.icao24===row.dataset.icao);
- if(p)showDetail(p);
-});
-searchEl.addEventListener('input',renderList);
-document.getElementById('locateBtn').addEventListener('click',()=>{
- if(!navigator.geolocation){alert('Geolocation is not available on this device.');return;}
- statusEl.textContent='Locating…';
- navigator.geolocation.getCurrentPosition(pos=>{
-  map.setView([pos.coords.latitude,pos.coords.longitude],9);
-  fetchPlanes();
- },()=>{statusEl.textContent='Location permission denied.';},{timeout:8000});
-});
-map.on('moveend',fetchPlanes);
+  // --- Language toggle ---
+  var LANGS = ['en','hi','bn'], langIdx = 0;
+  function applyLang(){
+    langBtn.textContent = LANGS[langIdx].toUpperCase();
+    document.getElementById('brandTitle').textContent = tr('title');
+    document.getElementById('brandSub').textContent = tr('sub');
+    tabCompass.textContent = tr('tabC');
+    tabRooms.textContent = tr('tabR');
+    zoneKicker.textContent = tr('kicker');
+    northBtn.textContent = northMode === 'magnetic' ? tr('magNorth') : tr('trueNorth');
+    if (!precise.active && !precise.locked) preciseBtn.textContent = tr('holdSteady');
+    if (!gotData) { permBtn.textContent = tr('enable'); facingEl.textContent = tr('enable'); zoneDesc.textContent = tr('zoneDefault'); }
+    if (lastZoneIdx !== null) {
+      facingEl.textContent = tr('facingPrefix') + I18N[LANG].zoneNames[lastZoneIdx];
+      zoneName.textContent = I18N[LANG].zoneNames[lastZoneIdx] + ' ' + tr('zoneWord');
+    }
+    refreshAccPill(); refreshTiltPill();
+    renderRoomList();
+  }
+  langBtn.addEventListener('click', function(){
+    langIdx = (langIdx + 1) % LANGS.length;
+    LANG = LANGS[langIdx];
+    applyLang();
+  });
 
-fetchPlanes();
-setInterval(fetchPlanes,15000);
+  // --- True / Magnetic North toggle ---
+  var northMode = 'magnetic', declination = 0;
+  northBtn.addEventListener('click', function(){
+    northMode = northMode === 'magnetic' ? 'true' : 'magnetic';
+    northBtn.textContent = northMode === 'magnetic' ? 'Magnetic North' : 'True North';
+    declRow.classList.toggle('show', northMode === 'true');
+  });
+  document.getElementById('declMinus').addEventListener('click', function(){
+    declination = Math.round((declination - 0.5) * 10) / 10; declVal.textContent = declination.toFixed(1) + '°';
+  });
+  document.getElementById('declPlus').addEventListener('click', function(){
+    declination = Math.round((declination + 0.5) * 10) / 10; declVal.textContent = declination.toFixed(1) + '°';
+  });
+
+  // --- Smoothed heading (circular EMA) + calibration + render ---
+  var smVx = null, smVy = null, gotData = false, calTimer = null;
+  var ALPHA = 0.22; // smoothing factor: lower = smoother, higher = more responsive
+  var cumRot = 0; // unbounded rotation so the dial always turns the shortest way, never spins
+
+  function shortestDelta(curMod, targetMod){
+    var d = (targetMod - curMod) % 360;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    return d;
+  }
+
+  function setNeedleRotation(effectiveHeading){
+    var targetMod = (effectiveHeading % 360 + 360) % 360;
+    var curMod = ((cumRot % 360) + 360) % 360;
+    cumRot += shortestDelta(curMod, targetMod);
+    needleGroup.style.transform = 'rotate(' + cumRot + 'deg)';
+  }
+
+  var lastZoneIdx = null;
+  function render(rawHeading){
+    var effective = ((rawHeading + (northMode === 'true' ? declination : 0)) % 360 + 360) % 360;
+    setNeedleRotation(effective);
+    degreesEl.textContent = Math.round(effective) + '°';
+    var idx = Math.round(effective / STEP) % N; if (idx < 0) idx += N;
+    lastZoneIdx = idx;
+    facingEl.textContent = tr('facingPrefix') + I18N[LANG].zoneNames[idx];
+    zoneName.textContent = I18N[LANG].zoneNames[idx] + ' ' + tr('zoneWord');
+    zoneDesc.textContent = ZONES[idx].d;
+  }
+
+  var calSamples = [], calDone = false;
+  function checkCalibration(rawHeading){
+    calSamples.push(rawHeading);
+    if (calSamples.length > 30) calSamples.shift();
+    if (calSamples.length < 10) return;
+    var mn = Math.min.apply(null, calSamples), mx = Math.max.apply(null, calSamples);
+    var spread = mx - mn; if (spread > 180) spread = 360 - spread;
+    if (spread > 50) {
+      calDone = true;
+      calBanner.textContent = '✓ Calibration looks good';
+      setTimeout(function(){ calBanner.classList.add('hidden'); }, 1200);
+    }
+  }
+
+  var jitterBuf = [], JN = 10;
+  function angDiff(a,b){ var d = Math.abs(a-b) % 360; return d > 180 ? 360-d : d; }
+  var lastAccLevel = null, lastTiltLevel = null;
+  function refreshAccPill(){ if (lastAccLevel) { accPill.textContent = tr('accPrefix') + I18N[LANG].accWords[lastAccLevel]; } }
+  function refreshTiltPill(){ if (lastTiltLevel) { tiltPill.textContent = tr('levelPrefix') + I18N[LANG].tiltWords[lastTiltLevel]; } }
+
+  function updateAccuracy(raw, smoothed, nativeAcc){
+    var level;
+    if (nativeAcc !== null) { level = nativeAcc <= 8 ? 'good' : nativeAcc <= 20 ? 'fair' : 'poor'; }
+    else {
+      var j = angDiff(raw, smoothed);
+      jitterBuf.push(j); if (jitterBuf.length > JN) jitterBuf.shift();
+      var avg = jitterBuf.reduce(function(s,v){ return s+v; }, 0) / jitterBuf.length;
+      level = avg < 3 ? 'good' : avg < 9 ? 'fair' : 'poor';
+    }
+    lastAccLevel = level;
+    accPill.className = 'pill ' + level;
+    refreshAccPill();
+    accRing.style.borderColor = level==='good' ? '#3ea36b' : level==='fair' ? 'var(--gold)' : 'var(--vermillion)';
+    if (calDone) {
+      if (level === 'poor') { calBanner.textContent = '⚠ Possible magnetic interference — move away from metal or electronics'; calBanner.classList.remove('hidden'); }
+      else { calBanner.classList.add('hidden'); }
+    }
+  }
+
+  var horizon = document.getElementById('horizon');
+  function updateTilt(beta, gamma){
+    if (typeof beta !== 'number' || typeof gamma !== 'number') return;
+    var mag = Math.sqrt(beta*beta + gamma*gamma);
+    var lvl = mag < 12 ? 'good' : mag < 30 ? 'fair' : 'poor';
+    lastTiltLevel = lvl;
+    tiltPill.className = 'pill ' + lvl;
+    refreshTiltPill();
+    var roll = Math.max(-30, Math.min(30, gamma));
+    var pitchOffset = Math.max(-24, Math.min(24, beta)) * 0.6;
+    horizon.style.transform = 'translateY(' + pitchOffset + 'px) rotate(' + (-roll) + 'deg)';
+    horizon.classList.toggle('level', lvl === 'good');
+  }
+
+  var precise = {active:false, locked:false, samples:[], startTime:0};
+  function finalizePrecise(){
+    var mx=0, my=0;
+    precise.samples.forEach(function(h){ var r=h*Math.PI/180; mx+=Math.cos(r); my+=Math.sin(r); });
+    var avg = Math.atan2(my, mx) * 180/Math.PI; if (avg < 0) avg += 360;
+    precise.active = false; precise.locked = true;
+    preciseBtn.disabled = false; preciseBtn.textContent = 'Retake Precise Reading';
+    render(avg);
+  }
+  preciseBtn.addEventListener('click', function(){
+    if (precise.locked) { precise.locked = false; preciseBtn.textContent = 'Hold Steady'; return; }
+    precise.active = true; precise.samples = []; precise.startTime = performance.now();
+    preciseBtn.textContent = 'Averaging…'; preciseBtn.disabled = true;
+  });
+
+  function handleOrientation(e, isAbsoluteSrc){
+    var heading, nativeAcc = null;
+    if (typeof e.webkitCompassHeading === 'number') {
+      heading = e.webkitCompassHeading;
+      if (typeof e.webkitCompassAccuracy === 'number' && e.webkitCompassAccuracy >= 0) nativeAcc = e.webkitCompassAccuracy;
+    } else if (e.alpha !== null && e.alpha !== undefined) {
+      if (isAbsoluteSrc) { window._absOK = true; }
+      if (!isAbsoluteSrc && window._absOK) return;
+      heading = 360 - e.alpha;
+    } else { return; }
+
+    var rad = heading * Math.PI / 180, vx = Math.cos(rad), vy = Math.sin(rad);
+    if (smVx === null) { smVx = vx; smVy = vy; }
+    else { smVx += ALPHA * (vx - smVx); smVy += ALPHA * (vy - smVy); }
+    var smoothed = Math.atan2(smVy, smVx) * 180 / Math.PI;
+    if (smoothed < 0) smoothed += 360;
+
+    gotData = true;
+    permBtn.style.display = 'none';
+    if (!calDone) checkCalibration(heading);
+    updateAccuracy(heading, smoothed, nativeAcc);
+    updateTilt(e.beta, e.gamma);
+
+    if (precise.active) {
+      precise.samples.push(smoothed);
+      if (performance.now() - precise.startTime > 2500) finalizePrecise();
+      return;
+    }
+    if (precise.locked) return;
+    render(smoothed);
+  }
+
+  function startListening(){
+    window.addEventListener('deviceorientationabsolute', function(e){ handleOrientation(e, true); }, true);
+    window.addEventListener('deviceorientation', function(e){ handleOrientation(e, false); }, true);
+    facingEl.textContent = 'Move your phone to calibrate…';
+    calBanner.classList.remove('hidden');
+    calTimer = setTimeout(function(){ calBanner.classList.add('hidden'); }, 8000);
+    setTimeout(function(){
+      if (!gotData) {
+        facingEl.textContent = (location.protocol !== 'https:' && location.hostname !== 'localhost')
+          ? 'Open this page over HTTPS to enable the compass sensor'
+          : 'No compass data received. Check motion sensors are allowed for this site.';
+        calBanner.classList.add('hidden');
+      }
+    }, 3000);
+  }
+
+  permBtn.addEventListener('click', function(){
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission().then(function(state){
+        if (state === 'granted') startListening();
+        else facingEl.textContent = 'Compass permission denied';
+      }).catch(function(){ facingEl.textContent = 'Compass unavailable on this device'; });
+    } else if (window.DeviceOrientationEvent) {
+      startListening();
+    } else {
+      facingEl.textContent = 'Compass unavailable on this device';
+    }
+  });
+
+  var themeIdx = 0;
+  themeBtn.addEventListener('click', function(){
+    themeIdx = (themeIdx + 1) % THEMES.length;
+    var t = THEMES[themeIdx];
+    document.documentElement.setAttribute('data-theme', t);
+    themeBtn.textContent = LABELS[t];
+  });
+})();
 </script>
 </body>
 </html>
