@@ -88,6 +88,8 @@ textarea{
 }
 #output.ok{color:var(--ok);}
 #output.err{color:var(--err);}
+#preview{width:100%;min-height:220px;border:none;display:block;background:#fff;}
+#preview[hidden]{display:none;}
 .badge{font-size:.68rem;padding:2px 8px;border-radius:999px;border:1px solid var(--border);}
 
 /* footer */
@@ -132,6 +134,7 @@ footer strong{color:var(--text);}
   <div class="pane">
     <div class="bar"><span>Output</span><span id="status" class="badge">Idle</span></div>
     <pre id="output">Tap Run to compile &amp; execute your code. Powered by the free Piston API — no key, no signup.</pre>
+    <iframe id="preview" title="Live preview" sandbox="allow-scripts" hidden></iframe>
   </div>
 </div>
 
@@ -160,34 +163,53 @@ document.getElementById('themeToggle').addEventListener('click', e=>{
 });
 setTheme(localStorage.getItem('cf-theme') || 'dark');
 
-// ---- Snippets & language setup ----
-const snippets = {
-  python: 'print("Hello, World!")',
-  javascript: 'console.log("Hello, World!");',
-  typescript: 'console.log("Hello, World!" as string);',
-  c: '#include <stdio.h>\nint main(){\n  printf("Hello, World!\\n");\n  return 0;\n}',
-  cpp: '#include <iostream>\nint main(){\n  std::cout << "Hello, World!" << std::endl;\n  return 0;\n}',
-  java: 'public class Main {\n  public static void main(String[] args){\n    System.out.println("Hello, World!");\n  }\n}',
-  go: 'package main\nimport "fmt"\nfunc main(){\n  fmt.Println("Hello, World!")\n}',
-  rust: 'fn main(){\n  println!("Hello, World!");\n}',
-  php: '<?php\necho "Hello, World!\\n";',
-  ruby: 'puts "Hello, World!"',
-  bash: 'echo "Hello, World!"'
+// ---- 27 popular languages: snippet, file extension, matching aliases ----
+const langs = {
+  html:       {code:'<!DOCTYPE html>\n<html>\n<head><title>Demo</title></head>\n<body>\n  <h1>Hello, World!</h1>\n  <p>Edit me and hit Run.</p>\n</body>\n</html>', ext:'.html', preview:'html'},
+  css:        {code:'body{\n  font-family: sans-serif;\n  background: #0f172a;\n  color: #f8fafc;\n  display:flex; align-items:center; justify-content:center; height:100vh; margin:0;\n}\n.box{\n  padding: 24px 32px; border-radius: 12px; background:#334155;\n}', ext:'.css', preview:'css'},
+  python:     {code:'print("Hello, World!")', ext:'.py', match:['python']},
+  javascript: {code:'console.log("Hello, World!");', ext:'.js', match:['javascript','node','js']},
+  typescript: {code:'console.log("Hello, World!" as string);', ext:'.ts', match:['typescript','ts']},
+  c:          {code:'#include <stdio.h>\nint main(){\n  printf("Hello, World!\\n");\n  return 0;\n}', ext:'.c', match:['c']},
+  cpp:        {code:'#include <iostream>\nint main(){\n  std::cout << "Hello, World!" << std::endl;\n  return 0;\n}', ext:'.cpp', match:['c++','cpp']},
+  csharp:     {code:'using System;\nclass Main {\n  static void Main(){\n    Console.WriteLine("Hello, World!");\n  }\n}', ext:'.cs', match:['csharp','c#','cs']},
+  java:       {code:'public class Main {\n  public static void main(String[] args){\n    System.out.println("Hello, World!");\n  }\n}', ext:'.java', match:['java']},
+  kotlin:     {code:'fun main(){\n  println("Hello, World!")\n}', ext:'.kt', match:['kotlin']},
+  go:         {code:'package main\nimport "fmt"\nfunc main(){\n  fmt.Println("Hello, World!")\n}', ext:'.go', match:['go','golang']},
+  rust:       {code:'fn main(){\n  println!("Hello, World!");\n}', ext:'.rs', match:['rust','rs']},
+  swift:      {code:'print("Hello, World!")', ext:'.swift', match:['swift']},
+  php:        {code:'<?php\necho "Hello, World!\\n";', ext:'.php', match:['php']},
+  ruby:       {code:'puts "Hello, World!"', ext:'.rb', match:['ruby','rb']},
+  perl:       {code:'print "Hello, World!\\n";', ext:'.pl', match:['perl','pl']},
+  lua:        {code:'print("Hello, World!")', ext:'.lua', match:['lua']},
+  r:          {code:'cat("Hello, World!\\n")', ext:'.r', match:['r']},
+  haskell:    {code:'main = putStrLn "Hello, World!"', ext:'.hs', match:['haskell','hs']},
+  elixir:     {code:'IO.puts("Hello, World!")', ext:'.exs', match:['elixir','exs']},
+  scala:      {code:'object Main extends App {\n  println("Hello, World!")\n}', ext:'.scala', match:['scala']},
+  dart:       {code:'void main(){\n  print("Hello, World!");\n}', ext:'.dart', match:['dart']},
+  julia:      {code:'println("Hello, World!")', ext:'.jl', match:['julia','jl']},
+  pascal:     {code:'program Main;\nbegin\n  writeln(\'Hello, World!\');\nend.', ext:'.pas', match:['pascal','fpc']},
+  fortran:    {code:'program main\n  print *, "Hello, World!"\nend program main', ext:'.f90', match:['fortran','f90']},
+  bash:       {code:'echo "Hello, World!"', ext:'.sh', match:['bash','sh']},
+  sql:        {code:"SELECT 'Hello, World!';", ext:'.sql', match:['sqlite3','sql']}
 };
-const extMap = {python:'.py',javascript:'.js',typescript:'.ts',c:'.c',cpp:'.cpp',java:'.java',go:'.go',rust:'.rs',php:'.php',ruby:'.rb',bash:'.sh'};
 
 let runtimes = [];
 async function loadRuntimes(){
   statusEl.textContent = 'Loading…';
+  Object.keys(langs).filter(n => langs[n].preview).forEach(name=>{
+    const opt = document.createElement('option');
+    opt.value = name; opt.dataset.lang = 'preview';
+    opt.textContent = name.charAt(0).toUpperCase()+name.slice(1);
+    langSel.appendChild(opt);
+  });
   try{
     const res = await fetch('https://emkc.org/api/v2/piston/runtimes');
     runtimes = await res.json();
-    const wanted = Object.keys(snippets);
-    const seen = new Set();
-    wanted.forEach(name=>{
-      const match = runtimes.find(r => r.language === name || (r.aliases||[]).includes(name));
-      if(match && !seen.has(name)){
-        seen.add(name);
+    Object.keys(langs).filter(n => langs[n].match).forEach(name=>{
+      const cands = langs[name].match;
+      const match = runtimes.find(r => cands.includes(r.language) || cands.some(c => (r.aliases||[]).includes(c)));
+      if(match){
         const opt = document.createElement('option');
         opt.value = name; opt.dataset.lang = match.language; opt.dataset.ver = match.version;
         opt.textContent = name.charAt(0).toUpperCase()+name.slice(1);
@@ -198,24 +220,42 @@ async function loadRuntimes(){
     onLangChange();
   }catch(err){
     statusEl.textContent = 'Offline';
-    outEl.textContent = 'Could not reach the Piston API to load languages. Check your connection and reload.';
+    outEl.textContent = 'Could not reach the Piston API to load languages. HTML/CSS preview still works offline.';
     outEl.className = 'err';
+    onLangChange();
   }
 }
 function onLangChange(){
   const key = langSel.value;
-  codeEl.value = snippets[key] || '';
-  extEl.textContent = extMap[key] || '';
+  codeEl.value = (langs[key] && langs[key].code) || '';
+  extEl.textContent = (langs[key] && langs[key].ext) || '';
   const opt = langSel.selectedOptions[0];
-  verBadge.textContent = opt ? opt.dataset.ver : '';
+  const isPreview = langs[key] && langs[key].preview;
+  verBadge.textContent = isPreview ? 'Live preview' : (opt ? opt.dataset.ver : '');
+  $('#output').hidden = false; $('#preview').hidden = true;
 }
 langSel.addEventListener('change', onLangChange);
+
+function renderPreview(key){
+  const code = codeEl.value;
+  const doc = langs[key].preview === 'css'
+    ? '<!DOCTYPE html><html><head><style>'+code+'</style></head><body><div class="box"><h2>Preview</h2><p>Sample paragraph text.</p></div></body></html>'
+    : code;
+  $('#preview').srcdoc = doc;
+  $('#preview').hidden = false; $('#output').hidden = true;
+  statusEl.textContent = 'Rendered';
+}
 
 async function runCode(){
   const opt = langSel.selectedOptions[0];
   if(!opt) return;
+  if(langs[opt.value] && langs[opt.value].preview){
+    renderPreview(opt.value);
+    return;
+  }
   runBtn.disabled = true; runBtn.textContent = '⏳ Running…';
   statusEl.textContent = 'Running';
+  $('#preview').hidden = true; $('#output').hidden = false;
   outEl.className = ''; outEl.textContent = 'Compiling & executing…';
   try{
     const res = await fetch('https://emkc.org/api/v2/piston/execute', {
@@ -223,7 +263,7 @@ async function runCode(){
       body: JSON.stringify({
         language: opt.dataset.lang,
         version: opt.dataset.ver,
-        files: [{ name: 'main'+(extMap[opt.value]||''), content: codeEl.value }]
+        files: [{ name: 'main'+((langs[opt.value]||{}).ext||''), content: codeEl.value }]
       })
     });
     const data = await res.json();
