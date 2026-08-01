@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10131a">
-<meta name="description" content="Free Indian Radio Player">
+<meta name="description" content="Free Indian Hindi Bengali Bollywood News Devotional Retro Radio">
 <title>Free Radio</title>
 <style>
 *{box-sizing:border-box}
@@ -41,7 +41,7 @@ footer{margin-top:auto;padding:12px 5px;color:var(--muted);font-size:11px}
 
 <header>
 <h1>📻 Free Radio</h1>
-<div class="sub">1000+ Dynamic Stations • Hindi • Bengali • Bollywood • News • Devotional • Retro</div>
+<div class="sub">Hindi • Bengali • Bollywood • News • Devotional • Retro</div>
 </header>
 
 <section class="box controls">
@@ -104,7 +104,7 @@ const volume=document.getElementById("volume");
 const year=document.getElementById("year");
 
 const BATCH=100;
-let stations=[],index=-1,offset=0,busy=false,end=false,observer;
+let stations=[],index=-1,offset=0,busy=false,end=false;
 
 year.textContent=new Date().getFullYear();
 audio.volume=.8;
@@ -112,7 +112,8 @@ audio.volume=.8;
 document.querySelectorAll("[data-t]").forEach(b=>{
  b.onclick=()=>{
   document.documentElement.dataset.theme=b.dataset.t;
-  document.querySelectorAll("[data-t]").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll("[data-t]")
+   .forEach(x=>x.classList.remove("active"));
   b.classList.add("active");
   localStorage.theme=b.dataset.t;
  };
@@ -129,6 +130,7 @@ volume.oninput=e=>audio.volume=e.target.value;
 
 function params(){
  let c=category.value,q=search.value.trim();
+
  let p={
   countrycode:"IN",
   is_https:"true",
@@ -163,6 +165,7 @@ async function load(reset=false){
   offset=0;
   end=false;
   stations=[];
+  index=-1;
   list.innerHTML="";
   more.textContent="Loading stations...";
  }
@@ -170,10 +173,12 @@ async function load(reset=false){
  busy=true;
 
  try{
+
   let r=await fetch(API+"?"+params());
+
   if(!r.ok)throw Error();
 
-  let incoming=await r.json()
+  let incoming=(await r.json())
    .filter(x=>x.url_resolved||x.url);
 
   let ids=new Set(stations.map(x=>x.stationuuid));
@@ -186,15 +191,23 @@ async function load(reset=false){
   render(incoming);
 
   if(incoming.length<BATCH){
+
    end=true;
-   more.textContent=`End of available stations • ${stations.length} loaded`;
+
+   more.textContent=
+    `End of available stations • ${stations.length} loaded`;
+
   }else{
+
    more.textContent=
     `${stations.length} stations loaded • Scroll for more`;
   }
 
  }catch(e){
-  more.textContent="Unable to load more stations. Tap search to retry.";
+
+  more.textContent=
+   "Unable to load more stations. Try again.";
+
  }
 
  busy=false;
@@ -203,11 +216,15 @@ async function load(reset=false){
 function render(items){
 
  if(!items.length&&!stations.length){
-  list.innerHTML='<div class="empty">No stations found.</div>';
+
+  list.innerHTML=
+   '<div class="empty">No stations found.</div>';
+
   return;
  }
 
  items.forEach(s=>{
+
   let i=stations.indexOf(s);
   let el=document.createElement("article");
   let fav=favorites().includes(s.stationuuid);
@@ -215,28 +232,41 @@ function render(items){
   el.className="station";
 
   el.innerHTML=`
-  <img src="${s.favicon||""}" onerror="this.style.visibility='hidden'">
+  <img src="${s.favicon||""}"
+       onerror="this.style.visibility='hidden'">
+
   <div class="info">
    <div class="name">${esc(s.name)}</div>
    <div class="meta">
     ${esc(s.country||"India")} • ${esc(s.codec||"Radio")}
    </div>
   </div>
+
   <div class="actions">
-   <button data-play="${i}">▶</button>
-   <button data-fav="${i}">${fav?"❤️":"♡"}</button>
+   <button data-play>▶</button>
+   <button data-fav>${fav?"❤️":"♡"}</button>
   </div>`;
 
-  el.querySelector("[data-play]").onclick=()=>playStation(i);
-  el.querySelector("[data-fav]").onclick=()=>favStation(i);
+  el.querySelector("[data-play]")
+   .onclick=()=>playStation(i);
+
+  el.querySelector("[data-fav]")
+   .onclick=()=>favStation(i);
+
   list.appendChild(el);
  });
 }
 
 function esc(x){
+
  return String(x||"").replace(/[&<>"']/g,m=>({
-  "&":"&amp;","<":"&lt;",">":"&gt;",
-  '"':"&quot;","'":"&#39;"
+
+  "&":"&amp;",
+  "<":"&lt;",
+  ">":"&gt;",
+  '"':"&quot;",
+  "'":"&#39;"
+
  }[m]));
 }
 
@@ -245,61 +275,98 @@ function playStation(i){
  if(!stations[i])return;
 
  index=i;
+
  let s=stations[i];
 
  audio.src=s.url_resolved||s.url;
 
  audio.play().then(()=>{
+
   now.textContent=s.name;
-  status.textContent="● LIVE • "+(s.codec||"Stream");
+
+  status.textContent=
+   "● LIVE • "+(s.codec||"Stream");
+
   cover.src=s.favicon||"";
+
   play.textContent="⏸";
+
  }).catch(()=>{
-  status.textContent="Stream unavailable — try another station.";
+
+  status.textContent=
+   "Stream unavailable — try another station.";
+
  });
 }
 
 play.onclick=()=>{
- if(!audio.src&&stations.length)return playStation(0);
+
+ if(!audio.src&&stations.length)
+  return playStation(0);
 
  if(audio.paused){
+
   audio.play().catch(()=>{});
+
   play.textContent="⏸";
+
  }else{
+
   audio.pause();
+
   play.textContent="▶";
  }
 };
 
 document.getElementById("next").onclick=()=>{
- if(stations.length)playStation((index+1)%stations.length);
+
+ if(stations.length)
+  playStation((index+1)%stations.length);
+
 };
 
 document.getElementById("prev").onclick=()=>{
- if(stations.length)playStation((index-1+stations.length)%stations.length);
+
+ if(stations.length)
+  playStation((index-1+stations.length)%stations.length);
+
 };
 
 function favorites(){
- return JSON.parse(localStorage.favorites||"[]");
+
+ return JSON.parse(
+  localStorage.favorites||"[]"
+ );
 }
 
 function favStation(i){
 
- let s=stations[i],a=favorites(),n=a.indexOf(s.stationuuid);
+ let s=stations[i];
+ let a=favorites();
+ let n=a.indexOf(s.stationuuid);
 
  n>-1?a.splice(n,1):a.push(s.stationuuid);
- localStorage.favorites=JSON.stringify(a);
 
- refreshFavoritesUI();
+ localStorage.favorites=
+  JSON.stringify(a);
+
+ if(category.value==="favorites")
+  loadFav();
+ else
+  refreshFavoritesUI();
 }
 
 function refreshFavoritesUI(){
- document.querySelectorAll(".station").forEach((el,i)=>{
+
+ document.querySelectorAll(".station")
+ .forEach((el,i)=>{
+
   let b=el.querySelector("[data-fav]");
-  if(b){
-   let s=stations[i];
-   b.textContent=favorites().includes(s.stationuuid)?"❤️":"♡";
-  }
+
+  if(b&&stations[i])
+   b.textContent=
+    favorites().includes(stations[i].stationuuid)
+     ?"❤️":"♡";
  });
 }
 
@@ -311,34 +378,43 @@ async function loadFav(){
  let ids=favorites();
 
  if(!ids.length){
-  list.innerHTML='<div class="empty">No favorite stations yet.</div>';
+
+  list.innerHTML=
+   '<div class="empty">No favorite stations yet.</div>';
+
   more.textContent="";
+
   return;
  }
 
  stations=[];
+ index=-1;
 
  for(let id of ids){
+
   try{
+
    let r=await fetch(
     "https://de1.api.radio-browser.info/json/stations/byuuid/"+id
    );
+
    let x=await r.json();
+
    if(x[0])stations.push(x[0]);
+
   }catch(e){}
  }
 
  render(stations);
- more.textContent=`${stations.length} favorite stations`;
-}
 
-function resetLoad(){
- search.value=category.value==="favorites"?"":search.value;
- load(true);
+ more.textContent=
+  `${stations.length} favorite stations`;
 }
 
 category.onchange=()=>{
+
  search.value="";
+
  load(true);
 };
 
@@ -347,23 +423,34 @@ document.getElementById("find").onclick=()=>{
 };
 
 search.onkeydown=e=>{
- if(e.key==="Enter")load(true);
+
+ if(e.key==="Enter")
+  load(true);
+
 };
 
-audio.onpause=()=>play.textContent="▶";
+audio.onpause=()=>{
+ play.textContent="▶";
+};
 
 audio.onerror=()=>{
- status.textContent="Stream error — choose another station";
+
+ status.textContent=
+  "Stream error — choose another station";
+
 };
 
-observer=new IntersectionObserver(entries=>{
+const observer=new IntersectionObserver(entries=>{
+
  if(entries[0].isIntersecting&&!busy&&!end)
   load(false);
+
 },{rootMargin:"500px"});
 
 observer.observe(more);
 
 load(true);
 </script>
+
 </body>
 </html>
