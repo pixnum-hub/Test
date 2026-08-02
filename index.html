@@ -104,9 +104,12 @@
     .resizer::before{width:4px;height:36px;}
   }
 
+  main.preview-full{grid-template-columns:1fr!important;grid-template-rows:1fr!important;}
+  main.preview-full .editor-wrap,main.preview-full .resizer{display:none;}
+  #fullscreenBtn.active{color:var(--accent);border-color:var(--accent);}
   .output-panel{min-height:0;min-width:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;}
   .output-header{
-    display:flex;justify-content:space-between;align-items:center;
+    display:flex;justify-content:space-between;align-items:center;gap:.5rem;
     padding:.4rem .8rem;background:var(--panel);border-bottom:1px solid var(--border);
     font-size:.8rem;color:var(--muted);
   }
@@ -178,6 +181,7 @@
         <button id="tabConsole" class="active">Console</button>
       </div>
       <span id="status">idle</span>
+      <button id="fullscreenBtn" class="ghost" title="Toggle fullscreen">⛶</button>
     </div>
     <pre id="output">Press ▶ Run to execute your code.</pre>
     <iframe id="preview" title="Live preview" sandbox="allow-scripts allow-modals allow-forms allow-same-origin"></iframe>
@@ -206,6 +210,7 @@ const blankBtn = document.getElementById('blankBtn');
 const output = document.getElementById('output');
 const preview = document.getElementById('preview');
 const outputPanel = document.getElementById('outputPanel');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
 const tabPreview = document.getElementById('tabPreview');
 const tabConsole = document.getElementById('tabConsole');
 const status = document.getElementById('status');
@@ -221,6 +226,26 @@ function showTab(t){
 }
 tabPreview.addEventListener('click', () => showTab('preview'));
 tabConsole.addEventListener('click', () => showTab('console'));
+
+// ---- fullscreen preview/console panel ----
+let isFull = false;
+function setFullscreen(on){
+  isFull = on;
+  mainEl.classList.toggle('preview-full', isFull);
+  fullscreenBtn.classList.toggle('active', isFull);
+  fullscreenBtn.textContent = isFull ? '⤢' : '⛶';
+  fullscreenBtn.title = isFull ? 'Exit fullscreen' : 'Toggle fullscreen';
+}
+fullscreenBtn.addEventListener('click', async () => {
+  setFullscreen(!isFull);
+  try{
+    if(isFull && outputPanel.requestFullscreen) await outputPanel.requestFullscreen();
+    else if(!isFull && document.fullscreenElement) await document.exitFullscreen();
+  }catch(err){}
+});
+document.addEventListener('fullscreenchange', () => {
+  if(!document.fullscreenElement && isFull) setFullscreen(false);
+});
 
 // ---- draggable split ----
 function isRow(){ return window.matchMedia('(min-width:860px)').matches; }
@@ -455,6 +480,7 @@ findClose.addEventListener('click', closeFind);
 document.addEventListener('keydown', e => {
   if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f'){ e.preventDefault(); openFind(); }
   else if(e.key === 'Escape' && !findBar.hidden){ closeFind(); }
+  else if(e.key === 'Escape' && isFull){ fullscreenBtn.click(); }
 });
 
 // ---- theme handling ----
