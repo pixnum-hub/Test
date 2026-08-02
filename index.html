@@ -157,9 +157,9 @@
       <details style="margin-top:10px">
         <summary>Advanced: processing instance</summary>
         <div class="settings-body">
-          <label for="instance">Cobalt-compatible instance URL</label>
+          <label for="instance">Preferred processing instance (tried first)</label>
           <input id="instance" type="url" value="https://api.cobalt.liubquanti.click">
-          <p class="note">Metadata (title/thumbnail) always comes from YouTube's own free oEmbed endpoint above. The default instance here is a community one currently online without a bot-check (checked <a href="https://cobalt.directory" target="_blank" rel="noopener">cobalt.directory</a> on Jul 31, 2026) — but community instances rotate and rate-limit, so if it stops working, open cobalt.directory, pick one with a ❌ under "Turnstile," and paste its API URL here.</p>
+          <p class="note">Metadata (title/thumbnail) always comes from YouTube's own free oEmbed endpoint above. For the actual file, Pulldown tries your preferred instance first, then falls back through a short list of other community instances automatically — a single one being down or bot-gated won't stop it. Status above shows which one it's trying. If every instance in the list fails, that's the anti-abuse reality of shared public instances right now, not a bug — self-hosting below is the only durable fix.</p>
           <details>
             <summary>Self-host your own instance (most reliable)</summary>
             <p class="note">One Docker container, no database. Save as <code>docker-compose.yml</code> and run <code>docker compose up -d</code>:</p>
@@ -279,36 +279,53 @@
     previewPanel.hidden = false;
   }
 
+  const FALLBACK_INSTANCES = [
+    "https://api.cobalt.liubquanti.click",
+    "https://rue-cobalt.xenon.zone",
+    "https://cobaltapi.cjs.nz"
+  ];
+
+  async function tryInstance(base, body){
+    let res;
+    try{
+      res = await fetch(base.replace(/\/$/, "") + "/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify(body)
+      });
+    }catch(networkErr){
+      return { ok:false, reason:"unreachable" };
+    }
+    let data;
+    try{ data = await res.json(); }
+    catch(parseErr){ return { ok:false, reason:"bad-reply" }; }
+    if(!res.ok || data.status === "error"){
+      const code = data && data.error && data.error.code ? data.error.code : ("HTTP " + res.status);
+      return { ok:false, reason:code };
+    }
+    return { ok:true, data };
+  }
+
   async function resolveDownload(rawUrl){
-    const base = instanceInput.value.trim().replace(/\/$/, "");
-    if(!base){ throw new Error("no processing instance set — see Advanced below"); }
     const body = {
       url: rawUrl,
       downloadMode: modeSel.value === "audio" ? "audio" : "auto",
       videoQuality: qualitySel.value === "max" ? "max" : qualitySel.value,
       audioFormat: "mp3"
     };
-    let res;
-    try{
-      res = await fetch(base + "/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify(body)
-      });
-    }catch(networkErr){
-      throw new Error("could not reach that instance (CORS/network block) — try another from cobalt.directory");
+    const chosen = instanceInput.value.trim();
+    const candidates = chosen ? [chosen, ...FALLBACK_INSTANCES.filter(i => i !== chosen)] : FALLBACK_INSTANCES;
+    const failures = [];
+    for(const base of candidates){
+      setStatus("trying " + base.replace(/^https?:\/\//, "") + "…", "busy");
+      const result = await tryInstance(base, body);
+      if(result.ok){
+        instanceInput.value = base;
+        return result.data;
+      }
+      failures.push(base.replace(/^https?:\/\//, "") + " (" + result.reason + ")");
     }
-    let data;
-    try{
-      data = await res.json();
-    }catch(parseErr){
-      throw new Error("instance sent a non-JSON reply (HTTP " + res.status + ") — likely blocked by a bot check");
-    }
-    if(!res.ok || data.status === "error"){
-      const code = data && data.error && data.error.code ? data.error.code : ("HTTP " + res.status);
-      throw new Error("instance declined the request (" + code + ")");
-    }
-    return data;
+    throw new Error("every instance declined — " + failures.join(", ") + " — self-hosting is the durable fix, see Advanced");
   }
 
   function renderLinks(data){
