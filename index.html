@@ -84,6 +84,13 @@
   details{ font-size:13px; }
   summary{ cursor:pointer; color:var(--dim); font-family:var(--mono); font-size:12px; }
   .settings-body{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+  .settings-body details{ border-top:1px dashed var(--border); padding-top:8px; }
+  code{ font-family:var(--mono); background:var(--bg); padding:1px 5px; border-radius:4px; font-size:12px; }
+  pre.code{
+    font-family:var(--mono); font-size:11.5px; line-height:1.5; background:var(--bg);
+    border:var(--bw) solid var(--border); border-radius:8px; padding:10px 12px;
+    overflow-x:auto; white-space:pre; color:var(--text);
+  }
 
   footer{
     margin-top:24px; padding:18px 16px 22px; border-top:var(--bw) solid var(--border);
@@ -152,7 +159,22 @@
         <div class="settings-body">
           <label for="instance">Cobalt-compatible instance URL</label>
           <input id="instance" type="url" value="https://api.cobalt.tools">
-          <p class="note">This app resolves video info directly from YouTube's own free oEmbed endpoint. Turning a link into an actual downloadable file needs a separate, unofficial "cobalt" processing server — YouTube actively blocks public ones, so the public default above may fail. If it does, browse <a href="https://cobalt.directory" target="_blank" rel="noopener">cobalt.directory</a> for a currently online instance and paste its URL here, or self-host your own.</p>
+          <p class="note">Metadata (title/thumbnail) always comes from YouTube's own free oEmbed endpoint above. Turning a link into a real file needs a separate "cobalt" processing server — YouTube actively blocks shared public ones, so the default above will often reply with an auth error. Browse <a href="https://cobalt.directory" target="_blank" rel="noopener">cobalt.directory</a> for one that's online right now and paste its URL here.</p>
+          <details>
+            <summary>Self-host your own instance (most reliable)</summary>
+            <p class="note">One Docker container, no database. Save as <code>docker-compose.yml</code> and run <code>docker compose up -d</code>:</p>
+            <pre class="code">services:
+  cobalt-api:
+    image: ghcr.io/imputnet/cobalt:11
+    container_name: cobalt-api
+    init: true
+    restart: unless-stopped
+    ports:
+      - 9000:9000/tcp
+    environment:
+      API_URL: "https://your-domain-or-tunnel/"</pre>
+            <p class="note">Then set the instance URL above to that address. YouTube may still need a disposable Google account's cookies file for reliable access — see the project's <a href="https://github.com/imputnet/cobalt" target="_blank" rel="noopener">GitHub docs</a> for the cookies setup, or deploy a hosted copy in one click via <a href="https://railway.com/deploy/cobalt-youtube-downloader" target="_blank" rel="noopener">Railway</a>.</p>
+          </details>
         </div>
       </details>
     </section>
