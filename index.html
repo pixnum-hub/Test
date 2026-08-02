@@ -154,16 +154,12 @@
         <div class="led" id="led"></div>
         <span id="statusText">STATUS: IDLE — awaiting a link</span>
       </div>
-      <details style="margin-top:10px">
-        <summary>Advanced: processing instance</summary>
+      <details style="margin-top:10px" open>
+        <summary>Processing instance (needed for actual downloads)</summary>
         <div class="settings-body">
-          <label for="instance">Preferred processing instance (tried first)</label>
-          <input id="instance" type="url" value="https://api.cobalt.liubquanti.click">
-          <p class="note">Metadata (title/thumbnail) always comes from YouTube's own free oEmbed endpoint above. For the actual file, Pulldown tries your preferred instance first, then falls back through a short list of other community instances automatically — a single one being down or bot-gated won't stop it. Status above shows which one it's trying. If every instance in the list fails, that's the anti-abuse reality of shared public instances right now, not a bug — self-hosting below is the only durable fix.</p>
-          <details>
-            <summary>Self-host your own instance (most reliable)</summary>
-            <p class="note">One Docker container, no database. Save as <code>docker-compose.yml</code> and run <code>docker compose up -d</code>:</p>
-            <pre class="code">services:
+          <p class="note">Metadata (title/thumbnail) above always works via YouTube's own free oEmbed endpoint. Turning a link into a real file needs a separate "cobalt" server, and right now <b>shared public ones are consistently gating requests</b> behind bot-checks or API keys — that's the platform's anti-abuse response, not a bug here. The reliable fix is running your own:</p>
+          <p class="note">One Docker container, no database. Save as <code>docker-compose.yml</code> and run <code>docker compose up -d</code>:</p>
+          <pre class="code">services:
   cobalt-api:
     image: ghcr.io/imputnet/cobalt:11
     container_name: cobalt-api
@@ -173,8 +169,10 @@
       - 9000:9000/tcp
     environment:
       API_URL: "https://your-domain-or-tunnel/"</pre>
-            <p class="note">Then set the instance URL above to that address. YouTube may still need a disposable Google account's cookies file for reliable access — see the project's <a href="https://github.com/imputnet/cobalt" target="_blank" rel="noopener">GitHub docs</a> for the cookies setup, or deploy a hosted copy in one click via <a href="https://railway.com/deploy/cobalt-youtube-downloader" target="_blank" rel="noopener">Railway</a>.</p>
-          </details>
+          <p class="note">No server of your own? One-click deploy via <a href="https://railway.com/deploy/cobalt-youtube-downloader" target="_blank" rel="noopener">Railway</a>. YouTube specifically may also need a disposable Google account's cookies file — see the project's <a href="https://github.com/imputnet/cobalt" target="_blank" rel="noopener">GitHub docs</a> for that setup.</p>
+          <label for="instance">Your instance's API URL</label>
+          <input id="instance" type="url" placeholder="https://your-instance.example.com">
+          <p class="note">No instance of your own yet? You can try browsing <a href="https://cobalt.directory" target="_blank" rel="noopener">cobalt.directory</a> for a currently-open community one, but expect it to be hit or miss.</p>
         </div>
       </details>
     </section>
@@ -279,12 +277,6 @@
     previewPanel.hidden = false;
   }
 
-  const FALLBACK_INSTANCES = [
-    "https://api.cobalt.liubquanti.click",
-    "https://rue-cobalt.xenon.zone",
-    "https://cobaltapi.cjs.nz"
-  ];
-
   async function tryInstance(base, body){
     let res;
     try{
@@ -294,11 +286,11 @@
         body: JSON.stringify(body)
       });
     }catch(networkErr){
-      return { ok:false, reason:"unreachable" };
+      return { ok:false, reason:"unreachable (CORS/network)" };
     }
     let data;
     try{ data = await res.json(); }
-    catch(parseErr){ return { ok:false, reason:"bad-reply" }; }
+    catch(parseErr){ return { ok:false, reason:"non-JSON reply, HTTP " + res.status }; }
     if(!res.ok || data.status === "error"){
       const code = data && data.error && data.error.code ? data.error.code : ("HTTP " + res.status);
       return { ok:false, reason:code };
@@ -307,25 +299,21 @@
   }
 
   async function resolveDownload(rawUrl){
+    const base = instanceInput.value.trim();
+    if(!base){
+      throw new Error("no instance set — add one under Advanced (self-hosting is the reliable option)");
+    }
     const body = {
       url: rawUrl,
       downloadMode: modeSel.value === "audio" ? "audio" : "auto",
       videoQuality: qualitySel.value === "max" ? "max" : qualitySel.value,
       audioFormat: "mp3"
     };
-    const chosen = instanceInput.value.trim();
-    const candidates = chosen ? [chosen, ...FALLBACK_INSTANCES.filter(i => i !== chosen)] : FALLBACK_INSTANCES;
-    const failures = [];
-    for(const base of candidates){
-      setStatus("trying " + base.replace(/^https?:\/\//, "") + "…", "busy");
-      const result = await tryInstance(base, body);
-      if(result.ok){
-        instanceInput.value = base;
-        return result.data;
-      }
-      failures.push(base.replace(/^https?:\/\//, "") + " (" + result.reason + ")");
+    const result = await tryInstance(base, body);
+    if(!result.ok){
+      throw new Error("instance declined: " + result.reason + " — public instances are widely gated right now, see Advanced");
     }
-    throw new Error("every instance declined — " + failures.join(", ") + " — self-hosting is the durable fix, see Advanced");
+    return result.data;
   }
 
   function renderLinks(data){
