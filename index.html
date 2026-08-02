@@ -89,6 +89,7 @@ background:#00000080;border-radius:8px;padding:4px 8px;display:flex;align-items:
 .options{display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left;font-size:.73rem}
 .options label{padding:8px;background:#fff6;border-radius:9px;display:flex;align-items:center;gap:6px}
 .options input{width:auto}
+.options label.wide{grid-column:1/-1}
 .qualityrow{margin-top:6px}
 .qualityrow select{font-size:.75rem}
 
@@ -207,12 +208,20 @@ allowfullscreen src="about:blank"></iframe>
 <div class="options">
 <label><input id="mic" type="checkbox"> 🎤 Microphone</label>
 <label><input id="audio" type="checkbox" checked> 🔊 System audio</label>
+<label class="wide"><input id="audioOnly" type="checkbox"> 🎵 Audio only</label>
 </div>
-<div class="qualityrow">
+<div class="qualityrow" id="videoQualityRow">
 <select id="quality" aria-label="Recording quality">
 <option value="std">Standard · 2.5 Mbps</option>
 <option value="hd" selected>HD · 8 Mbps</option>
 <option value="max">Max · 16 Mbps</option>
+</select>
+</div>
+<div class="qualityrow" id="audioQualityRow" style="display:none">
+<select id="audioQuality" aria-label="Audio quality">
+<option value="128000">Standard · 128 kbps</option>
+<option value="192000" selected>High · 192 kbps</option>
+<option value="320000">Max · 320 kbps</option>
 </select>
 </div>
 
@@ -232,6 +241,7 @@ style="width:100%;margin-top:6px">
 
 <div class="preview" id="preview">
 <video id="previewVid" controls playsinline></video>
+<audio id="previewAudio" controls style="display:none"></audio>
 <div class="recBtns">
 <button id="download">⬇ Download</button>
 <button id="discard">✕ Discard</button>
@@ -289,6 +299,11 @@ function wireControls(){
  $("resume").addEventListener("click",resumeRec);
  $("download").addEventListener("click",downloadRec);
  $("discard").addEventListener("click",discardRec);
+ $("audioOnly").addEventListener("change",e=>{
+  let on=e.target.checked;
+  $("videoQualityRow").style.display=on?"none":"block";
+  $("audioQualityRow").style.display=on?"block":"none";
+ });
 }
 wireControls();
 
@@ -485,6 +500,7 @@ window.addEventListener("keydown",e=>{
 
 /* ---------- recording ---------- */
 let rec=null,chunks=[],blob=null,timer=null,seconds=0,started=0,elapsedBeforePause=0;
+let recIsAudioOnly=false;
 
 const QUALITY={std:2500000,hd:8000000,max:16000000};
 
@@ -507,12 +523,20 @@ async function startRec(){
  if(!navigator.mediaDevices?.getDisplayMedia){
   return toast("Screen recording isn't supported on this browser/device — try desktop Chrome, Edge, or Firefox.","err");
  }
+ let audioOnly=$("audioOnly").checked;
+ if(audioOnly && !$("audio").checked && !$("mic").checked){
+  return toast("Turn on System audio or Microphone for an audio-only recording.","warn");
+ }
  resetRecordingUI();
+ recIsAudioOnly=audioOnly;
  try{
+  // getDisplayMedia always requires a video request per spec, even for an audio-only recording —
+  // we simply drop the video track right after capture and never encode it.
   let screen=await navigator.mediaDevices.getDisplayMedia({
    video:{frameRate:30},audio:$("audio").checked
   });
-  let tracks=[...screen.getVideoTracks()];
+  let videoTracks=screen.getVideoTracks();
+  let tracks=audioOnly?[]:[...videoTracks];
   if($("audio").checked)tracks.push(...screen.getAudioTracks());
 
   if($("mic").checked){
@@ -522,16 +546,40 @@ async function startRec(){
    }catch(e){toast("Microphone permission was denied — recording system audio only.","warn")}
   }
 
+  if(audioOnly){
+   videoTracks.forEach(t=>t.stop()); // release the screen capture immediately, keep only audio
+   if(!tracks.length){
+    toast("No audio track was available to record.","err");
+    return;
+   }
+  }
+
   let stream=new MediaStream(tracks);
-  let type=MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")?"video/webm;codecs=vp9,opus":
-   MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")?"video/webm;codecs=vp8,opus":"video/webm";
-  rec=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:QUALITY[$("quality").value]});
+  let type,opts;
+  if(audioOnly){
+   type=MediaRecorder.isTypeSupported("audio/webm;codecs=opus")?"audio/webm;codecs=opus":"audio/webm";
+   opts={mimeType:type,audioBitsPerSecond:Number($("audioQuality").value)};
+  }else{
+   type=MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")?"video/webm;codecs=vp9,opus":
+    MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")?"video/webm;codecs=vp8,opus":"video/webm";
+   opts={mimeType:type,videoBitsPerSecond:QUALITY[$("quality").value]};
+  }
+  rec=new MediaRecorder(stream,opts);
   chunks=[];blob=null;seconds=0;elapsedBeforePause=0;updateRecUI();
 
   rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
   rec.onstop=()=>{
-   blob=new Blob(chunks,{type:"video/webm"});
-   $("previewVid").src=URL.createObjectURL(blob);
+   blob=new Blob(chunks,{type:recIsAudioOnly?"audio/webm":"video/webm"});
+   let url=URL.createObjectURL(blob);
+   if(recIsAudioOnly){
+    $("previewAudio").src=url;
+    $("previewAudio").style.display="block";
+    $("previewVid").style.display="none";
+   }else{
+    $("previewVid").src=url;
+    $("previewVid").style.display="block";
+    $("previewAudio").style.display="none";
+   }
    $("preview").style.display="block";
    $("status").innerHTML='<span class="tally ready" id="recTally"></span> Recording ready';
    $("ovRec").classList.remove("on");
@@ -544,10 +592,10 @@ async function startRec(){
   $("start").style.display="none";
   $("pause").style.display="block";
   $("stop").style.display="block";
-  $("status").innerHTML='<span class="tally live" id="recTally"></span> Recording…';
+  $("status").innerHTML='<span class="tally live" id="recTally"></span> Recording'+(audioOnly?" (audio only)":"")+'…';
   $("ovRec").classList.add("on");
   setTally("live");
-  screen.getVideoTracks()[0].onended=stopRec;
+  if(!audioOnly)videoTracks[0].onended=stopRec;
  }catch(e){
   toast("Recording was cancelled.","warn");
  }
@@ -565,7 +613,7 @@ function resumeRec(){
   rec.resume();started=Date.now();
   timer=setInterval(()=>{seconds=elapsedBeforePause+Math.floor((Date.now()-started)/1000);updateRecUI()},500);
   $("pause").style.display="block";$("resume").style.display="none";
-  $("status").innerHTML='<span class="tally live" id="recTally"></span> Recording…';
+  $("status").innerHTML='<span class="tally live" id="recTally"></span> Recording'+(recIsAudioOnly?" (audio only)":"")+'…';
   setTally("live");
  }
 }
@@ -581,12 +629,14 @@ function downloadRec(){
  let name=$("filename").value.trim()||"youtube-recording";
  safeSet("pravah_filename",name);
  let a=document.createElement("a");
- a.href=URL.createObjectURL(blob);a.download=name.replace(/\s+/g,"-")+".webm";
+ a.href=URL.createObjectURL(blob);
+ a.download=name.replace(/\s+/g,"-")+(recIsAudioOnly?".weba":".webm");
  a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
  toast("Download started.","ok");
 }
 function discardRec(){
  if($("previewVid").src)URL.revokeObjectURL($("previewVid").src);
+ if($("previewAudio").src)URL.revokeObjectURL($("previewAudio").src);
  resetRecordingUI();
  toast("Recording discarded.");
 }
@@ -594,6 +644,7 @@ function resetRecordingUI(){
  blob=null;chunks=[];seconds=0;elapsedBeforePause=0;updateRecUI();
  $("preview").style.display="none";
  $("previewVid").removeAttribute("src");
+ $("previewAudio").removeAttribute("src");
  $("status").innerHTML='<span class="tally ready" id="recTally"></span> Recorder ready';
  setTally("ready");
  $("ovRec").classList.remove("on");
