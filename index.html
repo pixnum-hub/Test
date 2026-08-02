@@ -3,512 +3,306 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#12161c">
-<title>YouTube Player + Recorder</title>
+<meta name="theme-color" content="#000">
+<title>ClipMe</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
 *{box-sizing:border-box}
-:root{
- --bg:#eef1f6;--card:#ffffffb8;--txt:#12161c;--muted:#5b6674;
- --accent:#e6332a;   /* record tally */
- --accent2:#1f9d63;  /* ready / confirm tally */
- --accent3:#d98f16;  /* paused / caution tally */
- --line:#ffffff88;--shadow:0 12px 35px #0002;--panel:#0000000d;
-}
+:root{--bg:#eef2f7;--card:#ffffffc9;--txt:#111827;--muted:#64748b;--a:#ef4444;--line:#fff8}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--txt);
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;
-justify-content:center;align-items:center;text-align:center;-webkit-tap-highlight-color:transparent}
-.app{width:min(100%,650px);min-height:100vh;padding:10px;display:flex;
-flex-direction:column;justify-content:center;gap:10px}
-header,.card,footer{background:var(--card);border:1px solid var(--line);
-box-shadow:var(--shadow);backdrop-filter:blur(18px);border-radius:20px}
-header{padding:13px}
-h1{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.02em;
-font-size:1.25rem;margin:0 0 3px;text-transform:uppercase}
-.sub{font-size:.72rem;color:var(--muted);letter-spacing:.03em}
-.status{font-size:.75rem;color:var(--muted)}
-.modes{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:9px}
-button,input,select{border:0;border-radius:11px;padding:10px;font:inherit;color:inherit}
-button{background:#fff;color:#111;cursor:pointer;font-weight:650;transition:transform .08s}
-button:active{transform:scale(.96)}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
-.modes button{font-size:.68rem;padding:7px 9px}
-.card{padding:11px}
-.eyebrow{font-family:'Oswald',sans-serif;font-size:.66rem;font-weight:600;
-letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;margin:0 0 7px 2px}
-.inputrow{display:flex;gap:6px}
-input,select{width:100%;background:#ffffffd9;color:#111;outline:0}
-.badge{margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:.7rem;
-color:var(--muted);text-align:left;padding-left:2px}
-
-.results{margin-top:8px;max-height:320px;overflow-y:auto;display:none;
-flex-direction:column;gap:6px;text-align:left}
-.results.show{display:flex}
-.result{display:flex;gap:8px;padding:6px;border-radius:11px;background:#fff6;
-cursor:pointer;align-items:center;transition:transform .08s}
-.result:active{transform:scale(.98)}
-.result img{width:88px;height:50px;object-fit:cover;border-radius:8px;flex:none;background:#000}
-.result .meta{overflow:hidden;flex:1}
-.result .t{font-size:.76rem;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.result .c{font-size:.68rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.result .d{font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--muted);
-flex:none;padding-left:6px}
-.results .hint{padding:8px;font-size:.72rem;color:var(--muted)}
-body.dark .result,body.oled .result{background:#ffffff12}
-body.hc .result{background:#000;border:1px solid #fff}
-.badge b{color:var(--txt)}
-
-.player{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;
-border-radius:15px;background:#000;margin-top:9px}
+font-family:system-ui,sans-serif;display:flex;justify-content:center;align-items:center;text-align:center}
+.app{width:min(100%,680px);min-height:100vh;padding:9px;display:flex;flex-direction:column;justify-content:center;gap:9px}
+header,.card,footer{background:var(--card);border:1px solid var(--line);border-radius:20px;
+box-shadow:0 12px 35px #0002;backdrop-filter:blur(18px)}
+header{padding:11px}h1{font-size:1.15rem;margin:0}.sub,.status,.info{font-size:.7rem;color:var(--muted)}
+.modes{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;margin-top:7px}
+button,input,select{border:0;border-radius:10px;padding:9px;font:inherit}
+button{background:#fff;color:#111;font-weight:650;cursor:pointer}
+button:active{transform:scale(.96)}.modes button{font-size:.68rem;padding:6px 8px}
+.card{padding:9px}.inputrow{display:flex;gap:6px}
+input,select{background:#fff;color:#111;width:100%;outline:0}
+.player{position:relative;aspect-ratio:16/9;background:#000;border-radius:14px;
+overflow:hidden;margin-top:8px;transition:all .3s ease}
+.player.cinema{aspect-ratio:21/9}
 iframe{width:100%;height:100%;border:0}
-.ov{position:absolute;pointer-events:none;font-family:'JetBrains Mono',monospace;
-font-size:.68rem;font-weight:700;color:#fff;letter-spacing:.04em;
-background:#00000080;border-radius:8px;padding:4px 8px;display:flex;align-items:center;gap:5px}
-.ov-tc{right:7px;bottom:7px}
-.ov-rec{left:7px;top:7px;display:none}
-.ov-rec.on{display:flex}
-
-.tally{width:8px;height:8px;border-radius:50%;background:#8a99;flex:none}
-.tally.live{background:var(--accent);animation:pulse 1.3s infinite}
-.tally.ready{background:var(--accent2)}
-.tally.pause{background:var(--accent3)}
-@keyframes pulse{0%{box-shadow:0 0 0 0 #e6332a80}70%{box-shadow:0 0 0 9px #e6332a00}100%{box-shadow:0 0 0 0 #e6332a00}}
-
-.row{display:grid;gap:6px;margin-top:7px}
-.row3{grid-template-columns:repeat(3,1fr)}
-.row4{grid-template-columns:repeat(4,1fr)}
-.row2{grid-template-columns:repeat(2,1fr)}
-.row button{font-size:.72rem}
-.row button.active{background:var(--accent2);color:#fff}
-
-.volrow{display:flex;align-items:center;gap:8px;margin-top:8px}
-.volrow input[type=range]{padding:0;background:transparent;accent-color:var(--accent2)}
-.volrow select{width:auto;flex:none;font-size:.72rem}
-
-.record{margin-top:9px;padding:11px;border-radius:15px;background:var(--panel)}
-.options{display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left;font-size:.73rem}
-.options label{padding:8px;background:#fff6;border-radius:9px;display:flex;align-items:center;gap:6px}
-.options input{width:auto}
-.qualityrow{margin-top:6px}
-.qualityrow select{font-size:.75rem}
-
-.timecode{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;
-font-weight:700;letter-spacing:.05em;background:var(--panel);border-radius:10px;
-padding:9px;margin:8px 0 0;font-size:1.35rem;display:flex;align-items:center;
-justify-content:center;gap:9px}
-
-.recBtns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:7px}
-.recBtns button{font-size:.72rem}
-#pause,#stop,#download,#discard{display:none}
-.primary{background:var(--accent);color:#fff}
-
-.stats{font-size:.68rem;color:var(--muted);margin:6px 0 0;font-family:'JetBrains Mono',monospace}
-.preview{display:none;margin-top:9px;text-align:left}
-.preview video{width:100%;border-radius:12px;background:#000;display:block}
-.preview .recBtns{margin-top:8px}
-
-.kbd{font-family:'JetBrains Mono',monospace;font-size:.65rem;background:#8882;
-border-radius:5px;padding:1px 5px;margin:0 2px}
-footer{padding:10px;font-size:.68rem;color:var(--muted);line-height:1.7}
-
-.toasts{position:fixed;left:0;right:0;bottom:14px;display:flex;flex-direction:column;
-align-items:center;gap:6px;pointer-events:none;z-index:99}
-.toast{background:#12161cf0;color:#fff;font-size:.75rem;padding:9px 15px;
-border-radius:11px;box-shadow:0 8px 22px #0004;max-width:88%;opacity:0;
-transform:translateY(8px);transition:opacity .2s,transform .2s}
-.toast.show{opacity:1;transform:translateY(0)}
-.toast.warn{background:#d98f16f0}
-.toast.err{background:#e6332af0}
-.toast.ok{background:#1f9d63f0}
-
-body.dark{--bg:#12161c;--card:#1b2028e8;--txt:#eef2f7;--muted:#93a0b3;--line:#fff2;--panel:#ffffff10}
-body.dark input,body.dark select,body.dark button{background:#252b35;color:#fff}
-body.dark button.primary{background:var(--accent)}
-body.oled{--bg:#000;--card:#080808;--txt:#fff;--muted:#aaa;--line:#222;--panel:#ffffff10}
-body.oled input,body.oled select,body.oled button{background:#111;color:#fff}
-body.hc{--bg:#000;--card:#000;--txt:#fff;--muted:#fff;--line:#fff;--shadow:none;--panel:#000}
-body.hc input,body.hc select,body.hc button{background:#000;color:#fff;border:2px solid #fff}
+.controls,.recBtns,.settings{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:7px}
+.controls button,.recBtns button{font-size:.72rem}
+.seek{display:flex;gap:5px;align-items:center;margin-top:6px}
+.seek input{padding:0}.time{font-size:.68rem;min-width:38px}
+.settings{grid-template-columns:1fr 1fr;text-align:left}
+.setting{background:#0001;padding:7px;border-radius:10px;font-size:.7rem}
+.setting label{display:block;margin-bottom:3px}
+.record{margin-top:8px;padding:9px;background:#0001;border-radius:14px}
+.timer{font-size:1.2rem;font-weight:800;margin:3px}
+h2.section{font-size:.85rem;margin:2px 0 8px;text-align:left}
+.mediaList{list-style:none;padding:0;margin:8px 0 0;max-height:190px;overflow-y:auto;
+display:flex;flex-direction:column;gap:4px;text-align:left}
+.mediaList li{padding:8px 10px;background:#0001;border-radius:8px;font-size:.72rem;
+cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mediaList li:hover{background:#0002}
+.mediaList li.active{background:var(--a);color:#fff}
+.mediaList li.empty{cursor:default;background:none;color:var(--muted);text-align:center}
+.localPlayer{margin-top:8px;border-radius:14px;overflow:hidden;background:#000;display:none}
+.localPlayer video{width:100%;display:block;max-height:60vh}
+.localPlayer audio{width:100%;display:block;padding:14px}
+#pause,#resume,#stop,#download,#pip,#mini,#mp4{display:none}
+footer{padding:8px;font-size:.68rem;color:var(--muted)}
+body.dark{--bg:#101318;--card:#1b2028ed;--txt:#fff;--muted:#b4bfcc;--line:#fff2}
+body.dark button,body.dark input,body.dark select{background:#252b35;color:#fff}
+body.oled{--bg:#000;--card:#080808;--txt:#fff;--muted:#aaa;--line:#222}
+body.oled button,body.oled input,body.oled select{background:#111;color:#fff}
+body.hc{--bg:#000;--card:#000;--txt:#fff;--muted:#fff;--line:#fff}
+body.hc button,body.hc input,body.hc select{background:#000;color:#fff;border:2px solid #fff}
 body.hc .primary{background:#fff;color:#000}
-body.hc .tally.live{background:#fff}
-
-@media(max-width:430px){
- .app{padding:7px}.inputrow{flex-direction:column}
- .row3,.row4{grid-template-columns:repeat(2,1fr)}
- .options{grid-template-columns:1fr}
- .volrow{flex-wrap:wrap}
-}
+@media(max-width:440px){.app{padding:6px}.inputrow{flex-direction:column}
+.controls,.recBtns{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
 <main class="app">
-
 <header>
-<h1>▶ YouTube Player + Recorder</h1>
-<div class="sub">No API Key · No Registration · Studio-style controls</div>
+<h1>▶ ClipMe</h1>
 <div class="modes">
-<button onclick="mode('light')">☀ Light</button>
-<button onclick="mode('dark')">◐ Dark</button>
-<button onclick="mode('oled')">● OLED</button>
-<button onclick="mode('hc')">HC</button>
+<button onclick="theme('light')">☀ Light</button><button onclick="theme('dark')">◐ Dark</button>
+<button onclick="theme('oled')">● OLED</button><button onclick="theme('hc')">HC</button>
 </div>
 </header>
 
 <section class="card">
-<p class="eyebrow">Source</p>
 <div class="inputrow">
-<input id="url" placeholder="YouTube URL or Video ID" autocomplete="off">
-<button onclick="loadVideo()">Load</button>
+<input id="ytSearch" placeholder="Search YouTube…" onkeydown="if(event.key==='Enter')searchYT()">
+<button onclick="searchYT()">🔍 Search</button>
 </div>
-<div class="badge">Loaded: <b id="loadedId">none</b></div>
 
-<div class="inputrow" style="margin-top:8px">
-<input id="searchQ" placeholder="Search YouTube — songs or videos" autocomplete="off"
- onkeydown="if(event.key==='Enter'){event.preventDefault();searchYT()}">
-<button onclick="searchYT()">🔎 Search</button>
+<div class="inputrow">
+<input id="url" placeholder="YouTube URL, Video ID or Playlist URL">
+<button onclick="load()">Load</button>
 </div>
-<div class="results" id="searchResults"></div>
 
-<div class="player">
+<div class="player" id="playerWrap">
 <iframe id="yt" allow="autoplay;encrypted-media;picture-in-picture"
-allowfullscreen src="about:blank"></iframe>
-<div class="ov ov-rec" id="ovRec"><span class="tally live"></span>REC</div>
-<div class="ov ov-tc" id="ovTc">00:00 / 00:00</div>
+allowfullscreen src="https://www.youtube.com/embed/dQw4w9WgXcQ?enablejsapi=1"></iframe>
 </div>
 
-<div class="row row4">
+<div class="controls">
 <button onclick="cmd('playVideo')">▶ Play</button>
-<button onclick="cmd('pauseVideo')">⏸ Pause</button>
+<button onclick="cmd('pauseVideo')">Ⅱ Pause</button>
 <button onclick="cmd('stopVideo')">■ Stop</button>
-<button onclick="reload()">↻ Reload</button>
+<button onclick="load()">↻ Reload</button>
+<button onclick="cmd('seekTo',-10)">↶ −10s</button>
+<button onclick="cmd('seekTo',10,true)">↷ +10s</button>
+<button onclick="cmd('previousVideo')">⏮ Previous</button>
+<button onclick="cmd('nextVideo')">Next ⏭</button>
+<button onclick="cmd('mute')">🔇 Mute</button>
+<button onclick="cmd('unMute')">🔊 Unmute</button>
+<button onclick="pip()">▣ PiP</button>
+<button onclick="cinema()">▤ Cinema</button>
 </div>
-<div class="row row4">
-<button onclick="skip(-10)">⏪ 10s</button>
-<button onclick="skip(10)">⏩ 10s</button>
-<button id="loopBtn" onclick="toggleLoop()">⟲ Loop</button>
-<button id="muteBtn" onclick="toggleMute()">🔊 Mute</button>
+
+<div class="seek">
+<span class="time" id="cur">0:00</span>
+<input id="seek" type="range" min="0" max="100" value="0" oninput="seek()">
+<span class="time" id="dur">0:00</span>
 </div>
-<div class="volrow">
-<input id="vol" type="range" min="0" max="100" value="100" oninput="setVol(this.value)" aria-label="Volume">
-<select id="speed" onchange="cmd('setPlaybackRate',[parseFloat(this.value)])" aria-label="Playback speed">
-<option value="0.25">0.25×</option><option value="0.5">0.5×</option>
-<option value="0.75">0.75×</option><option value="1" selected>1×</option>
-<option value="1.25">1.25×</option><option value="1.5">1.5×</option>
-<option value="2">2×</option>
-</select>
+
+<div class="settings">
+<div class="setting"><label>Playback Speed</label>
+<select onchange="cmd('setPlaybackRate',+this.value)">
+<option>.25×</option><option>.5×</option><option>0.75×</option>
+<option selected>1×</option><option>1.25×</option><option>1.5×</option><option>2×</option>
+</select></div>
+<div class="setting"><label>Volume</label>
+<input type="range" min="0" max="100" value="100" oninput="volume(this.value)">
 </div>
-<div class="row row2">
-<button onclick="full()">⛶ Fullscreen</button>
-<button onclick="copyURL()">🔗 Copy URL</button>
+<div class="setting"><label>Record FPS</label>
+<select id="fps"><option>24</option><option selected>30</option><option>60</option></select></div>
+<div class="setting"><label>Record Quality</label>
+<select id="quality"><option>2.5</option><option selected>5</option><option>8</option><option>12</option></select>
 </div>
+<div class="setting"><label>Countdown</label>
+<select id="count"><option>0</option><option selected>3</option><option>5</option><option>10</option></select></div>
+<div class="setting"><label>Auto Stop</label>
+<select id="auto"><option value="0">Off</option><option value="60">1 min</option>
+<option value="300">5 min</option><option value="600">10 min</option></select></div>
+</div>
+
+<div class="info" id="info">YouTube player ready • Playlist URLs supported</div>
 
 <div class="record">
-<p class="eyebrow">Recorder</p>
-<div id="status" class="status"><span class="tally ready" id="recTally"></span> Recorder ready</div>
-
-<div class="options">
-<label><input id="mic" type="checkbox"> 🎤 Microphone</label>
-<label><input id="audio" type="checkbox" checked> 🔊 System audio</label>
-</div>
-<div class="qualityrow">
-<select id="quality" aria-label="Recording quality">
-<option value="std">Standard · 2.5 Mbps</option>
-<option value="hd" selected>HD · 8 Mbps</option>
-<option value="max">Max · 16 Mbps</option>
-</select>
-</div>
-
-<input id="filename" value="youtube-recording" placeholder="Recording filename"
-style="width:100%;margin-top:6px">
-
-<div class="timecode"><span class="tally" id="tcTally"></span><span id="timer">00:00:00</span></div>
-
+<div id="status" class="status">● Recorder ready</div>
+<div id="timer" class="timer">00:00:00</div>
+<input id="name" value="youtube-recording" placeholder="Recording filename">
 <div class="recBtns">
 <button id="start" class="primary" onclick="startRec()">● Record</button>
 <button id="pause" onclick="pauseRec()">Ⅱ Pause</button>
-<button id="stop" onclick="stopRec()">■ Stop</button>
 <button id="resume" onclick="resumeRec()">▶ Resume</button>
+<button id="stop" onclick="stopRec()">■ Stop</button>
+<button id="download" onclick="save()">⬇ WebM</button>
+<button id="mp4" onclick="saveMP4()">⬇ MP4</button>
+</div>
+<div class="info" id="stats">Duration: 00:00:00 • Size: 0 MB</div>
 </div>
 
-<div id="stats" class="stats">Duration: 00:00:00 · Size: 0 MB</div>
-
-<div class="preview" id="preview">
-<video id="previewVid" controls playsinline></video>
-<div class="recBtns">
-<button id="download" onclick="downloadRec()">⬇ Download</button>
-<button id="discard" onclick="discardRec()">✕ Discard</button>
-</div>
-</div>
+<div class="controls">
+<button id="mini" onclick="mini()">▣ Mini Player</button>
+<button onclick="wake()">☀ Keep Screen On</button>
+<button onclick="history()">▣ Recording History</button>
+<button onclick="backup()">⚙ Backup Settings</button>
+<button onclick="restore()">↥ Restore Settings</button>
+<button onclick="fullscreen()">⛶ Fullscreen</button>
 </div>
 </section>
 
-<footer>
-<span class="kbd">Space</span>Play/Pause
-<span class="kbd">M</span>Mute
-<span class="kbd">←/→</span>Seek 5s
-<br>© <span id="year"></span> Manik Roy. All Rights Reserved.
-</footer>
-</main>
+<section class="card">
+<h2 class="section">🎵 Local Media Library</h2>
+<div class="inputrow">
+<input id="mediaSearch" placeholder="Search your added files…" oninput="filterMedia(this.value)">
+<button onclick="pickMedia()">＋ Add</button>
+</div>
+<input type="file" id="mediaInput" accept="video/*,audio/*" multiple hidden onchange="addMedia(this.files)">
+<ul class="mediaList" id="mediaList"></ul>
+<div class="localPlayer" id="localPlayerWrap">
+<video id="localPlayer" controls></video>
+</div>
+<div class="info" id="mediaInfo">Add local audio/video files, then search and tap one to play. Files stay on your device — nothing is uploaded.</div>
+</section>
 
-<div class="toasts" id="toasts"></div>
+<footer>© <span id="year"></span> Manik Roy 2026. All Rights Reserved.</footer>
+</main>
 
 <script>
 const $=x=>document.getElementById(x);
+let rec=null,chunks=[],blob=null,t=0,timer=null,stopper=null,wlock=null,mediaFiles=[];
+$("year").textContent=new Date().getFullYear();theme(localStorage.theme||"dark");filterMedia("");
 
-/* ---------- theme ---------- */
-$("year").textContent=new Date().getFullYear();
-mode(localStorage.ytpr_theme||"light");
-function mode(x){document.body.className=x;localStorage.ytpr_theme=x}
-
-/* ---------- toast ---------- */
-function toast(msg,type=""){
- let t=document.createElement("div");
- t.className="toast"+(type?" "+type:"");
- t.textContent=msg;
- $("toasts").appendChild(t);
- requestAnimationFrame(()=>t.classList.add("show"));
- setTimeout(()=>{t.classList.remove("show");setTimeout(()=>t.remove(),250)},3000);
+function theme(x){document.body.className=x;localStorage.theme=x}
+function vid(v){
+ v=v.trim();if(/^[\w-]{11}$/.test(v))return v;
+ try{let u=new URL(v);if(u.searchParams.get("v"))return u.searchParams.get("v");
+ return u.hostname.includes("youtu.be")?u.pathname.slice(1):""}catch(e){return""}
 }
-
-/* ---------- player state ---------- */
-let currentVideoId=null,currentTime=0,videoDuration=0,playerState=-1;
-let loopEnabled=false,isMuted=false,lastVolume=100;
-
-function id(v){
- v=(v||"").trim();
- if(/^[\w-]{11}$/.test(v))return v;
- try{
-  let u=new URL(v);
-  if(u.hostname.includes("youtu.be"))return u.pathname.slice(1);
-  if(u.searchParams.get("v"))return u.searchParams.get("v");
-  let p=u.pathname.split("/"),i=p.indexOf("embed");
-  return i>=0?p[i+1]:"";
- }catch(e){return ""}
+function playlist(v){
+ try{let u=new URL(v);return u.searchParams.get("list")}catch(e){return""}
 }
-function loadVideo(){
- let x=id($("url").value);
- if(!x)return toast("Enter a valid YouTube URL or Video ID.","err");
- currentVideoId=x;
- localStorage.ytpr_lastUrl=$("url").value;
- $("loadedId").textContent=x;
- $("yt").src="https://www.youtube.com/embed/"+x+
-  "?enablejsapi=1&autoplay=1&playsinline=1";
- currentTime=0;videoDuration=0;playerState=-1;
- updateOverlay();
+function load(){
+ let v=$("url").value,id=vid(v),pl=playlist(v);
+ if(pl)$("yt").src="https://www.youtube.com/embed/videoseries?list="+pl+"&enablejsapi=1";
+ else if(id)$("yt").src="https://www.youtube.com/embed/"+id+"?enablejsapi=1&autoplay=1";
+ else return alert("Enter a valid YouTube URL, ID or playlist URL.");
+ $("info").textContent=pl?"Playlist loaded • Use Previous / Next":"Video loaded";
 }
-function reload(){
- if(!currentVideoId)return toast("Load a video first.","warn");
- $("yt").src="https://www.youtube.com/embed/"+currentVideoId+
-  "?enablejsapi=1&autoplay=1&playsinline=1";
+function searchYT(){
+ let q=$("ytSearch").value.trim();
+ if(!q)return alert("Type something to search for.");
+ $("yt").src="https://www.youtube.com/embed?listType=search&list="+encodeURIComponent(q)+"&enablejsapi=1";
+ $("info").innerHTML='Searching YouTube for "'+q.replace(/</g,"&lt;")+'" • If nothing plays, '+
+ '<a href="https://www.youtube.com/results?search_query='+encodeURIComponent(q)+
+ '" target="_blank" rel="noopener" style="color:inherit">open results in a new tab</a> and paste the video URL above.';
 }
-$("yt").addEventListener("load",()=>{
- if(currentVideoId)postMsg({event:"listening",id:currentVideoId});
-});
-
-function postMsg(obj){
- try{$("yt").contentWindow.postMessage(JSON.stringify(obj),"*")}catch(e){}
+function cmd(f,...a){
+ $("yt").contentWindow.postMessage(JSON.stringify({event:"command",func:f,args:a}),"*");
 }
-function cmd(func,args=[]){
- if(!currentVideoId)return toast("Load a video first.","warn");
- postMsg({event:"command",func,args});
+function volume(v){cmd("setVolume",+v)}
+function seek(){cmd("seekTo",+($("seek").value),true)}
+function fmt(s){s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+function fullscreen(){$("yt").requestFullscreen?.()}
+function cinema(){$("playerWrap").classList.toggle("cinema")}
+async function pip(){
+ try{await $("yt").requestPictureInPicture()}catch(e){alert("PiP is unavailable for this browser/player.")}
 }
-function skip(sec){
- if(!currentVideoId)return toast("Load a video first.","warn");
- cmd("seekTo",[Math.max(0,currentTime+sec),true]);
+function mini(){alert("Use browser Picture-in-Picture for the floating mini player.");pip()}
+async function wake(){
+ if(!("wakeLock"in navigator))return alert("Wake Lock is unavailable.");
+ try{wlock=await navigator.wakeLock.request("screen");alert("Screen will stay awake.");}
+ catch(e){alert("Wake Lock permission unavailable.")}
 }
-function toggleLoop(){
- loopEnabled=!loopEnabled;
- $("loopBtn").classList.toggle("active",loopEnabled);
- toast(loopEnabled?"Loop on":"Loop off");
-}
-function toggleMute(){
- isMuted=!isMuted;
- if(isMuted){cmd("mute");$("muteBtn").textContent="🔇 Unmute"}
- else{cmd("unMute");$("muteBtn").textContent="🔊 Mute"}
- $("muteBtn").classList.toggle("active",isMuted);
-}
-function setVol(v){
- lastVolume=v;
- cmd("setVolume",[Number(v)]);
- if(Number(v)==0 && !isMuted){isMuted=true;$("muteBtn").textContent="🔇 Unmute";$("muteBtn").classList.add("active")}
- if(Number(v)>0 && isMuted){isMuted=false;$("muteBtn").textContent="🔊 Mute";$("muteBtn").classList.remove("active")}
-}
-function full(){
- let el=$("yt");
- let req=el.requestFullscreen||el.webkitRequestFullscreen||el.webkitEnterFullscreen;
- if(req)req.call(el).catch?.(()=>toast("Fullscreen was blocked.","warn"));
- else toast("Fullscreen isn't supported on this browser.","warn");
-}
-async function copyURL(){
- if(!currentVideoId)return toast("Load a video first.","warn");
- let link="https://youtu.be/"+currentVideoId;
- try{
-  await navigator.clipboard.writeText(link);
-  toast("Link copied.","ok");
- }catch(e){
-  let ta=document.createElement("textarea");
-  ta.value=link;ta.style.position="fixed";ta.style.opacity="0";
-  document.body.appendChild(ta);ta.select();
-  try{document.execCommand("copy");toast("Link copied.","ok")}
-  catch(_){toast(link,"warn")}
-  ta.remove();
- }
-}
-
-/* listen for YouTube player info (works without loading the iframe_api script) */
-window.addEventListener("message",e=>{
- if(typeof e.origin==="string" && !e.origin.includes("youtube.com"))return;
- let data;
- try{data=JSON.parse(e.data)}catch(_){return}
- if(data.event==="infoDelivery" && data.info){
-  let info=data.info;
-  if(typeof info.currentTime==="number")currentTime=info.currentTime;
-  if(typeof info.duration==="number")videoDuration=info.duration;
-  if(typeof info.playerState==="number"){
-   let prev=playerState;playerState=info.playerState;
-   if(playerState===0 && prev!==0 && loopEnabled){cmd("seekTo",[0,true]);cmd("playVideo")}
-  }
-  updateOverlay();
- }
-});
-function fmtShort(s){
- s=Math.max(0,Math.floor(s||0));
- let m=Math.floor(s/60),z=s%60;
- return m+":"+String(z).padStart(2,"0");
-}
-function updateOverlay(){
- $("ovTc").textContent=fmtShort(currentTime)+" / "+fmtShort(videoDuration);
-}
-
-/* ---------- keyboard shortcuts ---------- */
-window.addEventListener("keydown",e=>{
- let tag=(e.target.tagName||"").toLowerCase();
- if(tag==="input"||tag==="select"||tag==="textarea")return;
- if(e.code==="Space"){e.preventDefault();cmd(playerState===1?"pauseVideo":"playVideo")}
- else if(e.key==="m"||e.key==="M"){toggleMute()}
- else if(e.key==="ArrowLeft"){skip(-5)}
- else if(e.key==="ArrowRight"){skip(5)}
-});
-
-/* ---------- recording ---------- */
-let rec=null,chunks=[],blob=null,timer=null,seconds=0,started=0,elapsedBeforePause=0;
-
-const QUALITY={std:2500000,hd:8000000,max:16000000};
-
-function fmtLong(s){
- let h=Math.floor(s/3600),m=Math.floor(s%3600/60),z=s%60;
- return [h,m,z].map(x=>String(x).padStart(2,"0")).join(":");
-}
-function updateRecUI(){
- $("timer").textContent=fmtLong(seconds);
- $("stats").textContent="Duration: "+fmtLong(seconds)+" · Size: "+
-  (blob?(blob.size/1048576).toFixed(2):"0")+" MB";
-}
-function setTally(state){
- // state: ready | live | pause
- let t1=$("recTally"),t2=$("tcTally");
- [t1,t2].forEach(t=>t.className="tally "+state);
-}
-
 async function startRec(){
- if(!navigator.mediaDevices?.getDisplayMedia){
-  return toast("Screen recording isn't supported on this browser/device — try desktop Chrome, Edge, or Firefox.","err");
- }
- resetRecordingUI();
+ if(!navigator.mediaDevices?.getDisplayMedia)return alert("Screen recording is unsupported.");
+ let sec=+$("count").value;
+ if(sec)await new Promise(r=>setTimeout(r,sec*1000));
  try{
-  let screen=await navigator.mediaDevices.getDisplayMedia({
-   video:{frameRate:30},audio:$("audio").checked
+  let s=await navigator.mediaDevices.getDisplayMedia({
+   video:{frameRate:+$("fps").value},audio:true
   });
-  let tracks=[...screen.getVideoTracks()];
-  if($("audio").checked)tracks.push(...screen.getAudioTracks());
-
-  if($("mic").checked){
-   try{
-    let ms=await navigator.mediaDevices.getUserMedia({audio:true});
-    tracks.push(...ms.getAudioTracks());
-   }catch(e){toast("Microphone permission was denied — recording system audio only.","warn")}
-  }
-
-  let stream=new MediaStream(tracks);
-  let type=MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")?"video/webm;codecs=vp9,opus":
-   MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")?"video/webm;codecs=vp8,opus":"video/webm";
-  rec=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:QUALITY[$("quality").value]});
-  chunks=[];blob=null;seconds=0;elapsedBeforePause=0;updateRecUI();
-
-  rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
-  rec.onstop=()=>{
-   blob=new Blob(chunks,{type:"video/webm"});
-   $("previewVid").src=URL.createObjectURL(blob);
-   $("preview").style.display="block";
-   $("status").innerHTML='<span class="tally ready" id="recTally"></span> Recording ready';
-   $("ovRec").classList.remove("on");
-   setTally("ready");
-   updateRecUI();
-  };
-  rec.start(1000);
-  started=Date.now();
-  timer=setInterval(()=>{seconds=elapsedBeforePause+Math.floor((Date.now()-started)/1000);updateRecUI()},500);
-  $("start").style.display="none";
-  $("pause").style.display="block";
-  $("stop").style.display="block";
-  $("status").innerHTML='<span class="tally live" id="recTally"></span> Recording…';
-  $("ovRec").classList.add("on");
-  setTally("live");
-  screen.getVideoTracks()[0].onended=stopRec;
- }catch(e){
-  toast("Recording was cancelled.","warn");
- }
+  let tracks=[...s.getVideoTracks(),...s.getAudioTracks()];
+  let stream=new MediaStream(tracks),br=+$("quality").value*1000000;
+  let type=MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")?
+  "video/webm;codecs=vp9,opus":"video/webm";
+  rec=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:br});
+  chunks=[];blob=null;t=0;update();
+  rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  rec.onstop=()=>{blob=new Blob(chunks,{type:"video/webm"});$("download").style.display="block";
+  if(MediaRecorder.isTypeSupported("video/mp4"))$("mp4").style.display="block";
+  $("status").textContent="✓ Recording ready";update();};
+  rec.start(1000);let started=Date.now();
+  timer=setInterval(()=>{t=Math.floor((Date.now()-started)/1000);update()},500);
+  let a=+$("auto").value;if(a)stopper=setTimeout(stopRec,a*1000);
+  $("start").style.display="none";$("pause").style.display="block";
+  $("stop").style.display="block";$("status").textContent="● Recording…";
+  s.getVideoTracks()[0].onended=stopRec;
+ }catch(e){$("status").textContent="Recording cancelled";}
 }
-function pauseRec(){
- if(rec?.state==="recording"){
-  rec.pause();clearInterval(timer);elapsedBeforePause=seconds;
-  $("pause").style.display="none";$("resume").style.display="block";
-  $("status").innerHTML='<span class="tally pause" id="recTally"></span> Recording paused';
-  setTally("pause");
- }
-}
-function resumeRec(){
- if(rec?.state==="paused"){
-  rec.resume();started=Date.now();
-  timer=setInterval(()=>{seconds=elapsedBeforePause+Math.floor((Date.now()-started)/1000);updateRecUI()},500);
-  $("pause").style.display="block";$("resume").style.display="none";
-  $("status").innerHTML='<span class="tally live" id="recTally"></span> Recording…';
-  setTally("live");
- }
-}
+function pauseRec(){if(rec?.state==="recording"){rec.pause();$("pause").style.display="none";
+$("resume").style.display="block";$("status").textContent="Ⅱ Paused"}}
+function resumeRec(){if(rec?.state==="paused"){rec.resume();$("pause").style.display="block";
+$("resume").style.display="none";$("status").textContent="● Recording…"}}
 function stopRec(){
- if(!rec||rec.state==="inactive")return;
- rec.stop();rec.stream?.getTracks().forEach(t=>t.stop());
- clearInterval(timer);
- $("start").style.display="block";$("pause").style.display="none";
- $("resume").style.display="none";$("stop").style.display="none";
+ if(!rec||rec.state==="inactive")return;rec.stop();rec.stream?.getTracks().forEach(x=>x.stop());
+ clearInterval(timer);clearTimeout(stopper);$("start").style.display="block";
+ $("pause").style.display=$("resume").style.display=$("stop").style.display="none";
 }
-function downloadRec(){
- if(!blob)return;
- let name=$("filename").value.trim()||"youtube-recording";
- localStorage.ytpr_filename=name;
- let a=document.createElement("a");
- a.href=URL.createObjectURL(blob);a.download=name.replace(/\s+/g,"-")+".webm";
- a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
- toast("Download started.","ok");
+function update(){$("timer").textContent=new Date(t*1000).toISOString().substr(11,8);
+$("stats").textContent="Duration: "+fmt(t)+" • Size: "+(blob?(blob.size/1048576).toFixed(2):"0")+" MB"}
+function saveAs(type,ext){
+ if(!blob)return;let a=document.createElement("a");a.href=URL.createObjectURL(blob);
+ a.download=($("name").value.trim()||"youtube-recording")+"."+ext;a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
-function discardRec(){
- if($("previewVid").src)URL.revokeObjectURL($("previewVid").src);
- resetRecordingUI();
- toast("Recording discarded.");
+function save(){saveAs("video/webm","webm")}
+function saveMP4(){if(MediaRecorder.isTypeSupported("video/mp4"))saveAs("video/mp4","mp4");
+else alert("Native MP4 recording is not supported by this browser. WebM is available.")}
+function history(){alert("Recording history is kept by your browser's downloaded files. No server upload is used.")}
+function backup(){
+ let d={theme:localStorage.theme||"light",filename:$("name").value};
+ let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(d)],{type:"application/json"}));
+ a.download="youtube-player-settings.json";a.click();
 }
-function resetRecordingUI(){
- blob=null;chunks=[];seconds=0;elapsedBeforePause=0;updateRecUI();
- $("preview").style.display="none";
- $("previewVid").removeAttribute("src");
- $("status").innerHTML='<span class="tally ready" id="recTally"></span> Recorder ready';
- setTally("ready");
- $("ovRec").classList.remove("on");
+function restore(){
+ let i=document.createElement("input");i.type="file";i.accept=".json";
+ i.onchange=async()=>{try{let d=JSON.parse(await i.files[0].text());theme(d.theme||"light");
+ $("name").value=d.filename||"youtube-recording"}catch(e){alert("Invalid settings file.")}};i.click();
 }
-
-/* ---------- restore saved preferences ---------- */
-if(localStorage.ytpr_filename)$("filename").value=localStorage.ytpr_filename;
-if(localStorage.ytpr_lastUrl)$("url").value=localStorage.ytpr_lastUrl;
-$("filename").addEventListener("change",()=>localStorage.ytpr_filename=$("filename").value.trim());
+function pickMedia(){$("mediaInput").click()}
+function addMedia(files){
+ for(const f of files){
+  if(!/^(video|audio)\//.test(f.type))continue;
+  mediaFiles.push({name:f.name,url:URL.createObjectURL(f),type:f.type});
+ }
+ $("mediaInput").value="";
+ filterMedia($("mediaSearch").value);
+}
+function filterMedia(q){
+ q=(q||"").trim().toLowerCase();
+ let list=$("mediaList");list.innerHTML="";
+ if(!mediaFiles.length){list.innerHTML='<li class="empty">No files added yet</li>';return}
+ let matches=mediaFiles.map((m,idx)=>({...m,idx})).filter(m=>m.name.toLowerCase().includes(q));
+ if(!matches.length){list.innerHTML='<li class="empty">No matches</li>';return}
+ matches.forEach(m=>{
+  let li=document.createElement("li");
+  li.id="media-"+m.idx;
+  li.textContent=(m.type.startsWith("audio")?"🎵 ":"🎬 ")+m.name;
+  li.onclick=()=>playMedia(m.idx);
+  list.appendChild(li);
+ });
+}
+function playMedia(i){
+ let m=mediaFiles[i];if(!m)return;
+ let p=$("localPlayer");p.src=m.url;
+ $("localPlayerWrap").style.display="block";
+ p.play();
+ $("mediaInfo").textContent="▶ Playing: "+m.name;
+ [...$("mediaList").children].forEach(li=>li.classList.remove("active"));
+ $("media-"+i)?.classList.add("active");
+}
 </script>
 </body>
 </html>
