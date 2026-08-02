@@ -96,6 +96,9 @@
     content:'';position:absolute;background:var(--muted);border-radius:2px;
     top:50%;left:50%;width:36px;height:4px;transform:translate(-50%,-50%);
   }
+  .resizer::after{
+    content:'';position:absolute;top:-8px;left:-8px;right:-8px;bottom:-8px;
+  }
   @media(min-width:860px){
     .resizer{width:16px;height:auto;cursor:col-resize;}
     .resizer::before{width:4px;height:36px;}
@@ -227,8 +230,16 @@ function setSplit(pct){
   mainEl.style.setProperty('--b', (100 - pct) + 'fr');
 }
 let dragging = false, pendingPct = null, resizeQueued = false;
-function startDrag(){ dragging = true; document.body.style.userSelect = 'none'; }
-function endDrag(){ dragging = false; document.body.style.userSelect = ''; }
+function startDrag(e){
+  dragging = true;
+  document.body.style.userSelect = 'none';
+  try{ resizer.setPointerCapture(e.pointerId); }catch(err){}
+}
+function endDrag(e){
+  dragging = false;
+  document.body.style.userSelect = '';
+  if(e && e.pointerId != null){ try{ resizer.releasePointerCapture(e.pointerId); }catch(err){} }
+}
 function onDrag(e){
   if(!dragging) return;
   const r = mainEl.getBoundingClientRect();
@@ -236,7 +247,9 @@ function onDrag(e){
   if(!resizeQueued){ resizeQueued = true; requestAnimationFrame(() => { setSplit(pendingPct); resizeQueued = false; }); }
 }
 resizer.addEventListener('pointerdown', startDrag);
+resizer.addEventListener('pointermove', onDrag);
 window.addEventListener('pointermove', onDrag, {passive:true});
+resizer.addEventListener('pointerup', endDrag);
 window.addEventListener('pointerup', endDrag);
 window.addEventListener('pointercancel', endDrag);
 
