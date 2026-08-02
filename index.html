@@ -1,599 +1,612 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, interactive-widget=resizes-content">
-<title>CodePad — Online IDE</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12161c">
+<title>PRAVAH — YouTube Player + Recorder</title>
 <style>
-  :root{ --fontsize:13px; }
-  :root{
-    --dark-bg:#1e1e1e;--dark-panel:#252526;--dark-text:#d4d4d4;--dark-muted:#8a8a8a;--dark-accent:#3794ff;--dark-border:#3c3c3c;--dark-btn:#0e639c;--dark-btnText:#fff;
-    --dark-kw:#569cd6;--dark-str:#ce9178;--dark-com:#6a9955;--dark-num:#b5cea8;
-    --light-bg:#ffffff;--light-panel:#f3f3f3;--light-text:#1e1e1e;--light-muted:#6e6e6e;--light-accent:#005fb8;--light-border:#e2e2e2;--light-btn:#005fb8;--light-btnText:#fff;
-    --light-kw:#0000ff;--light-str:#a31515;--light-com:#008000;--light-num:#098658;
-    --oled-bg:#000000;--oled-panel:#050505;--oled-text:#e8e8e8;--oled-muted:#7a7a7a;--oled-accent:#00e5c7;--oled-border:#1c1c1c;--oled-btn:#00e5c7;--oled-btnText:#000;
-    --oled-kw:#7ee787;--oled-str:#ffab70;--oled-com:#8b949e;--oled-num:#79c0ff;
-    --hc-bg:#000000;--hc-panel:#000000;--hc-text:#ffffff;--hc-muted:#ffff00;--hc-accent:#ffff00;--hc-border:#ffffff;--hc-btn:#ffff00;--hc-btnText:#000000;
-    --hc-kw:#ffff00;--hc-str:#00ffff;--hc-com:#00ff00;--hc-num:#ff77ff;
-  }
-  [data-theme="dark"]{--bg:var(--dark-bg);--panel:var(--dark-panel);--text:var(--dark-text);--muted:var(--dark-muted);--accent:var(--dark-accent);--border:var(--dark-border);--btn:var(--dark-btn);--btnText:var(--dark-btnText);--tok-kw:var(--dark-kw);--tok-str:var(--dark-str);--tok-com:var(--dark-com);--tok-num:var(--dark-num);}
-  [data-theme="light"]{--bg:var(--light-bg);--panel:var(--light-panel);--text:var(--light-text);--muted:var(--light-muted);--accent:var(--light-accent);--border:var(--light-border);--btn:var(--light-btn);--btnText:var(--light-btnText);--tok-kw:var(--light-kw);--tok-str:var(--light-str);--tok-com:var(--light-com);--tok-num:var(--light-num);}
-  [data-theme="oled"]{--bg:var(--oled-bg);--panel:var(--oled-panel);--text:var(--oled-text);--muted:var(--oled-muted);--accent:var(--oled-accent);--border:var(--oled-border);--btn:var(--oled-btn);--btnText:var(--oled-btnText);--tok-kw:var(--oled-kw);--tok-str:var(--oled-str);--tok-com:var(--oled-com);--tok-num:var(--oled-num);}
-  [data-theme="hc"]{--bg:var(--hc-bg);--panel:var(--hc-panel);--text:var(--hc-text);--muted:var(--hc-muted);--accent:var(--hc-accent);--border:var(--hc-border);--btn:var(--hc-btn);--btnText:var(--hc-btnText);--tok-kw:var(--hc-kw);--tok-str:var(--hc-str);--tok-com:var(--hc-com);--tok-num:var(--hc-num);}
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+*{box-sizing:border-box}
+:root{
+ --bg:#eef1f6;--card:#ffffffb8;--txt:#12161c;--muted:#5b6674;
+ --accent:#e6332a;   /* record tally */
+ --accent2:#1f9d63;  /* ready / confirm tally */
+ --accent3:#d98f16;  /* paused / caution tally */
+ --line:#ffffff88;--shadow:0 12px 35px #0002;--panel:#0000000d;
+}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--txt);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;
+justify-content:center;align-items:center;text-align:center;-webkit-tap-highlight-color:transparent}
+.app{width:min(100%,650px);min-height:100vh;padding:10px;display:flex;
+flex-direction:column;justify-content:center;gap:10px}
+header,.card,footer{background:var(--card);border:1px solid var(--line);
+box-shadow:var(--shadow);backdrop-filter:blur(18px);border-radius:20px}
+header{padding:13px}
+h1{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.02em;
+font-size:1.25rem;margin:0 0 3px;text-transform:uppercase}
+.sub{font-size:.72rem;color:var(--muted);letter-spacing:.03em}
+.status{font-size:.75rem;color:var(--muted)}
+.modes{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:9px}
+button,input,select{border:0;border-radius:11px;padding:10px;font:inherit;color:inherit}
+button{background:#fff;color:#111;cursor:pointer;font-weight:650;transition:transform .08s}
+button:active{transform:scale(.96)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+.modes button{font-size:.68rem;padding:7px 9px}
+.card{padding:11px}
+.eyebrow{font-family:'Oswald',sans-serif;font-size:.66rem;font-weight:600;
+letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;margin:0 0 7px 2px}
+.inputrow{display:flex;gap:6px}
+input,select{width:100%;background:#ffffffd9;color:#111;outline:0}
+.badge{margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:.7rem;
+color:var(--muted);text-align:left;padding-left:2px}
 
-  *{box-sizing:border-box;}
-  html,body{margin:0;height:100%;overflow:hidden;}
-  body{
-    background:var(--bg);color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    display:flex;flex-direction:column;height:100vh;height:100dvh;
-    transition:background .2s,color .2s;
-  }
-  header{
-    display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
-    padding:.6rem .8rem;border-bottom:1px solid var(--border);
-    background:var(--panel);position:sticky;top:0;z-index:5;
-  }
-  .brand{display:flex;align-items:center;gap:.4rem;font-weight:700;font-size:1.05rem;margin-right:auto;}
-  select,button{
-    font:inherit;border-radius:6px;border:1px solid var(--border);
-    background:var(--panel);color:var(--text);padding:.35rem .55rem;cursor:pointer;font-size:.85rem;
-  }
-  #runBtn{background:var(--btn);color:var(--btnText);border-color:var(--btn);font-weight:700;}
-  #runBtn:disabled{opacity:.6;cursor:wait;}
-  .ghost{color:var(--muted);}
-  .ghost:hover{color:var(--text);border-color:var(--text);}
-  .themes{display:flex;gap:.3rem;border-left:1px solid var(--border);padding-left:.5rem;}
-  .themes button{width:2rem;padding:.35rem 0;font-size:.72rem;}
-  .themes button.active{outline:2px solid var(--accent);}
+.results{margin-top:8px;max-height:320px;overflow-y:auto;display:none;
+flex-direction:column;gap:6px;text-align:left}
+.results.show{display:flex}
+.result{display:flex;gap:8px;padding:6px;border-radius:11px;background:#fff6;
+cursor:pointer;align-items:center;transition:transform .08s}
+.result:active{transform:scale(.98)}
+.result img{width:88px;height:50px;object-fit:cover;border-radius:8px;flex:none;background:#000}
+.result .meta{overflow:hidden;flex:1}
+.result .t{font-size:.76rem;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result .c{font-size:.68rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result .d{font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--muted);
+flex:none;padding-left:6px}
+.results .hint{padding:8px;font-size:.72rem;color:var(--muted)}
+body.dark .result,body.oled .result{background:#ffffff12}
+body.hc .result{background:#000;border:1px solid #fff}
+.badge b{color:var(--txt)}
 
-  main{
-    flex:1;display:grid;overflow:hidden;background:var(--border);gap:1px;min-height:0;
-    grid-template-columns:1fr;grid-template-rows:var(--a,1fr) 16px var(--b,1fr);
-  }
-  @media(min-width:860px){
-    main{grid-template-columns:var(--a,1fr) 16px var(--b,1fr);grid-template-rows:1fr;}
-  }
+.player{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;
+border-radius:15px;background:#000;margin-top:9px}
+iframe{width:100%;height:100%;border:0}
+.ov{position:absolute;pointer-events:none;font-family:'JetBrains Mono',monospace;
+font-size:.68rem;font-weight:700;color:#fff;letter-spacing:.04em;
+background:#00000080;border-radius:8px;padding:4px 8px;display:flex;align-items:center;gap:5px}
+.ov-tc{right:7px;bottom:7px}
+.ov-rec{left:7px;top:7px;display:none}
+.ov-rec.on{display:flex}
 
-  .editor-wrap{min-height:0;min-width:0;display:flex;background:var(--bg);overflow:hidden;position:relative;}
-  #gutter{
-    padding:.8rem .5rem;text-align:right;color:var(--muted);
-    background:var(--panel);user-select:none;overflow:hidden;
-    font-family:Menlo,Consolas,"Courier New",monospace;font-size:var(--fontsize);line-height:1.55;white-space:pre;
-  }
-  .code-area{position:relative;flex:1;min-width:0;}
-  #highlight,#code{
-    position:absolute;inset:0;margin:0;padding:.8rem;border:0;
-    font-family:Menlo,Consolas,"Courier New",monospace;font-size:var(--fontsize);line-height:1.55;tab-size:2;
-    white-space:pre-wrap;overflow-wrap:break-word;
-  }
-  #highlight{overflow:auto;pointer-events:none;color:var(--text);}
-  #code{
-    resize:none;outline:none;overflow:auto;background:transparent;color:transparent;caret-color:var(--text);
-  }
-  #code::placeholder{color:var(--muted);}
-  .tok-kw{color:var(--tok-kw);font-weight:600;}
-  .tok-str{color:var(--tok-str);}
-  .tok-com{color:var(--tok-com);font-style:italic;}
-  .tok-num{color:var(--tok-num);}
+.tally{width:8px;height:8px;border-radius:50%;background:#8a99;flex:none}
+.tally.live{background:var(--accent);animation:pulse 1.3s infinite}
+.tally.ready{background:var(--accent2)}
+.tally.pause{background:var(--accent3)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 #e6332a80}70%{box-shadow:0 0 0 9px #e6332a00}100%{box-shadow:0 0 0 0 #e6332a00}}
 
-  .findbar{
-    position:absolute;top:.5rem;right:.5rem;left:.5rem;z-index:4;
-    display:flex;flex-wrap:wrap;gap:.3rem;padding:.4rem;border-radius:8px;
-    background:var(--panel);border:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,.3);
-  }
-  .findbar input{
-    font:inherit;font-size:.85rem;border-radius:6px;border:1px solid var(--border);
-    background:var(--bg);color:var(--text);padding:.3rem .5rem;flex:1;min-width:80px;
-  }
-  #findCount{align-self:center;font-size:.75rem;color:var(--muted);white-space:nowrap;}
+.row{display:grid;gap:6px;margin-top:7px}
+.row3{grid-template-columns:repeat(3,1fr)}
+.row4{grid-template-columns:repeat(4,1fr)}
+.row2{grid-template-columns:repeat(2,1fr)}
+.row button{font-size:.72rem}
+.row button.active{background:var(--accent2);color:#fff}
 
-  .resizer{
-    flex:none;background:var(--border);touch-action:none;position:relative;
-    width:100%;height:16px;cursor:row-resize;
-  }
-  .resizer::before{
-    content:'';position:absolute;background:var(--muted);border-radius:2px;
-    top:50%;left:50%;width:36px;height:4px;transform:translate(-50%,-50%);
-  }
-  .resizer::after{
-    content:'';position:absolute;top:-8px;left:-8px;right:-8px;bottom:-8px;
-  }
-  @media(min-width:860px){
-    .resizer{width:16px;height:auto;cursor:col-resize;}
-    .resizer::before{width:4px;height:36px;}
-  }
+.volrow{display:flex;align-items:center;gap:8px;margin-top:8px}
+.volrow input[type=range]{padding:0;background:transparent;accent-color:var(--accent2)}
+.volrow select{width:auto;flex:none;font-size:.72rem}
 
-  main.preview-full{grid-template-columns:1fr!important;grid-template-rows:1fr!important;}
-  main.preview-full .editor-wrap,main.preview-full .resizer{display:none;}
-  #fullscreenBtn.active{color:var(--accent);border-color:var(--accent);}
-  .output-panel{min-height:0;min-width:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;}
-  .output-header{
-    display:flex;justify-content:space-between;align-items:center;gap:.5rem;
-    padding:.4rem .8rem;background:var(--panel);border-bottom:1px solid var(--border);
-    font-size:.8rem;color:var(--muted);
-  }
-  .tabs{display:flex;gap:.3rem;}
-  .tabs button{padding:.25rem .6rem;font-size:.75rem;background:transparent;}
-  .tabs button.active{background:var(--btn);color:var(--btnText);border-color:var(--btn);}
-  #status{color:var(--accent);}
-  #output{
-    flex:1;margin:0;padding:.8rem;overflow:auto;white-space:pre-wrap;
-    font:13px/1.55 Menlo,Consolas,"Courier New",monospace;contain:content;
-  }
-  #preview{flex:1;border:0;width:100%;background:#fff;display:none;}
-  .output-panel.show-preview #preview{display:block;}
-  .output-panel.show-preview #output{display:none;}
+.record{margin-top:9px;padding:11px;border-radius:15px;background:var(--panel)}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left;font-size:.73rem}
+.options label{padding:8px;background:#fff6;border-radius:9px;display:flex;align-items:center;gap:6px}
+.options input{width:auto}
+.qualityrow{margin-top:6px}
+.qualityrow select{font-size:.75rem}
 
-  footer{
-    border-top:1px solid var(--border);background:var(--panel);
-    padding:.9rem 1rem;display:flex;flex-direction:column;align-items:center;
-    justify-content:center;text-align:center;gap:.15rem;
-  }
-  footer small{color:var(--muted);font-size:.78rem;}
+.timecode{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;
+font-weight:700;letter-spacing:.05em;background:var(--panel);border-radius:10px;
+padding:9px;margin:8px 0 0;font-size:1.35rem;display:flex;align-items:center;
+justify-content:center;gap:9px}
+
+.recBtns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:7px}
+.recBtns button{font-size:.72rem}
+#pause,#stop,#download,#discard{display:none}
+.primary{background:var(--accent);color:#fff}
+
+.stats{font-size:.68rem;color:var(--muted);margin:6px 0 0;font-family:'JetBrains Mono',monospace}
+.preview{display:none;margin-top:9px;text-align:left}
+.preview video{width:100%;border-radius:12px;background:#000;display:block}
+.preview .recBtns{margin-top:8px}
+
+.kbd{font-family:'JetBrains Mono',monospace;font-size:.65rem;background:#8882;
+border-radius:5px;padding:1px 5px;margin:0 2px}
+footer{padding:10px;font-size:.68rem;color:var(--muted);line-height:1.7}
+
+.toasts{position:fixed;left:0;right:0;bottom:14px;display:flex;flex-direction:column;
+align-items:center;gap:6px;pointer-events:none;z-index:99}
+.toast{background:#12161cf0;color:#fff;font-size:.75rem;padding:9px 15px;
+border-radius:11px;box-shadow:0 8px 22px #0004;max-width:88%;opacity:0;
+transform:translateY(8px);transition:opacity .2s,transform .2s}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.warn{background:#d98f16f0}
+.toast.err{background:#e6332af0}
+.toast.ok{background:#1f9d63f0}
+
+body.dark{--bg:#12161c;--card:#1b2028e8;--txt:#eef2f7;--muted:#93a0b3;--line:#fff2;--panel:#ffffff10}
+body.dark input,body.dark select,body.dark button{background:#252b35;color:#fff}
+body.dark button.primary{background:var(--accent)}
+body.oled{--bg:#000;--card:#080808;--txt:#fff;--muted:#aaa;--line:#222;--panel:#ffffff10}
+body.oled input,body.oled select,body.oled button{background:#111;color:#fff}
+body.hc{--bg:#000;--card:#000;--txt:#fff;--muted:#fff;--line:#fff;--shadow:none;--panel:#000}
+body.hc input,body.hc select,body.hc button{background:#000;color:#fff;border:2px solid #fff}
+body.hc .primary{background:#fff;color:#000}
+body.hc .tally.live{background:#fff}
+
+@media(max-width:430px){
+ .app{padding:7px}.inputrow{flex-direction:column}
+ .row3,.row4{grid-template-columns:repeat(2,1fr)}
+ .options{grid-template-columns:1fr}
+ .volrow{flex-wrap:wrap}
+}
 </style>
 </head>
 <body>
+<main class="app">
 
 <header>
-  <div class="brand">CodePad</div>
-  <select id="langSelect" aria-label="Language"></select>
-  <button id="runBtn">▶ Run</button>
-  <button id="undoBtn" class="ghost" title="Undo">↶</button>
-  <button id="redoBtn" class="ghost" title="Redo">↷</button>
-  <button id="findBtn" class="ghost" title="Find & replace">🔍</button>
-  <button id="zoomOut" class="ghost" title="Smaller text">A−</button>
-  <button id="zoomIn" class="ghost" title="Larger text">A+</button>
-  <button id="resetBtn" class="ghost" title="Reset editor">⟲ Reset</button>
-  <button id="blankBtn" class="ghost" title="New blank HTML file">📄 Blank</button>
-  <div class="themes" id="themes" aria-label="Theme toggle">
-    <button data-t="dark" title="Dark+">D+</button>
-    <button data-t="light" title="Light+">L+</button>
-    <button data-t="oled" title="OLED True Black">OL</button>
-    <button data-t="hc" title="High Contrast">HC</button>
-  </div>
+<h1>▶ PRAVAH</h1>
+<div class="sub">YouTube Player + Recorder · No API Key · Search, Play &amp; Record</div>
+<div class="modes">
+<button data-theme="light">☀ Light</button>
+<button data-theme="dark">◐ Dark</button>
+<button data-theme="oled">● OLED</button>
+<button data-theme="hc">HC</button>
+</div>
 </header>
 
-<main>
-  <div class="editor-wrap">
-    <div id="gutter">1</div>
-    <div class="code-area">
-      <pre id="highlight" aria-hidden="true"><code id="hlCode"></code></pre>
-      <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"
-        placeholder="Write your code here..."></textarea>
-    </div>
-    <div class="findbar" id="findBar" hidden>
-      <input id="findInput" type="text" placeholder="Find">
-      <span id="findCount">0/0</span>
-      <button id="findPrev" class="ghost" title="Previous">↑</button>
-      <button id="findNext" class="ghost" title="Next">↓</button>
-      <input id="replaceInput" type="text" placeholder="Replace">
-      <button id="replaceOne" class="ghost">Replace</button>
-      <button id="replaceAll" class="ghost">All</button>
-      <button id="findClose" class="ghost" title="Close">✕</button>
-    </div>
-  </div>
-  <div class="resizer" id="resizer" title="Drag to resize"></div>
-  <div class="output-panel" id="outputPanel">
-    <div class="output-header">
-      <div class="tabs">
-        <button id="tabPreview">Preview</button>
-        <button id="tabConsole" class="active">Console</button>
-      </div>
-      <span id="status">idle</span>
-      <button id="fullscreenBtn" class="ghost" title="Toggle fullscreen">⛶</button>
-    </div>
-    <pre id="output">Press ▶ Run to execute your code.</pre>
-    <iframe id="preview" title="Live preview" sandbox="allow-scripts allow-modals allow-forms allow-same-origin"></iframe>
-  </div>
-</main>
+<section class="card">
+<p class="eyebrow">Source</p>
+<div class="inputrow">
+<input id="url" placeholder="YouTube URL or Video ID" autocomplete="off">
+<button id="loadBtn">Load</button>
+</div>
+<div class="badge">Loaded: <b id="loadedId">none</b></div>
+
+<div class="inputrow" style="margin-top:8px">
+<input id="searchQ" placeholder="Search YouTube — songs or videos" autocomplete="off">
+<button id="searchBtn">🔎 Search</button>
+</div>
+<div class="results" id="searchResults"></div>
+
+<div class="player">
+<iframe id="yt" allow="autoplay;encrypted-media;picture-in-picture"
+allowfullscreen src="about:blank"></iframe>
+<div class="ov ov-rec" id="ovRec"><span class="tally live"></span>REC</div>
+<div class="ov ov-tc" id="ovTc">00:00 / 00:00</div>
+</div>
+
+<div class="row row4">
+<button id="playBtn">▶ Play</button>
+<button id="pauseBtn">⏸ Pause</button>
+<button id="stopBtn">■ Stop</button>
+<button id="reloadBtn">↻ Reload</button>
+</div>
+<div class="row row4">
+<button id="skipBackBtn">⏪ 10s</button>
+<button id="skipFwdBtn">⏩ 10s</button>
+<button id="loopBtn">⟲ Loop</button>
+<button id="muteBtn">🔊 Mute</button>
+</div>
+<div class="volrow">
+<input id="vol" type="range" min="0" max="100" value="100" aria-label="Volume">
+<select id="speed" aria-label="Playback speed">
+<option value="0.25">0.25×</option><option value="0.5">0.5×</option>
+<option value="0.75">0.75×</option><option value="1" selected>1×</option>
+<option value="1.25">1.25×</option><option value="1.5">1.5×</option>
+<option value="2">2×</option>
+</select>
+</div>
+<div class="row row2">
+<button id="fullBtn">⛶ Fullscreen</button>
+<button id="copyBtn">🔗 Copy URL</button>
+</div>
+
+<div class="record">
+<p class="eyebrow">Recorder</p>
+<div id="status" class="status"><span class="tally ready" id="recTally"></span> Recorder ready</div>
+
+<div class="options">
+<label><input id="mic" type="checkbox"> 🎤 Microphone</label>
+<label><input id="audio" type="checkbox" checked> 🔊 System audio</label>
+</div>
+<div class="qualityrow">
+<select id="quality" aria-label="Recording quality">
+<option value="std">Standard · 2.5 Mbps</option>
+<option value="hd" selected>HD · 8 Mbps</option>
+<option value="max">Max · 16 Mbps</option>
+</select>
+</div>
+
+<input id="filename" value="youtube-recording" placeholder="Recording filename"
+style="width:100%;margin-top:6px">
+
+<div class="timecode"><span class="tally" id="tcTally"></span><span id="timer">00:00:00</span></div>
+
+<div class="recBtns">
+<button id="start" class="primary">● Record</button>
+<button id="pause">Ⅱ Pause</button>
+<button id="stop">■ Stop</button>
+<button id="resume">▶ Resume</button>
+</div>
+
+<div id="stats" class="stats">Duration: 00:00:00 · Size: 0 MB</div>
+
+<div class="preview" id="preview">
+<video id="previewVid" controls playsinline></video>
+<div class="recBtns">
+<button id="download">⬇ Download</button>
+<button id="discard">✕ Discard</button>
+</div>
+</div>
+</div>
+</section>
 
 <footer>
-  <small>© <span id="year"></span> Manik Roy. All Rights Reserved.</small>
-  <small>Runs on the free Piston execution API — no key, no signup.</small>
+<span class="kbd">Space</span>Play/Pause
+<span class="kbd">M</span>Mute
+<span class="kbd">←/→</span>Seek 5s
+<br>© <span id="year"></span> Manik Roy. All Rights Reserved.
 </footer>
+</main>
+
+<div class="toasts" id="toasts"></div>
 
 <script>
-const API = "https://emkc.org/api/v2/piston";
-const code = document.getElementById('code');
-const gutter = document.getElementById('gutter');
-const hl = document.getElementById('highlight');
-const hlCode = document.getElementById('hlCode');
-const langSelect = document.getElementById('langSelect');
-const runBtn = document.getElementById('runBtn');
-const undoBtn = document.getElementById('undoBtn');
-const redoBtn = document.getElementById('redoBtn');
-const zoomOut = document.getElementById('zoomOut');
-const zoomIn = document.getElementById('zoomIn');
-const resetBtn = document.getElementById('resetBtn');
-const blankBtn = document.getElementById('blankBtn');
-const output = document.getElementById('output');
-const preview = document.getElementById('preview');
-const outputPanel = document.getElementById('outputPanel');
-const fullscreenBtn = document.getElementById('fullscreenBtn');
-const tabPreview = document.getElementById('tabPreview');
-const tabConsole = document.getElementById('tabConsole');
-const status = document.getElementById('status');
-const resizer = document.getElementById('resizer');
-const mainEl = document.querySelector('main');
-let runtimes = {};
+const $=x=>document.getElementById(x);
 
-// ---- tab switching ----
-function showTab(t){
-  outputPanel.classList.toggle('show-preview', t === 'preview');
-  tabPreview.classList.toggle('active', t === 'preview');
-  tabConsole.classList.toggle('active', t === 'console');
-}
-tabPreview.addEventListener('click', () => showTab('preview'));
-tabConsole.addEventListener('click', () => showTab('console'));
+/* ---------- theme ---------- */
+function safeGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function safeSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 
-// ---- fullscreen preview/console panel ----
-let isFull = false;
-function setFullscreen(on){
-  isFull = on;
-  mainEl.classList.toggle('preview-full', isFull);
-  fullscreenBtn.classList.toggle('active', isFull);
-  fullscreenBtn.textContent = isFull ? '⤢' : '⛶';
-  fullscreenBtn.title = isFull ? 'Exit fullscreen' : 'Toggle fullscreen';
-}
-fullscreenBtn.addEventListener('click', async () => {
-  setFullscreen(!isFull);
-  try{
-    if(isFull && outputPanel.requestFullscreen) await outputPanel.requestFullscreen();
-    else if(!isFull && document.fullscreenElement) await document.exitFullscreen();
-  }catch(err){}
-});
-document.addEventListener('fullscreenchange', () => {
-  if(!document.fullscreenElement && isFull) setFullscreen(false);
+$("year").textContent=new Date().getFullYear();
+mode(safeGet("pravah_theme")||"dark");
+function mode(x){document.body.className=x;safeSet("pravah_theme",x)}
+document.querySelectorAll(".modes button").forEach(btn=>{
+ btn.addEventListener("click",()=>mode(btn.dataset.theme));
 });
 
-// ---- draggable split ----
-function isRow(){ return window.matchMedia('(min-width:860px)').matches; }
-function setSplit(pct){
-  pct = Math.min(80, Math.max(20, pct));
-  mainEl.style.setProperty('--a', pct + 'fr');
-  mainEl.style.setProperty('--b', (100 - pct) + 'fr');
+/* ---------- wire up every other control (no inline handlers anywhere) ---------- */
+function wireControls(){
+ $("loadBtn").addEventListener("click",loadVideo);
+ $("searchBtn").addEventListener("click",searchYT);
+ $("searchQ").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){e.preventDefault();searchYT()}
+ });
+ $("playBtn").addEventListener("click",()=>cmd("playVideo"));
+ $("pauseBtn").addEventListener("click",()=>cmd("pauseVideo"));
+ $("stopBtn").addEventListener("click",()=>cmd("stopVideo"));
+ $("reloadBtn").addEventListener("click",reload);
+ $("skipBackBtn").addEventListener("click",()=>skip(-10));
+ $("skipFwdBtn").addEventListener("click",()=>skip(10));
+ $("loopBtn").addEventListener("click",toggleLoop);
+ $("muteBtn").addEventListener("click",toggleMute);
+ $("vol").addEventListener("input",e=>setVol(e.target.value));
+ $("speed").addEventListener("change",e=>cmd("setPlaybackRate",[parseFloat(e.target.value)]));
+ $("fullBtn").addEventListener("click",full);
+ $("copyBtn").addEventListener("click",copyURL);
+ $("start").addEventListener("click",startRec);
+ $("pause").addEventListener("click",pauseRec);
+ $("stop").addEventListener("click",stopRec);
+ $("resume").addEventListener("click",resumeRec);
+ $("download").addEventListener("click",downloadRec);
+ $("discard").addEventListener("click",discardRec);
 }
-let dragging = false, pendingPct = null, resizeQueued = false;
-function startDrag(e){
-  dragging = true;
-  document.body.style.userSelect = 'none';
-  try{ resizer.setPointerCapture(e.pointerId); }catch(err){}
-}
-function endDrag(e){
-  dragging = false;
-  document.body.style.userSelect = '';
-  if(e && e.pointerId != null){ try{ resizer.releasePointerCapture(e.pointerId); }catch(err){} }
-}
-function onDrag(e){
-  if(!dragging) return;
-  const r = mainEl.getBoundingClientRect();
-  pendingPct = isRow() ? ((e.clientX - r.left) / r.width) * 100 : ((e.clientY - r.top) / r.height) * 100;
-  if(!resizeQueued){ resizeQueued = true; requestAnimationFrame(() => { setSplit(pendingPct); resizeQueued = false; }); }
-}
-resizer.addEventListener('pointerdown', startDrag);
-resizer.addEventListener('pointermove', onDrag);
-window.addEventListener('pointermove', onDrag, {passive:true});
-resizer.addEventListener('pointerup', endDrag);
-window.addEventListener('pointerup', endDrag);
-window.addEventListener('pointercancel', endDrag);
+wireControls();
 
-document.getElementById('year').textContent = new Date().getFullYear();
-
-// ---- keep the app pinned to the real visible viewport ----
-function syncViewportHeight(){
-  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  document.body.style.height = h + 'px';
-}
-syncViewportHeight();
-window.addEventListener('resize', syncViewportHeight);
-if(window.visualViewport) window.visualViewport.addEventListener('resize', syncViewportHeight);
-
-// ---- console output, capped ----
-const MAX_OUTPUT = 200000;
-function setOutput(text){
-  if(text.length > MAX_OUTPUT) text = text.slice(0, MAX_OUTPUT) + '\n\n… output truncated to keep the app responsive.';
-  output.textContent = text;
+/* ---------- toast ---------- */
+function toast(msg,type=""){
+ let t=document.createElement("div");
+ t.className="toast"+(type?" "+type:"");
+ t.textContent=msg;
+ $("toasts").appendChild(t);
+ requestAnimationFrame(()=>t.classList.add("show"));
+ setTimeout(()=>{t.classList.remove("show");setTimeout(()=>t.remove(),250)},3000);
 }
 
-// ---- syntax highlighting ----
-const KEYWORDS = new Set(['function','return','if','else','elif','for','foreach','while','do','switch','case','default',
-  'break','continue','class','struct','enum','interface','extends','implements','public','private','protected','static',
-  'final','const','let','var','def','fn','fun','func','import','from','as','export','package','namespace','using',
-  'include','require','new','delete','try','catch','finally','throw','throws','async','await','yield','lambda','with',
-  'pass','self','this','super','void','int','float','double','long','short','byte','char','bool','boolean','string',
-  'String','True','False','None','null','nil','undefined','true','false','and','or','not','in','is','print','echo',
-  'puts','console','begin','end','then','module','mod','pub','mut','impl','trait','match','type','typedef','template']);
-const HL_RE = /(\/\/[^\n]*|#[^\n]*|\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|(\b\d+\.?\d*\b)|([A-Za-z_$][\w$]*)/g;
-function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function highlightCode(src){
-  HL_RE.lastIndex = 0;
-  let out = '', last = 0, m;
-  while((m = HL_RE.exec(src))){
-    out += escapeHtml(src.slice(last, m.index));
-    const [full, com, str, num, word] = m;
-    const esc = escapeHtml(full);
-    if(com) out += `<span class="tok-com">${esc}</span>`;
-    else if(str) out += `<span class="tok-str">${esc}</span>`;
-    else if(num) out += `<span class="tok-num">${esc}</span>`;
-    else if(word && KEYWORDS.has(word)) out += `<span class="tok-kw">${esc}</span>`;
-    else out += esc;
-    last = HL_RE.lastIndex;
-  }
-  out += escapeHtml(src.slice(last));
-  return out + '\n';
+/* ---------- player state ---------- */
+let currentVideoId=null,currentTime=0,videoDuration=0,playerState=-1;
+let loopEnabled=false,isMuted=false,lastVolume=100;
+
+function id(v){
+ v=(v||"").trim();
+ if(/^[\w-]{11}$/.test(v))return v;
+ try{
+  let u=new URL(v);
+  if(u.hostname.includes("youtu.be"))return u.pathname.slice(1);
+  if(u.searchParams.get("v"))return u.searchParams.get("v");
+  let p=u.pathname.split("/"),i=p.indexOf("embed");
+  return i>=0?p[i+1]:"";
+ }catch(e){return ""}
+}
+function loadVideo(){
+ let x=id($("url").value);
+ if(!x)return toast("Enter a valid YouTube URL or Video ID.","err");
+ loadById(x);
+}
+function loadById(vidId){
+ currentVideoId=vidId;
+ $("url").value="https://youtu.be/"+vidId;
+ safeSet("pravah_lastUrl",$("url").value);
+ $("loadedId").textContent=vidId;
+ $("yt").src="https://www.youtube.com/embed/"+vidId+
+  "?enablejsapi=1&autoplay=1&playsinline=1";
+ currentTime=0;videoDuration=0;playerState=-1;
+ updateOverlay();
 }
 
-// ---- gutter + highlight: rebuilt together, throttled to one frame ----
-let lastLineCount = -1;
-function updateGutter(){
-  const n = code.value ? code.value.split('\n').length : 1;
-  if(n === lastLineCount) return;
-  lastLineCount = n;
-  const nums = new Array(n);
-  for(let i = 0; i < n; i++) nums[i] = i + 1;
-  gutter.textContent = nums.join('\n');
-}
-function renderHighlight(){ hlCode.innerHTML = highlightCode(code.value); }
-let editorQueued = false;
-function queueEditorUpdate(){
-  if(editorQueued) return;
-  editorQueued = true;
-  requestAnimationFrame(() => { updateGutter(); renderHighlight(); editorQueued = false; });
-}
-code.addEventListener('input', queueEditorUpdate);
-code.addEventListener('scroll', () => {
-  gutter.scrollTop = code.scrollTop;
-  hl.scrollTop = code.scrollTop;
-  hl.scrollLeft = code.scrollLeft;
-}, {passive:true});
-queueEditorUpdate();
-
-// ---- font size / zoom ----
-let fontSize = parseInt(localStorage.getItem('codepad-fontsize'), 10) || 13;
-function applyFontSize(){
-  document.documentElement.style.setProperty('--fontsize', fontSize + 'px');
-  localStorage.setItem('codepad-fontsize', fontSize);
-}
-zoomOut.addEventListener('click', () => { fontSize = Math.max(10, fontSize - 1); applyFontSize(); });
-zoomIn.addEventListener('click', () => { fontSize = Math.min(24, fontSize + 1); applyFontSize(); });
-applyFontSize();
-
-// ---- insert text while preserving native undo/redo history ----
-function insertText(text){
-  code.focus();
-  if(!document.execCommand('insertText', false, text)){
-    const s = code.selectionStart, en = code.selectionEnd;
-    code.setRangeText(text, s, en, 'end');
-    queueEditorUpdate();
-  }
-}
-undoBtn.addEventListener('click', () => { code.focus(); document.execCommand('undo'); queueEditorUpdate(); });
-redoBtn.addEventListener('click', () => { code.focus(); document.execCommand('redo'); queueEditorUpdate(); });
-
-// ---- auto-indent & bracket pairing ----
-const PAIRS = {'(':')','[':']','{':'}','"':'"',"'":"'",'`':'`'};
-const CLOSERS = new Set(Object.values(PAIRS));
-code.addEventListener('keydown', e => {
-  if(e.ctrlKey || e.metaKey || e.altKey) return;
-  const s = code.selectionStart, en = code.selectionEnd, v = code.value;
-
-  if(e.key === 'Enter'){
-    e.preventDefault();
-    const lineStart = v.lastIndexOf('\n', s - 1) + 1;
-    const indent = (v.slice(lineStart, s).match(/^[ \t]*/) || [''])[0];
-    const prevChar = v[s - 1], nextChar = v[s];
-    let insert = '\n' + indent + (prevChar && '{[('.includes(prevChar) ? '  ' : '');
-    if(prevChar && '{[('.includes(prevChar) && nextChar === PAIRS[prevChar]){
-      insertText(insert + '\n' + indent);
-      code.setSelectionRange(s + insert.length, s + insert.length);
-    } else {
-      insertText(insert);
-    }
-    return;
-  }
-  if(PAIRS[e.key] && s === en){
-    e.preventDefault();
-    insertText(e.key + PAIRS[e.key]);
-    code.setSelectionRange(s + 1, s + 1);
-    return;
-  }
-  if(CLOSERS.has(e.key) && v[s] === e.key && s === en){
-    e.preventDefault();
-    code.setSelectionRange(s + 1, s + 1);
-    return;
-  }
-  if(e.key === 'Backspace' && s === en && PAIRS[v[s - 1]] === v[s]){
-    e.preventDefault();
-    code.setSelectionRange(s - 1, s + 1);
-    insertText('');
-    return;
-  }
-  if(e.key === 'Tab'){
-    e.preventDefault();
-    insertText('  ');
-  }
-});
-
-// ---- find & replace ----
-const findBtn = document.getElementById('findBtn');
-const findBar = document.getElementById('findBar');
-const findInput = document.getElementById('findInput');
-const replaceInput = document.getElementById('replaceInput');
-const findCount = document.getElementById('findCount');
-const findPrev = document.getElementById('findPrev');
-const findNext = document.getElementById('findNext');
-const replaceOne = document.getElementById('replaceOne');
-const replaceAll = document.getElementById('replaceAll');
-const findClose = document.getElementById('findClose');
-let matches = [], matchIndex = -1;
-
-function doSearch(){
-  const q = findInput.value;
-  matches = [];
-  if(q){
-    const v = code.value;
-    let i = 0, idx;
-    while((idx = v.indexOf(q, i)) !== -1){ matches.push(idx); i = idx + q.length; }
-  }
-  matchIndex = matches.length ? 0 : -1;
-  findCount.textContent = matches.length ? `${matchIndex + 1}/${matches.length}` : '0/0';
-  if(matchIndex !== -1) selectMatch();
-}
-function selectMatch(){
-  const q = findInput.value;
-  const idx = matches[matchIndex];
-  code.focus();
-  code.setSelectionRange(idx, idx + q.length);
-}
-function step(dir){
-  if(!matches.length) return;
-  matchIndex = (matchIndex + dir + matches.length) % matches.length;
-  findCount.textContent = `${matchIndex + 1}/${matches.length}`;
-  selectMatch();
-}
-findInput.addEventListener('input', doSearch);
-findNext.addEventListener('click', () => step(1));
-findPrev.addEventListener('click', () => step(-1));
-findInput.addEventListener('keydown', e => {
-  if(e.key === 'Enter'){ e.preventDefault(); step(e.shiftKey ? -1 : 1); }
-});
-replaceOne.addEventListener('click', () => {
-  if(matchIndex === -1) return;
-  const q = findInput.value, idx = matches[matchIndex];
-  code.setSelectionRange(idx, idx + q.length);
-  insertText(replaceInput.value);
-  doSearch();
-});
-replaceAll.addEventListener('click', () => {
-  const q = findInput.value;
-  if(!q) return;
-  const newVal = code.value.split(q).join(replaceInput.value);
-  code.setSelectionRange(0, code.value.length);
-  insertText(newVal);
-  doSearch();
-});
-function openFind(){ findBar.hidden = false; findInput.focus(); findInput.select(); doSearch(); }
-function closeFind(){ findBar.hidden = true; code.focus(); }
-findBtn.addEventListener('click', openFind);
-findClose.addEventListener('click', closeFind);
-document.addEventListener('keydown', e => {
-  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f'){ e.preventDefault(); openFind(); }
-  else if(e.key === 'Escape' && !findBar.hidden){ closeFind(); }
-  else if(e.key === 'Escape' && isFull){ fullscreenBtn.click(); }
-});
-
-// ---- theme handling ----
-const themeBtns = document.querySelectorAll('.themes button');
-function setTheme(t){
-  document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem('codepad-theme', t);
-  themeBtns.forEach(b => b.classList.toggle('active', b.dataset.t === t));
-}
-themeBtns.forEach(b => b.addEventListener('click', () => setTheme(b.dataset.t)));
-setTheme(localStorage.getItem('codepad-theme') || 'dark');
-
-// ---- 25 popular languages (Piston runtime ids) + friendly labels ----
-const POPULAR = [
-  ['javascript','JavaScript'],['typescript','TypeScript'],['python','Python'],
-  ['java','Java'],['c','C'],['c++','C++'],['csharp','C#'],['go','Go'],
-  ['rust','Rust'],['ruby','Ruby'],['php','PHP'],['swift','Swift'],
-  ['kotlin','Kotlin'],['scala','Scala'],['perl','Perl'],['lua','Lua'],
-  ['rscript','R'],['dart','Dart'],['elixir','Elixir'],['haskell','Haskell'],
-  ['clojure','Clojure'],['bash','Bash'],['sqlite3','SQL'],['julia','Julia'],
-  ['groovy','Groovy']
+/* ---------- search (keyless — uses public Invidious mirrors, tries each in turn) ---------- */
+const INVIDIOUS_INSTANCES=[
+ "https://invidious.nerdvpn.de","https://yt.artemislena.eu",
+ "https://invidious.jing.rocks","https://iv.melmac.space",
+ "https://invidious.reallyaweso.me"
 ];
-langSelect.innerHTML = '<option value="html">HTML (live preview)</option>' +
-  POPULAR.map(([v,label]) => `<option value="${v}">${label}</option>`).join('');
-langSelect.value = 'html';
-langSelect.addEventListener('change', () => {
-  showTab(langSelect.value === 'html' ? 'preview' : 'console');
-});
-
-async function loadRuntimes(){
+async function searchYT(){
+ let q=$("searchQ").value.trim();
+ if(!q)return toast("Enter something to search for.","warn");
+ let box=$("searchResults");
+ box.classList.add("show");
+ box.innerHTML='<div class="hint">Searching…</div>';
+ for(let base of INVIDIOUS_INSTANCES){
   try{
-    const res = await fetch(`${API}/runtimes`);
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    data.forEach(r => { runtimes[r.language] = r.version; });
-    const known = new Set(POPULAR.map(p => p[0]));
-    const extra = Object.keys(runtimes).filter(l => !known.has(l)).sort();
-    langSelect.innerHTML += extra.map(l => `<option value="${l}">${l}</option>`).join('');
-  }catch(e){
-    status.textContent = 'API unreachable';
-    setOutput('Could not load the remote language list (' + e.message + ').\n"html" still runs fully offline in the Preview tab.');
-  }
+   let ctrl=new AbortController();
+   let t=setTimeout(()=>ctrl.abort(),4500);
+   let res=await fetch(base+"/api/v1/search?q="+encodeURIComponent(q)+"&type=video",{signal:ctrl.signal});
+   clearTimeout(t);
+   if(!res.ok)continue;
+   let data=await res.json();
+   let vids=(Array.isArray(data)?data:[]).filter(d=>d.type==="video"&&d.videoId);
+   if(!vids.length){box.innerHTML='<div class="hint">No results found. Try different words.</div>';return}
+   renderResults(vids.slice(0,15));
+   return;
+  }catch(e){continue}
+ }
+ box.innerHTML='<div class="hint">Search is temporarily unavailable — paste a YouTube link or ID above instead.</div>';
 }
-loadRuntimes();
-
-const BLANK_HTML = '<!DOCTYPE html>\n<html>\n<head>\n  <title>Untitled</title>\n</head>\n<body>\n\n</body>\n</html>';
-
-resetBtn.addEventListener('click', () => {
-  code.value = '';
-  lastLineCount = -1;
-  queueEditorUpdate();
-  preview.srcdoc = '';
-  setOutput('Press ▶ Run to execute your code.');
-  status.textContent = 'idle';
-  code.focus();
+function renderResults(vids){
+ let box=$("searchResults");
+ box.innerHTML="";
+ vids.forEach(v=>{
+  let thumbs=v.videoThumbnails||[];
+  let thumb=thumbs.find(t=>t.quality==="medium")||thumbs[0]||{};
+  let item=document.createElement("div");
+  item.className="result";item.tabIndex=0;item.setAttribute("role","button");
+  item.setAttribute("aria-label","Play "+(v.title||"video"));
+  let img=document.createElement("img");
+  img.loading="lazy";img.alt="";img.src=thumb.url||"";
+  let meta=document.createElement("div");meta.className="meta";
+  let t=document.createElement("div");t.className="t";t.textContent=v.title||"Untitled";
+  let c=document.createElement("div");c.className="c";c.textContent=v.author||"";
+  meta.append(t,c);
+  let d=document.createElement("div");d.className="d";d.textContent=fmtShort(v.lengthSeconds||0);
+  item.append(img,meta,d);
+  let pick=()=>{
+   loadById(v.videoId);
+   toast("Playing: "+(v.title||v.videoId),"ok");
+   box.classList.remove("show");
+   document.querySelector(".player").scrollIntoView({behavior:"smooth",block:"center"});
+  };
+  item.addEventListener("click",pick);
+  item.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick()}});
+  box.appendChild(item);
+ });
+}
+function reload(){
+ if(!currentVideoId)return toast("Load a video first.","warn");
+ $("yt").src="https://www.youtube.com/embed/"+currentVideoId+
+  "?enablejsapi=1&autoplay=1&playsinline=1";
+}
+$("yt").addEventListener("load",()=>{
+ if(currentVideoId)postMsg({event:"listening",id:currentVideoId});
 });
 
-blankBtn.addEventListener('click', () => {
-  langSelect.value = 'html';
-  code.value = BLANK_HTML;
-  lastLineCount = -1;
-  queueEditorUpdate();
-  preview.srcdoc = '';
-  setOutput('Press ▶ Run to execute your code.');
-  status.textContent = 'new file';
-  showTab('preview');
-  code.focus();
+function postMsg(obj){
+ try{$("yt").contentWindow.postMessage(JSON.stringify(obj),"*")}catch(e){}
+}
+function cmd(func,args=[]){
+ if(!currentVideoId)return toast("Load a video first.","warn");
+ postMsg({event:"command",func,args});
+}
+function skip(sec){
+ if(!currentVideoId)return toast("Load a video first.","warn");
+ cmd("seekTo",[Math.max(0,currentTime+sec),true]);
+}
+function toggleLoop(){
+ loopEnabled=!loopEnabled;
+ $("loopBtn").classList.toggle("active",loopEnabled);
+ toast(loopEnabled?"Loop on":"Loop off");
+}
+function toggleMute(){
+ isMuted=!isMuted;
+ if(isMuted){cmd("mute");$("muteBtn").textContent="🔇 Unmute"}
+ else{cmd("unMute");$("muteBtn").textContent="🔊 Mute"}
+ $("muteBtn").classList.toggle("active",isMuted);
+}
+function setVol(v){
+ lastVolume=v;
+ cmd("setVolume",[Number(v)]);
+ if(Number(v)==0 && !isMuted){isMuted=true;$("muteBtn").textContent="🔇 Unmute";$("muteBtn").classList.add("active")}
+ if(Number(v)>0 && isMuted){isMuted=false;$("muteBtn").textContent="🔊 Mute";$("muteBtn").classList.remove("active")}
+}
+function full(){
+ let el=$("yt");
+ let req=el.requestFullscreen||el.webkitRequestFullscreen||el.webkitEnterFullscreen;
+ if(req)req.call(el).catch?.(()=>toast("Fullscreen was blocked.","warn"));
+ else toast("Fullscreen isn't supported on this browser.","warn");
+}
+async function copyURL(){
+ if(!currentVideoId)return toast("Load a video first.","warn");
+ let link="https://youtu.be/"+currentVideoId;
+ try{
+  await navigator.clipboard.writeText(link);
+  toast("Link copied.","ok");
+ }catch(e){
+  let ta=document.createElement("textarea");
+  ta.value=link;ta.style.position="fixed";ta.style.opacity="0";
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand("copy");toast("Link copied.","ok")}
+  catch(_){toast(link,"warn")}
+  ta.remove();
+ }
+}
+
+/* listen for YouTube player info (works without loading the iframe_api script) */
+window.addEventListener("message",e=>{
+ if(typeof e.origin==="string" && !e.origin.includes("youtube.com"))return;
+ let data;
+ try{data=JSON.parse(e.data)}catch(_){return}
+ if(data.event==="infoDelivery" && data.info){
+  let info=data.info;
+  if(typeof info.currentTime==="number")currentTime=info.currentTime;
+  if(typeof info.duration==="number")videoDuration=info.duration;
+  if(typeof info.playerState==="number"){
+   let prev=playerState;playerState=info.playerState;
+   if(playerState===0 && prev!==0 && loopEnabled){cmd("seekTo",[0,true]);cmd("playVideo")}
+  }
+  updateOverlay();
+ }
+});
+function fmtShort(s){
+ s=Math.max(0,Math.floor(s||0));
+ let m=Math.floor(s/60),z=s%60;
+ return m+":"+String(z).padStart(2,"0");
+}
+function updateOverlay(){
+ $("ovTc").textContent=fmtShort(currentTime)+" / "+fmtShort(videoDuration);
+}
+
+/* ---------- keyboard shortcuts ---------- */
+window.addEventListener("keydown",e=>{
+ let tag=(e.target.tagName||"").toLowerCase();
+ if(tag==="input"||tag==="select"||tag==="textarea")return;
+ if(e.code==="Space"){e.preventDefault();cmd(playerState===1?"pauseVideo":"playVideo")}
+ else if(e.key==="m"||e.key==="M"){toggleMute()}
+ else if(e.key==="ArrowLeft"){skip(-5)}
+ else if(e.key==="ArrowRight"){skip(5)}
 });
 
-// ---- run code ----
-runBtn.addEventListener('click', async () => {
-  if(runBtn.disabled) return;
-  const language = langSelect.value;
+/* ---------- recording ---------- */
+let rec=null,chunks=[],blob=null,timer=null,seconds=0,started=0,elapsedBeforePause=0;
 
-  if(language === 'html'){
-    preview.srcdoc = code.value;
-    showTab('preview');
-    status.textContent = 'rendered';
-    return;
+const QUALITY={std:2500000,hd:8000000,max:16000000};
+
+function fmtLong(s){
+ let h=Math.floor(s/3600),m=Math.floor(s%3600/60),z=s%60;
+ return [h,m,z].map(x=>String(x).padStart(2,"0")).join(":");
+}
+function updateRecUI(){
+ $("timer").textContent=fmtLong(seconds);
+ $("stats").textContent="Duration: "+fmtLong(seconds)+" · Size: "+
+  (blob?(blob.size/1048576).toFixed(2):"0")+" MB";
+}
+function setTally(state){
+ // state: ready | live | pause
+ let t1=$("recTally"),t2=$("tcTally");
+ [t1,t2].forEach(t=>t.className="tally "+state);
+}
+
+async function startRec(){
+ if(!navigator.mediaDevices?.getDisplayMedia){
+  return toast("Screen recording isn't supported on this browser/device — try desktop Chrome, Edge, or Firefox.","err");
+ }
+ resetRecordingUI();
+ try{
+  let screen=await navigator.mediaDevices.getDisplayMedia({
+   video:{frameRate:30},audio:$("audio").checked
+  });
+  let tracks=[...screen.getVideoTracks()];
+  if($("audio").checked)tracks.push(...screen.getAudioTracks());
+
+  if($("mic").checked){
+   try{
+    let ms=await navigator.mediaDevices.getUserMedia({audio:true});
+    tracks.push(...ms.getAudioTracks());
+   }catch(e){toast("Microphone permission was denied — recording system audio only.","warn")}
   }
 
-  const version = runtimes[language];
-  if(!version){ setOutput('That language failed to load from the API. Try again or pick "html".'); showTab('console'); return; }
+  let stream=new MediaStream(tracks);
+  let type=MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")?"video/webm;codecs=vp9,opus":
+   MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")?"video/webm;codecs=vp8,opus":"video/webm";
+  rec=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:QUALITY[$("quality").value]});
+  chunks=[];blob=null;seconds=0;elapsedBeforePause=0;updateRecUI();
 
-  showTab('console');
-  runBtn.disabled = true;
-  status.textContent = 'running…';
-  setOutput('Contacting execution API…');
+  rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  rec.onstop=()=>{
+   blob=new Blob(chunks,{type:"video/webm"});
+   $("previewVid").src=URL.createObjectURL(blob);
+   $("preview").style.display="block";
+   $("status").innerHTML='<span class="tally ready" id="recTally"></span> Recording ready';
+   $("ovRec").classList.remove("on");
+   setTally("ready");
+   updateRecUI();
+  };
+  rec.start(1000);
+  started=Date.now();
+  timer=setInterval(()=>{seconds=elapsedBeforePause+Math.floor((Date.now()-started)/1000);updateRecUI()},500);
+  $("start").style.display="none";
+  $("pause").style.display="block";
+  $("stop").style.display="block";
+  $("status").innerHTML='<span class="tally live" id="recTally"></span> Recording…';
+  $("ovRec").classList.add("on");
+  setTally("live");
+  screen.getVideoTracks()[0].onended=stopRec;
+ }catch(e){
+  toast("Recording was cancelled.","warn");
+ }
+}
+function pauseRec(){
+ if(rec?.state==="recording"){
+  rec.pause();clearInterval(timer);elapsedBeforePause=seconds;
+  $("pause").style.display="none";$("resume").style.display="block";
+  $("status").innerHTML='<span class="tally pause" id="recTally"></span> Recording paused';
+  setTally("pause");
+ }
+}
+function resumeRec(){
+ if(rec?.state==="paused"){
+  rec.resume();started=Date.now();
+  timer=setInterval(()=>{seconds=elapsedBeforePause+Math.floor((Date.now()-started)/1000);updateRecUI()},500);
+  $("pause").style.display="block";$("resume").style.display="none";
+  $("status").innerHTML='<span class="tally live" id="recTally"></span> Recording…';
+  setTally("live");
+ }
+}
+function stopRec(){
+ if(!rec||rec.state==="inactive")return;
+ rec.stop();rec.stream?.getTracks().forEach(t=>t.stop());
+ clearInterval(timer);
+ $("start").style.display="block";$("pause").style.display="none";
+ $("resume").style.display="none";$("stop").style.display="none";
+}
+function downloadRec(){
+ if(!blob)return;
+ let name=$("filename").value.trim()||"youtube-recording";
+ safeSet("pravah_filename",name);
+ let a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);a.download=name.replace(/\s+/g,"-")+".webm";
+ a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+ toast("Download started.","ok");
+}
+function discardRec(){
+ if($("previewVid").src)URL.revokeObjectURL($("previewVid").src);
+ resetRecordingUI();
+ toast("Recording discarded.");
+}
+function resetRecordingUI(){
+ blob=null;chunks=[];seconds=0;elapsedBeforePause=0;updateRecUI();
+ $("preview").style.display="none";
+ $("previewVid").removeAttribute("src");
+ $("status").innerHTML='<span class="tally ready" id="recTally"></span> Recorder ready';
+ setTally("ready");
+ $("ovRec").classList.remove("on");
+}
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
-
-  try{
-    const res = await fetch(`${API}/execute`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ language, version, files: [{ name: 'main', content: code.value }] }),
-      signal: controller.signal
-    });
-    if(!res.ok){ const text = await res.text(); throw new Error('HTTP ' + res.status + ' — ' + text.slice(0,200)); }
-    const data = await res.json();
-    const out = (data.run?.stdout || '') + (data.run?.stderr || '') || data.message || 'No output.';
-    setOutput(out);
-    status.textContent = data.run?.code === 0 ? 'success' : 'finished';
-  }catch(err){
-    const msg = err.name === 'AbortError' ? 'Request timed out after 15s.' : err.message;
-    setOutput('Run failed: ' + msg + '\n\nThe execution API may be rate-limiting or blocking this network. "html" always works offline via Preview.');
-    status.textContent = 'error';
-  }finally{
-    clearTimeout(timeout);
-    runBtn.disabled = false;
-  }
-});
+/* ---------- restore saved preferences ---------- */
+{
+ let savedName=safeGet("pravah_filename");
+ if(savedName)$("filename").value=savedName;
+ let savedUrl=safeGet("pravah_lastUrl");
+ if(savedUrl)$("url").value=savedUrl;
+}
+$("filename").addEventListener("change",()=>safeSet("pravah_filename",$("filename").value.trim()));
 </script>
 </body>
 </html>
