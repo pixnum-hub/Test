@@ -233,17 +233,23 @@
   }
   function extractId(url){
     const patterns = [
-      /(?:v=|\/shorts\/|\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})/
+      /(?:v=|\/shorts\/|\/embed\/|\/live\/|youtu\.be\/)([A-Za-z0-9_-]{11})/
     ];
     for(const p of patterns){ const m = url.match(p); if(m) return m[1]; }
+    if(/^[A-Za-z0-9_-]{11}$/.test(url.trim())) return url.trim();
     return null;
   }
 
   async function fetchMeta(videoId, rawUrl){
     const oembed = "https://www.youtube.com/oembed?url=" +
       encodeURIComponent("https://www.youtube.com/watch?v=" + videoId) + "&format=json";
-    const res = await fetch(oembed);
-    if(!res.ok) throw new Error("Could not read video info (private, age-restricted, or invalid link).");
+    let res;
+    try{
+      res = await fetch(oembed);
+    }catch(networkErr){
+      throw new Error("network/CORS block reading video info — check connection");
+    }
+    if(!res.ok) throw new Error("could not read video info (private, age-restricted, or invalid link)");
     const data = await res.json();
     thumb.src = data.thumbnail_url || "";
     titleEl.textContent = data.title || "Untitled";
@@ -253,21 +259,32 @@
 
   async function resolveDownload(rawUrl){
     const base = instanceInput.value.trim().replace(/\/$/, "");
+    if(!base){ throw new Error("no processing instance set — see Advanced below"); }
     const body = {
       url: rawUrl,
       downloadMode: modeSel.value === "audio" ? "audio" : "auto",
       videoQuality: qualitySel.value === "max" ? "max" : qualitySel.value,
       audioFormat: "mp3"
     };
-    const res = await fetch(base + "/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify(body)
-    });
-    const data = await res.json();
+    let res;
+    try{
+      res = await fetch(base + "/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify(body)
+      });
+    }catch(networkErr){
+      throw new Error("could not reach that instance (CORS/network block) — try another from cobalt.directory");
+    }
+    let data;
+    try{
+      data = await res.json();
+    }catch(parseErr){
+      throw new Error("instance sent a non-JSON reply (HTTP " + res.status + ") — likely blocked by a bot check");
+    }
     if(!res.ok || data.status === "error"){
-      const code = data && data.error && data.error.code ? data.error.code : "unknown";
-      throw new Error("Processing instance declined the request (" + code + ").");
+      const code = data && data.error && data.error.code ? data.error.code : ("HTTP " + res.status);
+      throw new Error("instance declined the request (" + code + ")");
     }
     return data;
   }
