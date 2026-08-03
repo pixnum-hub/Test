@@ -63,6 +63,11 @@
   .st-fav.active{color:var(--accent);}
   .st-play{color:var(--accent2);font-size:16px;}
   .st-badge{font-size:10px;color:var(--accent2);border:1px solid var(--edge);border-radius:8px;padding:2px 6px;white-space:nowrap;}
+  .add-form{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+  .add-form input{padding:10px 12px;border-radius:10px;border:1px solid var(--edge);background:var(--panel);color:var(--fg);font-size:14px;}
+  .add-form button{background:var(--accent);color:#111;border:none;padding:10px;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px;align-self:flex-start;padding-left:16px;padding-right:16px;}
+  .add-toggle{width:100%;background:transparent;border:1px dashed var(--edge);color:var(--muted);padding:9px;border-radius:10px;font-size:13px;cursor:pointer;margin-top:8px;}
+  .st-remove{background:none;border:none;color:var(--danger);font-size:15px;cursor:pointer;}
   .footer{ text-align:center;padding:16px 8px 10px;color:var(--muted);font-size:12px; display:flex;align-items:center;justify-content:center;min-height:40px; }
   @media (min-width:600px){ .app{padding:24px;} .station-list{max-height:48vh;} }
 </style>
@@ -111,6 +116,12 @@
       <select id="countrySelect" aria-label="Filter by country"><option value="">All countries</option></select>
       <select id="tagSelect" aria-label="Filter by genre"><option value="">All genres</option></select>
     </div>
+    <button id="addToggleBtn" class="add-toggle" type="button">+ Add your own station</button>
+    <div id="addForm" class="add-form hidden">
+      <input id="addName" type="text" placeholder="Station name">
+      <input id="addUrl" type="url" placeholder="Direct stream URL (mp3, aac, etc.)">
+      <button id="addSubmitBtn" type="button">Add station</button>
+    </div>
   </section>
 
   <section class="list-wrap">
@@ -120,6 +131,7 @@
       <button class="tab" data-mode="search">Results</button>
       <button class="tab" data-mode="fav">★ Favorites</button>
       <button class="tab" data-mode="recent">Recent</button>
+      <button class="tab" data-mode="custom">My Stations</button>
     </div>
     <ul id="stationList" class="station-list"><li class="hint">Loading stations…</li></ul>
   </section>
@@ -183,9 +195,10 @@
   let sleepTimeout = null, sleepInterval = null;
 
   // ---------- Favorites & Recent (localStorage) ----------
-  const FAV_KEY='tune-favorites', RECENT_KEY='tune-recent', VOL_KEY='tune-volume';
+  const FAV_KEY='tune-favorites', RECENT_KEY='tune-recent', VOL_KEY='tune-volume', CUSTOM_KEY='tune-custom';
   let favorites = JSON.parse(localStorage.getItem(FAV_KEY) || '{}');
   let recent = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+  let customStations = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]');
   function trim(st){ return {stationuuid:st.stationuuid,name:st.name,tags:st.tags,country:st.country,url:st.url,url_resolved:st.url_resolved,favicon:st.favicon,bitrate:st.bitrate}; }
   function toggleFavorite(st){
     if (favorites[st.stationuuid]) delete favorites[st.stationuuid];
@@ -199,6 +212,11 @@
     recent = recent.slice(0, 20);
     localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
   }
+  function removeCustomStation(uuid){
+    customStations = customStations.filter(s => s.stationuuid !== uuid);
+    localStorage.setItem(CUSTOM_KEY, JSON.stringify(customStations));
+    setMode('custom');
+  }
 
   // ---------- Rendering ----------
   function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -207,6 +225,7 @@
     if (!stations.length){ listEl.innerHTML = '<li class="hint">No stations found.</li>'; return; }
     stations.forEach(st => {
       const isFav = !!favorites[st.stationuuid];
+      const isCustom = st.stationuuid.startsWith('custom-');
       const li = document.createElement('li');
       li.innerHTML = `
         <div class="st-left">
@@ -218,10 +237,11 @@
         </div>
         <div class="st-right">
           ${(st.bitrate || st.codec) ? `<span class="st-badge">${[st.codec, st.bitrate ? st.bitrate+'k' : ''].filter(Boolean).join(' · ')}</span>` : ''}
-          <button class="st-fav ${isFav?'active':''}" aria-label="Toggle favorite">★</button>
+          ${isCustom ? `<button class="st-remove" aria-label="Remove station">✕</button>` : `<button class="st-fav ${isFav?'active':''}" aria-label="Toggle favorite">★</button>`}
           <span class="st-play">▶</span>
         </div>`;
-      li.querySelector('.st-fav').addEventListener('click', e => { e.stopPropagation(); toggleFavorite(st); });
+      if (isCustom) li.querySelector('.st-remove').addEventListener('click', e => { e.stopPropagation(); removeCustomStation(st.stationuuid); });
+      else li.querySelector('.st-fav').addEventListener('click', e => { e.stopPropagation(); toggleFavorite(st); });
       li.addEventListener('click', () => playStation(st));
       listEl.appendChild(li);
     });
@@ -234,6 +254,7 @@
     else if (mode === 'trending') loadTrending();
     else if (mode === 'search') render(searchStations);
     else if (mode === 'fav') render(Object.values(favorites));
+    else if (mode === 'custom') render(customStations);
     else render(recent);
   }
   async function loadTrending(){
@@ -275,6 +296,22 @@
   countrySelect.addEventListener('change', runSearch);
   tagSelect.addEventListener('change', runSearch);
 
+  // ---------- Add your own station ----------
+  const addToggleBtn = document.getElementById('addToggleBtn');
+  const addForm = document.getElementById('addForm');
+  const addName = document.getElementById('addName');
+  const addUrl = document.getElementById('addUrl');
+  addToggleBtn.addEventListener('click', () => addForm.classList.toggle('hidden'));
+  document.getElementById('addSubmitBtn').addEventListener('click', () => {
+    const name = addName.value.trim(), url = addUrl.value.trim();
+    if (!name || !url){ alert('Please enter a station name and a stream URL.'); return; }
+    if (!/^https?:\/\//i.test(url)){ alert('Stream URL must start with http:// or https://'); return; }
+    customStations.unshift({ stationuuid: 'custom-' + Date.now(), name, url, url_resolved: url, tags: 'Custom', country: '', favicon: '', bitrate: 0 });
+    localStorage.setItem(CUSTOM_KEY, JSON.stringify(customStations));
+    addName.value = ''; addUrl.value = ''; addForm.classList.add('hidden');
+    setMode('custom');
+  });
+
   // ---------- Playback ----------
   async function playStation(st){
     lastStation = st;
@@ -284,8 +321,14 @@
     bitrateEl.textContent = st.bitrate ? st.bitrate + ' kbps' : '—';
     if (st.favicon){ stationLogo.src = st.favicon; stationLogo.style.display='block'; } else { stationLogo.style.display='none'; }
     try{
-      const resolved = await apiFetch('/json/url/' + st.stationuuid);
-      audio.src = (resolved && resolved.url) ? resolved.url : (st.url_resolved || st.url);
+      let streamUrl;
+      if (st.stationuuid && st.stationuuid.startsWith('custom-')){
+        streamUrl = st.url;
+      } else {
+        const resolved = await apiFetch('/json/url/' + st.stationuuid);
+        streamUrl = (resolved && resolved.url) ? resolved.url : (st.url_resolved || st.url);
+      }
+      audio.src = streamUrl;
       await audio.play();
       setPlaying(true);
       addRecent(st);
