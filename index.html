@@ -1,500 +1,613 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>TUNE — Free Internet Radio</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
-<link rel="apple-touch-icon" href="icon-180.png">
-<meta name="theme-color" content="#e8a33d">
+<title>पञ्चांग · Panchang</title>
 <style>
-  :root{ --radius:14px; --gap:14px; }
-  html[data-theme="dark"]{ --bg:#15130f; --panel:#1e1b16; --panel2:#262218; --edge:#332e22; --fg:#f2ead9; --muted:#a89e8a; --accent:#e8a33d; --accent2:#4fa39a; --danger:#e35c5c; }
-  html[data-theme="light"]{ --bg:#f4efe4; --panel:#ffffff; --panel2:#efe8d8; --edge:#ddd3ba; --fg:#221e15; --muted:#736a56; --accent:#c1721f; --accent2:#217d76; --danger:#c94848; }
-  html[data-theme="oled"]{ --bg:#000000; --panel:#0a0a0a; --panel2:#111111; --edge:#232323; --fg:#f5f5f5; --muted:#8f8f8f; --accent:#ffb547; --accent2:#56d6c9; --danger:#ff6b6b; }
-  html[data-theme="hc"]{ --bg:#000000; --panel:#000000; --panel2:#000000; --edge:#ffffff; --fg:#ffffff; --muted:#ffffff; --accent:#ffff00; --accent2:#00ffff; --danger:#ff3b3b; }
-  *{box-sizing:border-box;}
-  body{ margin:0; min-height:100dvh; background:var(--bg); color:var(--fg); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; display:flex; flex-direction:column; transition:background .25s,color .25s; }
-  .app{max-width:640px;margin:0 auto;width:100%;padding:16px;flex:1;display:flex;flex-direction:column;gap:var(--gap);}
-  .topbar{display:flex;align-items:center;justify-content:space-between;}
-  .brand{font-size:22px;letter-spacing:2px;margin:0;font-weight:800;}
-  .brand span{color:var(--accent);}
-  .theme-btn,.icon-btn{ background:var(--panel);border:1px solid var(--edge);color:var(--fg); width:42px;height:42px;border-radius:50%;font-size:17px;cursor:pointer;flex:none; }
-  .theme-btn:active,.icon-btn:active{transform:scale(.94);}
-  .deck{background:var(--panel);border:1px solid var(--edge);border-radius:var(--radius);padding:16px;}
-  .lcd{background:var(--panel2);border:1px solid var(--edge);border-radius:10px;padding:12px 14px;}
-  .lcd-row{display:flex;align-items:center;gap:8px;overflow:hidden;}
-  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none;}
-  .dot.live{background:var(--danger);box-shadow:0 0 6px var(--danger);}
-  .spinner{width:12px;height:12px;border-radius:50%;border:2px solid var(--muted);border-top-color:var(--accent);animation:spin .8s linear infinite;flex:none;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  #stationLogo{width:26px;height:26px;border-radius:6px;object-fit:cover;flex:none;display:none;background:var(--panel);}
-  .marquee{overflow:hidden;white-space:nowrap;flex:1;}
-  #stationName{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;letter-spacing:.5px;}
-  .lcd-meta{display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--muted);font-family:ui-monospace,monospace;}
-  .eq{display:flex;align-items:flex-end;gap:3px;height:20px;margin-top:10px;}
-  .eq i{width:4px;background:var(--accent2);border-radius:2px;height:4px;}
-  .eq.playing i{animation:bounce 900ms ease-in-out infinite;}
-  .eq i:nth-child(2){animation-delay:.1s;} .eq i:nth-child(3){animation-delay:.2s;}
-  .eq i:nth-child(4){animation-delay:.3s;} .eq i:nth-child(5){animation-delay:.15s;}
-  @keyframes bounce{0%,100%{height:4px;}50%{height:18px;}}
-  .controls{display:flex;align-items:center;gap:10px;margin-top:14px;}
-  .play-btn{ width:56px;height:56px;border-radius:50%;background:var(--accent);color:#111;border:none; font-size:20px;cursor:pointer;flex:none; }
-  .play-btn:active{transform:scale(.95);}
-  input[type="range"]{flex:1;accent-color:var(--accent);}
-  .sleep-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap;}
-  .sleep-row select{background:var(--panel2);color:var(--fg);border:1px solid var(--edge);border-radius:8px;padding:5px 6px;}
-  .retry-btn{background:var(--danger);color:#fff;border:none;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;}
-  .hidden{display:none !important;}
-  .search-wrap input{ width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--edge); background:var(--panel);color:var(--fg);font-size:15px; }
-  .search-wrap input:focus{outline:2px solid var(--accent);}
-  .filter-row{display:flex;gap:8px;margin-top:8px;}
-  .filter-row select{flex:1;padding:9px;border-radius:10px;border:1px solid var(--edge);background:var(--panel);color:var(--fg);font-size:13px;}
-  .filter-status{font-size:11px;color:var(--accent2);margin-top:6px;min-height:14px;}
-  .tabs{display:flex;gap:6px;margin:10px 0 8px;flex-wrap:wrap;}
-  .tab{ background:transparent;border:1px solid var(--edge);color:var(--muted); padding:6px 11px;border-radius:20px;font-size:12px;cursor:pointer; }
-  .tab.active{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600;}
-  .list-wrap{flex:1;display:flex;flex-direction:column;min-height:0;}
-  .station-list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1;max-height:42vh;}
-  .station-list li{ display:flex;justify-content:space-between;align-items:center;gap:10px; padding:12px;border-bottom:1px solid var(--edge);cursor:pointer; }
-  .station-list li:active{background:var(--panel2);}
-  .station-list li.hint{color:var(--muted);justify-content:center;cursor:default;}
-  .st-left{display:flex;align-items:center;gap:10px;overflow:hidden;}
-  .st-name{font-size:14px;font-weight:600;}
-  .st-tags{font-size:11px;color:var(--muted);}
-  .st-right{display:flex;align-items:center;gap:10px;flex:none;}
-  .st-fav{background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;}
-  .st-fav.active{color:var(--accent);}
-  .st-play{color:var(--accent2);font-size:16px;}
-  .st-badge{font-size:10px;color:var(--accent2);border:1px solid var(--edge);border-radius:8px;padding:2px 6px;white-space:nowrap;}
-  .add-form{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
-  .add-form input{padding:10px 12px;border-radius:10px;border:1px solid var(--edge);background:var(--panel);color:var(--fg);font-size:14px;}
-  .add-form button{background:var(--accent);color:#111;border:none;padding:10px;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px;align-self:flex-start;padding-left:16px;padding-right:16px;}
-  .add-toggle{width:100%;background:transparent;border:1px dashed var(--edge);color:var(--muted);padding:9px;border-radius:10px;font-size:13px;cursor:pointer;margin-top:8px;}
-  #clearListBtn{border-color:var(--danger);color:var(--danger);margin-bottom:8px;}
-  .st-remove{background:none;border:none;color:var(--danger);font-size:15px;cursor:pointer;}
-  .st-vote,.st-share{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;}
-  .st-vote.voted{color:var(--accent2);}
-  .offline-banner{background:var(--danger);color:#fff;text-align:center;padding:8px;border-radius:10px;font-size:12px;}
-  a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-  @media (prefers-reduced-motion: reduce){
-    .eq.playing i, .spinner{ animation:none !important; }
+  :root{ --radius:16px; --gap:12px; }
+  html[data-theme="dark"]{
+    --bg:#12141c; --bg2:#1b1e29; --bg3:#20232f;
+    --text:#eee8da; --muted:#9a9fb5;
+    --accent:#e8a33d; --accent2:#8b9dee;
+    --good:#4caf7d; --bad:#e5646b;
+    --border:rgba(255,255,255,.08); --ring:0 0 0 3px rgba(232,163,61,.35);
   }
-  .footer{ text-align:center;padding:16px 8px 10px;color:var(--muted);font-size:12px; display:flex;align-items:center;justify-content:center;min-height:40px; }
-  @media (min-width:600px){ .app{padding:24px;} .station-list{max-height:48vh;} }
+  html[data-theme="light"]{
+    --bg:#f7f1e4; --bg2:#ffffff; --bg3:#fbf7ee;
+    --text:#28221a; --muted:#75695a;
+    --accent:#b96f16; --accent2:#3d4d99;
+    --good:#2f8f5b; --bad:#c0394a;
+    --border:rgba(40,34,26,.1); --ring:0 0 0 3px rgba(185,111,22,.25);
+  }
+  html[data-theme="oled"]{
+    --bg:#000000; --bg2:#070707; --bg3:#0d0d0d;
+    --text:#e9e6df; --muted:#8b8b8b;
+    --accent:#f0a83c; --accent2:#96a6ff;
+    --good:#4caf7d; --bad:#e5646b;
+    --border:rgba(255,255,255,.1); --ring:0 0 0 3px rgba(240,168,60,.3);
+  }
+  html[data-theme="hc"]{
+    --bg:#000000; --bg2:#000000; --bg3:#000000;
+    --text:#ffffff; --muted:#ffffff;
+    --accent:#ffe600; --accent2:#00e5ff;
+    --good:#00ff6a; --bad:#ff5252;
+    --border:#ffffff; --ring:0 0 0 3px #ffe600;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100dvh; background:var(--bg); color:var(--text);
+    font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    transition:background .25s,color .25s;
+  }
+  .wrap{width:100%; max-width:640px; padding:18px 16px 8px; flex:1;}
+  header{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
+  .brand{display:flex; flex-direction:column;}
+  .brand .kicker{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-weight:800; letter-spacing:-.01em; font-size:2.1rem; color:var(--accent); line-height:1;}
+  .brand .sub{font-size:.88rem; color:var(--muted); letter-spacing:.14em; text-transform:uppercase; margin-top:3px;}
+  .btnRow{display:flex; gap:8px; flex-wrap:wrap;}
+  .pillBtn{
+    background:var(--bg2); color:var(--text); border:1px solid var(--border);
+    border-radius:999px; padding:9px 14px; font-size:.88rem; font-weight:600;
+    cursor:pointer; letter-spacing:.03em; white-space:nowrap;
+  }
+  .pillBtn:focus-visible{outline:none; box-shadow:var(--ring);}
+  .datebar{font-size:.98rem; color:var(--muted); margin-bottom:18px;}
+  .dial-row{display:flex; flex-direction:column; align-items:center; margin:8px 0 22px;}
+  .dial{
+    width:150px; height:150px; border-radius:50%;
+    background:conic-gradient(var(--accent) calc(var(--pct,0)*1%), var(--bg3) 0);
+    display:flex; align-items:center; justify-content:center; position:relative;
+    border:1px solid var(--border);
+  }
+  .dial::after{content:"";position:absolute;inset:10px;border-radius:50%;background:var(--bg2);}
+  .dial-inner{position:relative; z-index:1; text-align:center;}
+  .dial-inner .tithi{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-weight:800; font-size:1.3rem; color:var(--accent); display:block;}
+  .dial-inner .paksha{font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em;}
+  .dial-caption{margin-top:10px; font-size:.9rem; color:var(--muted); text-align:center;}
+  .section-title{font-size:1.35rem; font-weight:800; margin:26px 2px 12px;}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:var(--gap);}
+  .card{
+    background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px; display:flex; flex-direction:column; gap:2px;
+  }
+  .card .label{font-size:.88rem; font-weight:600; text-transform:uppercase; letter-spacing:.09em; color:var(--muted);}
+  .card .value{font-size:1.25rem; font-weight:700;}
+  .card .value.small{font-size:1.08rem;}
+  .card .value.accent{color:var(--accent);}
+  .card.wide{grid-column:1/-1; flex-direction:row; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;}
+  .chogh-block{background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:4px 14px 12px;}
+  .chogh-sub{font-size:.95rem; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); margin:12px 0 2px;}
+  .chogh-row{display:flex; justify-content:space-between; align-items:center; padding:8px 0 8px 10px; border-left:3px solid var(--muted); font-size:.98rem;}
+  .chogh-row + .chogh-row{border-top:1px solid var(--border);}
+  .chogh-row.good{border-left-color:var(--good);}
+  .chogh-row.bad{border-left-color:var(--bad);}
+  .chogh-row.neutral{border-left-color:var(--accent2);}
+  .chogh-time{color:var(--muted); font-size:.88rem;}
+  .note{margin-top:12px; font-size:.82rem; color:var(--muted); text-align:center;}
+  .loc{margin-top:14px; font-size:.85rem; color:var(--muted); text-align:center;}
+  footer{
+    width:100%; margin-top:24px; padding:16px 12px 22px;
+    border-top:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-size:.88rem; color:var(--muted);
+  }
+  @media (min-width:600px){
+    .grid{grid-template-columns:1fr 1fr 1fr;}
+    .brand .kicker{font-size:2.4rem;}
+  }
 </style>
 </head>
 <body>
-<div class="app">
-  <div id="offlineBanner" class="offline-banner hidden" role="status">You're offline — playback may be interrupted.</div>
-
-  <header class="topbar">
-    <h1 class="brand">TUNE<span>.</span></h1>
-    <button id="themeBtn" class="theme-btn" aria-label="Toggle theme">◐</button>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <span class="kicker" id="brandTitle">Panchang</span>
+      <span class="sub" id="brandSub">Daily Panchang</span>
+    </div>
+    <div class="btnRow">
+      <button id="langBtn" class="pillBtn" type="button">বাংলা</button>
+      <button id="themeBtn" class="pillBtn" type="button">🌙 Dark</button>
+    </div>
   </header>
 
-  <main>
-  <section class="deck">
-    <div class="lcd">
-      <div class="lcd-row">
-        <span class="dot" id="liveDot"></span>
-        <span class="spinner hidden" id="spinner"></span>
-        <img id="stationLogo" alt="">
-        <div class="marquee"><span id="stationName" aria-live="polite">Select a station to tune in</span></div>
+  <div class="datebar" id="dateBar">—</div>
+
+  <div class="dial-row">
+    <div class="dial" id="dial">
+      <div class="dial-inner">
+        <span class="tithi" id="dialTithi">—</span>
+        <span class="paksha" id="dialPaksha">—</span>
       </div>
-      <div class="lcd-meta">
-        <span id="stationTags">—</span>
-        <span id="stationBitrate">—</span>
-      </div>
-      <div class="eq" id="eq"><i></i><i></i><i></i><i></i><i></i></div>
     </div>
-    <div class="controls">
-      <button id="playBtn" class="play-btn" aria-label="Play or pause">▶</button>
-      <button id="muteBtn" class="icon-btn" aria-label="Mute">🔊</button>
-      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.85" aria-label="Volume">
-    </div>
-    <div class="sleep-row">
-      <span>😴 Sleep</span>
-      <select id="sleepSelect" aria-label="Sleep timer">
-        <option value="0">Off</option><option value="15">15m</option><option value="30">30m</option>
-        <option value="45">45m</option><option value="60">60m</option>
-      </select>
-      <span id="sleepStatus"></span>
-      <button id="retryBtn" class="retry-btn hidden">Retry</button>
-    </div>
-  </section>
+    <div class="dial-caption" id="dialCaption">—</div>
+  </div>
 
-  <section class="search-wrap">
-    <input id="searchInput" type="search" placeholder="Search station, genre, or country…">
-    <div class="filter-row">
-      <select id="countrySelect" aria-label="Filter by country"><option value="">All countries</option></select>
-      <select id="tagSelect" aria-label="Filter by genre"><option value="">All genres</option></select>
+  <div class="grid">
+    <div class="card wide">
+      <div><div class="label" id="lVara">—</div><div class="value accent" id="vVara">—</div></div>
+      <div><div class="label" id="lRitu">—</div><div class="value" id="vRitu">—</div></div>
     </div>
-    <div id="filterStatus" class="filter-status" role="status"></div>
-    <button id="addToggleBtn" class="add-toggle" type="button">+ Add your own station</button>
-    <div id="addForm" class="add-form hidden">
-      <input id="addName" type="text" placeholder="Station name">
-      <input id="addUrl" type="url" placeholder="Direct stream URL (mp3, aac, etc.)">
-      <button id="addSubmitBtn" type="button">Add station</button>
-    </div>
-  </section>
+    <div class="card"><div class="label" id="lNak">—</div><div class="value" id="vNak">—</div></div>
+    <div class="card"><div class="label" id="lYoga">—</div><div class="value" id="vYoga">—</div></div>
+    <div class="card"><div class="label" id="lKarana">—</div><div class="value" id="vKarana">—</div></div>
+    <div class="card"><div class="label" id="lMoonSign">—</div><div class="value" id="vMoonSign">—</div></div>
+    <div class="card"><div class="label" id="lSunSign">—</div><div class="value" id="vSunSign">—</div></div>
+    <div class="card"><div class="label" id="lPaksha">—</div><div class="value" id="vPaksha">—</div></div>
+    <div class="card"><div class="label" id="lSunrise">—</div><div class="value" id="vSunrise">—</div></div>
+    <div class="card"><div class="label" id="lSunset">—</div><div class="value" id="vSunset">—</div></div>
+    <div class="card"><div class="label" id="lMoonrise">—</div><div class="value" id="vMoonrise">—</div></div>
+    <div class="card"><div class="label" id="lMoonset">—</div><div class="value" id="vMoonset">—</div></div>
+  </div>
 
-  <section class="list-wrap">
-    <div class="tabs" role="tablist" aria-label="Station lists">
-      <button class="tab active" data-mode="top">Popular</button>
-      <button class="tab" data-mode="trending">🔥 Trending</button>
-      <button class="tab" data-mode="new">🆕 New</button>
-      <button class="tab" data-mode="search">Results</button>
-      <button class="tab" data-mode="fav">★ Favorites</button>
-      <button class="tab" data-mode="recent">Recent</button>
-      <button class="tab" data-mode="custom">My Stations</button>
+  <div class="section-title" id="tHinduCal">Hindu Calendar</div>
+  <div class="grid">
+    <div class="card wide">
+      <div><div class="label" id="lMonth">—</div><div class="value accent" id="vMonth">—</div></div>
+      <div><div class="label" id="lAyana">—</div><div class="value" id="vAyana">—</div></div>
     </div>
-    <button id="clearListBtn" class="add-toggle hidden" type="button">Clear all</button>
-    <ul id="stationList" class="station-list" aria-live="polite"><li class="hint">Loading stations…</li></ul>
-  </section>
-  </main>
+    <div class="card"><div class="label" id="lVikram">—</div><div class="value" id="vVikram">—</div></div>
+    <div class="card"><div class="label" id="lShaka">—</div><div class="value" id="vShaka">—</div></div>
+  </div>
 
-  <footer class="footer">
-    <p>© Manik Roy <span id="year"></span>. All Rights Reserved.</p>
-  </footer>
+  <div class="section-title" id="tMuhurat">Muhurat &amp; Kaal</div>
+  <div class="grid">
+    <div class="card"><div class="label" id="lRahu">—</div><div class="value small" id="vRahu">—</div></div>
+    <div class="card"><div class="label" id="lYama">—</div><div class="value small" id="vYama">—</div></div>
+    <div class="card"><div class="label" id="lGulika">—</div><div class="value small" id="vGulika">—</div></div>
+    <div class="card"><div class="label" id="lAbhijit">—</div><div class="value small" id="vAbhijit">—</div></div>
+    <div class="card"><div class="label" id="lBrahma">—</div><div class="value small" id="vBrahma">—</div></div>
+  </div>
+
+  <div class="section-title" id="tChogh">Choghadiya</div>
+  <div class="chogh-block">
+    <div class="chogh-sub" id="tDay">Day</div>
+    <div id="dayChoghList"></div>
+    <div class="chogh-sub" id="tNight">Night</div>
+    <div id="nightChoghList"></div>
+  </div>
+
+  <div class="section-title" id="tGochara">Navagraha Gochara</div>
+  <div class="grid">
+    <div class="card"><div class="label" id="lG_sun">—</div><div class="value" id="vG_sun">—</div></div>
+    <div class="card"><div class="label" id="lG_moon">—</div><div class="value" id="vG_moon">—</div></div>
+    <div class="card"><div class="label" id="lG_mars">—</div><div class="value" id="vG_mars">—</div></div>
+    <div class="card"><div class="label" id="lG_mercury">—</div><div class="value" id="vG_mercury">—</div></div>
+    <div class="card"><div class="label" id="lG_jupiter">—</div><div class="value" id="vG_jupiter">—</div></div>
+    <div class="card"><div class="label" id="lG_venus">—</div><div class="value" id="vG_venus">—</div></div>
+    <div class="card"><div class="label" id="lG_saturn">—</div><div class="value" id="vG_saturn">—</div></div>
+    <div class="card"><div class="label" id="lG_rahu">—</div><div class="value" id="vG_rahu">—</div></div>
+    <div class="card"><div class="label" id="lG_ketu">—</div><div class="value" id="vG_ketu">—</div></div>
+  </div>
+  <div class="loc" id="locNote">—</div>
 </div>
 
-<audio id="audio" preload="none"></audio>
+<footer>© Manik Roy <span id="year"></span>. <span id="rightsText">All Rights Reserved.</span></footer>
 
 <script>
-  // ---------- Theme ----------
-  const THEMES = ['dark','light','oled','hc'];
-  const root = document.documentElement;
-  const themeBtn = document.getElementById('themeBtn');
-  let theme = localStorage.getItem('tune-theme') || 'dark';
-  applyTheme(theme);
-  function applyTheme(t){
-    root.setAttribute('data-theme', t);
-    localStorage.setItem('tune-theme', t);
-    themeBtn.textContent = {dark:'◐',light:'☀',oled:'●',hc:'◆'}[t];
-  }
-  themeBtn.addEventListener('click', () => { theme = THEMES[(THEMES.indexOf(theme)+1) % THEMES.length]; applyTheme(theme); });
-  // ---------- Footer year ----------
-  document.getElementById('year').textContent = new Date().getFullYear();
-  // ---------- API ----------
-  const HOSTS = ['https://de1.api.radio-browser.info','https://at1.api.radio-browser.info','https://nl1.api.radio-browser.info'];
-  async function apiFetch(path){
-    for (const h of HOSTS){
-      try{ const res = await fetch(h + path, { headers:{'User-Agent':'TuneRadioApp/1.0'} }); if (res.ok) return await res.json(); }
-      catch(e){ /* try next host */ }
+// ---------- Theme toggle (Dark / Light / OLED true-black / High-Contrast) ----------
+const THEMES = [
+  {id:"dark",  en:"🌙 Dark",  bn:"🌙 ডার্ক",   hi:"🌙 डार्क"},
+  {id:"light", en:"☀️ Light", bn:"☀️ লাইট",   hi:"☀️ लाइट"},
+  {id:"oled",  en:"⚫ OLED",  bn:"⚫ ওএলইডি",  hi:"⚫ ओएलईडी"},
+  {id:"hc",    en:"◐ High Contrast", bn:"◐ হাই কনট্রাস্ট", hi:"◐ हाई कॉन्ट्रास्ट"}
+];
+const root = document.documentElement;
+const themeBtn = document.getElementById("themeBtn");
+let themeIdx = Math.max(0, THEMES.findIndex(t => t.id === localStorage.getItem("panchangTheme")));
+themeBtn.addEventListener("click", () => {
+  themeIdx = (themeIdx + 1) % THEMES.length;
+  localStorage.setItem("panchangTheme", THEMES[themeIdx].id);
+  applyTheme();
+});
+function applyTheme(){
+  root.setAttribute("data-theme", THEMES[themeIdx].id);
+  themeBtn.textContent = THEMES[themeIdx][lang];
+}
+
+// ---------- Language toggle (English / Bengali / Hindi) ----------
+const LANGS = [
+  {code:"en", name:"English"},
+  {code:"bn", name:"বাংলা"},
+  {code:"hi", name:"हिन्दी"}
+];
+const langBtn = document.getElementById("langBtn");
+let langIdx = Math.max(0, LANGS.findIndex(l => l.code === localStorage.getItem("panchangLang")));
+let lang = LANGS[langIdx].code;
+langBtn.addEventListener("click", () => {
+  langIdx = (langIdx + 1) % LANGS.length;
+  lang = LANGS[langIdx].code;
+  localStorage.setItem("panchangLang", lang);
+  render();
+});
+
+// ---------- Footer auto-updating year ----------
+document.getElementById("year").textContent = new Date().getFullYear();
+
+// ---------- UI text ----------
+const UI = {
+  en:{ title:"Panchang", brand:"Daily Panchang", vara:"Vara (Weekday)", ritu:"Ritu (Season)",
+    nakshatra:"Nakshatra", yoga:"Yoga", karana:"Karana", moonSign:"Moon Sign", sunSign:"Sun Sign",
+    paksha:"Paksha", sunrise:"Sunrise", sunset:"Sunset", moonrise:"Moonrise", moonset:"Moonset",
+    rights:"All Rights Reserved.",
+    hinduCal:"Hindu Calendar", month:"Lunar Month", vikram:"Vikram Samvat", shaka:"Shaka Samvat", ayana:"Ayana",
+    uttarayana:"Uttarayana", dakshinayana:"Dakshinayana",
+    muhurat:"Muhurat & Kaal", rahu:"Rahu Kaal", yama:"Yamaganda", gulika:"Gulika Kaal",
+    abhijit:"Abhijit Muhurat", brahma:"Brahma Muhurta",
+    chogh:"Choghadiya", day:"Day", night:"Night", gochara:"Navagraha Gochara",
+    sunFor:"Sun timings for", yourLoc:"your location", defaultLoc:"New Delhi (default)",
+    caption:(n,p,pct)=>`Tithi ${n} of ${p} · ${pct}% through the lunar month` },
+  bn:{ title:"পঞ্জিকা", brand:"দৈনিক পঞ্জিকা", vara:"বার (সপ্তাহ)", ritu:"ঋতু",
+    nakshatra:"নক্ষত্র", yoga:"যোগ", karana:"করণ", moonSign:"চন্দ্র রাশি", sunSign:"সূর্য রাশি",
+    paksha:"পক্ষ", sunrise:"সূর্যোদয়", sunset:"সূর্যাস্ত", moonrise:"চন্দ্রোদয়", moonset:"চন্দ্রাস্ত",
+    rights:"সর্বস্বত্ব সংরক্ষিত।",
+    hinduCal:"হিন্দু পঞ্জিকা", month:"চান্দ্র মাস", vikram:"বিক্রম সংবৎ", shaka:"শক সংবৎ", ayana:"অয়ন",
+    uttarayana:"উত্তরায়ণ", dakshinayana:"দক্ষিণায়ন",
+    muhurat:"মুহূর্ত ও কাল", rahu:"রাহু কাল", yama:"যমগণ্ড", gulika:"গুলিক কাল",
+    abhijit:"অভিজিৎ মুহূর্ত", brahma:"ব্রহ্ম মুহূর্ত",
+    chogh:"চোঘড়িয়া", day:"দিন", night:"রাত", gochara:"নবগ্রহ গোচর",
+    sunFor:"সূর্যের সময়", yourLoc:"আপনার অবস্থান", defaultLoc:"নিউ দিল্লি (ডিফল্ট)",
+    caption:(n,p,pct)=>`${p}-র তিথি ${n} · চান্দ্র মাসের ${pct}% অতিক্রান্ত` },
+  hi:{ title:"पञ्चांग", brand:"दैनिक पंचांग", vara:"वार (सप्ताह का दिन)", ritu:"ऋतु",
+    nakshatra:"नक्षत्र", yoga:"योग", karana:"करण", moonSign:"चंद्र राशि", sunSign:"सूर्य राशि",
+    paksha:"पक्ष", sunrise:"सूर्योदय", sunset:"सूर्यास्त", moonrise:"चंद्रोदय", moonset:"चंद्रास्त",
+    rights:"सर्वाधिकार सुरक्षित।",
+    hinduCal:"हिन्दू पंचांग", month:"चंद्र मास", vikram:"विक्रम संवत", shaka:"शक संवत", ayana:"अयन",
+    uttarayana:"उत्तरायण", dakshinayana:"दक्षिणायन",
+    muhurat:"मुहूर्त और काल", rahu:"राहु काल", yama:"यमगण्ड", gulika:"गुलिक काल",
+    abhijit:"अभिजित मुहूर्त", brahma:"ब्रह्म मुहूर्त",
+    chogh:"चोघड़िया", day:"दिन", night:"रात", gochara:"नवग्रह गोचर",
+    sunFor:"सूर्य का समय", yourLoc:"आपके स्थान का", defaultLoc:"नई दिल्ली (डिफ़ॉल्ट)",
+    caption:(n,p,pct)=>`${p} की तिथि ${n} · चंद्र मास का ${pct}% पूर्ण` }
+};
+
+// ---------- Panchang reference data (English + Bengali + Hindi) ----------
+const TITHI = {
+  en:["Pratipada","Dwitiya","Tritiya","Chaturthi","Panchami","Shashthi","Saptami","Ashtami",
+    "Navami","Dashami","Ekadashi","Dwadashi","Trayodashi","Chaturdashi"],
+  bn:["প্রতিপদ","দ্বিতীয়া","তৃতীয়া","চতুর্থী","পঞ্চমী","ষষ্ঠী","সপ্তমী","অষ্টমী",
+    "নবমী","দশমী","একাদশী","দ্বাদশী","ত্রয়োদশী","চতুর্দশী"],
+  hi:["प्रतिपदा","द्वितीया","तृतीया","चतुर्थी","पंचमी","षष्ठी","सप्तमी","अष्टमी",
+    "नवमी","दशमी","एकादशी","द्वादशी","त्रयोदशी","चतुर्दशी"]
+};
+const PAKSHA_END = { en:["Purnima","Amavasya"], bn:["পূর্ণিমা","অমাবস্যা"], hi:["पूर्णिमा","अमावस्या"] };
+const PAKSHA = { en:["Shukla Paksha","Krishna Paksha"], bn:["শুক্লপক্ষ","কৃষ্ণপক্ষ"], hi:["शुक्ल पक्ष","कृष्ण पक्ष"] };
+const NAKSHATRA = {
+  en:["Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu","Pushya",
+    "Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha",
+    "Anuradha","Jyeshtha","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta",
+    "Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"],
+  bn:["অশ্বিনী","ভরণী","কৃত্তিকা","রোহিণী","মৃগশিরা","আর্দ্রা","পুনর্বসু","পুষ্যা",
+    "অশ্লেষা","মঘা","পূর্বফাল্গুনী","উত্তরফাল্গুনী","হস্তা","চিত্রা","স্বাতী","বিশাখা",
+    "অনুরাধা","জ্যেষ্ঠা","মূলা","পূর্বাষাঢ়া","উত্তরাষাঢ়া","শ্রবণা","ধনিষ্ঠা",
+    "শতভিষা","পূর্বভাদ্রপদ","উত্তরভাদ্রপদ","রেবতী"],
+  hi:["अश्विनी","भरणी","कृत्तिका","रोहिणी","मृगशिरा","आर्द्रा","पुनर्वसु","पुष्य",
+    "आश्लेषा","मघा","पूर्वाफाल्गुनी","उत्तराफाल्गुनी","हस्त","चित्रा","स्वाती","विशाखा",
+    "अनुराधा","ज्येष्ठा","मूल","पूर्वाषाढ़ा","उत्तराषाढ़ा","श्रवण","धनिष्ठा",
+    "शतभिषा","पूर्वाभाद्रपद","उत्तराभाद्रपद","रेवती"]
+};
+const YOGA = {
+  en:["Vishkambha","Priti","Ayushman","Saubhagya","Shobhana","Atiganda","Sukarma","Dhriti",
+    "Shoola","Ganda","Vriddhi","Dhruva","Vyaghata","Harshana","Vajra","Siddhi","Vyatipata",
+    "Variyana","Parigha","Shiva","Siddha","Sadhya","Shubha","Shukla","Brahma","Indra","Vaidhriti"],
+  bn:["বিষ্কম্ভ","প্রীতি","আয়ুষ্মান","সৌভাগ্য","শোভন","অতিগণ্ড","সুকর্মা","ধৃতি",
+    "শূল","গণ্ড","বৃদ্ধি","ধ্রুব","ব্যাঘাত","হর্ষণ","বজ্র","সিদ্ধি","ব্যতীপাত",
+    "বরীয়ান","পরিঘ","শিব","সিদ্ধ","সাধ্য","শুভ","শুক্ল","ব্রহ্ম","ইন্দ্র","বৈধৃতি"],
+  hi:["विष्कुम्भ","प्रीति","आयुष्मान","सौभाग्य","शोभन","अतिगण्ड","सुकर्मा","धृति",
+    "शूल","गण्ड","वृद्धि","ध्रुव","व्याघात","हर्षण","वज्र","सिद्धि","व्यतीपात",
+    "वरीयान","परिघ","शिव","सिद्ध","साध्य","शुभ","शुक्ल","ब्रह्म","इन्द्र","वैधृति"]
+};
+const KARANA_MOVABLE = {
+  en:["Bava","Balava","Kaulava","Taitila","Garija","Vanija","Vishti"],
+  bn:["বব","বালব","কৌলব","তৈতিল","গরজ","বণিজ","বিষ্টি"],
+  hi:["बव","बालव","कौलव","तैतिल","गरज","वणिज","विष्टि"]
+};
+const KARANA_FIXED = {
+  en:["Kimstughna","Shakuni","Chatushpada","Naga"],
+  bn:["কিংস্তুঘ্ন","শকুনি","চতুষ্পদ","নাগ"],
+  hi:["किंस्तुघ्न","शकुनि","चतुष्पद","नाग"]
+};
+const RASHI = {
+  en:["Mesha","Vrishabha","Mithuna","Karka","Simha","Kanya","Tula","Vrischika","Dhanu","Makara","Kumbha","Meena"],
+  bn:["মেষ","বৃষ","মিথুন","কর্কট","সিংহ","কন্যা","তুলা","বৃশ্চিক","ধনু","মকর","কুম্ভ","মীন"],
+  hi:["मेष","वृषभ","मिथुन","कर्क","सिंह","कन्या","तुला","वृश्चिक","धनु","मकर","कुंभ","मीन"]
+};
+const VARA = {
+  en:["Ravivar","Somvar","Mangalvar","Budhvar","Guruvar","Shukravar","Shanivar"],
+  bn:["রবিবার","সোমবার","মঙ্গলবার","বুধবার","বৃহস্পতিবার","শুক্রবার","শনিবার"],
+  hi:["रविवार","सोमवार","मंगलवार","बुधवार","गुरुवार","शुक्रवार","शनिवार"]
+};
+const RITU = { en:["Shishir","Vasant","Grishma","Varsha","Sharad","Hemant"],
+  bn:["শীত","বসন্ত","গ্রীষ্ম","বর্ষা","শরৎ","হেমন্ত"],
+  hi:["शिशिर","वसंत","ग्रीष्म","वर्षा","शरद","हेमंत"] };
+const RITU_BY_MONTH = [0,0,1,1,2,2,3,3,4,4,5,5];
+const MONTHS = {
+  en:["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashwin","Kartik","Margashirsha","Pausha","Magha","Phalguna"],
+  bn:["চৈত্র","বৈশাখ","জ্যৈষ্ঠ","আষাঢ়","শ্রাবণ","ভাদ্র","আশ্বিন","কার্তিক","অগ্রহায়ণ","পৌষ","মাঘ","ফাল্গুন"],
+  hi:["चैत्र","वैशाख","ज्येष्ठ","आषाढ़","श्रावण","भाद्रपद","आश्विन","कार्तिक","मार्गशीर्ष","पौष","माघ","फाल्गुन"]
+};
+const GRAHA_ORDER = ["sun","moon","mars","mercury","jupiter","venus","saturn","rahu","ketu"];
+const GRAHA_NAME = {
+  en:["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"],
+  bn:["সূর্য","চন্দ্র","মঙ্গল","বুধ","বৃহস্পতি","শুক্র","শনি","রাহু","কেতু"],
+  hi:["सूर्य","चंद्र","मंगल","बुध","बृहस्पति","शुक्र","शनि","राहु","केतु"]
+};
+const CHOGHADIYA = {
+  en:["Udveg","Chal","Labh","Amrit","Kaal","Shubh","Rog"],
+  bn:["উদ্বেগ","চল","লাভ","অমৃত","কাল","শুভ","রোগ"],
+  hi:["उद्वेग","चल","लाभ","अमृत","काल","शुभ","रोग"]
+};
+const CHOGH_QUALITY = ["bad","neutral","good","good","bad","good","bad"]; // aligned to CHOGHADIYA order
+const DAY_START_IDX   = [0,3,6,2,5,1,4]; // Sun..Sat -> index into CHOGHADIYA
+const NIGHT_START_IDX = [5,1,4,0,3,6,2];
+const RAHU_SEG   = [8,2,7,5,6,4,3];
+const YAMA_SEG   = [5,4,3,2,1,7,6];
+const GULIKA_SEG = [7,6,5,4,3,2,1];
+
+// ---------- Low-precision astronomy (Meeus / Schlyter style approximations) ----------
+const norm = d => ((d % 360) + 360) % 360;
+const rad = d => d * Math.PI / 180;
+const lonOf = (x,y) => norm(Math.atan2(y,x) * 180 / Math.PI);
+const toJD = date => date.getTime() / 86400000 + 2440587.5;
+
+function sunLongitude(jd){
+  const T = (jd - 2451545) / 36525;
+  const L0 = norm(280.46646 + 36000.76983 * T);
+  const M = norm(357.52911 + 35999.05029 * T);
+  const Mr = rad(M);
+  const C = (1.914602 - 0.004817 * T) * Math.sin(Mr)
+          + (0.019993 - 0.000101 * T) * Math.sin(2 * Mr)
+          + 0.000289 * Math.sin(3 * Mr);
+  return norm(L0 + C);
+}
+function moonLongitude(jd){
+  const T = (jd - 2451545) / 36525;
+  const Lp = norm(218.3164477 + 481267.88123421 * T);
+  const D  = rad(norm(297.8501921 + 445267.1114034 * T));
+  const M  = rad(norm(357.5291092 + 35999.0502909 * T));
+  const Mp = rad(norm(134.9633964 + 477198.8675055 * T));
+  const F  = rad(norm(93.2720950 + 483202.0175233 * T));
+  const dl = 6.288774 * Math.sin(Mp)
+           + 1.274027 * Math.sin(2 * D - Mp)
+           + 0.658314 * Math.sin(2 * D)
+           + 0.213618 * Math.sin(2 * Mp)
+           - 0.185116 * Math.sin(M)
+           - 0.114332 * Math.sin(2 * F)
+           + 0.058793 * Math.sin(2 * D - 2 * Mp)
+           + 0.057066 * Math.sin(2 * D - M - Mp)
+           + 0.053322 * Math.sin(2 * D + Mp);
+  return norm(Lp + dl);
+}
+function lahiriAyanamsha(jd){
+  const yearsFromJ2000 = (jd - 2451545) / 365.25;
+  return 23.85 + yearsFromJ2000 * 0.013972; // ~50.3"/yr precession
+}
+// Heliocentric orbital elements (Schlyter low-precision method), d = days since 1999-12-31 00:00 UT
+function elementsFor(p, d){
+  const E = {
+    mercury:{N:48.3313+3.24587e-5*d, i:7.0047+5.00e-8*d, w:29.1241+1.01444e-5*d, a:0.387098, e:0.205635+5.59e-10*d, M:168.6562+4.0923344368*d},
+    venus:  {N:76.6799+2.46590e-5*d, i:3.3946+2.75e-8*d, w:54.8910+1.38374e-5*d, a:0.723330, e:0.006773-1.302e-9*d,  M:48.0052+1.6021302244*d},
+    mars:   {N:49.5574+2.11081e-5*d, i:1.8497-1.78e-8*d, w:286.5016+2.92961e-5*d, a:1.523688, e:0.093405+2.516e-9*d, M:18.6021+0.5240207766*d},
+    jupiter:{N:100.4542+2.76854e-5*d, i:1.3030-1.557e-7*d, w:273.8777+1.64505e-5*d, a:5.20256, e:0.048498+4.469e-9*d, M:19.8950+0.0830853001*d},
+    saturn: {N:113.6634+2.38980e-5*d, i:2.4886-1.081e-7*d, w:339.3939+2.97661e-5*d, a:9.55475, e:0.055546-9.499e-9*d, M:316.9670+0.0334442282*d}
+  };
+  return E[p];
+}
+function planetLonSidereal(el, ayan, sunLon){
+  const Mr = rad(norm(el.M));
+  let E = Mr;
+  for (let k = 0; k < 5; k++) E -= (E - el.e * Math.sin(E) - Mr) / (1 - el.e * Math.cos(E));
+  const xv = el.a * (Math.cos(E) - el.e), yv = el.a * Math.sqrt(1 - el.e * el.e) * Math.sin(E);
+  const v = Math.atan2(yv, xv), r = Math.hypot(xv, yv);
+  const Nr = rad(el.N), ir = rad(el.i), wr = rad(el.w);
+  const xh = r * (Math.cos(Nr) * Math.cos(v + wr) - Math.sin(Nr) * Math.sin(v + wr) * Math.cos(ir));
+  const yh = r * (Math.sin(Nr) * Math.cos(v + wr) + Math.cos(Nr) * Math.sin(v + wr) * Math.cos(ir));
+  const xs = Math.cos(rad(sunLon)), ys = Math.sin(rad(sunLon));
+  return norm(lonOf(xh + xs, yh + ys) - ayan);
+}
+
+// ---------- Compute today's indices once (language-independent) ----------
+const now = new Date();
+const idx = (function(){
+  const jd = toJD(now);
+  const sunLon = sunLongitude(jd);
+  const moonLon = moonLongitude(jd);
+  const ayan = lahiriAyanamsha(jd);
+  const sunSid = norm(sunLon - ayan);
+  const moonSid = norm(moonLon - ayan);
+  const elong = norm(moonLon - sunLon); // ayanamsha cancels out here
+  const tithiNum = Math.floor(elong / 12); // 0-29
+  const karanaIndex = Math.floor(elong / 6); // 0-59
+  const sunSignIdx = Math.floor(sunSid / 30);
+  const moonSignIdx = Math.floor(moonSid / 30);
+
+  const dS = jd - 2451543.5; // Schlyter epoch day-number
+  const planetRashi = { sun: sunSignIdx, moon: moonSignIdx };
+  ["mercury","venus","mars","jupiter","saturn"].forEach(p => {
+    planetRashi[p] = Math.floor(planetLonSidereal(elementsFor(p, dS), ayan, sunLon) / 30);
+  });
+  const T = (jd - 2451545) / 36525;
+  const rahuLon = norm(norm(125.04452 - 1934.136261 * T) - ayan);
+  planetRashi.rahu = Math.floor(rahuLon / 30);
+  planetRashi.ketu = Math.floor(norm(rahuLon + 180) / 30);
+
+  const monthIdx = (sunSignIdx + 1) % 12;
+  const uttarayanaSigns = [9,10,11,0,1,2];
+  const ayanaIdx = uttarayanaSigns.includes(sunSignIdx) ? 0 : 1;
+
+  return {
+    weekday: now.getDay(),
+    ritu: RITU_BY_MONTH[now.getMonth()],
+    tithiNum, pakshaIdx: tithiNum < 15 ? 0 : 1,
+    nakIndex: Math.floor(moonSid / (360 / 27)),
+    yogaIndex: Math.floor(norm(moonSid + sunSid) / (360 / 27)),
+    karanaIndex, moonSignIdx, sunSignIdx, planetRashi, monthIdx, ayanaIdx,
+    pct: elong / 360 * 100
+  };
+})();
+
+function karanaName(l){
+  if (idx.karanaIndex === 0) return KARANA_FIXED[l][0];
+  if (idx.karanaIndex >= 57) return KARANA_FIXED[l][idx.karanaIndex - 56];
+  return KARANA_MOVABLE[l][(idx.karanaIndex - 1) % 7];
+}
+function tithiName(l){
+  if (idx.tithiNum === 14) return PAKSHA_END[l][0];
+  if (idx.tithiNum === 29) return PAKSHA_END[l][1];
+  return TITHI[l][idx.tithiNum % 15];
+}
+
+// ---------- Render (re-run whenever language changes) ----------
+function render(){
+  const t = UI[lang];
+  document.getElementById("brandTitle").textContent = t.title;
+  document.getElementById("brandSub").textContent = t.brand;
+  document.getElementById("lVara").textContent = t.vara;
+  document.getElementById("lRitu").textContent = t.ritu;
+  document.getElementById("lNak").textContent = t.nakshatra;
+  document.getElementById("lYoga").textContent = t.yoga;
+  document.getElementById("lKarana").textContent = t.karana;
+  document.getElementById("lMoonSign").textContent = t.moonSign;
+  document.getElementById("lSunSign").textContent = t.sunSign;
+  document.getElementById("lPaksha").textContent = t.paksha;
+  document.getElementById("lSunrise").textContent = t.sunrise;
+  document.getElementById("lSunset").textContent = t.sunset;
+  document.getElementById("lMoonrise").textContent = t.moonrise;
+  document.getElementById("lMoonset").textContent = t.moonset;
+  document.getElementById("rightsText").textContent = t.rights;
+  document.getElementById("langBtn").textContent = LANGS[langIdx].name;
+
+  document.getElementById("tHinduCal").textContent = t.hinduCal;
+  document.getElementById("lMonth").textContent = t.month;
+  document.getElementById("lVikram").textContent = t.vikram;
+  document.getElementById("lShaka").textContent = t.shaka;
+  document.getElementById("lAyana").textContent = t.ayana;
+  document.getElementById("tMuhurat").textContent = t.muhurat;
+  document.getElementById("lRahu").textContent = t.rahu;
+  document.getElementById("lYama").textContent = t.yama;
+  document.getElementById("lGulika").textContent = t.gulika;
+  document.getElementById("lAbhijit").textContent = t.abhijit;
+  document.getElementById("lBrahma").textContent = t.brahma;
+  document.getElementById("tChogh").textContent = t.chogh;
+  document.getElementById("tDay").textContent = t.day;
+  document.getElementById("tNight").textContent = t.night;
+  document.getElementById("tGochara").textContent = t.gochara;
+
+  document.getElementById("dateBar").textContent =
+    now.toLocaleDateString(LOCALE[lang], { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+
+  const paksha = PAKSHA[lang][idx.pakshaIdx];
+  document.getElementById("vVara").textContent = VARA[lang][idx.weekday];
+  document.getElementById("vRitu").textContent = RITU[lang][idx.ritu];
+  document.getElementById("vNak").textContent = NAKSHATRA[lang][idx.nakIndex];
+  document.getElementById("vYoga").textContent = YOGA[lang][idx.yogaIndex];
+  document.getElementById("vKarana").textContent = karanaName(lang);
+  document.getElementById("vMoonSign").textContent = RASHI[lang][idx.moonSignIdx];
+  document.getElementById("vSunSign").textContent = RASHI[lang][idx.sunSignIdx];
+  document.getElementById("vPaksha").textContent = paksha;
+  document.getElementById("dialTithi").textContent = tithiName(lang);
+  document.getElementById("dialPaksha").textContent = paksha;
+  document.getElementById("dial").style.setProperty("--pct", idx.pct.toFixed(1));
+  document.getElementById("dialCaption").textContent =
+    t.caption(idx.tithiNum % 15 + 1, paksha, idx.pct.toFixed(0));
+
+  document.getElementById("vMonth").textContent = MONTHS[lang][idx.monthIdx];
+  document.getElementById("vAyana").textContent = idx.ayanaIdx === 0 ? t.uttarayana : t.dakshinayana;
+  document.getElementById("vVikram").textContent = now.getMonth() >= 3 ? now.getFullYear() + 57 : now.getFullYear() + 56;
+  document.getElementById("vShaka").textContent = now.getMonth() >= 3 ? now.getFullYear() - 78 : now.getFullYear() - 79;
+
+  GRAHA_ORDER.forEach((key, i) => {
+    document.getElementById("lG_" + key).textContent = GRAHA_NAME[lang][i];
+    document.getElementById("vG_" + key).textContent = RASHI[lang][idx.planetRashi[key]];
+  });
+
+  applyTheme();
+  renderTimings();
+}
+
+// ---------- Sunrise / Sunset / Moonrise / Moonset via Open-Meteo (free, keyless) ----------
+const LOCALE = { en:"en-US", bn:"bn-IN", hi:"hi-IN" };
+let sunTimes = null, sunLocKey = null, kaal = null;
+
+function computeKaal(){
+  if (!sunTimes) return null;
+  const sr = new Date(sunTimes.daily.sunrise[0]);
+  const ss = new Date(sunTimes.daily.sunset[0]);
+  const srNext = new Date(sunTimes.daily.sunrise[1] || sunTimes.daily.sunrise[0]);
+  const dayPart = (ss - sr) / 8;
+  const nightPart = (srNext - ss) / 8;
+  const seg = n => new Date(sr.getTime() + (n - 1) * dayPart);
+  const per = n => ({ start: seg(n), end: new Date(seg(n).getTime() + dayPart) });
+  const muhurta = (ss - sr) / 15;
+  const buildList = (startIdx, startTime, part) => {
+    const list = [];
+    for (let k = 0; k < 8; k++){
+      const oi = (startIdx + k) % 7;
+      const st = new Date(startTime.getTime() + k * part);
+      list.push({ o: oi, start: st, end: new Date(st.getTime() + part) });
     }
-    return [];
-  }
-  // ---------- Elements ----------
-  const listEl = document.getElementById('stationList');
-  const tabs = document.querySelectorAll('.tab');
-  const audio = document.getElementById('audio');
-  const playBtn = document.getElementById('playBtn');
-  const muteBtn = document.getElementById('muteBtn');
-  const eq = document.getElementById('eq');
-  const liveDot = document.getElementById('liveDot');
-  const spinner = document.getElementById('spinner');
-  const stationLogo = document.getElementById('stationLogo');
-  const nameEl = document.getElementById('stationName');
-  const tagsEl = document.getElementById('stationTags');
-  const bitrateEl = document.getElementById('stationBitrate');
-  const volume = document.getElementById('volume');
-  const retryBtn = document.getElementById('retryBtn');
-  const sleepSelect = document.getElementById('sleepSelect');
-  const sleepStatus = document.getElementById('sleepStatus');
-  const countrySelect = document.getElementById('countrySelect');
-  const tagSelect = document.getElementById('tagSelect');
-  const searchInput = document.getElementById('searchInput');
-  let topStations = [], topLoaded = false, searchStations = [], trendingStations = [], trendingLoaded = false, newStations = [], newLoaded = false, activeMode = 'top', lastStation = null;
-  let sleepTimeout = null, sleepInterval = null;
-  // ---------- Favorites & Recent (localStorage) ----------
-  const FAV_KEY='tune-favorites', RECENT_KEY='tune-recent', VOL_KEY='tune-volume', CUSTOM_KEY='tune-custom';
-  let favorites = JSON.parse(localStorage.getItem(FAV_KEY) || '{}');
-  let recent = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
-  let customStations = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]');
-  function trim(st){ return {stationuuid:st.stationuuid,name:st.name,tags:st.tags,country:st.country,url:st.url,url_resolved:st.url_resolved,favicon:st.favicon,bitrate:st.bitrate}; }
-  function toggleFavorite(st){
-    if (favorites[st.stationuuid]) delete favorites[st.stationuuid];
-    else favorites[st.stationuuid] = trim(st);
-    localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
-    setMode(activeMode);
-  }
-  function addRecent(st){
-    recent = recent.filter(s => s.stationuuid !== st.stationuuid);
-    recent.unshift(trim(st));
-    recent = recent.slice(0, 20);
-    localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
-  }
-  function removeCustomStation(uuid){
-    customStations = customStations.filter(s => s.stationuuid !== uuid);
-    localStorage.setItem(CUSTOM_KEY, JSON.stringify(customStations));
-    setMode('custom');
-  }
-  function removeRecent(uuid){
-    recent = recent.filter(s => s.stationuuid !== uuid);
-    localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
-    setMode('recent');
-  }
-  const clearListBtn = document.getElementById('clearListBtn');
-  function updateClearBtn(){
-    const show = activeMode === 'fav' || activeMode === 'recent' || activeMode === 'custom';
-    clearListBtn.classList.toggle('hidden', !show);
-    clearListBtn.textContent = { fav: 'Clear all favorites', recent: 'Clear all recent', custom: 'Clear all my stations' }[activeMode] || 'Clear all';
-  }
-  clearListBtn.addEventListener('click', () => {
-    if (!confirm('Clear all stations from this list? This cannot be undone.')) return;
-    if (activeMode === 'fav'){ favorites = {}; localStorage.setItem(FAV_KEY, '{}'); }
-    else if (activeMode === 'recent'){ recent = []; localStorage.setItem(RECENT_KEY, '[]'); }
-    else if (activeMode === 'custom'){ customStations = []; localStorage.setItem(CUSTOM_KEY, '[]'); }
-    setMode(activeMode);
+    return list;
+  };
+  return {
+    rahu: per(RAHU_SEG[idx.weekday]),
+    yama: per(YAMA_SEG[idx.weekday]),
+    gulika: per(GULIKA_SEG[idx.weekday]),
+    abhijit: { start: new Date(sr.getTime() + 7 * muhurta), end: new Date(sr.getTime() + 8 * muhurta) },
+    brahma: { start: new Date(sr.getTime() - 96 * 60000), end: new Date(sr.getTime() - 48 * 60000) },
+    dayChogh: buildList(DAY_START_IDX[idx.weekday], sr, dayPart),
+    nightChogh: buildList(NIGHT_START_IDX[idx.weekday], ss, nightPart)
+  };
+}
+function buildChoghRows(list, containerId){
+  document.getElementById(containerId).innerHTML = list.map(item => {
+    const q = CHOGH_QUALITY[item.o];
+    const name = CHOGHADIYA[lang][item.o];
+    return `<div class="chogh-row ${q}"><span>${name}</span><span class="chogh-time">${fmtT(item.start)}–${fmtT(item.end)}</span></div>`;
+  }).join("");
+}
+function fmtT(d){ return new Date(d).toLocaleTimeString(LOCALE[lang], { hour:"2-digit", minute:"2-digit" }); }
+
+function renderTimings(){
+  const t = UI[lang];
+  if (!sunTimes){ document.getElementById("locNote").textContent = ""; return; }
+  document.getElementById("vSunrise").textContent = fmtT(sunTimes.daily.sunrise[0]);
+  document.getElementById("vSunset").textContent = fmtT(sunTimes.daily.sunset[0]);
+  const mr = sunTimes.daily.moonrise && sunTimes.daily.moonrise[0];
+  const ms = sunTimes.daily.moonset && sunTimes.daily.moonset[0];
+  document.getElementById("vMoonrise").textContent = mr ? fmtT(mr) : "—";
+  document.getElementById("vMoonset").textContent = ms ? fmtT(ms) : "—";
+  document.getElementById("locNote").textContent = `${t.sunFor} ${sunLocKey === "gps" ? t.yourLoc : t.defaultLoc}`;
+  if (!kaal) return;
+  document.getElementById("vRahu").textContent = `${fmtT(kaal.rahu.start)}–${fmtT(kaal.rahu.end)}`;
+  document.getElementById("vYama").textContent = `${fmtT(kaal.yama.start)}–${fmtT(kaal.yama.end)}`;
+  document.getElementById("vGulika").textContent = `${fmtT(kaal.gulika.start)}–${fmtT(kaal.gulika.end)}`;
+  document.getElementById("vAbhijit").textContent = `${fmtT(kaal.abhijit.start)}–${fmtT(kaal.abhijit.end)}`;
+  document.getElementById("vBrahma").textContent = `${fmtT(kaal.brahma.start)}–${fmtT(kaal.brahma.end)}`;
+  buildChoghRows(kaal.dayChogh, "dayChoghList");
+  buildChoghRows(kaal.nightChogh, "nightChoghList");
+}
+function loadSunTimes(lat, lon, key){
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=sunrise,sunset,moonrise,moonset&forecast_days=2&timezone=auto`;
+  fetch(url).then(r => r.json()).then(data => {
+    sunTimes = data; sunLocKey = key;
+    kaal = computeKaal();
+    renderTimings();
+  }).catch(() => {
+    document.getElementById("locNote").textContent = "";
   });
-  // ---------- Rendering ----------
-  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  function render(stations){
-    listEl.innerHTML = '';
-    if (!stations.length){ listEl.innerHTML = '<li class="hint">No stations found.</li>'; return; }
-    stations.forEach(st => {
-      const isFav = !!favorites[st.stationuuid];
-      const isCustom = st.stationuuid.startsWith('custom-');
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <div class="st-left">
-          <img class="st-logo" style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex:none;background:var(--panel2);" src="${st.favicon||''}" onerror="this.style.visibility='hidden'" alt="">
-          <div>
-            <div class="st-name">${escapeHtml(st.name || 'Untitled station')}</div>
-            <div class="st-tags">${escapeHtml((st.tags||'').split(',').slice(0,3).join(' · ') || st.country || '')}</div>
-          </div>
-        </div>
-        <div class="st-right">
-          ${(st.bitrate || st.codec) ? `<span class="st-badge">${[st.codec, st.bitrate ? st.bitrate+'k' : ''].filter(Boolean).join(' · ')}</span>` : ''}
-          ${!isCustom ? `<button class="st-vote" aria-label="Vote for station">👍</button><button class="st-share" aria-label="Share station">⤴</button>` : ''}
-          ${isCustom ? `<button class="st-remove" aria-label="Remove station">✕</button>` : `<button class="st-fav ${isFav?'active':''}" aria-label="Toggle favorite">★</button>`}
-          ${(!isCustom && activeMode === 'recent') ? `<button class="st-remove" aria-label="Remove from recent">✕</button>` : ''}
-          <span class="st-play">▶</span>
-        </div>`;
-      if (isCustom) li.querySelector('.st-remove').addEventListener('click', e => { e.stopPropagation(); removeCustomStation(st.stationuuid); });
-      else li.querySelector('.st-fav').addEventListener('click', e => { e.stopPropagation(); toggleFavorite(st); });
-      if (!isCustom && activeMode === 'recent'){
-        li.querySelectorAll('.st-remove').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); removeRecent(st.stationuuid); }));
-      }
-      if (!isCustom){
-        li.querySelector('.st-vote').addEventListener('click', e => { e.stopPropagation(); voteStation(st, e.currentTarget); });
-        li.querySelector('.st-share').addEventListener('click', e => { e.stopPropagation(); shareStation(st); });
-      }
-      li.addEventListener('click', () => playStation(st));
-      listEl.appendChild(li);
-    });
-  }
-  function setMode(mode){
-    activeMode = mode;
-    tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
-    updateClearBtn();
-    if (mode === 'top') loadTop();
-    else if (mode === 'trending') loadTrending();
-    else if (mode === 'new') loadNew();
-    else if (mode === 'search') render(searchStations);
-    else if (mode === 'fav') render(Object.values(favorites));
-    else if (mode === 'custom') render(customStations);
-    else render(recent);
-  }
-  async function loadTrending(){
-    if (trendingLoaded){ render(trendingStations); return; }
-    listEl.innerHTML = '<li class="hint">Loading trending stations…</li>';
-    trendingStations = await fetchList('clicktrend', false);
-    trendingLoaded = true;
-    if (activeMode === 'trending') render(trendingStations);
-  }
-  async function loadNew(){
-    if (newLoaded){ render(newStations); return; }
-    listEl.innerHTML = '<li class="hint">Searching for newly added stations…</li>';
-    newStations = await fetchList('lastchangetime', false);
-    newLoaded = true;
-    if (activeMode === 'new') render(newStations);
-  }
-  // Automatically re-searches every 4 minutes (respecting the current country/genre filters)
-  // and refreshes whichever list is loaded, so new/trending stations surface without any manual action.
-  async function autoRefresh(){
-    if (topLoaded) topStations = await fetchList('clickcount', false);
-    if (trendingLoaded) trendingStations = await fetchList('clicktrend', false);
-    newStations = await fetchList('lastchangetime', false);
-    newLoaded = true;
-    if (activeMode === 'top') render(topStations);
-    else if (activeMode === 'trending') render(trendingStations);
-    else if (activeMode === 'new') render(newStations);
-  }
-  setInterval(autoRefresh, 4 * 60 * 1000);
-  tabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
-  // Builds a Radio Browser search query using the current country/genre filters (and optionally the text search box).
-  function fetchList(order, includeName){
-    let path = '/json/stations/search?limit=40&hidebroken=true&order=' + order + '&reverse=true';
-    if (includeName){ const q = searchInput.value.trim(); if (q) path += '&name=' + encodeURIComponent(q); }
-    if (countrySelect.value) path += '&country=' + encodeURIComponent(countrySelect.value);
-    if (tagSelect.value) path += '&tag=' + encodeURIComponent(tagSelect.value);
-    return apiFetch(path);
-  }
-  function updateFilterStatus(){
-    const parts = [countrySelect.value, tagSelect.value].filter(Boolean);
-    document.getElementById('filterStatus').textContent = parts.length ? 'Filtering by: ' + parts.join(' · ') : '';
-  }
-  // ---------- Loading ----------
-  async function loadTop(){
-    if (topLoaded){ render(topStations); return; }
-    listEl.innerHTML = '<li class="hint">Loading stations…</li>';
-    topStations = await fetchList('clickcount', false);
-    topLoaded = true;
-    if (activeMode === 'top') render(topStations);
-  }
-  async function loadFilters(){
-    const countries = await apiFetch('/json/countries?order=stationcount&reverse=true&limit=30');
-    countries.forEach(c => { if(!c.name) return; const o=document.createElement('option'); o.value=c.name; o.textContent=c.name; countrySelect.appendChild(o); });
-    const tags = await apiFetch('/json/tags?order=stationcount&reverse=true&limit=40');
-    tags.forEach(t => { if(!t.name) return; const o=document.createElement('option'); o.value=t.name; o.textContent=t.name; tagSelect.appendChild(o); });
-  }
-  let searchTimer;
-  async function runSearch(){
-    const q = searchInput.value.trim(), country = countrySelect.value, tag = tagSelect.value;
-    if (!q && !country && !tag){ setMode('top'); return; }
-    setMode('search');
-    listEl.innerHTML = '<li class="hint">Searching…</li>';
-    searchStations = await fetchList('clickcount', true);
-    if (activeMode === 'search') render(searchStations);
-  }
-  searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 450); });
-  function onFilterChange(){
-    topLoaded = false; trendingLoaded = false; newLoaded = false;
-    updateFilterStatus();
-    if (activeMode === 'top') loadTop();
-    else if (activeMode === 'trending') loadTrending();
-    else if (activeMode === 'new') loadNew();
-    else runSearch();
-  }
-  countrySelect.addEventListener('change', onFilterChange);
-  tagSelect.addEventListener('change', onFilterChange);
-  // ---------- Add your own station ----------
-  const addToggleBtn = document.getElementById('addToggleBtn');
-  const addForm = document.getElementById('addForm');
-  const addName = document.getElementById('addName');
-  const addUrl = document.getElementById('addUrl');
-  addToggleBtn.addEventListener('click', () => addForm.classList.toggle('hidden'));
-  document.getElementById('addSubmitBtn').addEventListener('click', () => {
-    const name = addName.value.trim(), url = addUrl.value.trim();
-    if (!name || !url){ alert('Please enter a station name and a stream URL.'); return; }
-    if (!/^https?:\/\//i.test(url)){ alert('Stream URL must start with http:// or https://'); return; }
-    customStations.unshift({ stationuuid: 'custom-' + Date.now(), name, url, url_resolved: url, tags: 'Custom', country: '', favicon: '', bitrate: 0 });
-    localStorage.setItem(CUSTOM_KEY, JSON.stringify(customStations));
-    addName.value = ''; addUrl.value = ''; addForm.classList.add('hidden');
-    setMode('custom');
-  });
-  // ---------- Playback ----------
-  async function playStation(st){
-    lastStation = st;
-    retryBtn.classList.add('hidden');
-    nameEl.textContent = st.name || 'Loading…';
-    tagsEl.textContent = (st.tags || st.country || '—').split(',').slice(0,3).join(' · ');
-    bitrateEl.textContent = st.bitrate ? st.bitrate + ' kbps' : '—';
-    if (st.favicon){ stationLogo.src = st.favicon; stationLogo.style.display='block'; } else { stationLogo.style.display='none'; }
-    try{
-      let streamUrl;
-      if (st.stationuuid && st.stationuuid.startsWith('custom-')){
-        streamUrl = st.url;
-      } else {
-        const resolved = await apiFetch('/json/url/' + st.stationuuid);
-        streamUrl = (resolved && resolved.url) ? resolved.url : (st.url_resolved || st.url);
-      }
-      audio.src = streamUrl;
-      await audio.play();
-      setPlaying(true);
-      addRecent(st);
-      setMediaSession(st);
-    }catch(err){
-      nameEl.textContent = 'Could not play "' + (st.name || 'station') + '"';
-      setPlaying(false);
-      retryBtn.classList.remove('hidden');
-    }
-  }
-  retryBtn.addEventListener('click', () => { if (lastStation) playStation(lastStation); });
-  function setPlaying(isPlaying){
-    playBtn.textContent = isPlaying ? '❚❚' : '▶';
-    eq.classList.toggle('playing', isPlaying);
-    liveDot.classList.toggle('live', isPlaying);
-  }
-  playBtn.addEventListener('click', () => {
-    if (!audio.src) return;
-    if (audio.paused){ audio.play(); setPlaying(true); } else { audio.pause(); setPlaying(false); }
-  });
-  audio.addEventListener('waiting', () => { spinner.classList.remove('hidden'); liveDot.classList.remove('live'); });
-  audio.addEventListener('playing', () => { spinner.classList.add('hidden'); liveDot.classList.add('live'); });
-  audio.addEventListener('canplay', () => spinner.classList.add('hidden'));
-  audio.addEventListener('error', () => {
-    spinner.classList.add('hidden'); setPlaying(false);
-    if (lastStation){ nameEl.textContent = 'Playback error — tap retry'; retryBtn.classList.remove('hidden'); }
-  });
-  // ---------- Volume & mute ----------
-  volume.value = localStorage.getItem(VOL_KEY) || 0.85;
-  audio.volume = parseFloat(volume.value);
-  volume.addEventListener('input', () => {
-    audio.volume = parseFloat(volume.value);
-    localStorage.setItem(VOL_KEY, volume.value);
-    if (audio.muted && audio.volume > 0){ audio.muted = false; muteBtn.textContent = '🔊'; }
-  });
-  muteBtn.addEventListener('click', () => {
-    audio.muted = !audio.muted;
-    muteBtn.textContent = audio.muted ? '🔇' : '🔊';
-  });
-  // ---------- Media Session (lock-screen controls) ----------
-  function setMediaSession(st){
-    if (!('mediaSession' in navigator)) return;
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: st.name || 'Radio', artist: st.country || '', album: 'TUNE Radio',
-      artwork: st.favicon ? [{ src: st.favicon, sizes: '512x512', type: 'image/png' }] : []
-    });
-    navigator.mediaSession.setActionHandler('play', () => { audio.play(); setPlaying(true); });
-    navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); setPlaying(false); });
-  }
-  // ---------- Sleep timer ----------
-  sleepSelect.addEventListener('change', () => {
-    clearTimeout(sleepTimeout); clearInterval(sleepInterval);
-    let mins = parseInt(sleepSelect.value, 10);
-    if (!mins){ sleepStatus.textContent = ''; return; }
-    sleepStatus.textContent = 'stops in ' + mins + 'm';
-    sleepInterval = setInterval(() => { mins--; sleepStatus.textContent = mins > 0 ? 'stops in ' + mins + 'm' : ''; }, 60000);
-    sleepTimeout = setTimeout(() => {
-      audio.pause(); setPlaying(false); sleepStatus.textContent = '';
-      clearInterval(sleepInterval); sleepSelect.value = '0';
-    }, mins * 60000);
-  });
-  // ---------- Keyboard shortcuts ----------
-  document.addEventListener('keydown', e => {
-    if (['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)) return;
-    if (e.code === 'Space'){ e.preventDefault(); playBtn.click(); }
-    else if (e.code === 'ArrowUp'){ volume.value = Math.min(1, parseFloat(volume.value)+0.05); volume.dispatchEvent(new Event('input')); }
-    else if (e.code === 'ArrowDown'){ volume.value = Math.max(0, parseFloat(volume.value)-0.05); volume.dispatchEvent(new Event('input')); }
-  });
-  // ---------- Vote & share ----------
-  async function voteStation(st, btn){
-    if (btn.classList.contains('voted')) return;
-    try{ await apiFetch('/json/vote/' + st.stationuuid); btn.classList.add('voted'); btn.textContent = '✓'; }
-    catch(e){ /* vote failed silently, e.g. offline */ }
-  }
-  async function shareStation(st){
-    const shareData = { title: st.name || 'Radio station', text: 'Listen to ' + (st.name || 'this station') + ' on TUNE', url: st.url_resolved || st.url };
-    if (navigator.share){ try{ await navigator.share(shareData); }catch(e){ /* user cancelled */ } }
-    else if (navigator.clipboard){ try{ await navigator.clipboard.writeText(shareData.url); alert('Stream link copied to clipboard.'); }catch(e){ alert(shareData.url); } }
-    else alert(shareData.url);
-  }
-  // ---------- Offline detection ----------
-  const offlineBanner = document.getElementById('offlineBanner');
-  function updateOnlineStatus(){ offlineBanner.classList.toggle('hidden', navigator.onLine); }
-  window.addEventListener('online', updateOnlineStatus);
-  window.addEventListener('offline', updateOnlineStatus);
-  updateOnlineStatus();
-  // ---------- PWA install support ----------
-  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
-    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
-  }
-  loadTop();
-  loadFilters();
+}
+
+render();
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    pos => loadSunTimes(pos.coords.latitude.toFixed(4), pos.coords.longitude.toFixed(4), "gps"),
+    () => loadSunTimes(28.6139, 77.2090, "default"),
+    { timeout: 6000 }
+  );
+} else {
+  loadSunTimes(28.6139, 77.2090, "default");
+}
 </script>
 </body>
 </html>
