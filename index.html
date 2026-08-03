@@ -1,497 +1,319 @@
-<!doctype html>
-<html lang="en" data-theme="dark">
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>TUNE — Free Internet Radio</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
-<link rel="apple-touch-icon" href="icon-180.png">
-<meta name="theme-color" content="#e8a33d">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Aperture — Camera</title>
 <style>
-  :root{ --radius:14px; --gap:14px; }
-  html[data-theme="dark"]{ --bg:#15130f; --panel:#1e1b16; --panel2:#262218; --edge:#332e22; --fg:#f2ead9; --muted:#a89e8a; --accent:#e8a33d; --accent2:#4fa39a; --danger:#e35c5c; }
-  html[data-theme="light"]{ --bg:#f4efe4; --panel:#ffffff; --panel2:#efe8d8; --edge:#ddd3ba; --fg:#221e15; --muted:#736a56; --accent:#c1721f; --accent2:#217d76; --danger:#c94848; }
-  html[data-theme="oled"]{ --bg:#000000; --panel:#0a0a0a; --panel2:#111111; --edge:#232323; --fg:#f5f5f5; --muted:#8f8f8f; --accent:#ffb547; --accent2:#56d6c9; --danger:#ff6b6b; }
-  html[data-theme="hc"]{ --bg:#000000; --panel:#000000; --panel2:#000000; --edge:#ffffff; --fg:#ffffff; --muted:#ffffff; --accent:#ffff00; --accent2:#00ffff; --danger:#ff3b3b; }
-  *{box-sizing:border-box;}
-  body{ margin:0; min-height:100dvh; background:var(--bg); color:var(--fg); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; display:flex; flex-direction:column; transition:background .25s,color .25s; }
-  .app{max-width:640px;margin:0 auto;width:100%;padding:16px;flex:1;display:flex;flex-direction:column;gap:var(--gap);}
-  .topbar{display:flex;align-items:center;justify-content:space-between;}
-  .brand{font-size:22px;letter-spacing:2px;margin:0;font-weight:800;}
-  .brand span{color:var(--accent);}
-  .theme-btn,.icon-btn{ background:var(--panel);border:1px solid var(--edge);color:var(--fg); width:42px;height:42px;border-radius:50%;font-size:17px;cursor:pointer;flex:none; }
-  .theme-btn:active,.icon-btn:active{transform:scale(.94);}
-  .deck{background:var(--panel);border:1px solid var(--edge);border-radius:var(--radius);padding:16px;}
-  .lcd{background:var(--panel2);border:1px solid var(--edge);border-radius:10px;padding:12px 14px;}
-  .lcd-row{display:flex;align-items:center;gap:8px;overflow:hidden;}
-  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none;}
-  .dot.live{background:var(--danger);box-shadow:0 0 6px var(--danger);}
-  .spinner{width:12px;height:12px;border-radius:50%;border:2px solid var(--muted);border-top-color:var(--accent);animation:spin .8s linear infinite;flex:none;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  #stationLogo{width:26px;height:26px;border-radius:6px;object-fit:cover;flex:none;display:none;background:var(--panel);}
-  .marquee{overflow:hidden;white-space:nowrap;flex:1;}
-  #stationName{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;letter-spacing:.5px;}
-  .lcd-meta{display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--muted);font-family:ui-monospace,monospace;}
-  .eq{display:flex;align-items:flex-end;gap:3px;height:20px;margin-top:10px;}
-  .eq i{width:4px;background:var(--accent2);border-radius:2px;height:4px;}
-  .eq.playing i{animation:bounce 900ms ease-in-out infinite;}
-  .eq i:nth-child(2){animation-delay:.1s;} .eq i:nth-child(3){animation-delay:.2s;}
-  .eq i:nth-child(4){animation-delay:.3s;} .eq i:nth-child(5){animation-delay:.15s;}
-  @keyframes bounce{0%,100%{height:4px;}50%{height:18px;}}
-  .controls{display:flex;align-items:center;gap:10px;margin-top:14px;}
-  .play-btn{ width:56px;height:56px;border-radius:50%;background:var(--accent);color:#111;border:none; font-size:20px;cursor:pointer;flex:none; }
-  .play-btn:active{transform:scale(.95);}
-  input[type="range"]{flex:1;accent-color:var(--accent);}
-  .sleep-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap;}
-  .sleep-row select{background:var(--panel2);color:var(--fg);border:1px solid var(--edge);border-radius:8px;padding:5px 6px;}
-  .retry-btn{background:var(--danger);color:#fff;border:none;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;}
-  .hidden{display:none !important;}
-  .search-wrap input{ width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--edge); background:var(--panel);color:var(--fg);font-size:15px; }
-  .search-wrap input:focus{outline:2px solid var(--accent);}
-  .filter-row{display:flex;gap:8px;margin-top:8px;}
-  .filter-row select{flex:1;padding:9px;border-radius:10px;border:1px solid var(--edge);background:var(--panel);color:var(--fg);font-size:13px;}
-  .filter-status{font-size:11px;color:var(--accent2);margin-top:6px;min-height:14px;}
-  .tabs{display:flex;gap:6px;margin:10px 0 8px;flex-wrap:wrap;}
-  .tab{ background:transparent;border:1px solid var(--edge);color:var(--muted); padding:6px 11px;border-radius:20px;font-size:12px;cursor:pointer; }
-  .tab.active{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600;}
-  .list-wrap{flex:1;display:flex;flex-direction:column;min-height:0;}
-  .station-list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1;max-height:42vh;}
-  .station-list li{ display:flex;justify-content:space-between;align-items:center;gap:10px; padding:12px;border-bottom:1px solid var(--edge);cursor:pointer; }
-  .station-list li:active{background:var(--panel2);}
-  .station-list li.hint{color:var(--muted);justify-content:center;cursor:default;}
-  .st-left{display:flex;align-items:center;gap:10px;overflow:hidden;}
-  .st-name{font-size:14px;font-weight:600;}
-  .st-tags{font-size:11px;color:var(--muted);}
-  .st-right{display:flex;align-items:center;gap:10px;flex:none;}
-  .st-fav{background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;}
-  .st-fav.active{color:var(--accent);}
-  .st-play{color:var(--accent2);font-size:16px;}
-  .st-badge{font-size:10px;color:var(--accent2);border:1px solid var(--edge);border-radius:8px;padding:2px 6px;white-space:nowrap;}
-  .add-form{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
-  .add-form input{padding:10px 12px;border-radius:10px;border:1px solid var(--edge);background:var(--panel);color:var(--fg);font-size:14px;}
-  .add-form button{background:var(--accent);color:#111;border:none;padding:10px;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px;align-self:flex-start;padding-left:16px;padding-right:16px;}
-  .add-toggle{width:100%;background:transparent;border:1px dashed var(--edge);color:var(--muted);padding:9px;border-radius:10px;font-size:13px;cursor:pointer;margin-top:8px;}
-  .st-remove{background:none;border:none;color:var(--danger);font-size:15px;cursor:pointer;}
-  .st-vote,.st-share{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;}
-  .st-vote.voted{color:var(--accent2);}
-  .offline-banner{background:var(--danger);color:#fff;text-align:center;padding:8px;border-radius:10px;font-size:12px;}
-  a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-  @media (prefers-reduced-motion: reduce){
-    .eq.playing i, .spinner{ animation:none !important; }
+  :root{
+    --bg:#121214; --surface:#1c1c1f; --text:#f2f0eb; --sub:#9a978f;
+    --accent:#d4a24c; --border:#2c2c30; --danger:#e2574c; --shutter:#f2f0eb;
   }
-  .footer{ text-align:center;padding:16px 8px 10px;color:var(--muted);font-size:12px; display:flex;align-items:center;justify-content:center;min-height:40px; }
-  @media (min-width:600px){ .app{padding:24px;} .station-list{max-height:48vh;} }
+  [data-theme="light"]{
+    --bg:#f4f2ee; --surface:#ffffff; --text:#1c1a17; --sub:#6b675f;
+    --accent:#b8823a; --border:#e2ded4; --danger:#c0392b; --shutter:#1c1a17;
+  }
+  [data-theme="oled"]{
+    --bg:#000000; --surface:#000000; --text:#ffffff; --sub:#8e8b85;
+    --accent:#d4a24c; --border:#151515; --danger:#ff6b5e; --shutter:#ffffff;
+  }
+  [data-theme="hc"]{
+    --bg:#000000; --surface:#000000; --text:#ffffff; --sub:#ffffff;
+    --accent:#ffe100; --border:#ffffff; --danger:#ff4136; --shutter:#ffe100;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; min-height:100vh;
+    overscroll-behavior:none; transition:background .25s,color .25s;
+  }
+  .mono{font-family:"SF Mono",ui-monospace,"Courier New",monospace; letter-spacing:.03em;}
+
+  /* --- Film-strip sprocket border, the app's signature element --- */
+  .sprockets{
+    height:14px; flex-shrink:0; background-color:var(--accent);
+    background-image:radial-gradient(circle at 10px 7px, var(--bg) 4.2px, transparent 4.6px);
+    background-size:20px 14px; background-repeat:repeat-x;
+  }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; background:var(--surface); border-bottom:1px solid var(--border);
+  }
+  .brand{display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px;}
+  .brand .dot{width:8px; height:8px; border-radius:50%; background:var(--accent);}
+  .iconbtn{
+    background:transparent; border:1px solid var(--border); color:var(--text);
+    width:38px; height:38px; border-radius:10px; font-size:16px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .iconbtn:active{transform:scale(.92);}
+  .headerbtns{display:flex; gap:8px;}
+
+  main{
+    flex:1; position:relative; background:#000; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; min-height:0;
+  }
+  #video{width:100%; height:100%; object-fit:cover; display:block;}
+  #canvas{display:none;}
+  .flash-anim{
+    position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none;
+  }
+  .flash-anim.on{animation:flash .28s ease-out;}
+  @keyframes flash{0%{opacity:.9;} 100%{opacity:0;}}
+
+  .status{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:24px; color:#eee; font-size:14px; background:#000;
+  }
+  .status.hidden{display:none;}
+
+  .readout{
+    position:absolute; top:12px; left:12px; font-size:11px; color:#eee;
+    background:rgba(0,0,0,.35); padding:4px 8px; border-radius:6px;
+  }
+
+  footer.controls{
+    background:var(--surface); border-top:1px solid var(--border);
+    padding:12px 14px 16px; flex-shrink:0;
+  }
+  .strip{display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; scrollbar-width:none;}
+  .strip::-webkit-scrollbar{display:none;}
+  .thumb{
+    width:52px; height:52px; border-radius:8px; object-fit:cover; flex-shrink:0;
+    border:1px solid var(--border); cursor:pointer;
+  }
+  .empty-note{font-size:12px; color:var(--sub); padding:4px 2px 10px;}
+
+  .shutter-row{
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+  }
+  .last-thumb-wrap{justify-self:start;}
+  .last-thumb{
+    width:44px; height:44px; border-radius:9px; object-fit:cover;
+    border:1px solid var(--border); cursor:pointer; background:var(--bg);
+  }
+  #shutter{
+    width:74px; height:74px; border-radius:50%; background:transparent;
+    border:3px solid var(--shutter); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; justify-self:center;
+  }
+  #shutter .inner{width:58px; height:58px; border-radius:50%; background:var(--shutter);}
+  #shutter:active .inner{width:50px; height:50px;}
+  .flip-btn{justify-self:end;}
+
+  .site-footer{
+    text-align:center; font-size:11px; color:var(--sub);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; padding:8px 10px 12px; background:var(--surface);
+  }
+
+  /* Modal */
+  .modal{
+    position:fixed; inset:0; background:rgba(0,0,0,.9); display:none;
+    align-items:center; justify-content:center; flex-direction:column; gap:14px; z-index:20;
+  }
+  .modal.open{display:flex;}
+  .modal img{max-width:92vw; max-height:70vh; border-radius:10px;}
+  .modal .row{display:flex; gap:10px;}
+  .modal a, .modal button{
+    text-decoration:none; padding:10px 16px; border-radius:8px; font-size:13px;
+    border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer;
+  }
+  .modal .del{color:var(--danger); border-color:var(--danger);}
 </style>
 </head>
-<body>
-<div class="app">
+<body data-theme="dark">
 
-  <div id="offlineBanner" class="offline-banner hidden" role="status">You're offline — playback may be interrupted.</div>
+<div class="sprockets"></div>
 
-  <header class="topbar">
-    <h1 class="brand">TUNE<span>.</span></h1>
-    <button id="themeBtn" class="theme-btn" aria-label="Toggle theme">◐</button>
-  </header>
+<header>
+  <div class="brand"><span class="dot"></span>Aperture</div>
+  <div class="headerbtns">
+    <button class="iconbtn" id="flashBtn" title="Torch" hidden>⚡</button>
+    <button class="iconbtn" id="themeBtn" title="Theme">◐</button>
+  </div>
+</header>
 
-  <main>
-  <section class="deck">
-    <div class="lcd">
-      <div class="lcd-row">
-        <span class="dot" id="liveDot"></span>
-        <span class="spinner hidden" id="spinner"></span>
-        <img id="stationLogo" alt="">
-        <div class="marquee"><span id="stationName" aria-live="polite">Select a station to tune in</span></div>
-      </div>
-      <div class="lcd-meta">
-        <span id="stationTags">—</span>
-        <span id="stationBitrate">—</span>
-      </div>
-      <div class="eq" id="eq"><i></i><i></i><i></i><i></i><i></i></div>
-    </div>
-    <div class="controls">
-      <button id="playBtn" class="play-btn" aria-label="Play or pause">▶</button>
-      <button id="muteBtn" class="icon-btn" aria-label="Mute">🔊</button>
-      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.85" aria-label="Volume">
-    </div>
-    <div class="sleep-row">
-      <span>😴 Sleep</span>
-      <select id="sleepSelect" aria-label="Sleep timer">
-        <option value="0">Off</option><option value="15">15m</option><option value="30">30m</option>
-        <option value="45">45m</option><option value="60">60m</option>
-      </select>
-      <span id="sleepStatus"></span>
-      <button id="retryBtn" class="retry-btn hidden">Retry</button>
-    </div>
-  </section>
+<main>
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas"></canvas>
+  <div class="flash-anim" id="flashAnim"></div>
+  <div class="readout mono" id="readout">f/1.8 · READY</div>
+  <div class="status" id="status">Requesting camera access…</div>
+</main>
 
-  <section class="search-wrap">
-    <input id="searchInput" type="search" placeholder="Search station, genre, or country…">
-    <div class="filter-row">
-      <select id="countrySelect" aria-label="Filter by country"><option value="">All countries</option></select>
-      <select id="tagSelect" aria-label="Filter by genre"><option value="">All genres</option></select>
-    </div>
-    <div id="filterStatus" class="filter-status" role="status"></div>
-    <button id="addToggleBtn" class="add-toggle" type="button">+ Add your own station</button>
-    <div id="addForm" class="add-form hidden">
-      <input id="addName" type="text" placeholder="Station name">
-      <input id="addUrl" type="url" placeholder="Direct stream URL (mp3, aac, etc.)">
-      <button id="addSubmitBtn" type="button">Add station</button>
-    </div>
-  </section>
+<div class="sprockets"></div>
 
-  <section class="list-wrap">
-    <div class="tabs" role="tablist" aria-label="Station lists">
-      <button class="tab active" data-mode="top">Popular</button>
-      <button class="tab" data-mode="trending">🔥 Trending</button>
-      <button class="tab" data-mode="new">🆕 New</button>
-      <button class="tab" data-mode="search">Results</button>
-      <button class="tab" data-mode="fav">★ Favorites</button>
-      <button class="tab" data-mode="recent">Recent</button>
-      <button class="tab" data-mode="custom">My Stations</button>
+<footer class="controls">
+  <div class="strip" id="strip"></div>
+  <div class="empty-note" id="emptyNote">No shots yet — tap the shutter to capture.</div>
+  <div class="shutter-row">
+    <div class="last-thumb-wrap">
+      <img class="last-thumb" id="lastThumb" hidden alt="Last photo">
     </div>
-    <ul id="stationList" class="station-list" aria-live="polite"><li class="hint">Loading stations…</li></ul>
-  </section>
-  </main>
+    <button id="shutter" title="Capture"><span class="inner"></span></button>
+    <button class="iconbtn flip-btn" id="flipBtn" title="Switch camera">⟲</button>
+  </div>
+</footer>
 
-  <footer class="footer">
-    <p>© Manik Roy <span id="year"></span>. All Rights Reserved.</p>
-  </footer>
+<div class="site-footer">
+  <div>© <span id="year"></span> Manik Roy. All Rights Reserved.</div>
 </div>
 
-<audio id="audio" preload="none"></audio>
+<div class="modal" id="modal">
+  <img id="modalImg" alt="Captured photo">
+  <div class="row">
+    <a id="downloadLink" download="aperture-photo.jpg">Download</a>
+    <button class="del" id="deleteBtn">Delete</button>
+    <button id="closeModal">Close</button>
+  </div>
+</div>
 
 <script>
-  // ---------- Theme ----------
-  const THEMES = ['dark','light','oled','hc'];
-  const root = document.documentElement;
-  const themeBtn = document.getElementById('themeBtn');
-  let theme = localStorage.getItem('tune-theme') || 'dark';
-  applyTheme(theme);
-  function applyTheme(t){
-    root.setAttribute('data-theme', t);
-    localStorage.setItem('tune-theme', t);
-    themeBtn.textContent = {dark:'◐',light:'☀',oled:'●',hc:'◆'}[t];
-  }
-  themeBtn.addEventListener('click', () => { theme = THEMES[(THEMES.indexOf(theme)+1) % THEMES.length]; applyTheme(theme); });
-
-  // ---------- Footer year ----------
+(function(){
   document.getElementById('year').textContent = new Date().getFullYear();
 
-  // ---------- API ----------
-  const HOSTS = ['https://de1.api.radio-browser.info','https://at1.api.radio-browser.info','https://nl1.api.radio-browser.info'];
-  async function apiFetch(path){
-    for (const h of HOSTS){
-      try{ const res = await fetch(h + path, { headers:{'User-Agent':'TuneRadioApp/1.0'} }); if (res.ok) return await res.json(); }
-      catch(e){ /* try next host */ }
-    }
-    return [];
+  // ---------- Theme cycle: dark -> light -> oled -> hc ----------
+  var themes = ['dark','light','oled','hc'];
+  var themeIcons = {dark:'◐', light:'☀', oled:'●', hc:'◆'};
+  var themeBtn = document.getElementById('themeBtn');
+  var saved = localStorage.getItem('aperture-theme') || 'dark';
+  applyTheme(saved);
+  themeBtn.addEventListener('click', function(){
+    var i = (themes.indexOf(document.body.getAttribute('data-theme')) + 1) % themes.length;
+    applyTheme(themes[i]);
+  });
+  function applyTheme(t){
+    document.body.setAttribute('data-theme', t);
+    themeBtn.textContent = themeIcons[t];
+    localStorage.setItem('aperture-theme', t);
   }
 
-  // ---------- Elements ----------
-  const listEl = document.getElementById('stationList');
-  const tabs = document.querySelectorAll('.tab');
-  const audio = document.getElementById('audio');
-  const playBtn = document.getElementById('playBtn');
-  const muteBtn = document.getElementById('muteBtn');
-  const eq = document.getElementById('eq');
-  const liveDot = document.getElementById('liveDot');
-  const spinner = document.getElementById('spinner');
-  const stationLogo = document.getElementById('stationLogo');
-  const nameEl = document.getElementById('stationName');
-  const tagsEl = document.getElementById('stationTags');
-  const bitrateEl = document.getElementById('stationBitrate');
-  const volume = document.getElementById('volume');
-  const retryBtn = document.getElementById('retryBtn');
-  const sleepSelect = document.getElementById('sleepSelect');
-  const sleepStatus = document.getElementById('sleepStatus');
-  const countrySelect = document.getElementById('countrySelect');
-  const tagSelect = document.getElementById('tagSelect');
-  const searchInput = document.getElementById('searchInput');
+  // ---------- Camera ----------
+  var video = document.getElementById('video');
+  var canvas = document.getElementById('canvas');
+  var status = document.getElementById('status');
+  var readout = document.getElementById('readout');
+  var flashBtn = document.getElementById('flashBtn');
+  var flipBtn = document.getElementById('flipBtn');
+  var shutterBtn = document.getElementById('shutter');
+  var flashAnim = document.getElementById('flashAnim');
 
-  let topStations = [], topLoaded = false, searchStations = [], trendingStations = [], trendingLoaded = false, newStations = [], newLoaded = false, activeMode = 'top', lastStation = null;
-  let sleepTimeout = null, sleepInterval = null;
+  var facingMode = 'environment';
+  var currentStream = null;
+  var torchOn = false;
+  var photos = JSON.parse(sessionStorage.getItem('aperture-photos') || '[]');
 
-  // ---------- Favorites & Recent (localStorage) ----------
-  const FAV_KEY='tune-favorites', RECENT_KEY='tune-recent', VOL_KEY='tune-volume', CUSTOM_KEY='tune-custom';
-  let favorites = JSON.parse(localStorage.getItem(FAV_KEY) || '{}');
-  let recent = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
-  let customStations = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]');
-  function trim(st){ return {stationuuid:st.stationuuid,name:st.name,tags:st.tags,country:st.country,url:st.url,url_resolved:st.url_resolved,favicon:st.favicon,bitrate:st.bitrate}; }
-  function toggleFavorite(st){
-    if (favorites[st.stationuuid]) delete favorites[st.stationuuid];
-    else favorites[st.stationuuid] = trim(st);
-    localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
-    setMode(activeMode);
-  }
-  function addRecent(st){
-    recent = recent.filter(s => s.stationuuid !== st.stationuuid);
-    recent.unshift(trim(st));
-    recent = recent.slice(0, 20);
-    localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
-  }
-  function removeCustomStation(uuid){
-    customStations = customStations.filter(s => s.stationuuid !== uuid);
-    localStorage.setItem(CUSTOM_KEY, JSON.stringify(customStations));
-    setMode('custom');
-  }
-
-  // ---------- Rendering ----------
-  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  function render(stations){
-    listEl.innerHTML = '';
-    if (!stations.length){ listEl.innerHTML = '<li class="hint">No stations found.</li>'; return; }
-    stations.forEach(st => {
-      const isFav = !!favorites[st.stationuuid];
-      const isCustom = st.stationuuid.startsWith('custom-');
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <div class="st-left">
-          <img class="st-logo" style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex:none;background:var(--panel2);" src="${st.favicon||''}" onerror="this.style.visibility='hidden'" alt="">
-          <div>
-            <div class="st-name">${escapeHtml(st.name || 'Untitled station')}</div>
-            <div class="st-tags">${escapeHtml((st.tags||'').split(',').slice(0,3).join(' · ') || st.country || '')}</div>
-          </div>
-        </div>
-        <div class="st-right">
-          ${(st.bitrate || st.codec) ? `<span class="st-badge">${[st.codec, st.bitrate ? st.bitrate+'k' : ''].filter(Boolean).join(' · ')}</span>` : ''}
-          ${!isCustom ? `<button class="st-vote" aria-label="Vote for station">👍</button><button class="st-share" aria-label="Share station">⤴</button>` : ''}
-          ${isCustom ? `<button class="st-remove" aria-label="Remove station">✕</button>` : `<button class="st-fav ${isFav?'active':''}" aria-label="Toggle favorite">★</button>`}
-          <span class="st-play">▶</span>
-        </div>`;
-      if (isCustom) li.querySelector('.st-remove').addEventListener('click', e => { e.stopPropagation(); removeCustomStation(st.stationuuid); });
-      else li.querySelector('.st-fav').addEventListener('click', e => { e.stopPropagation(); toggleFavorite(st); });
-      if (!isCustom){
-        li.querySelector('.st-vote').addEventListener('click', e => { e.stopPropagation(); voteStation(st, e.currentTarget); });
-        li.querySelector('.st-share').addEventListener('click', e => { e.stopPropagation(); shareStation(st); });
-      }
-      li.addEventListener('click', () => playStation(st));
-      listEl.appendChild(li);
+  function startCamera(){
+    if(currentStream){ currentStream.getTracks().forEach(function(t){t.stop();}); }
+    status.textContent = 'Requesting camera access…';
+    status.classList.remove('hidden');
+    flashBtn.hidden = true;
+    var constraints = { video:{ facingMode:{ideal:facingMode} }, audio:false };
+    navigator.mediaDevices.getUserMedia(constraints).then(function(stream){
+      currentStream = stream;
+      video.srcObject = stream;
+      status.classList.add('hidden');
+      var track = stream.getVideoTracks()[0];
+      var caps = track.getCapabilities ? track.getCapabilities() : {};
+      flashBtn.hidden = !(caps.torch);
+      readout.textContent = 'f/1.8 · READY';
+    }).catch(function(err){
+      status.textContent = 'Camera unavailable: ' + (err.message || err.name) +
+        '. Check browser permissions and try again.';
     });
   }
 
-  function setMode(mode){
-    activeMode = mode;
-    tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
-    if (mode === 'top') loadTop();
-    else if (mode === 'trending') loadTrending();
-    else if (mode === 'new') loadNew();
-    else if (mode === 'search') render(searchStations);
-    else if (mode === 'fav') render(Object.values(favorites));
-    else if (mode === 'custom') render(customStations);
-    else render(recent);
-  }
-  async function loadTrending(){
-    if (trendingLoaded){ render(trendingStations); return; }
-    listEl.innerHTML = '<li class="hint">Loading trending stations…</li>';
-    trendingStations = await fetchList('clicktrend', false);
-    trendingLoaded = true;
-    if (activeMode === 'trending') render(trendingStations);
-  }
-  async function loadNew(){
-    if (newLoaded){ render(newStations); return; }
-    listEl.innerHTML = '<li class="hint">Searching for newly added stations…</li>';
-    newStations = await fetchList('lastchangetime', false);
-    newLoaded = true;
-    if (activeMode === 'new') render(newStations);
-  }
-  // Automatically re-searches every 4 minutes (respecting the current country/genre filters)
-  // and refreshes whichever list is loaded, so new/trending stations surface without any manual action.
-  async function autoRefresh(){
-    if (topLoaded) topStations = await fetchList('clickcount', false);
-    if (trendingLoaded) trendingStations = await fetchList('clicktrend', false);
-    newStations = await fetchList('lastchangetime', false);
-    newLoaded = true;
-    if (activeMode === 'top') render(topStations);
-    else if (activeMode === 'trending') render(trendingStations);
-    else if (activeMode === 'new') render(newStations);
-  }
-  setInterval(autoRefresh, 4 * 60 * 1000);
-  tabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
-
-  // Builds a Radio Browser search query using the current country/genre filters (and optionally the text search box).
-  function fetchList(order, includeName){
-    let path = '/json/stations/search?limit=40&hidebroken=true&order=' + order + '&reverse=true';
-    if (includeName){ const q = searchInput.value.trim(); if (q) path += '&name=' + encodeURIComponent(q); }
-    if (countrySelect.value) path += '&country=' + encodeURIComponent(countrySelect.value);
-    if (tagSelect.value) path += '&tag=' + encodeURIComponent(tagSelect.value);
-    return apiFetch(path);
-  }
-  function updateFilterStatus(){
-    const parts = [countrySelect.value, tagSelect.value].filter(Boolean);
-    document.getElementById('filterStatus').textContent = parts.length ? 'Filtering by: ' + parts.join(' · ') : '';
+  if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+    startCamera();
+  } else {
+    status.textContent = 'This browser does not support camera access.';
   }
 
-  // ---------- Loading ----------
-  async function loadTop(){
-    if (topLoaded){ render(topStations); return; }
-    listEl.innerHTML = '<li class="hint">Loading stations…</li>';
-    topStations = await fetchList('clickcount', false);
-    topLoaded = true;
-    if (activeMode === 'top') render(topStations);
-  }
-  async function loadFilters(){
-    const countries = await apiFetch('/json/countries?order=stationcount&reverse=true&limit=30');
-    countries.forEach(c => { if(!c.name) return; const o=document.createElement('option'); o.value=c.name; o.textContent=c.name; countrySelect.appendChild(o); });
-    const tags = await apiFetch('/json/tags?order=stationcount&reverse=true&limit=40');
-    tags.forEach(t => { if(!t.name) return; const o=document.createElement('option'); o.value=t.name; o.textContent=t.name; tagSelect.appendChild(o); });
-  }
-
-  let searchTimer;
-  async function runSearch(){
-    const q = searchInput.value.trim(), country = countrySelect.value, tag = tagSelect.value;
-    if (!q && !country && !tag){ setMode('top'); return; }
-    setMode('search');
-    listEl.innerHTML = '<li class="hint">Searching…</li>';
-    searchStations = await fetchList('clickcount', true);
-    if (activeMode === 'search') render(searchStations);
-  }
-  searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 450); });
-  function onFilterChange(){
-    topLoaded = false; trendingLoaded = false; newLoaded = false;
-    updateFilterStatus();
-    if (activeMode === 'top') loadTop();
-    else if (activeMode === 'trending') loadTrending();
-    else if (activeMode === 'new') loadNew();
-    else runSearch();
-  }
-  countrySelect.addEventListener('change', onFilterChange);
-  tagSelect.addEventListener('change', onFilterChange);
-
-  // ---------- Add your own station ----------
-  const addToggleBtn = document.getElementById('addToggleBtn');
-  const addForm = document.getElementById('addForm');
-  const addName = document.getElementById('addName');
-  const addUrl = document.getElementById('addUrl');
-  addToggleBtn.addEventListener('click', () => addForm.classList.toggle('hidden'));
-  document.getElementById('addSubmitBtn').addEventListener('click', () => {
-    const name = addName.value.trim(), url = addUrl.value.trim();
-    if (!name || !url){ alert('Please enter a station name and a stream URL.'); return; }
-    if (!/^https?:\/\//i.test(url)){ alert('Stream URL must start with http:// or https://'); return; }
-    customStations.unshift({ stationuuid: 'custom-' + Date.now(), name, url, url_resolved: url, tags: 'Custom', country: '', favicon: '', bitrate: 0 });
-    localStorage.setItem(CUSTOM_KEY, JSON.stringify(customStations));
-    addName.value = ''; addUrl.value = ''; addForm.classList.add('hidden');
-    setMode('custom');
+  flipBtn.addEventListener('click', function(){
+    facingMode = facingMode === 'environment' ? 'user' : 'environment';
+    startCamera();
   });
 
-  // ---------- Playback ----------
-  async function playStation(st){
-    lastStation = st;
-    retryBtn.classList.add('hidden');
-    nameEl.textContent = st.name || 'Loading…';
-    tagsEl.textContent = (st.tags || st.country || '—').split(',').slice(0,3).join(' · ');
-    bitrateEl.textContent = st.bitrate ? st.bitrate + ' kbps' : '—';
-    if (st.favicon){ stationLogo.src = st.favicon; stationLogo.style.display='block'; } else { stationLogo.style.display='none'; }
-    try{
-      let streamUrl;
-      if (st.stationuuid && st.stationuuid.startsWith('custom-')){
-        streamUrl = st.url;
-      } else {
-        const resolved = await apiFetch('/json/url/' + st.stationuuid);
-        streamUrl = (resolved && resolved.url) ? resolved.url : (st.url_resolved || st.url);
-      }
-      audio.src = streamUrl;
-      await audio.play();
-      setPlaying(true);
-      addRecent(st);
-      setMediaSession(st);
-    }catch(err){
-      nameEl.textContent = 'Could not play "' + (st.name || 'station') + '"';
-      setPlaying(false);
-      retryBtn.classList.remove('hidden');
-    }
-  }
-  retryBtn.addEventListener('click', () => { if (lastStation) playStation(lastStation); });
-
-  function setPlaying(isPlaying){
-    playBtn.textContent = isPlaying ? '❚❚' : '▶';
-    eq.classList.toggle('playing', isPlaying);
-    liveDot.classList.toggle('live', isPlaying);
-  }
-  playBtn.addEventListener('click', () => {
-    if (!audio.src) return;
-    if (audio.paused){ audio.play(); setPlaying(true); } else { audio.pause(); setPlaying(false); }
-  });
-  audio.addEventListener('waiting', () => { spinner.classList.remove('hidden'); liveDot.classList.remove('live'); });
-  audio.addEventListener('playing', () => { spinner.classList.add('hidden'); liveDot.classList.add('live'); });
-  audio.addEventListener('canplay', () => spinner.classList.add('hidden'));
-  audio.addEventListener('error', () => {
-    spinner.classList.add('hidden'); setPlaying(false);
-    if (lastStation){ nameEl.textContent = 'Playback error — tap retry'; retryBtn.classList.remove('hidden'); }
-  });
-
-  // ---------- Volume & mute ----------
-  volume.value = localStorage.getItem(VOL_KEY) || 0.85;
-  audio.volume = parseFloat(volume.value);
-  volume.addEventListener('input', () => {
-    audio.volume = parseFloat(volume.value);
-    localStorage.setItem(VOL_KEY, volume.value);
-    if (audio.muted && audio.volume > 0){ audio.muted = false; muteBtn.textContent = '🔊'; }
-  });
-  muteBtn.addEventListener('click', () => {
-    audio.muted = !audio.muted;
-    muteBtn.textContent = audio.muted ? '🔇' : '🔊';
-  });
-
-  // ---------- Media Session (lock-screen controls) ----------
-  function setMediaSession(st){
-    if (!('mediaSession' in navigator)) return;
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: st.name || 'Radio', artist: st.country || '', album: 'TUNE Radio',
-      artwork: st.favicon ? [{ src: st.favicon, sizes: '512x512', type: 'image/png' }] : []
+  flashBtn.addEventListener('click', function(){
+    if(!currentStream) return;
+    var track = currentStream.getVideoTracks()[0];
+    torchOn = !torchOn;
+    track.applyConstraints({ advanced:[{ torch: torchOn }] }).catch(function(){
+      torchOn = !torchOn;
     });
-    navigator.mediaSession.setActionHandler('play', () => { audio.play(); setPlaying(true); });
-    navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); setPlaying(false); });
-  }
-
-  // ---------- Sleep timer ----------
-  sleepSelect.addEventListener('change', () => {
-    clearTimeout(sleepTimeout); clearInterval(sleepInterval);
-    let mins = parseInt(sleepSelect.value, 10);
-    if (!mins){ sleepStatus.textContent = ''; return; }
-    sleepStatus.textContent = 'stops in ' + mins + 'm';
-    sleepInterval = setInterval(() => { mins--; sleepStatus.textContent = mins > 0 ? 'stops in ' + mins + 'm' : ''; }, 60000);
-    sleepTimeout = setTimeout(() => {
-      audio.pause(); setPlaying(false); sleepStatus.textContent = '';
-      clearInterval(sleepInterval); sleepSelect.value = '0';
-    }, mins * 60000);
+    flashBtn.style.color = torchOn ? 'var(--accent)' : '';
   });
 
-  // ---------- Keyboard shortcuts ----------
-  document.addEventListener('keydown', e => {
-    if (['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)) return;
-    if (e.code === 'Space'){ e.preventDefault(); playBtn.click(); }
-    else if (e.code === 'ArrowUp'){ volume.value = Math.min(1, parseFloat(volume.value)+0.05); volume.dispatchEvent(new Event('input')); }
-    else if (e.code === 'ArrowDown'){ volume.value = Math.max(0, parseFloat(volume.value)-0.05); volume.dispatchEvent(new Event('input')); }
+  shutterBtn.addEventListener('click', capture);
+
+  function capture(){
+    if(!currentStream) return;
+    var w = video.videoWidth, h = video.videoHeight;
+    if(!w || !h) return;
+    canvas.width = w; canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    if(facingMode === 'user'){ ctx.translate(w,0); ctx.scale(-1,1); }
+    ctx.drawImage(video, 0, 0, w, h);
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    photos.unshift(dataUrl);
+    if(photos.length > 12) photos.pop();
+    persistAndRender();
+    flashAnim.classList.remove('on'); void flashAnim.offsetWidth; flashAnim.classList.add('on');
+    readout.textContent = 'f/1.8 · CAPTURED';
+    setTimeout(function(){ readout.textContent = 'f/1.8 · READY'; }, 900);
+  }
+
+  function persistAndRender(){
+    try{ sessionStorage.setItem('aperture-photos', JSON.stringify(photos)); }catch(e){}
+    renderStrip();
+  }
+
+  var strip = document.getElementById('strip');
+  var emptyNote = document.getElementById('emptyNote');
+  var lastThumb = document.getElementById('lastThumb');
+
+  function renderStrip(){
+    strip.innerHTML = '';
+    emptyNote.hidden = photos.length > 0;
+    lastThumb.hidden = photos.length === 0;
+    if(photos.length){ lastThumb.src = photos[0]; }
+    photos.forEach(function(src, idx){
+      var img = document.createElement('img');
+      img.className = 'thumb'; img.src = src; img.alt = 'Photo ' + (idx+1);
+      img.addEventListener('click', function(){ openModal(idx); });
+      strip.appendChild(img);
+    });
+  }
+  lastThumb.addEventListener('click', function(){ if(photos.length) openModal(0); });
+
+  // ---------- Modal / gallery ----------
+  var modal = document.getElementById('modal');
+  var modalImg = document.getElementById('modalImg');
+  var downloadLink = document.getElementById('downloadLink');
+  var deleteBtn = document.getElementById('deleteBtn');
+  var activeIdx = -1;
+
+  function openModal(idx){
+    activeIdx = idx;
+    modalImg.src = photos[idx];
+    downloadLink.href = photos[idx];
+    downloadLink.download = 'aperture-' + Date.now() + '.jpg';
+    modal.classList.add('open');
+  }
+  document.getElementById('closeModal').addEventListener('click', function(){
+    modal.classList.remove('open');
+  });
+  deleteBtn.addEventListener('click', function(){
+    if(activeIdx > -1){ photos.splice(activeIdx, 1); persistAndRender(); }
+    modal.classList.remove('open');
   });
 
-  // ---------- Vote & share ----------
-  async function voteStation(st, btn){
-    if (btn.classList.contains('voted')) return;
-    try{ await apiFetch('/json/vote/' + st.stationuuid); btn.classList.add('voted'); btn.textContent = '✓'; }
-    catch(e){ /* vote failed silently, e.g. offline */ }
-  }
-  async function shareStation(st){
-    const shareData = { title: st.name || 'Radio station', text: 'Listen to ' + (st.name || 'this station') + ' on TUNE', url: st.url_resolved || st.url };
-    if (navigator.share){ try{ await navigator.share(shareData); }catch(e){ /* user cancelled */ } }
-    else if (navigator.clipboard){ try{ await navigator.clipboard.writeText(shareData.url); alert('Stream link copied to clipboard.'); }catch(e){ alert(shareData.url); } }
-    else alert(shareData.url);
-  }
-
-  // ---------- Offline detection ----------
-  const offlineBanner = document.getElementById('offlineBanner');
-  function updateOnlineStatus(){ offlineBanner.classList.toggle('hidden', navigator.onLine); }
-  window.addEventListener('online', updateOnlineStatus);
-  window.addEventListener('offline', updateOnlineStatus);
-  updateOnlineStatus();
-
-  // ---------- PWA install support ----------
-  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
-    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
-  }
-
-  loadTop();
-  loadFilters();
+  renderStrip();
+})();
 </script>
 </body>
 </html>
