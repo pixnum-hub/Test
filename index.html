@@ -128,6 +128,7 @@
     <div class="tabs">
       <button class="tab active" data-mode="top">Popular</button>
       <button class="tab" data-mode="trending">🔥 Trending</button>
+      <button class="tab" data-mode="new">🆕 New</button>
       <button class="tab" data-mode="search">Results</button>
       <button class="tab" data-mode="fav">★ Favorites</button>
       <button class="tab" data-mode="recent">Recent</button>
@@ -191,7 +192,7 @@
   const tagSelect = document.getElementById('tagSelect');
   const searchInput = document.getElementById('searchInput');
 
-  let topStations = [], searchStations = [], trendingStations = [], trendingLoaded = false, activeMode = 'top', lastStation = null;
+  let topStations = [], searchStations = [], trendingStations = [], trendingLoaded = false, newStations = [], newLoaded = false, activeMode = 'top', lastStation = null;
   let sleepTimeout = null, sleepInterval = null;
 
   // ---------- Favorites & Recent (localStorage) ----------
@@ -252,6 +253,7 @@
     tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
     if (mode === 'top') render(topStations);
     else if (mode === 'trending') loadTrending();
+    else if (mode === 'new') loadNew();
     else if (mode === 'search') render(searchStations);
     else if (mode === 'fav') render(Object.values(favorites));
     else if (mode === 'custom') render(customStations);
@@ -264,6 +266,25 @@
     trendingLoaded = true;
     if (activeMode === 'trending') render(trendingStations);
   }
+  async function loadNew(){
+    if (newLoaded){ render(newStations); return; }
+    listEl.innerHTML = '<li class="hint">Searching for newly added stations…</li>';
+    newStations = await apiFetch('/json/stations/search?limit=40&hidebroken=true&order=lastchangetime&reverse=true');
+    newLoaded = true;
+    if (activeMode === 'new') render(newStations);
+  }
+  // Automatically re-searches every 4 minutes and refreshes whichever list is loaded,
+  // so newly-added and newly-trending stations surface without any manual action.
+  async function autoRefresh(){
+    topStations = await apiFetch('/json/stations/topclick/40');
+    if (trendingLoaded) trendingStations = await apiFetch('/json/stations/search?limit=40&hidebroken=true&order=clicktrend&reverse=true');
+    newStations = await apiFetch('/json/stations/search?limit=40&hidebroken=true&order=lastchangetime&reverse=true');
+    newLoaded = true;
+    if (activeMode === 'top') render(topStations);
+    else if (activeMode === 'trending') render(trendingStations);
+    else if (activeMode === 'new') render(newStations);
+  }
+  setInterval(autoRefresh, 4 * 60 * 1000);
   tabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
 
   // ---------- Loading ----------
