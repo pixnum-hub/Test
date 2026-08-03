@@ -193,6 +193,7 @@ footer strong{color:var(--accent);}
         <span id="pitchVal">0.92</span>
         <button class="miniStep" data-target="pitch" data-step="0.05">+</button>
       </div>
+      <div id="voiceNameLabel" style="font-size:.72rem; color:var(--muted); text-align:center;"></div>
     </div>
     <div style="flex-basis:100%; height:0;"></div>
     <div class="group" id="teleGroup">
@@ -429,11 +430,24 @@ let voiceGender = "male";
 let speechRate = 0.80;   // slower pace reads as more devotional/solemn
 let speechPitch = 0.92;  // slightly deeper pitch for a more authentic, resonant chant tone
 
-const MALE_HINTS = ["male","prabhat","hemant","ravi","david","mark","daniel","rishi","amit","aditya"];
-const FEMALE_HINTS = ["female","heera","lekha","kalpana","susan","samantha","zira","priya"];
+const MALE_HINTS = ["male","prabhat","hemant","ravi","david","mark","daniel","rishi","amit","aditya",
+  "guy","fred","alex","tom","james","paul","google uk english male","microsoft ravi","arnav","neel"];
+const FEMALE_HINTS = ["female","heera","lekha","kalpana","susan","samantha","zira","priya",
+  "google uk english female","victoria","karen","moira","tessa","swara","aria"];
 
-function pickVoice(langCode){
-  const voices = speechSynthesis.getVoices();
+let voicesReady = null;
+function voicesLoaded(){
+  if(voicesReady) return voicesReady;
+  voicesReady = new Promise(resolve => {
+    const existing = speechSynthesis.getVoices();
+    if(existing.length){ resolve(existing); return; }
+    speechSynthesis.addEventListener("voiceschanged", () => resolve(speechSynthesis.getVoices()), { once:true });
+    setTimeout(() => resolve(speechSynthesis.getVoices()), 1500); // fallback if event never fires
+  });
+  return voicesReady;
+}
+
+function pickVoice(langCode, voices){
   const base = langCode.split("-")[0];
   const matching = voices.filter(v => v.lang === langCode || (v.lang && v.lang.startsWith(base)));
   if(matching.length === 0) return null;
@@ -445,24 +459,31 @@ function pickVoice(langCode){
 function speakNextChunk(){
   if(queueIndex >= speechQueue.length){ stopSpeak(); return; }
   const text = speechQueue[queueIndex];
-  const utter = new SpeechSynthesisUtterance(text);
-  const langCode = voiceLang[lang];
-  utter.lang = langCode;
-  const voice = pickVoice(langCode);
-  if(voice) utter.voice = voice;
-  utter.rate = speechRate;
-  utter.pitch = speechPitch;
-  utter.onend = () => { queueIndex++; speakNextChunk(); };
-  utter.onerror = () => {
-    if(queueIndex === 0){
-      stopSpeak();
-      alert("Couldn't start speech. Your browser may not have a voice installed for this language.");
-    } else {
-      queueIndex++; speakNextChunk();
+  voicesLoaded().then(voices => {
+    const utter = new SpeechSynthesisUtterance(text);
+    const langCode = voiceLang[lang];
+    utter.lang = langCode;
+    const voice = pickVoice(langCode, voices);
+    if(voice){
+      utter.voice = voice;
+      if(queueIndex === 0) document.getElementById("voiceNameLabel").textContent = "Voice: " + voice.name;
+    } else if(queueIndex === 0){
+      document.getElementById("voiceNameLabel").textContent = "No installed voice found for this language — using device default";
     }
-  };
-  currentUtterance = utter;              // persistent reference, prevents silent GC failure
-  speechSynthesis.speak(utter);
+    utter.rate = speechRate;
+    utter.pitch = speechPitch;
+    utter.onend = () => { queueIndex++; speakNextChunk(); };
+    utter.onerror = () => {
+      if(queueIndex === 0){
+        stopSpeak();
+        alert("Couldn't start speech. Your browser may not have a voice installed for this language.");
+      } else {
+        queueIndex++; speakNextChunk();
+      }
+    };
+    currentUtterance = utter;              // persistent reference, prevents silent GC failure
+    speechSynthesis.speak(utter);
+  });
 }
 
 function stopSpeak(){
@@ -490,10 +511,6 @@ speakBtn.addEventListener("click", () => {
     alert("Speech playback failed to start.");
   }
 });
-
-if(speechOK && speechSynthesis.getVoices().length === 0){
-  speechSynthesis.addEventListener("voiceschanged", () => {}, { once:true });
-}
 
 const speechPanel = document.getElementById("speechPanel");
 document.getElementById("speechSettingsBtn").addEventListener("click", () => {
