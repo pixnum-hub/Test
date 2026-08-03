@@ -54,6 +54,27 @@ header{padding:6px 4px 0;display:flex;justify-content:space-between;align-items:
   color:var(--text);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;padding:0;
 }
 .themes button.active{background:var(--accent);color:#100c04;border-color:transparent}
+.header-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+#autoThemeBtn{width:34px;height:34px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--text);cursor:pointer;font-size:13px}
+#autoThemeBtn.active{background:var(--accent);color:#100c04;border-color:transparent}
+#commuteBtn{
+  width:34px;height:34px;border-radius:10px;border:1px solid var(--bd);background:var(--card);
+  color:var(--text);cursor:pointer;font-size:15px;padding:0;
+}
+#commuteBtn.active{background:#e5484d;color:#fff;border-color:transparent}
+
+/* ---- mood row ---- */
+.mood-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px}
+.mood-row::-webkit-scrollbar{display:none}
+.mood-chip{
+  flex:none;background:var(--card);border:1px solid var(--bd);border-radius:20px;
+  padding:8px 13px;font-size:12px;cursor:pointer;color:var(--text);
+}
+.mood-chip.active{background:var(--accent);color:#100c04;border-color:transparent}
+
+/* ---- station blurb ---- */
+.station .blurb{font-size:11px;color:var(--muted);margin-top:3px;font-style:italic;
+  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
 
 /* ============ Search / Category ============ */
 .toolbar{display:flex;gap:8px}
@@ -72,9 +93,11 @@ select#category{
 
 /* ============ Player / Dial ============ */
 .player{background:var(--card);border:1px solid var(--bd);border-radius:var(--radius);padding:18px 16px 16px;}
-.dial{position:relative;height:64px;overflow:hidden;border-radius:12px;background:var(--card2);border:1px solid var(--bd);margin-bottom:14px}
+.dial{position:relative;height:64px;overflow:hidden;border-radius:12px;background:var(--card2);border:1px solid var(--bd);margin-bottom:14px;touch-action:none;cursor:grab}
+.dial:active{cursor:grabbing}
 .dial-scale{
   position:absolute;inset:0;display:flex;align-items:flex-end;padding:0 6px 6px;gap:0;
+  transform-origin:center;transition:transform .1s linear;
 }
 .dial-tick{flex:1;border-left:1px solid var(--dial-scale);height:14px;position:relative}
 .dial-tick.major{height:22px;border-left-width:2px}
@@ -82,6 +105,7 @@ select#category{
 .dial-needle{
   position:absolute;top:0;bottom:0;width:2px;background:var(--accent);left:50%;
   box-shadow:0 0 8px 1px var(--accent);transition:left .5s cubic-bezier(.3,1.4,.5,1);
+  pointer-events:none;
 }
 .dial-needle::before{
   content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
@@ -89,8 +113,15 @@ select#category{
 }
 .dial-freq{
   position:absolute;right:8px;top:6px;font-family:var(--font-mono);font-size:11px;color:var(--accent);
-  letter-spacing:.05em;background:var(--bg);padding:2px 6px;border-radius:6px;opacity:.9;
+  letter-spacing:.05em;background:var(--bg);padding:2px 6px;border-radius:6px;opacity:.9;pointer-events:none;
 }
+.surprise-btn{
+  position:absolute;left:50%;bottom:6px;transform:translateX(-50%) translateY(140%);
+  background:var(--accent);color:#100c04;border:none;border-radius:14px;padding:5px 12px;
+  font-size:11px;font-weight:700;cursor:pointer;opacity:0;transition:transform .25s ease,opacity .25s ease;
+  pointer-events:none;
+}
+.surprise-btn.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
 
 .now-row{display:flex;align-items:center;gap:12px}
 .cover{
@@ -168,6 +199,17 @@ select#category{
 
 footer{margin-top:auto;padding:14px 5px 4px;color:var(--muted);font-size:11px;text-align:center}
 
+/* ============ Commute mode ============ */
+.app.commute .toolbar,.app.commute #category,.app.commute .mood-row,
+.app.commute #recentsWrap,.app.commute .list,.app.commute .more,.app.commute .brand .sub{
+  display:none;
+}
+.app.commute .now{font-size:26px}
+.app.commute .cover{width:78px;height:78px}
+.app.commute .player-controls button{width:56px;height:56px;font-size:20px}
+.app.commute .player-controls .play{width:76px;height:76px;font-size:28px}
+.app.commute .dial{height:44px}
+
 @media(max-width:420px){
   .app{padding:10px}
   .brand h1{font-size:23px}
@@ -184,13 +226,24 @@ footer{margin-top:auto;padding:14px 5px 4px;color:var(--muted);font-size:11px;te
     <h1>📻 Vaanee</h1>
     <div class="sub">Hindi · Bengali · Bollywood · News · Devotional · Retro</div>
   </div>
-  <div class="themes">
-    <button data-t="dark" class="active" title="Dark">🌙</button>
-    <button data-t="light" title="Light">☀️</button>
-    <button data-t="oled" title="OLED">🖤</button>
-    <button data-t="hc" title="High contrast">HC</button>
+  <div class="header-actions">
+    <div class="themes">
+      <button data-t="dark" class="active" title="Dark">🌙</button>
+      <button data-t="light" title="Light">☀️</button>
+      <button data-t="oled" title="OLED">🖤</button>
+      <button data-t="hc" title="High contrast">HC</button>
+      <button id="autoThemeBtn" title="Auto theme by time of day">⏱</button>
+    </div>
+    <button id="commuteBtn" title="Commute mode">🚗</button>
   </div>
 </header>
+
+<div class="mood-row" id="moodRow">
+  <button class="mood-chip" data-mood="calm">😌 Calm</button>
+  <button class="mood-chip" data-mood="energetic">⚡ Energetic</button>
+  <button class="mood-chip" data-mood="devotional">🕉️ Devotional</button>
+  <button class="mood-chip" data-mood="nostalgic">🎞️ Nostalgic</button>
+</div>
 
 <section class="toolbar">
   <input id="search" placeholder="Search stations, language, city…" inputmode="search">
@@ -209,10 +262,11 @@ footer{margin-top:auto;padding:14px 5px 4px;color:var(--muted);font-size:11px;te
 </select>
 
 <section class="player">
-  <div class="dial">
+  <div class="dial" id="dial">
     <div class="dial-scale" id="dialScale"></div>
     <div class="dial-needle" id="dialNeedle"></div>
     <div class="dial-freq" id="dialFreq">--.-</div>
+    <button id="surpriseBtn" class="surprise-btn">🎲 Surprise me</button>
   </div>
 
   <div class="now-row">
@@ -277,7 +331,7 @@ const sleepBtn=document.getElementById("sleepBtn");
 const BATCH=100;
 let stations=[],index=-1,offset=0,busy=false,end=false;
 let sleepTimer=null,sleepEnd=null;
-let recordable=true,mediaRecorder=null,recordChunks=[],recordStart=null,recordTick=null;
+let recordable=true,mediaRecorder=null,recordChunks=[],recordStart=null,recordTick=null,recordingStreamUrl=null;
 
 year.textContent=new Date().getFullYear();
 audio.volume=.8;
@@ -289,14 +343,73 @@ document.querySelectorAll("[data-t]").forEach(b=>{
     document.querySelectorAll("[data-t]").forEach(x=>x.classList.remove("active"));
     b.classList.add("active");
     localStorage.vaanee_theme_v1=b.dataset.t;
+    localStorage.vaanee_theme_auto_v1="0";
+    autoThemeBtn.classList.remove("active");
   };
 });
-if(localStorage.vaanee_theme_v1){
-  document.documentElement.dataset.theme=localStorage.vaanee_theme_v1;
-  document.querySelectorAll("[data-t]").forEach(b=>
-    b.classList.toggle("active",b.dataset.t===localStorage.vaanee_theme_v1)
-  );
+const autoThemeBtn=document.getElementById("autoThemeBtn");
+function autoThemeForHour(h){
+  if(h>=6&&h<17)return "light";
+  if(h>=17&&h<21)return "dark";
+  return "oled";
 }
+function applyTheme(t){
+  document.documentElement.dataset.theme=t;
+  document.querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("active",b.dataset.t===t));
+}
+function runAutoTheme(){
+  if(localStorage.vaanee_theme_auto_v1!=="1")return;
+  applyTheme(autoThemeForHour(new Date().getHours()));
+}
+autoThemeBtn.onclick=()=>{
+  let on=localStorage.vaanee_theme_auto_v1==="1";
+  if(on){
+    localStorage.vaanee_theme_auto_v1="0";
+    autoThemeBtn.classList.remove("active");
+  }else{
+    localStorage.vaanee_theme_auto_v1="1";
+    autoThemeBtn.classList.add("active");
+    runAutoTheme();
+  }
+};
+if(localStorage.vaanee_theme_auto_v1==="1"){
+  autoThemeBtn.classList.add("active");
+  runAutoTheme();
+}else if(localStorage.vaanee_theme_v1){
+  applyTheme(localStorage.vaanee_theme_v1);
+}
+setInterval(runAutoTheme,30*60*1000);
+
+/* ---------- commute mode ---------- */
+const commuteBtn=document.getElementById("commuteBtn");
+const appEl=document.querySelector(".app");
+commuteBtn.onclick=()=>{
+  appEl.classList.toggle("commute");
+  commuteBtn.classList.toggle("active",appEl.classList.contains("commute"));
+};
+
+/* ---------- mood row ---------- */
+let currentMood=null;
+const MOOD_TAGS={
+  calm:"easylistening",
+  energetic:"dance",
+  devotional:"devotional",
+  nostalgic:"retro"
+};
+document.querySelectorAll(".mood-chip").forEach(chip=>{
+  chip.onclick=()=>{
+    let m=chip.dataset.mood;
+    if(currentMood===m){
+      currentMood=null;
+      chip.classList.remove("active");
+    }else{
+      document.querySelectorAll(".mood-chip").forEach(c=>c.classList.remove("active"));
+      currentMood=m;
+      chip.classList.add("active");
+    }
+    load(true);
+  };
+});
 
 /* ---------- dial scale (decorative FM-style ticks) ---------- */
 (function buildScale(){
@@ -324,6 +437,75 @@ function updateDial(){
   dialFreq.textContent=(88+ (pct/100)*20).toFixed(1)+" FM";
 }
 
+/* ---------- dial-drag scanning, haptics, pinch zoom, surprise-me ---------- */
+const dialEl=document.getElementById("dial");
+const surpriseBtn=document.getElementById("surpriseBtn");
+let dragging=false,dragStartX=0,dragStartIndex=0,dragPreviewIndex=-1,dialZoom=1,pinchStartDist=null;
+
+function vibrate(pattern){ if(navigator.vibrate) navigator.vibrate(pattern); }
+function pxPerStation(){ return 26/dialZoom; }
+
+dialEl.addEventListener("pointerdown",e=>{
+  if(!stations.length)return;
+  dragging=true;
+  dialEl.setPointerCapture(e.pointerId);
+  dragStartX=e.clientX;
+  dragStartIndex=index<0?0:index;
+  dragPreviewIndex=dragStartIndex;
+});
+dialEl.addEventListener("pointermove",e=>{
+  if(!dragging||!stations.length)return;
+  let dx=e.clientX-dragStartX;
+  let steps=Math.round(dx/pxPerStation());
+  let rawIndex=dragStartIndex+steps;
+  surpriseBtn.classList.toggle("show", rawIndex<0||rawIndex>=stations.length);
+  let clamped=Math.max(0,Math.min(stations.length-1,rawIndex));
+  if(clamped!==dragPreviewIndex){
+    dragPreviewIndex=clamped;
+    vibrate(8);
+    let pct=5+(clamped/Math.max(stations.length-1,1))*90;
+    dialNeedle.style.left=pct+"%";
+    dialFreq.textContent=(88+(pct/100)*20).toFixed(1)+" FM";
+  }
+});
+function endDrag(){
+  if(!dragging)return;
+  dragging=false;
+  let atEdge=surpriseBtn.classList.contains("show");
+  surpriseBtn.classList.remove("show");
+  if(atEdge){
+    triggerSurprise();
+  }else if(dragPreviewIndex>=0&&dragPreviewIndex!==index){
+    playStation(dragPreviewIndex);
+  }else{
+    updateDial();
+  }
+}
+dialEl.addEventListener("pointerup",endDrag);
+dialEl.addEventListener("pointercancel",()=>{ dragging=false; surpriseBtn.classList.remove("show"); updateDial(); });
+
+surpriseBtn.onclick=e=>{ e.stopPropagation(); triggerSurprise(); };
+function triggerSurprise(){
+  if(!stations.length)return;
+  vibrate([10,30,10]);
+  playStation(Math.floor(Math.random()*stations.length));
+}
+
+dialEl.addEventListener("touchstart",e=>{
+  if(e.touches.length===2){
+    pinchStartDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+  }
+},{passive:true});
+dialEl.addEventListener("touchmove",e=>{
+  if(e.touches.length===2&&pinchStartDist){
+    let dist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    dialZoom=Math.max(1,Math.min(3,dialZoom*(dist/pinchStartDist)));
+    pinchStartDist=dist;
+    dialScale.style.transform=`scaleX(${dialZoom})`;
+  }
+},{passive:true});
+dialEl.addEventListener("touchend",e=>{ if(e.touches.length<2)pinchStartDist=null; });
+
 volume.oninput=e=>{ audio.volume=e.target.value; localStorage.vaanee_volume_v1=e.target.value; };
 if(localStorage.vaanee_volume_v1){
   volume.value=localStorage.vaanee_volume_v1;
@@ -340,6 +522,7 @@ function params(){
   if(c==="news")p.tag="news";
   if(c==="devotional")p.tag="devotional";
   if(c==="retro")p.tag="retro";
+  if(currentMood)p.tag=MOOD_TAGS[currentMood];
   if(q)p.name=q;
   return new URLSearchParams(p);
 }
@@ -400,6 +583,7 @@ function render(items){
       <div class="info">
         <div class="name">${esc(s.name)}</div>
         <div class="meta">${esc(s.country||"India")} · ${esc(s.codec||"Radio")}${s.bitrate?" · "+s.bitrate+"kbps":""}</div>
+        <div class="blurb">${esc(generateBlurb(s))}</div>
       </div>
       <div class="actions">
         <button data-play aria-label="Play">▶</button>
@@ -413,6 +597,16 @@ function render(items){
 
 function esc(x){
   return String(x||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+}
+
+function generateBlurb(s){
+  let tag=(s.tags||"").split(",").map(t=>t.trim()).filter(Boolean)[0];
+  let lang=(s.language||"").split(",").map(t=>t.trim()).filter(Boolean)[0];
+  let parts=[];
+  parts.push(lang ? lang.charAt(0).toUpperCase()+lang.slice(1)+" station" : "Radio station");
+  if(s.country) parts.push("from "+s.country);
+  if(tag) parts.push("· "+tag.charAt(0).toUpperCase()+tag.slice(1));
+  return parts.join(" ");
 }
 
 /* ---------- playback ---------- */
@@ -629,6 +823,7 @@ function startRecording(){
     return;
   }
   recordChunks=[];
+  recordingStreamUrl=audio.src;
   mediaRecorder.ondataavailable=e=>{ if(e.data && e.data.size) recordChunks.push(e.data); };
   mediaRecorder.onstop=()=>saveRecording();
   mediaRecorder.start();
@@ -657,20 +852,63 @@ function stopRecording(save){
   mediaRecorder=null;
 }
 
-function saveRecording(){
+async function fetchStreamTitle(url){
+  if(!url)return null;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),3500);
+  try{
+    const res=await fetch(url,{headers:{"Icy-MetaData":"1"},signal:controller.signal});
+    const metaInt=parseInt(res.headers.get("icy-metaint"),10);
+    if(!metaInt||!res.body) throw new Error("no metaint exposed");
+    const reader=res.body.getReader();
+    let buffer=new Uint8Array(0);
+    const append=chunk=>{
+      let merged=new Uint8Array(buffer.length+chunk.length);
+      merged.set(buffer); merged.set(chunk,buffer.length);
+      buffer=merged;
+    };
+    while(buffer.length<metaInt+1){
+      const {value,done}=await reader.read();
+      if(done) throw new Error("stream ended");
+      append(value);
+    }
+    const metaLen=buffer[metaInt]*16;
+    while(buffer.length<metaInt+1+metaLen){
+      const {value,done}=await reader.read();
+      if(done) throw new Error("stream ended");
+      append(value);
+    }
+    const metaStr=new TextDecoder("utf-8").decode(buffer.slice(metaInt+1,metaInt+1+metaLen));
+    reader.cancel().catch(()=>{});
+    clearTimeout(timer);
+    const match=metaStr.match(/StreamTitle='([^']*)'/);
+    return match && match[1].trim() ? match[1].trim() : null;
+  }catch(e){
+    clearTimeout(timer);
+    return null;
+  }
+}
+
+async function saveRecording(){
   if(!recordChunks.length)return;
   let blob=new Blob(recordChunks,{type:recordChunks[0].type||"audio/webm"});
-  let ext = blob.type.includes("webm") ? "webm" : "audio";
-  let stationName = stations[index] ? stations[index].name.replace(/[^\w\-]+/g,"_").slice(0,40) : "recording";
-  let ts = new Date().toISOString().replace(/[:.]/g,"-").slice(0,19);
+  let ext=blob.type.includes("webm")?"webm":"audio";
+  let stationName=stations[index]?stations[index].name.replace(/[^\w\-]+/g,"_").slice(0,40):"recording";
+  let ts=new Date().toISOString().replace(/[:.]/g,"-").slice(0,19);
+  recordNote.textContent="Identifying track…";
+  let songTitle=await fetchStreamTitle(recordingStreamUrl);
+  let base = songTitle ? songTitle.replace(/[^\w\-]+/g,"_").slice(0,50) : `${stationName}_${ts}`;
   let a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
-  a.download=`vaanee_${stationName}_${ts}.${ext}`;
+  a.download=`vaanee_${base}.${ext}`;
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),4000);
   recordChunks=[];
+  recordNote.textContent = songTitle
+    ? `Saved as "${songTitle}"`
+    : "Saved (couldn't identify the track — station didn't expose song info).";
 }
 
 audio.addEventListener("pause",updateRecordAvailability);
