@@ -379,7 +379,6 @@ if(!speechOK) speakBtn.style.opacity = "0.6";
 let speechQueue = [];
 let queueIndex = 0;
 let currentUtterance = null;   // keep a persistent reference so Chrome doesn't garbage-collect mid-speech
-let keepAliveTimer = null;
 
 function pickVoice(langCode){
   const voices = speechSynthesis.getVoices();
@@ -414,7 +413,6 @@ function stopSpeak(){
   speechSynthesis.cancel();
   speaking = false;
   currentUtterance = null;
-  if(keepAliveTimer){ clearInterval(keepAliveTimer); keepAliveTimer = null; }
   speakBtn.textContent = "🔊";
 }
 
@@ -425,10 +423,6 @@ function startSpeak(){
   speaking = true;
   speakBtn.textContent = "⏸";
   speakNextChunk();
-  // Chrome silently halts long-running speech after ~15s unless nudged; this keeps it alive
-  keepAliveTimer = setInterval(() => {
-    if(speechSynthesis.speaking){ speechSynthesis.pause(); speechSynthesis.resume(); }
-  }, 10000);
 }
 
 speakBtn.addEventListener("click", () => {
