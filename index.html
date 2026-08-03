@@ -1,610 +1,475 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<title>Aperture — Camera</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hanuma</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#C1440E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hanuma">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Noto+Serif:ital@0;1&family=Noto+Serif+Devanagari:wght@400;600;700&family=Noto+Serif+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#121214; --surface:#1c1c1f; --text:#f2f0eb; --sub:#9a978f;
-    --accent:#d4a24c; --border:#2c2c30; --danger:#e2574c; --shutter:#f2f0eb;
-    --vh:100vh; --vh:100dvh;
-  }
-  [data-theme="light"]{
-    --bg:#f4f2ee; --surface:#ffffff; --text:#1c1a17; --sub:#6b675f;
-    --accent:#b8823a; --border:#e2ded4; --danger:#c0392b; --shutter:#1c1a17;
-  }
-  [data-theme="oled"]{
-    --bg:#000000; --surface:#000000; --text:#ffffff; --sub:#8e8b85;
-    --accent:#d4a24c; --border:#151515; --danger:#ff6b5e; --shutter:#ffffff;
-  }
-  [data-theme="hc"]{
-    --bg:#000000; --surface:#000000; --text:#ffffff; --sub:#ffffff;
-    --accent:#ffe100; --border:#ffffff; --danger:#ff4136; --shutter:#ffe100;
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{height:100%; overscroll-behavior:none;}
-  body{
-    margin:0; background:var(--bg); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    display:flex; flex-direction:column; height:var(--vh); width:100vw;
-    overflow:hidden; transition:background .25s,color .25s;
-    touch-action:manipulation;
-  }
-  .mono{font-family:"SF Mono",ui-monospace,"Courier New",monospace; letter-spacing:.03em;}
-  svg{width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;}
-
-  header{
-    display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
-    padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
-    padding-left:calc(14px + env(safe-area-inset-left)); padding-right:calc(14px + env(safe-area-inset-right));
-    background:var(--surface); border-bottom:1px solid var(--border);
-  }
-  .brand{display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px;}
-  .brand .dot{width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0;}
-  .iconbtn{
-    background:transparent; border:1px solid var(--border); color:var(--text);
-    width:40px; height:40px; border-radius:10px; padding:0;
-    display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
-  }
-  .iconbtn:active{transform:scale(.92);}
-  .iconbtn.active{border-color:var(--accent); color:var(--accent);}
-  .headerbtns{display:flex; gap:6px;}
-
-  main{
-    flex:1 1 auto; position:relative; background:#000; overflow:hidden;
-    display:flex; align-items:center; justify-content:center; min-height:0;
-  }
-  #video{width:100%; height:100%; object-fit:cover; display:block; touch-action:none;}
-  #canvas,#cropCanvas{display:none;}
-  .flash-anim{position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none;}
-  .flash-anim.on{animation:flash .28s ease-out;}
-  @keyframes flash{0%{opacity:.9;} 100%{opacity:0;}}
-
-  .zoom-readout{
-    position:absolute; top:12px; right:12px; font-size:12px; color:#eee;
-    background:rgba(0,0,0,.4); padding:4px 8px; border-radius:6px; z-index:1;
-    opacity:0; transition:opacity .15s;
-  }
-  .zoom-readout.show{opacity:1;}
-
-  .status{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    text-align:center; padding:24px; color:#eee; font-size:14px; background:#000; z-index:2;
-  }
-  .status.hidden{display:none;}
-
-  .readout{
-    position:absolute; top:12px; left:12px; font-size:11px; color:#eee;
-    background:rgba(0,0,0,.4); padding:4px 8px; border-radius:6px; line-height:1.5; z-index:1;
-  }
-
-  .focus-ring{
-    position:absolute; width:64px; height:64px; margin:-32px 0 0 -32px;
-    border:2px solid var(--accent); border-radius:8px; pointer-events:none; opacity:0; transform:scale(1.3);
-  }
-  .focus-ring.show{animation:focuspulse .6s ease-out;}
-  @keyframes focuspulse{0%{opacity:1; transform:scale(1.3);} 40%{opacity:1; transform:scale(1);} 100%{opacity:0; transform:scale(1);}}
-
-  footer.controls{
-    background:var(--surface); border-top:1px solid var(--border); flex-shrink:0;
-    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
-  }
-  .strip{display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
-  .strip::-webkit-scrollbar{display:none;}
-  .thumb{width:48px; height:48px; border-radius:8px; object-fit:cover; flex-shrink:0; border:1px solid var(--border); cursor:pointer;}
-  .empty-note{font-size:12px; color:var(--sub); padding:2px 2px 8px;}
-
-  .shutter-row{display:grid; grid-template-columns:1fr auto 1fr; align-items:center;}
-  .last-thumb-wrap{justify-self:start;}
-  .last-thumb{width:42px; height:42px; border-radius:9px; object-fit:cover; border:1px solid var(--border); cursor:pointer; background:var(--bg);}
-  #shutter{
-    width:70px; height:70px; border-radius:50%; background:transparent; border:3px solid var(--shutter); padding:0;
-    display:flex; align-items:center; justify-content:center; cursor:pointer; justify-self:center;
-  }
-  #shutter .inner{width:54px; height:54px; border-radius:50%; background:var(--shutter);}
-  #shutter:active .inner{width:46px; height:46px;}
-  .flip-btn{justify-self:end;}
-
-  .site-footer{
-    text-align:center; font-size:11px; color:var(--sub); flex-shrink:0;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:2px; padding:6px 10px 8px; background:var(--surface);
-  }
-
-  /* Manual controls panel */
-  .panel{
-    position:fixed; left:0; right:0; bottom:0; max-height:80vh; max-height:80dvh; overflow-y:auto;
-    -webkit-overflow-scrolling:touch; background:var(--surface); border-top:1px solid var(--border);
-    border-radius:16px 16px 0 0; padding:14px 16px calc(20px + env(safe-area-inset-bottom));
-    transform:translateY(105%); transition:transform .25s ease; z-index:25;
-  }
-  .panel.open{transform:translateY(0);}
-  .panel-head{display:flex; align-items:center; justify-content:space-between; font-weight:700; margin-bottom:6px; font-size:15px;}
-  .panel-head button{background:none; border:none; color:var(--text); cursor:pointer; padding:6px;}
-  .panel-title{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub); margin:14px 0 6px;}
-  .panel-row{display:flex; flex-direction:column; gap:6px; margin-bottom:12px;}
-  .panel-row .lbl{display:flex; justify-content:space-between; font-size:13px;}
-  .panel-row .lbl span:last-child{color:var(--accent); font-family:"SF Mono",ui-monospace,monospace;}
-  input[type=range]{
-    width:100%; accent-color:var(--accent); height:32px; -webkit-appearance:none; appearance:none; background:transparent;
-  }
-  input[type=range]::-webkit-slider-runnable-track{height:4px; background:var(--border); border-radius:2px;}
-  input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none; margin-top:-9px; width:22px; height:22px; border-radius:50%;
-    background:var(--accent); border:2px solid var(--surface);
-  }
-  input[type=range]:disabled{opacity:.35;}
-  select{
-    width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border);
-    border-radius:8px; padding:11px 10px; font-size:16px; -webkit-appearance:none; appearance:none;
-  }
-  .chips{display:flex; gap:8px;}
-  .chip{
-    flex:1; text-align:center; padding:11px 6px; border-radius:8px; border:1px solid var(--border);
-    background:var(--bg); color:var(--text); font-size:13px; cursor:pointer;
-  }
-  .chip.active{border-color:var(--accent); color:var(--accent); font-weight:700;}
-  .hint{font-size:11px; color:var(--sub); margin-top:6px; line-height:1.4;}
-  .reset-btn{
-    margin-top:16px; width:100%; padding:12px; border-radius:8px; border:1px solid var(--border);
-    background:var(--bg); color:var(--text); cursor:pointer; font-size:14px;
-  }
-  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; z-index:24;}
-  .overlay.show{display:block;}
-
-  /* Modal / gallery */
-  .modal{
-    position:fixed; inset:0; background:rgba(0,0,0,.94); display:none;
-    align-items:center; justify-content:center; flex-direction:column; gap:14px; z-index:30;
-    padding:16px calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
-  }
-  .modal.open{display:flex;}
-  .img-wrap{position:relative; max-width:92vw; max-height:60vh; display:flex; touch-action:none;}
-  .img-wrap img{max-width:92vw; max-height:60vh; border-radius:10px; display:block;}
-  .crop-box{position:absolute; border:2px dashed var(--accent); background:rgba(212,162,76,.12); touch-action:none;}
-  .crop-handle{position:absolute; width:20px; height:20px; margin:-10px; background:var(--accent); border-radius:50%; touch-action:none;}
-  .modal .row{display:flex; gap:8px; flex-wrap:wrap; justify-content:center;}
-  .modal a, .modal button{
-    text-decoration:none; padding:11px 14px; border-radius:8px; font-size:13px;
-    border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer;
-    display:flex; align-items:center; gap:6px;
-  }
-  .modal .del{color:var(--danger); border-color:var(--danger);}
-  .modal .primary{border-color:var(--accent); color:var(--accent);}
-
-  @media (max-width:340px){
-    .brand{font-size:13px;} .iconbtn{width:36px; height:36px;}
-  }
+:root{
+  --bg:#FBF3E3; --surface:#FFF9EE; --text:#2B1608; --muted:#7A5A3A;
+  --accent:#C1440E; --gold:#B8860B; --line:rgba(193,68,14,.25); --shadow:rgba(43,22,8,.12);
+  --verse-scale:1;
+}
+[data-theme="dark"]{
+  --bg:#1B120A; --surface:#241A10; --text:#F1E4C9; --muted:#C9AE84;
+  --accent:#FF7A3D; --gold:#E8B84B; --line:rgba(255,122,61,.3); --shadow:rgba(0,0,0,.4);
+}
+[data-theme="oled"]{
+  --bg:#000000; --surface:#0A0A0A; --text:#EDE0C8; --muted:#B39D7A;
+  --accent:#FF8A4C; --gold:#E8B84B; --line:rgba(255,138,76,.3); --shadow:rgba(0,0,0,.6);
+}
+[data-theme="hc"]{
+  --bg:#000000; --surface:#000000; --text:#FFFFFF; --muted:#FFFFFF;
+  --accent:#FFD400; --gold:#FFD400; --line:#FFFFFF; --shadow:rgba(0,0,0,0);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0; background:var(--bg); color:var(--text);}
+body{
+  font-family:"Noto Serif",serif; min-height:100vh; display:flex; flex-direction:column;
+  transition:background .3s,color .3s; padding-bottom:env(safe-area-inset-bottom);
+}
+[lang="hi"] .verse, [lang="hi"] .subtitle{font-family:"Noto Serif Devanagari","Kohinoor Devanagari","Mangal",serif;}
+[lang="bn"] .verse, [lang="bn"] .subtitle{font-family:"Noto Serif Bengali","Vrinda","Siyam Rupali","Noto Sans Bengali",serif;}
+[lang="hi"] h1{font-family:"Noto Serif Devanagari","Yatra One",cursive;}
+[lang="bn"] h1{font-family:"Noto Serif Bengali","Yatra One",cursive;}
+header{
+  text-align:center; padding:28px 16px 14px; position:relative;
+}
+h1{
+  font-family:"Yatra One",cursive; font-weight:400; font-size:clamp(2.2rem,9vw,3.2rem);
+  margin:0; color:var(--accent); letter-spacing:.5px;
+}
+.subtitle{color:var(--muted); font-size:1rem; margin-top:4px; letter-spacing:1px; text-transform:uppercase;}
+.divider{width:64px; height:3px; background:var(--gold); margin:14px auto; border-radius:2px;}
+.controls{
+  display:flex; flex-wrap:wrap; gap:10px; justify-content:center; padding:0 12px 18px;
+}
+.group{
+  display:flex; background:var(--surface); border:1px solid var(--line); border-radius:999px;
+  padding:4px; box-shadow:0 2px 8px var(--shadow);
+}
+.group button{
+  border:none; background:transparent; color:var(--muted); font-size:1rem; font-weight:600;
+  padding:9px 16px; border-radius:999px; cursor:pointer; transition:all .25s; font-family:inherit;
+}
+.group button.active{background:var(--accent); color:var(--bg);}
+[data-theme="hc"] .group button.active{color:#000;}
+main{
+  flex:1; max-width:640px; width:100%; margin:0 auto; padding:0 16px 30px;
+}
+.doha{
+  background:var(--surface); border-left:4px solid var(--gold); border-radius:8px;
+  padding:18px 20px; margin:0 0 18px; box-shadow:0 2px 10px var(--shadow); font-style:italic;
+}
+.chaupai-list{list-style:none; margin:0; padding:0; counter-reset:v;}
+.chaupai-list li{
+  position:relative; padding:14px 16px 14px 46px; margin-bottom:10px; border-radius:8px;
+  background:var(--surface); box-shadow:0 1px 6px var(--shadow); counter-increment:v;
+}
+.chaupai-list li::before{
+  content:counter(v); position:absolute; left:10px; top:50%; transform:translateY(-50%);
+  width:24px; height:24px; border-radius:50%; background:var(--accent); color:var(--bg);
+  font-size:.78rem; font-family:"Noto Serif",serif; display:flex; align-items:center; justify-content:center;
+}
+[data-theme="hc"] .chaupai-list li::before{color:#000;}
+.verse{font-size:calc(1.18rem * var(--verse-scale)); line-height:1.8;}
+footer{
+  text-align:center; padding:18px 12px calc(18px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line); font-size:.9rem; color:var(--muted);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+}
+footer strong{color:var(--accent);}
+@media (min-width:480px){ .verse{font-size:calc(1.3rem * var(--verse-scale));} }
+.sizeBtn{
+  border:none; background:transparent; color:var(--muted); font-weight:700; cursor:pointer;
+  padding:9px 14px; border-radius:999px; font-family:inherit; font-size:1rem;
+}
+.sizeBtn:first-child{font-size:.8rem;}
+.sizeBtn:last-child{font-size:1.2rem;}
+#speakGroup button{
+  border:none; background:var(--accent); color:var(--bg); width:34px; height:34px; border-radius:50%;
+  font-size:.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:none;
+  margin:0 2px;
+}
+[data-theme="hc"] #speakGroup button{color:#000;}
+#teleGroup{ padding:8px 10px; gap:4px; }
+#teleGroup #teleBtn{
+  border:none; background:var(--accent); color:var(--bg); width:48px; height:48px; border-radius:50%;
+  font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:none;
+  margin:0 4px;
+}
+[data-theme="hc"] #teleGroup #teleBtn{color:#000;}
+#teleGroup .teleStep{
+  border:none; background:var(--accent); color:var(--bg); width:42px; height:42px; border-radius:50%;
+  font-size:1.2rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex:none; margin:0 6px;
+}
+[data-theme="hc"] #teleGroup .teleStep{color:#000;}
+#teleSpeedVal{ font-size:1.05rem; font-weight:700; color:var(--text); min-width:44px; text-align:center; }
+#installBtn{
+  background:var(--accent) !important; color:var(--bg) !important; font-weight:700;
+  padding:9px 18px !important; border-radius:999px;
+}
+[data-theme="hc"] #installBtn{color:#000 !important;}
 </style>
 </head>
 <body data-theme="dark">
-
 <header>
-  <div class="brand"><span class="dot"></span>Aperture</div>
-  <div class="headerbtns">
-    <button class="iconbtn" id="flashBtn" title="Torch" hidden><svg viewBox="0 0 24 24"><path d="M13 2 3 14h8l-1 8 10-12h-8l1-8z"/></svg></button>
-    <button class="iconbtn" id="manualBtn" title="Manual controls"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg></button>
-    <button class="iconbtn" id="themeBtn" title="Theme"><svg id="themeIcon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg></button>
-  </div>
-</header>
-
-<main>
-  <video id="video" autoplay playsinline muted></video>
-  <canvas id="canvas"></canvas>
-  <div class="flash-anim" id="flashAnim"></div>
-  <div class="readout mono" id="readout">f/1.8 · AF</div>
-  <div class="zoom-readout mono" id="zoomReadout">1.0x</div>
-  <div class="focus-ring" id="focusRing"></div>
-  <div class="status" id="status">Requesting camera access…</div>
-</main>
-
-<footer class="controls">
-  <div class="strip" id="strip"></div>
-  <div class="empty-note" id="emptyNote">No shots yet — tap the shutter to capture.</div>
-  <div class="shutter-row">
-    <div class="last-thumb-wrap"><img class="last-thumb" id="lastThumb" hidden alt="Last photo"></div>
-    <button id="shutter" title="Capture"><span class="inner"></span></button>
-    <button class="iconbtn flip-btn" id="flipBtn" title="Switch camera"><svg viewBox="0 0 24 24"><path d="M17 2 21 6l-4 4"/><path d="M3 12v-1a4 4 0 0 1 4-4h14"/><path d="M7 22 3 18l4-4"/><path d="M21 12v1a4 4 0 0 1-4 4H3"/></svg></button>
-  </div>
-</footer>
-
-<div class="site-footer"><div>© <span id="year"></span> Manik Roy. All Rights Reserved.</div></div>
-
-<div class="overlay" id="overlay"></div>
-<div class="panel" id="panel">
-  <div class="panel-head"><span>Manual Controls</span><button id="panelClose"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
-
-  <div class="panel-title">Exposure</div>
-  <div class="panel-row"><div class="lbl"><span>Exposure Comp. (EV)</span><span id="evVal">0</span></div>
-    <input type="range" id="evSlider" min="-2" max="2" step="0.1" value="0"></div>
-  <div class="panel-row"><div class="lbl"><span>Shutter Speed</span><span id="shutterVal">Auto</span></div>
-    <input type="range" id="shutterSlider" disabled></div>
-  <div class="panel-row"><div class="lbl"><span>ISO</span><span id="isoVal">Auto</span></div>
-    <input type="range" id="isoSlider" disabled></div>
-
-  <div class="panel-title">Aperture</div>
-  <div class="panel-row"><div class="lbl"><span>Aperture</span><span id="apertureVal">f/1.8</span></div>
-    <input type="range" id="apertureSlider" disabled></div>
-
-  <div class="panel-title">White Balance</div>
-  <div class="panel-row"><div class="lbl"><span>Mode</span><span></span></div>
-    <select id="wbMode"><option value="continuous">Auto</option><option value="manual">Manual</option></select></div>
-  <div class="panel-row"><div class="lbl"><span>Color Temperature</span><span id="ctVal">Auto</span></div>
-    <input type="range" id="ctSlider" min="2000" max="9000" step="100" disabled></div>
-
-  <div class="panel-title">Image</div>
-  <div class="panel-row"><div class="lbl"><span>Contrast</span><span id="contrastVal">0</span></div>
-    <input type="range" id="contrastSlider" min="-50" max="50" step="1" value="0"></div>
-  <div class="panel-row"><div class="lbl"><span>Sharpness</span><span id="sharpVal">0</span></div>
-    <input type="range" id="sharpSlider" min="0" max="100" step="1" value="0"></div>
-
-  <div class="panel-title">Save Format</div>
-  <div class="chips">
-    <div class="chip active" data-format="jpeg">JPEG</div>
-    <div class="chip" data-format="png">PNG</div>
-    <div class="chip" data-format="raw">RAW*</div>
-  </div>
-  <div class="hint">*Browsers can't access true sensor RAW data. "RAW" saves a full-quality, uncompressed PNG instead of a compressed JPEG.</div>
-
-  <button class="reset-btn" id="resetBtn">Reset to Auto</button>
-</div>
-
-<div class="modal" id="modal">
-  <div class="img-wrap" id="imgWrap">
-    <img id="modalImg" alt="Captured photo">
-    <div class="crop-box" id="cropBox" hidden>
-      <div class="crop-handle" data-c="nw" style="left:0;top:0;"></div>
-      <div class="crop-handle" data-c="ne" style="right:0;top:0;margin-right:-10px;"></div>
-      <div class="crop-handle" data-c="sw" style="left:0;bottom:0;margin-bottom:-10px;"></div>
-      <div class="crop-handle" data-c="se" style="right:0;bottom:0;margin-right:-10px;margin-bottom:-10px;"></div>
+  <h1 id="title">হনূমা</h1>
+  <div class="subtitle" id="subtitle">হনুমান চালিসা</div>
+  <div class="divider"></div>
+  <div class="controls">
+    <div class="group" id="langGroup">
+      <button data-lang="hi">हिंदी</button>
+      <button data-lang="en">English</button>
+      <button data-lang="bn" class="active">বাংলা</button>
+    </div>
+    <div class="group" id="themeGroup">
+      <button data-theme="light">Light</button>
+      <button data-theme="dark" class="active">Dark</button>
+      <button data-theme="oled">OLED</button>
+      <button data-theme="hc">HC</button>
+    </div>
+    <div class="group" id="sizeGroup">
+      <button class="sizeBtn" data-step="-1" aria-label="Decrease text size">A−</button>
+      <button class="sizeBtn" data-step="1" aria-label="Increase text size">A+</button>
+    </div>
+    <div class="group" id="speakGroup">
+      <button id="speakBtn" aria-label="Speak mantra">🔊</button>
+    </div>
+    <div style="flex-basis:100%; height:0;"></div>
+    <div class="group" id="teleGroup">
+      <button id="teleBtn" aria-label="Toggle teleprompter">▶</button>
+      <button class="teleStep" data-step="-0.1" aria-label="Decrease scroll speed">−</button>
+      <span id="teleSpeedVal">1.0</span>
+      <button class="teleStep" data-step="0.1" aria-label="Increase scroll speed">+</button>
+    </div>
+    <div class="group" id="installGroup" style="display:none;">
+      <button id="installBtn">⬇ Install App</button>
     </div>
   </div>
-  <div class="row" id="modalRow">
-    <a id="downloadLink" class="primary" download="aperture-photo.jpg">Download</a>
-    <button id="cropBtn">Crop</button>
-    <button class="del" id="deleteBtn">Delete</button>
-    <button id="closeModal">Close</button>
-  </div>
-  <div class="row" id="cropRow" hidden>
-    <button class="primary" id="applyCrop">Apply Crop</button>
-    <button id="cancelCrop">Cancel</button>
-  </div>
-</div>
-<canvas id="cropCanvas"></canvas>
-
+</header>
+<main id="main"></main>
+<footer>
+  <div>© <span id="year"></span> <strong>Manik Roy</strong>. All Rights Reserved.</div>
+</footer>
 <script>
-(function(){
-  document.getElementById('year').textContent = new Date().getFullYear();
+const DATA = {
+  hi: {
+    d1: "श्रीगुरु चरन सरोज रज निज मनु मुकुरु सुधारि। बरनउँ रघुबर बिमल जसु जो दायकु फल चारि॥",
+    d2: "बुद्धिहीन तनु जानिके सुमिरौं पवन-कुमार। बल बुद्धि विद्या देहु मोहिं हरहु कलेश विकार॥",
+    c: ["जय हनुमान ज्ञान गुन सागर। जय कपीस तिहुँ लोक उजागर॥",
+        "राम दूत अतुलित बल धामा। अंजनि-पुत्र पवनसुत नामा॥",
+        "महाबीर बिक्रम बजरंगी। कुमति निवार सुमति के संगी॥",
+        "कंचन बरन बिराज सुबेसा। कानन कुंडल कुंचित केसा॥",
+        "हाथ बज्र औ ध्वजा बिराजै। काँधे मूँज जनेऊ साजै॥",
+        "शंकर सुवन केसरीनंदन। तेज प्रताप महा जग वंदन॥",
+        "विद्यावान गुनी अति चातुर। राम काज करिबे को आतुर॥",
+        "प्रभु चरित्र सुनिबे को रसिया। राम लखन सीता मन बसिया॥",
+        "सूक्ष्म रूप धरि सियहिं दिखावा। बिकट रूप धरि लंक जरावा॥",
+        "भीम रूप धरि असुर सँहारे। रामचंद्र के काज सँवारे॥",
+        "लाय सजीवन लखन जियाये। श्रीरघुबीर हरषि उर लाये॥",
+        "रघुपति कीन्ही बहुत बड़ाई। तुम मम प्रिय भरतहि सम भाई॥",
+        "सहस बदन तुम्हरो जस गावैं। अस कहि श्रीपति कंठ लगावैं॥",
+        "सनकादिक ब्रह्मादि मुनीसा। नारद सारद सहित अहीसा॥",
+        "जम कुबेर दिगपाल जहाँ ते। कबि कोबिद कहि सके कहाँ ते॥",
+        "तुम उपकार सुग्रीवहिं कीन्हा। राम मिलाय राज पद दीन्हा॥",
+        "तुम्हरो मंत्र बिभीषन माना। लंकेस्वर भए सब जग जाना॥",
+        "जुग सहस्र जोजन पर भानू। लील्यो ताहि मधुर फल जानू॥",
+        "प्रभु मुद्रिका मेलि मुख माहीं। जलधि लाँघि गये अचरज नाहीं॥",
+        "दुर्गम काज जगत के जेते। सुगम अनुग्रह तुम्हरे तेते॥",
+        "राम दुआरे तुम रखवारे। होत न आज्ञा बिनु पैसारे॥",
+        "सब सुख लहै तुम्हारी सरना। तुम रच्छक काहू को डरना॥",
+        "आपन तेज सम्हारो आपै। तीनों लोक हाँक तें काँपै॥",
+        "भूत पिसाच निकट नहिं आवै। महाबीर जब नाम सुनावै॥",
+        "नासै रोग हरै सब पीरा। जपत निरंतर हनुमत बीरा॥",
+        "संकट तें हनुमान छुड़ावै। मन क्रम बचन ध्यान जो लावै॥",
+        "सब पर राम तपस्वी राजा। तिन के काज सकल तुम साजा॥",
+        "और मनोरथ जो कोई लावै। सोइ अमित जीवन फल पावै॥",
+        "चारों जुग परताप तुम्हारा। है परसिद्ध जगत उजियारा॥",
+        "साधु संत के तुम रखवारे। असुर निकंदन राम दुलारे॥",
+        "अष्ट सिद्धि नौ निधि के दाता। अस बर दीन जानकी माता॥",
+        "राम रसायन तुम्हरे पासा। सदा रहो रघुपति के दासा॥",
+        "तुम्हरे भजन राम को पावै। जनम जनम के दुख बिसरावै॥",
+        "अंतकाल रघुबर पुर जाई। जहाँ जन्म हरिभक्त कहाई॥",
+        "और देवता चित्त न धरई। हनुमत सेइ सर्ब सुख करई॥",
+        "संकट कटै मिटै सब पीरा। जो सुमिरै हनुमत बलबीरा॥",
+        "जय जय जय हनुमान गोसाईं। कृपा करहु गुरुदेव की नाईं॥",
+        "जो सत बार पाठ कर कोई। छूटहि बंदि महा सुख होई॥",
+        "जो यह पढ़ै हनुमान चालीसा। होय सिद्धि साखी गौरीसा॥",
+        "तुलसीदास सदा हरि चेरा। कीजै नाथ हृदय महँ डेरा॥"],
+    df: "पवनतनय संकट हरन मंगल मूरति रूप। राम लखन सीता सहित हृदय बसहु सुर भूप॥"
+  },
+  en: {
+    d1: "Shri Guru charan saroj raj, nija manu mukuru sudhari। Baranau Raghubar bimal jasu, jo dayaku phal chari॥",
+    d2: "Buddhiheen tanu janike, sumirow Pavan-kumar। Bal buddhi vidya dehu mohi, harahu kalesh vikar॥",
+    c: ["Jai Hanuman gyan gun sagar। Jai Kapis tihun lok ujagar॥",
+        "Ram doot atulit bal dhama। Anjani-putra Pavansut nama॥",
+        "Mahabir Bikram Bajrangi। Kumati nivar sumati ke sangi॥",
+        "Kanchan baran biraj subesa। Kanan kundal kunchit kesa॥",
+        "Hath bajra au dhwaja biraje। Kandhe moonj janeu saje॥",
+        "Shankar suvan Kesari nandan। Tej pratap maha jag vandan॥",
+        "Vidyavan guni ati chatur। Ram kaj karibe ko atur॥",
+        "Prabhu charitra sunibe ko rasiya। Ram Lakhan Sita man basiya॥",
+        "Sukshma roop dhari Siyahi dikhava। Bikat roop dhari Lank jarava॥",
+        "Bhim roop dhari asur sanhare। Ramchandra ke kaj sanvare॥",
+        "Laye Sanjivan Lakhan jiyaye। Shri Raghubir harashi ur laye॥",
+        "Raghupati kinhi bahut baraai। Tum mam priya Bharat-hi sam bhai॥",
+        "Sahas badan tumharo jas gavai। As kahi Shripati kanth lagavai॥",
+        "Sanakadik Brahmadi Munisa। Narad Sarad sahit Ahisa॥",
+        "Jam Kuber digpal jahan te। Kabi kobid kahi sake kahan te॥",
+        "Tum upkar Sugrivahin kinha। Ram milaye rajpad dinha॥",
+        "Tumharo mantra Vibhishan mana। Lankeshwar bhaye sab jag jana॥",
+        "Jug sahasra jojan par Bhanu। Leelyo tahi madhur phal janu॥",
+        "Prabhu mudrika meli mukh mahi। Jaladhi langhi gaye achraj nahi॥",
+        "Durgam kaj jagat ke jete। Sugam anugrah tumhre tete॥",
+        "Ram duare tum rakhware। Hot na agya binu paisare॥",
+        "Sab sukh lahai tumhari sarna। Tum rachchak kahu ko darna॥",
+        "Apan tej samharo apai। Teenon lok hank te kanpai॥",
+        "Bhoot pisach nikat nahi aavai। Mahabir jab naam sunavai॥",
+        "Nase rog harai sab peera। Japat nirantar Hanumat beera॥",
+        "Sankat te Hanuman chhudavai। Man kram bachan dhyan jo lavai॥",
+        "Sab par Ram tapasvi raja। Tin ke kaj sakal tum saja॥",
+        "Aur manorath jo koi lavai। Soi amit jeevan phal pavai॥",
+        "Charon jug paratap tumhara। Hai parasiddha jagat ujiyara॥",
+        "Sadhu sant ke tum rakhware। Asur nikandan Ram dulare॥",
+        "Ashta siddhi nau nidhi ke data। As bar deen Janki mata॥",
+        "Ram rasayan tumhare pasa। Sada raho Raghupati ke dasa॥",
+        "Tumhare bhajan Ram ko pavai। Janam janam ke dukh bisravai॥",
+        "Antkal Raghubar pur jai। Jahan janma Haribhakt kahai॥",
+        "Aur devta chitt na dharai। Hanumat sei sarba sukh karai॥",
+        "Sankat katai mitai sab peera। Jo sumirai Hanumat balbeera॥",
+        "Jai jai jai Hanuman gosai। Kripa karahu gurudev ki nai॥",
+        "Jo sat baar path kar koi। Chhutahi bandi maha sukh hoi॥",
+        "Jo yah padhai Hanuman Chalisa। Hoye siddhi sakhi Gaurisa॥",
+        "Tulsidas sada Hari chera। Keeje Nath hriday mahn dera॥"],
+    df: "Pavantanay sankat haran, mangal murati roop। Ram Lakhan Sita sahit, hriday basahu sur bhoop॥"
+  },
+  bn: {
+    d1: "শ্রীগুরু চরণ সরোজ রজ, নিজ মনু মুকুরু সুধারি। বরনউঁ রঘুবর বিমল জসু, জো দায়কু ফল চারি॥",
+    d2: "বুদ্ধিহীন তনু জানিকে, সুমিরৌঁ পবন-কুমার। বল বুদ্ধি বিদ্যা দেহু মোহিঁ, হরহু কলেশ বিকার॥",
+    c: ["জয় হনুমান জ্ঞান গুণ সাগর। জয় কপীস তিহুঁ লোক উজাগর॥",
+        "রাম দূত অতুলিত বল ধামা। অঞ্জনি-পুত্র পবনসুত নামা॥",
+        "মহাবীর বিক্রম বজরঙ্গী। কুমতি নিবার সুমতি কে সঙ্গী॥",
+        "কঞ্চন বরন বিরাজ সুবেসা। কানন কুণ্ডল কুঞ্চিত কেসা॥",
+        "হাত বজ্র ঔ ধ্বজা বিরাজৈ। কাঁধে মূঁজ জনেউ সাজৈ॥",
+        "শঙ্কর সুবন কেসরীনন্দন। তেজ প্রতাপ মহা জগ বন্দন॥",
+        "বিদ্যাবান গুণী অতি চাতুর। রাম কাজ করিবে কো আতুর॥",
+        "প্রভু চরিত্র সুনিবে কো রসিয়া। রাম লখন সীতা মন বসিয়া॥",
+        "সূক্ষ্ম রূপ ধরি সিয়হিঁ দিখাওয়া। বিকট রূপ ধরি লঙ্ক জরাওয়া॥",
+        "ভীম রূপ ধরি অসুর সংহারে। রামচন্দ্র কে কাজ সঁওয়ারে॥",
+        "লায় সজীবন লখন জিয়ায়ে। শ্রীরঘুবীর হরষি উর লায়ে॥",
+        "রঘুপতি কীন্হী বহুত বড়াই। তুম মম প্রিয় ভরতহি সম ভাই॥",
+        "সহস বদন তুমহারে জস গাবৈঁ। অস কহি শ্রীপতি কণ্ঠ লগাবৈঁ॥",
+        "সনকাদিক ব্রহ্মাদি মুনীসা। নারদ সারদ সহিত অহীসা॥",
+        "জম কুবের দিগপাল জহাঁ তে। কবি কোবিদ কহি সকে কহাঁ তে॥",
+        "তুম উপকার সুগ্রীবহিঁ কীন্হা। রাম মিলায় রাজ পদ দীন্হা॥",
+        "তুমহারে মন্ত্র বিভীষণ মানা। লঙ্কেস্বর ভয়ে সব জগ জানা॥",
+        "যুগ সহস্র যোজন পর ভানূ। লীল্যো তাহি মধুর ফল জানূ॥",
+        "প্রভু মুদ্রিকা মেলি মুখ মাহীঁ। জলধি লাঁঘি গয়ে অচরজ নাহীঁ॥",
+        "দুর্গম কাজ জগৎ কে জেতে। সুগম অনুগ্রহ তুম্হরে তেতে॥",
+        "রাম দুআরে তুম রখওয়ারে। হোত ন আজ্ঞা বিনু পৈসারে॥",
+        "সব সুখ লহৈ তুমহারি সরনা। তুম রচ্ছক কাহূ কো ডরনা॥",
+        "আপন তেজ সমহারে আপৈ। তীনোঁ লোক হাঁক তেঁ কাঁপৈ॥",
+        "ভূত পিশাচ নিকট নহিঁ আবৈ। মহাবীর জব নাম সুনাবৈ॥",
+        "নাসৈ রোগ হরৈ সব পীরা। জপত নিরন্তর হনুমত বীরা॥",
+        "সংকট তেঁ হনুমান ছুড়াবৈ। মন ক্রম বচন ধ্যান জো লাবৈ॥",
+        "সব পর রাম তপস্বী রাজা। তিন কে কাজ সকল তুম সাজা॥",
+        "ঔর মনোরথ জো কোই লাবৈ। সোই অমিত জীবন ফল পাবৈ॥",
+        "চারোঁ যুগ পরতাপ তুম্হারা। হৈ পরসিদ্ধ জগৎ উজিয়ারা॥",
+        "সাধু সন্ত কে তুম রখওয়ারে। অসুর নিকন্দন রাম দুলারে॥",
+        "অষ্ট সিদ্ধি নৌ নিধি কে দাতা। অস বর দীন জানকী মাতা॥",
+        "রাম রসায়ন তুম্হরে পাসা। সদা রহো রঘুপতি কে দাসা॥",
+        "তুম্হরে ভজন রাম কো পাবৈ। জনম জনম কে দুখ বিসরাবৈ॥",
+        "অন্তকাল রঘুবর পুর জাই। জহাঁ জন্ম হরিভক্ত কহাই॥",
+        "ঔর দেবতা চিত্ত ন ধরই। হনুমত সেই সর্ব সুখ করই॥",
+        "সংকট কটৈ মিটৈ সব পীরা। জো সুমিরৈ হনুমত বলবীরা॥",
+        "জয় জয় জয় হনুমান গোসাইঁ। কৃপা করহু গুরুদেব কী নাইঁ॥",
+        "জো সত বার পাঠ কর কোই। ছূটহি বন্দি মহা সুখ হোই॥",
+        "জো যহ পড়ে হনুমান চালীসা। হোয় সিদ্ধি সাখী গৌরীসা॥",
+        "তুলসীদাস সদা হরি চেরা। কীজৈ নাথ হৃদয় মহঁ ডেরা॥"],
+    df: "পবনতনয় সংকট হরন মঙ্গল মূরতি রূপ। রাম লখন সীতা সহিত হৃদয় বসহু সুর ভূপ॥"
+  }
+};
+const TITLES = { hi:["हनुमान चालीसा","श्री हनुमान चालीसा"], en:["Hanuman Chalisa","Sri Hanuman Chalisa"], bn:["হনুমান চালিসা","শ্রী হনুমান চালিসা"] };
+const APP_NAME = { hi:"हनुमा", en:"Hanuma", bn:"হনূমা" };
 
-  // ---------- Theme cycle ----------
-  var themes = ['dark','light','oled','hc'];
-  var themeIconPaths = {
-    dark:'<path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/>',
-    light:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-    oled:'<circle cx="12" cy="12" r="9" stroke-width="1.8"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/>',
-    hc:'<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/>'
+let lang = "bn";
+
+function render(){
+  const d = DATA[lang];
+  const main = document.getElementById("main");
+  let html = `<div class="doha verse">${d.d1}</div><div class="doha verse">${d.d2}</div><ol class="chaupai-list">`;
+  d.c.forEach(v => html += `<li class="verse">${v}</li>`);
+  html += `</ol><div class="doha verse">${d.df}</div>`;
+  main.innerHTML = html;
+  document.getElementById("title").textContent = APP_NAME[lang];
+  document.getElementById("subtitle").textContent = TITLES[lang][0];
+  document.documentElement.lang = lang;
+}
+
+document.getElementById("langGroup").addEventListener("click", e => {
+  const btn = e.target.closest("button");
+  if(!btn) return;
+  lang = btn.dataset.lang;
+  [...e.currentTarget.children].forEach(b => b.classList.toggle("active", b===btn));
+  if("speechSynthesis" in window) stopSpeak();
+  render();
+});
+
+document.getElementById("themeGroup").addEventListener("click", e => {
+  const btn = e.target.closest("button");
+  if(!btn) return;
+  document.body.setAttribute("data-theme", btn.dataset.theme);
+  [...e.currentTarget.children].forEach(b => b.classList.toggle("active", b===btn));
+});
+
+let verseScale = 1;
+document.getElementById("sizeGroup").addEventListener("click", e => {
+  const btn = e.target.closest("button");
+  if(!btn) return;
+  verseScale = Math.min(1.6, Math.max(0.75, verseScale + parseInt(btn.dataset.step) * 0.1));
+  document.documentElement.style.setProperty("--verse-scale", verseScale);
+});
+
+document.getElementById("year").textContent = new Date().getFullYear();
+render();
+
+let teleRAF = null, teleSpeed = 1;
+const teleBtn = document.getElementById("teleBtn");
+
+function teleStep(){
+  window.scrollBy(0, teleSpeed);
+  const atBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 2;
+  if(atBottom){ stopTele(); return; }
+  teleRAF = requestAnimationFrame(teleStep);
+}
+function startTele(){ teleBtn.textContent = "⏸"; teleRAF = requestAnimationFrame(teleStep); }
+function stopTele(){ teleBtn.textContent = "▶"; if(teleRAF) cancelAnimationFrame(teleRAF); teleRAF = null; }
+
+teleBtn.addEventListener("click", () => { teleRAF ? stopTele() : startTele(); });
+const teleSpeedVal = document.getElementById("teleSpeedVal");
+document.querySelectorAll(".teleStep").forEach(btn => {
+  btn.addEventListener("click", () => {
+    teleSpeed = Math.min(3, Math.max(0.3, Math.round((teleSpeed + parseFloat(btn.dataset.step)) * 10) / 10));
+    teleSpeedVal.textContent = teleSpeed.toFixed(1);
+  });
+});
+["wheel","touchstart"].forEach(evt => window.addEventListener(evt, e => {
+  if(teleRAF && !e.target.closest("#teleGroup")) stopTele();
+}, {passive:true}));
+
+const speakBtn = document.getElementById("speakBtn");
+const voiceLang = { hi:"hi-IN", en:"en-IN", bn:"bn-IN" };
+let speaking = false;
+const speechOK = ("speechSynthesis" in window) && (typeof SpeechSynthesisUtterance !== "undefined");
+if(!speechOK) speakBtn.style.opacity = "0.6";
+
+let speechQueue = [];
+let queueIndex = 0;
+let currentUtterance = null;   // keep a persistent reference so Chrome doesn't garbage-collect mid-speech
+let keepAliveTimer = null;
+
+function pickVoice(langCode){
+  const voices = speechSynthesis.getVoices();
+  return voices.find(v => v.lang === langCode)
+      || voices.find(v => v.lang && v.lang.startsWith(langCode.split("-")[0]))
+      || null;
+}
+
+function speakNextChunk(){
+  if(queueIndex >= speechQueue.length){ stopSpeak(); return; }
+  const text = speechQueue[queueIndex];
+  const utter = new SpeechSynthesisUtterance(text);
+  const langCode = voiceLang[lang];
+  utter.lang = langCode;
+  const voice = pickVoice(langCode);
+  if(voice) utter.voice = voice;
+  utter.rate = 0.85;
+  utter.onend = () => { queueIndex++; speakNextChunk(); };
+  utter.onerror = () => {
+    if(queueIndex === 0){
+      stopSpeak();
+      alert("Couldn't start speech. Your browser may not have a voice installed for this language.");
+    } else {
+      queueIndex++; speakNextChunk();
+    }
   };
-  var themeBtn = document.getElementById('themeBtn'), themeIcon = document.getElementById('themeIcon');
-  applyTheme(localStorage.getItem('aperture-theme') || 'dark');
-  themeBtn.addEventListener('click', function(){
-    var i = (themes.indexOf(document.body.getAttribute('data-theme')) + 1) % themes.length;
-    applyTheme(themes[i]);
-  });
-  function applyTheme(t){
-    document.body.setAttribute('data-theme', t);
-    themeIcon.innerHTML = themeIconPaths[t];
-    localStorage.setItem('aperture-theme', t);
+  currentUtterance = utter;              // persistent reference, prevents silent GC failure
+  speechSynthesis.speak(utter);
+}
+
+function stopSpeak(){
+  speechSynthesis.cancel();
+  speaking = false;
+  currentUtterance = null;
+  if(keepAliveTimer){ clearInterval(keepAliveTimer); keepAliveTimer = null; }
+  speakBtn.textContent = "🔊";
+}
+
+function startSpeak(){
+  const d = DATA[lang];
+  speechQueue = [d.d1, d.d2, ...d.c, d.df];
+  queueIndex = 0;
+  speaking = true;
+  speakBtn.textContent = "⏸";
+  speakNextChunk();
+  // Chrome silently halts long-running speech after ~15s unless nudged; this keeps it alive
+  keepAliveTimer = setInterval(() => {
+    if(speechSynthesis.speaking){ speechSynthesis.pause(); speechSynthesis.resume(); }
+  }, 10000);
+}
+
+speakBtn.addEventListener("click", () => {
+  if(!speechOK){ alert("Speech isn't supported in this browser. Please open this file in Chrome, Safari or Edge."); return; }
+  if(speaking){ stopSpeak(); return; }
+  try{ startSpeak(); }
+  catch(err){
+    console.error("Speech error:", err);
+    alert("Speech playback failed to start.");
   }
+});
 
-  // ---------- Elements ----------
-  var video = document.getElementById('video'), canvas = document.getElementById('canvas');
-  var status = document.getElementById('status'), readout = document.getElementById('readout');
-  var flashBtn = document.getElementById('flashBtn'), flipBtn = document.getElementById('flipBtn');
-  var shutterBtn = document.getElementById('shutter'), flashAnim = document.getElementById('flashAnim');
-  var focusRing = document.getElementById('focusRing');
+if(speechOK && speechSynthesis.getVoices().length === 0){
+  speechSynthesis.addEventListener("voiceschanged", () => {}, { once:true });
+}
 
-  var facingMode = 'environment', currentStream = null, torchOn = false, focusSupported = false, caps = {};
-  var pinch = { active:false, startDist:0, startZoom:1, zoom:1, cssZoom:1, zoomSupported:false, midX:0, midY:0 };
-  var zoomReadout = document.getElementById('zoomReadout');
-  var photos = [];
-  try{ photos = JSON.parse(sessionStorage.getItem('aperture-photos') || '[]'); }catch(e){ photos = []; }
-  var state = { ev:0, contrast:0, sharpness:0, format:'jpeg' };
-
-  function startCamera(){
-    if(currentStream){ currentStream.getTracks().forEach(function(t){t.stop();}); }
-    status.textContent = 'Requesting camera access…'; status.classList.remove('hidden');
-    flashBtn.hidden = true;
-    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-      status.textContent = 'This browser does not support camera access.'; return;
-    }
-    navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:facingMode} }, audio:false }).then(function(stream){
-      currentStream = stream; video.srcObject = stream; status.classList.add('hidden');
-      var track = stream.getVideoTracks()[0];
-      caps = track.getCapabilities ? track.getCapabilities() : {};
-      var settings = track.getSettings ? track.getSettings() : {};
-      flashBtn.hidden = !(caps.torch);
-      focusSupported = !!(caps.focusMode && caps.focusMode.length);
-      pinch.zoomSupported = !!(caps.zoom && caps.zoom.max);
-      pinch.zoom = pinch.zoomSupported ? (settings.zoom || caps.zoom.min) : 1;
-      pinch.cssZoom = 1; video.style.transform = 'scale(1)'; video.style.transformOrigin = '50% 50%';
-      if(focusSupported && caps.focusMode.indexOf('continuous') > -1){
-        track.applyConstraints({ advanced:[{ focusMode:'continuous' }] }).catch(function(){});
-      }
-      readout.textContent = 'f/1.8 · AF';
-      setupManualControls(caps, settings);
-    }).catch(function(err){
-      status.textContent = 'Camera unavailable: ' + (err.message || err.name) + '. Check browser/site permissions (camera needs HTTPS) and try again.';
-      status.classList.remove('hidden');
-    });
-  }
-  startCamera();
-
-  flipBtn.addEventListener('click', function(){ facingMode = facingMode === 'environment' ? 'user' : 'environment'; startCamera(); });
-  flashBtn.addEventListener('click', function(){
-    if(!currentStream) return;
-    var track = currentStream.getVideoTracks()[0]; torchOn = !torchOn;
-    track.applyConstraints({ advanced:[{ torch: torchOn }] }).catch(function(){ torchOn = !torchOn; });
-    flashBtn.classList.toggle('active', torchOn);
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
   });
+}
 
-  function doFocusAt(clientX, clientY){
-    var rect = video.getBoundingClientRect(), x = clientX - rect.left, y = clientY - rect.top;
-    focusRing.style.left = x + 'px'; focusRing.style.top = y + 'px';
-    focusRing.classList.remove('show'); void focusRing.offsetWidth; focusRing.classList.add('show');
-    readout.textContent = 'f/1.8 · FOCUSING';
-    if(currentStream && focusSupported){
-      var track = currentStream.getVideoTracks()[0];
-      track.applyConstraints({ advanced:[{ focusMode:'single-shot', pointsOfInterest:[{x:x/rect.width, y:y/rect.height}] }] }).catch(function(){});
-    }
-    setTimeout(function(){ readout.textContent = 'f/1.8 · AF'; }, 500);
-  }
-  video.addEventListener('click', function(e){ doFocusAt(e.clientX, e.clientY); });
+let deferredInstall = null;
+const installGroup = document.getElementById("installGroup");
+const installBtn = document.getElementById("installBtn");
 
-  // ---------- Pinch-to-zoom (refocuses at the pinch point on release) ----------
-  function touchDist(a,b){ var dx=a.clientX-b.clientX, dy=a.clientY-b.clientY; return Math.sqrt(dx*dx+dy*dy); }
-  function touchMid(a,b){ return { x:(a.clientX+b.clientX)/2, y:(a.clientY+b.clientY)/2 }; }
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredInstall = e;
+  installGroup.style.display = "flex";
+});
 
-  video.addEventListener('touchstart', function(e){
-    if(e.touches.length === 2){
-      e.preventDefault();
-      pinch.active = true;
-      pinch.startDist = touchDist(e.touches[0], e.touches[1]);
-      pinch.startZoom = pinch.zoomSupported ? pinch.zoom : pinch.cssZoom;
-      var m = touchMid(e.touches[0], e.touches[1]); pinch.midX = m.x; pinch.midY = m.y;
-      zoomReadout.classList.add('show');
-    }
-  }, {passive:false});
+installBtn?.addEventListener("click", async () => {
+  if(!deferredInstall) return;
+  deferredInstall.prompt();
+  await deferredInstall.userChoice;
+  deferredInstall = null;
+  installGroup.style.display = "none";
+});
 
-  video.addEventListener('touchmove', function(e){
-    if(!pinch.active || e.touches.length !== 2) return;
-    e.preventDefault();
-    var ratio = touchDist(e.touches[0], e.touches[1]) / pinch.startDist;
-    var m = touchMid(e.touches[0], e.touches[1]); pinch.midX = m.x; pinch.midY = m.y;
-    if(pinch.zoomSupported){
-      var nz = Math.max(caps.zoom.min, Math.min(caps.zoom.max, pinch.startZoom * ratio));
-      pinch.zoom = nz; applyAdv({ zoom: nz });
-      zoomReadout.textContent = nz.toFixed(1) + 'x';
-    } else {
-      var nz2 = Math.max(1, Math.min(3, pinch.startZoom * ratio));
-      pinch.cssZoom = nz2;
-      var rect = video.getBoundingClientRect();
-      video.style.transformOrigin = ((pinch.midX-rect.left)/rect.width*100) + '% ' + ((pinch.midY-rect.top)/rect.height*100) + '%';
-      video.style.transform = 'scale(' + nz2 + ')';
-      zoomReadout.textContent = nz2.toFixed(1) + 'x';
-    }
-  }, {passive:false});
-
-  video.addEventListener('touchend', function(e){
-    if(pinch.active && e.touches.length < 2){
-      pinch.active = false;
-      zoomReadout.classList.remove('show');
-      doFocusAt(pinch.midX, pinch.midY);
-    }
-  });
-
-  // ---------- Manual controls panel ----------
-  var manualBtn = document.getElementById('manualBtn'), panel = document.getElementById('panel'), overlay = document.getElementById('overlay');
-  manualBtn.addEventListener('click', function(){ panel.classList.add('open'); overlay.classList.add('show'); });
-  function closePanel(){ panel.classList.remove('open'); overlay.classList.remove('show'); }
-  document.getElementById('panelClose').addEventListener('click', closePanel);
-  overlay.addEventListener('click', closePanel);
-
-  var evSlider = document.getElementById('evSlider'), evVal = document.getElementById('evVal');
-  var shutterSlider = document.getElementById('shutterSlider'), shutterVal = document.getElementById('shutterVal');
-  var isoSlider = document.getElementById('isoSlider'), isoVal = document.getElementById('isoVal');
-  var apertureSlider = document.getElementById('apertureSlider'), apertureVal = document.getElementById('apertureVal');
-  var wbMode = document.getElementById('wbMode'), ctSlider = document.getElementById('ctSlider'), ctVal = document.getElementById('ctVal');
-  var contrastSlider = document.getElementById('contrastSlider'), contrastVal = document.getElementById('contrastVal');
-  var sharpSlider = document.getElementById('sharpSlider'), sharpVal = document.getElementById('sharpVal');
-
-  function setupManualControls(caps, settings){
-    bindCapRange(evSlider, evVal, caps.exposureCompensation, settings.exposureCompensation, '');
-    bindCapRange(shutterSlider, shutterVal, caps.exposureTime, settings.exposureTime, 'µs');
-    bindCapRange(isoSlider, isoVal, caps.iso, settings.iso, '');
-    if(caps.aperture && caps.aperture.max){
-      bindCapRange(apertureSlider, apertureVal, caps.aperture, settings.aperture, '', 'f/');
-    } else {
-      apertureSlider.disabled = true;
-      apertureVal.textContent = settings.aperture ? 'f/' + settings.aperture + ' (fixed)' : 'f/1.8 (fixed)';
-    }
-    var wbSupported = caps.whiteBalanceMode && caps.whiteBalanceMode.indexOf('manual') > -1;
-    wbMode.disabled = !wbSupported;
-    ctSlider.disabled = true;
-    if(caps.colorTemperature){ ctSlider.min = caps.colorTemperature.min; ctSlider.max = caps.colorTemperature.max; ctSlider.step = caps.colorTemperature.step || 100; }
-  }
-  function bindCapRange(slider, label, cap, current, unit, prefix){
-    if(cap && cap.max !== undefined){
-      slider.disabled = false; slider.min = cap.min; slider.max = cap.max; slider.step = cap.step || 1;
-      slider.value = current !== undefined ? current : (cap.min + cap.max) / 2;
-      label.textContent = (prefix||'') + slider.value + unit;
-    } else { slider.disabled = true; label.textContent = 'Not supported'; }
-  }
-  function applyAdv(obj){ if(currentStream){ currentStream.getVideoTracks()[0].applyConstraints({advanced:[obj]}).catch(function(){}); } }
-
-  evSlider.addEventListener('input', function(){ evVal.textContent = evSlider.value; applyAdv({exposureCompensation: parseFloat(evSlider.value)}); });
-  shutterSlider.addEventListener('input', function(){ shutterVal.textContent = shutterSlider.value + 'µs'; applyAdv({exposureMode:'manual', exposureTime: parseFloat(shutterSlider.value)}); });
-  isoSlider.addEventListener('input', function(){ isoVal.textContent = isoSlider.value; applyAdv({exposureMode:'manual', iso: parseFloat(isoSlider.value)}); });
-  apertureSlider.addEventListener('input', function(){ apertureVal.textContent = 'f/' + apertureSlider.value; applyAdv({aperture: parseFloat(apertureSlider.value)}); });
-  wbMode.addEventListener('change', function(){
-    var manual = wbMode.value === 'manual'; ctSlider.disabled = !manual;
-    applyAdv({whiteBalanceMode: wbMode.value});
-    ctVal.textContent = manual ? ctSlider.value : 'Auto';
-  });
-  ctSlider.addEventListener('input', function(){ ctVal.textContent = ctSlider.value + 'K'; applyAdv({colorTemperature: parseFloat(ctSlider.value)}); });
-
-  function updateVideoFilter(){ video.style.filter = 'contrast(' + (100 + parseInt(contrastSlider.value)) + '%)'; }
-  contrastSlider.addEventListener('input', function(){ state.contrast = parseInt(contrastSlider.value); contrastVal.textContent = state.contrast; updateVideoFilter(); });
-  sharpSlider.addEventListener('input', function(){ state.sharpness = parseInt(sharpSlider.value); sharpVal.textContent = state.sharpness; });
-
-  document.querySelectorAll('.chip').forEach(function(chip){
-    chip.addEventListener('click', function(){
-      document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
-      chip.classList.add('active'); state.format = chip.getAttribute('data-format');
-    });
-  });
-
-  document.getElementById('resetBtn').addEventListener('click', function(){
-    evSlider.value = 0; evVal.textContent = '0';
-    wbMode.value = 'continuous'; ctSlider.disabled = true; ctVal.textContent = 'Auto';
-    contrastSlider.value = 0; state.contrast = 0; contrastVal.textContent = '0'; updateVideoFilter();
-    sharpSlider.value = 0; state.sharpness = 0; sharpVal.textContent = '0';
-    applyAdv({exposureMode:'continuous', whiteBalanceMode:'continuous', exposureCompensation:0});
-    if(currentStream){
-      var t = currentStream.getVideoTracks()[0];
-      setupManualControls(caps, t.getSettings ? t.getSettings() : {});
-    }
-  });
-
-  // ---------- Capture ----------
-  shutterBtn.addEventListener('click', capture);
-  function sharpen(ctx, w, h, amount){
-    var src = ctx.getImageData(0,0,w,h), d = src.data, out = ctx.createImageData(w,h), o = out.data;
-    var k = [0,-1,0,-1,5,-1,0,-1,0], a = amount / 100;
-    for(var y=0;y<h;y++){ for(var x=0;x<w;x++){
-      var i = (y*w+x)*4;
-      if(x===0||y===0||x===w-1||y===h-1){ o[i]=d[i]; o[i+1]=d[i+1]; o[i+2]=d[i+2]; o[i+3]=d[i+3]; continue; }
-      for(var c=0;c<3;c++){
-        var sum=0, ki=0;
-        for(var ky=-1;ky<=1;ky++){ for(var kx=-1;kx<=1;kx++){ sum += d[((y+ky)*w+(x+kx))*4+c]*k[ki++]; } }
-        o[i+c] = Math.max(0, Math.min(255, d[i+c]*(1-a) + sum*a));
-      }
-      o[i+3] = d[i+3];
-    }}
-    ctx.putImageData(out,0,0);
-  }
-  function mimeFor(fmt){ return fmt === 'jpeg' ? 'image/jpeg' : 'image/png'; }
-  function extFor(fmt){ return fmt === 'jpeg' ? 'jpg' : 'png'; }
-
-  function capture(){
-    if(!currentStream) return;
-    var w = video.videoWidth, h = video.videoHeight; if(!w || !h) return;
-    canvas.width = w; canvas.height = h;
-    var ctx = canvas.getContext('2d');
-    ctx.filter = 'contrast(' + (100 + state.contrast) + '%)';
-    if(facingMode === 'user'){ ctx.translate(w,0); ctx.scale(-1,1); }
-    ctx.drawImage(video, 0, 0, w, h);
-    ctx.setTransform(1,0,0,1,0,0); ctx.filter = 'none';
-    if(state.sharpness > 0) sharpen(ctx, w, h, state.sharpness);
-    var fmt = state.format === 'raw' ? 'png' : state.format;
-    var dataUrl = canvas.toDataURL(mimeFor(fmt), 0.92);
-    photos.unshift(dataUrl); if(photos.length > 12) photos.pop();
-    persistAndRender();
-    flashAnim.classList.remove('on'); void flashAnim.offsetWidth; flashAnim.classList.add('on');
-    readout.textContent = 'f/1.8 · CAPTURED';
-    setTimeout(function(){ readout.textContent = 'f/1.8 · AF'; }, 900);
-  }
-
-  function persistAndRender(){ try{ sessionStorage.setItem('aperture-photos', JSON.stringify(photos)); }catch(e){} renderStrip(); }
-
-  var strip = document.getElementById('strip'), emptyNote = document.getElementById('emptyNote'), lastThumb = document.getElementById('lastThumb');
-  function renderStrip(){
-    strip.innerHTML = ''; emptyNote.hidden = photos.length > 0; lastThumb.hidden = photos.length === 0;
-    if(photos.length){ lastThumb.src = photos[0]; }
-    photos.forEach(function(src, idx){
-      var img = document.createElement('img'); img.className = 'thumb'; img.src = src; img.alt = 'Photo ' + (idx+1);
-      img.addEventListener('click', function(){ openModal(idx); }); strip.appendChild(img);
-    });
-  }
-  lastThumb.addEventListener('click', function(){ if(photos.length) openModal(0); });
-
-  // ---------- Modal / gallery / crop ----------
-  var modal = document.getElementById('modal'), modalImg = document.getElementById('modalImg'), imgWrap = document.getElementById('imgWrap');
-  var downloadLink = document.getElementById('downloadLink'), deleteBtn = document.getElementById('deleteBtn');
-  var modalRow = document.getElementById('modalRow'), cropRow = document.getElementById('cropRow'), cropBox = document.getElementById('cropBox');
-  var activeIdx = -1, cropping = false, box = {l:10,t:10,w:80,h:80};
-
-  function openModal(idx){
-    activeIdx = idx; modalImg.src = photos[idx];
-    var fmt = state.format === 'raw' ? 'png' : state.format;
-    downloadLink.href = photos[idx]; downloadLink.download = 'aperture-' + Date.now() + '.' + extFor(fmt);
-    modal.classList.add('open'); exitCrop();
-  }
-  document.getElementById('closeModal').addEventListener('click', function(){ modal.classList.remove('open'); exitCrop(); });
-  deleteBtn.addEventListener('click', function(){ if(activeIdx > -1){ photos.splice(activeIdx,1); persistAndRender(); } modal.classList.remove('open'); exitCrop(); });
-
-  function exitCrop(){ cropping = false; cropBox.hidden = true; modalRow.hidden = false; cropRow.hidden = true; }
-  function drawBox(){ cropBox.style.left = box.l+'%'; cropBox.style.top = box.t+'%'; cropBox.style.width = box.w+'%'; cropBox.style.height = box.h+'%'; }
-
-  document.getElementById('cropBtn').addEventListener('click', function(){
-    cropping = true; box = {l:10,t:10,w:80,h:80}; drawBox();
-    cropBox.hidden = false; modalRow.hidden = true; cropRow.hidden = false;
-  });
-  document.getElementById('cancelCrop').addEventListener('click', exitCrop);
-
-  function pct(clientX, clientY){
-    var r = imgWrap.getBoundingClientRect();
-    return { x: Math.max(0, Math.min(100, (clientX - r.left) / r.width * 100)), y: Math.max(0, Math.min(100, (clientY - r.top) / r.height * 100)) };
-  }
-  cropBox.addEventListener('pointerdown', function(e){
-    if(e.target !== cropBox) return;
-    e.preventDefault(); cropBox.setPointerCapture(e.pointerId);
-    var start = pct(e.clientX, e.clientY), orig = {l:box.l, t:box.t};
-    function move(ev){
-      var p = pct(ev.clientX, ev.clientY);
-      box.l = Math.max(0, Math.min(100-box.w, orig.l + (p.x-start.x)));
-      box.t = Math.max(0, Math.min(100-box.h, orig.t + (p.y-start.y)));
-      drawBox();
-    }
-    function up(){ cropBox.removeEventListener('pointermove', move); cropBox.removeEventListener('pointerup', up); }
-    cropBox.addEventListener('pointermove', move); cropBox.addEventListener('pointerup', up);
-  });
-  document.querySelectorAll('.crop-handle').forEach(function(h){
-    h.addEventListener('pointerdown', function(e){
-      e.preventDefault(); e.stopPropagation(); h.setPointerCapture(e.pointerId);
-      var corner = h.getAttribute('data-c'), orig = {l:box.l,t:box.t,w:box.w,h:box.h};
-      function move(ev){
-        var p = pct(ev.clientX, ev.clientY);
-        if(corner === 'se'){ box.w = Math.max(10, Math.min(100-orig.l, p.x-orig.l)); box.h = Math.max(10, Math.min(100-orig.t, p.y-orig.t)); }
-        else if(corner === 'nw'){ var nl=Math.max(0,Math.min(orig.l+orig.w-10,p.x)); var nt=Math.max(0,Math.min(orig.t+orig.h-10,p.y)); box.w=orig.w+(orig.l-nl); box.h=orig.h+(orig.t-nt); box.l=nl; box.t=nt; }
-        else if(corner === 'ne'){ var nt2=Math.max(0,Math.min(orig.t+orig.h-10,p.y)); box.w=Math.max(10,Math.min(100-orig.l,p.x-orig.l)); box.h=orig.h+(orig.t-nt2); box.t=nt2; }
-        else if(corner === 'sw'){ var nl2=Math.max(0,Math.min(orig.l+orig.w-10,p.x)); box.h=Math.max(10,Math.min(100-orig.t,p.y-orig.t)); box.w=orig.w+(orig.l-nl2); box.l=nl2; }
-        drawBox();
-      }
-      function up(){ h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); }
-      h.addEventListener('pointermove', move); h.addEventListener('pointerup', up);
-    });
-  });
-
-  var cropCanvas = document.getElementById('cropCanvas');
-  document.getElementById('applyCrop').addEventListener('click', function(){
-    var nw = modalImg.naturalWidth, nh = modalImg.naturalHeight;
-    var sx = box.l/100*nw, sy = box.t/100*nh, sw = box.w/100*nw, sh = box.h/100*nh;
-    cropCanvas.width = sw; cropCanvas.height = sh;
-    var ctx = cropCanvas.getContext('2d');
-    ctx.drawImage(modalImg, sx, sy, sw, sh, 0, 0, sw, sh);
-    var fmt = state.format === 'raw' ? 'png' : state.format;
-    var newUrl = cropCanvas.toDataURL(mimeFor(fmt), 0.92);
-    photos[activeIdx] = newUrl; persistAndRender();
-    modalImg.src = newUrl; downloadLink.href = newUrl;
-    exitCrop();
-  });
-
-  renderStrip();
-  window.addEventListener('resize', function(){
-    document.documentElement.style.setProperty('--vh', window.innerHeight + 'px');
-  });
-})();
+window.addEventListener("appinstalled", () => { installGroup.style.display = "none"; });
 </script>
 </body>
 </html>
