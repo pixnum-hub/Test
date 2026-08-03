@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TUNE — Free Internet Radio</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#e8a33d">
 <style>
   :root{ --radius:14px; --gap:14px; }
   html[data-theme="dark"]{ --bg:#15130f; --panel:#1e1b16; --panel2:#262218; --edge:#332e22; --fg:#f2ead9; --muted:#a89e8a; --accent:#e8a33d; --accent2:#4fa39a; --danger:#e35c5c; }
@@ -47,6 +51,7 @@
   .search-wrap input:focus{outline:2px solid var(--accent);}
   .filter-row{display:flex;gap:8px;margin-top:8px;}
   .filter-row select{flex:1;padding:9px;border-radius:10px;border:1px solid var(--edge);background:var(--panel);color:var(--fg);font-size:13px;}
+  .filter-status{font-size:11px;color:var(--accent2);margin-top:6px;min-height:14px;}
   .tabs{display:flex;gap:6px;margin:10px 0 8px;flex-wrap:wrap;}
   .tab{ background:transparent;border:1px solid var(--edge);color:var(--muted); padding:6px 11px;border-radius:20px;font-size:12px;cursor:pointer; }
   .tab.active{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600;}
@@ -68,6 +73,13 @@
   .add-form button{background:var(--accent);color:#111;border:none;padding:10px;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px;align-self:flex-start;padding-left:16px;padding-right:16px;}
   .add-toggle{width:100%;background:transparent;border:1px dashed var(--edge);color:var(--muted);padding:9px;border-radius:10px;font-size:13px;cursor:pointer;margin-top:8px;}
   .st-remove{background:none;border:none;color:var(--danger);font-size:15px;cursor:pointer;}
+  .st-vote,.st-share{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;}
+  .st-vote.voted{color:var(--accent2);}
+  .offline-banner{background:var(--danger);color:#fff;text-align:center;padding:8px;border-radius:10px;font-size:12px;}
+  a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){
+    .eq.playing i, .spinner{ animation:none !important; }
+  }
   .footer{ text-align:center;padding:16px 8px 10px;color:var(--muted);font-size:12px; display:flex;align-items:center;justify-content:center;min-height:40px; }
   @media (min-width:600px){ .app{padding:24px;} .station-list{max-height:48vh;} }
 </style>
@@ -75,18 +87,21 @@
 <body>
 <div class="app">
 
+  <div id="offlineBanner" class="offline-banner hidden" role="status">You're offline — playback may be interrupted.</div>
+
   <header class="topbar">
     <h1 class="brand">TUNE<span>.</span></h1>
     <button id="themeBtn" class="theme-btn" aria-label="Toggle theme">◐</button>
   </header>
 
+  <main>
   <section class="deck">
     <div class="lcd">
       <div class="lcd-row">
         <span class="dot" id="liveDot"></span>
         <span class="spinner hidden" id="spinner"></span>
         <img id="stationLogo" alt="">
-        <div class="marquee"><span id="stationName">Select a station to tune in</span></div>
+        <div class="marquee"><span id="stationName" aria-live="polite">Select a station to tune in</span></div>
       </div>
       <div class="lcd-meta">
         <span id="stationTags">—</span>
@@ -116,6 +131,7 @@
       <select id="countrySelect" aria-label="Filter by country"><option value="">All countries</option></select>
       <select id="tagSelect" aria-label="Filter by genre"><option value="">All genres</option></select>
     </div>
+    <div id="filterStatus" class="filter-status" role="status"></div>
     <button id="addToggleBtn" class="add-toggle" type="button">+ Add your own station</button>
     <div id="addForm" class="add-form hidden">
       <input id="addName" type="text" placeholder="Station name">
@@ -125,7 +141,7 @@
   </section>
 
   <section class="list-wrap">
-    <div class="tabs">
+    <div class="tabs" role="tablist" aria-label="Station lists">
       <button class="tab active" data-mode="top">Popular</button>
       <button class="tab" data-mode="trending">🔥 Trending</button>
       <button class="tab" data-mode="new">🆕 New</button>
@@ -134,8 +150,9 @@
       <button class="tab" data-mode="recent">Recent</button>
       <button class="tab" data-mode="custom">My Stations</button>
     </div>
-    <ul id="stationList" class="station-list"><li class="hint">Loading stations…</li></ul>
+    <ul id="stationList" class="station-list" aria-live="polite"><li class="hint">Loading stations…</li></ul>
   </section>
+  </main>
 
   <footer class="footer">
     <p>© Manik Roy <span id="year"></span>. All Rights Reserved.</p>
@@ -192,7 +209,7 @@
   const tagSelect = document.getElementById('tagSelect');
   const searchInput = document.getElementById('searchInput');
 
-  let topStations = [], searchStations = [], trendingStations = [], trendingLoaded = false, newStations = [], newLoaded = false, activeMode = 'top', lastStation = null;
+  let topStations = [], topLoaded = false, searchStations = [], trendingStations = [], trendingLoaded = false, newStations = [], newLoaded = false, activeMode = 'top', lastStation = null;
   let sleepTimeout = null, sleepInterval = null;
 
   // ---------- Favorites & Recent (localStorage) ----------
@@ -238,11 +255,16 @@
         </div>
         <div class="st-right">
           ${(st.bitrate || st.codec) ? `<span class="st-badge">${[st.codec, st.bitrate ? st.bitrate+'k' : ''].filter(Boolean).join(' · ')}</span>` : ''}
+          ${!isCustom ? `<button class="st-vote" aria-label="Vote for station">👍</button><button class="st-share" aria-label="Share station">⤴</button>` : ''}
           ${isCustom ? `<button class="st-remove" aria-label="Remove station">✕</button>` : `<button class="st-fav ${isFav?'active':''}" aria-label="Toggle favorite">★</button>`}
           <span class="st-play">▶</span>
         </div>`;
       if (isCustom) li.querySelector('.st-remove').addEventListener('click', e => { e.stopPropagation(); removeCustomStation(st.stationuuid); });
       else li.querySelector('.st-fav').addEventListener('click', e => { e.stopPropagation(); toggleFavorite(st); });
+      if (!isCustom){
+        li.querySelector('.st-vote').addEventListener('click', e => { e.stopPropagation(); voteStation(st, e.currentTarget); });
+        li.querySelector('.st-share').addEventListener('click', e => { e.stopPropagation(); shareStation(st); });
+      }
       li.addEventListener('click', () => playStation(st));
       listEl.appendChild(li);
     });
@@ -251,7 +273,7 @@
   function setMode(mode){
     activeMode = mode;
     tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
-    if (mode === 'top') render(topStations);
+    if (mode === 'top') loadTop();
     else if (mode === 'trending') loadTrending();
     else if (mode === 'new') loadNew();
     else if (mode === 'search') render(searchStations);
@@ -262,23 +284,23 @@
   async function loadTrending(){
     if (trendingLoaded){ render(trendingStations); return; }
     listEl.innerHTML = '<li class="hint">Loading trending stations…</li>';
-    trendingStations = await apiFetch('/json/stations/search?limit=40&hidebroken=true&order=clicktrend&reverse=true');
+    trendingStations = await fetchList('clicktrend', false);
     trendingLoaded = true;
     if (activeMode === 'trending') render(trendingStations);
   }
   async function loadNew(){
     if (newLoaded){ render(newStations); return; }
     listEl.innerHTML = '<li class="hint">Searching for newly added stations…</li>';
-    newStations = await apiFetch('/json/stations/search?limit=40&hidebroken=true&order=lastchangetime&reverse=true');
+    newStations = await fetchList('lastchangetime', false);
     newLoaded = true;
     if (activeMode === 'new') render(newStations);
   }
-  // Automatically re-searches every 4 minutes and refreshes whichever list is loaded,
-  // so newly-added and newly-trending stations surface without any manual action.
+  // Automatically re-searches every 4 minutes (respecting the current country/genre filters)
+  // and refreshes whichever list is loaded, so new/trending stations surface without any manual action.
   async function autoRefresh(){
-    topStations = await apiFetch('/json/stations/topclick/40');
-    if (trendingLoaded) trendingStations = await apiFetch('/json/stations/search?limit=40&hidebroken=true&order=clicktrend&reverse=true');
-    newStations = await apiFetch('/json/stations/search?limit=40&hidebroken=true&order=lastchangetime&reverse=true');
+    if (topLoaded) topStations = await fetchList('clickcount', false);
+    if (trendingLoaded) trendingStations = await fetchList('clicktrend', false);
+    newStations = await fetchList('lastchangetime', false);
     newLoaded = true;
     if (activeMode === 'top') render(topStations);
     else if (activeMode === 'trending') render(trendingStations);
@@ -287,10 +309,25 @@
   setInterval(autoRefresh, 4 * 60 * 1000);
   tabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
 
+  // Builds a Radio Browser search query using the current country/genre filters (and optionally the text search box).
+  function fetchList(order, includeName){
+    let path = '/json/stations/search?limit=40&hidebroken=true&order=' + order + '&reverse=true';
+    if (includeName){ const q = searchInput.value.trim(); if (q) path += '&name=' + encodeURIComponent(q); }
+    if (countrySelect.value) path += '&country=' + encodeURIComponent(countrySelect.value);
+    if (tagSelect.value) path += '&tag=' + encodeURIComponent(tagSelect.value);
+    return apiFetch(path);
+  }
+  function updateFilterStatus(){
+    const parts = [countrySelect.value, tagSelect.value].filter(Boolean);
+    document.getElementById('filterStatus').textContent = parts.length ? 'Filtering by: ' + parts.join(' · ') : '';
+  }
+
   // ---------- Loading ----------
   async function loadTop(){
+    if (topLoaded){ render(topStations); return; }
     listEl.innerHTML = '<li class="hint">Loading stations…</li>';
-    topStations = await apiFetch('/json/stations/topclick/40');
+    topStations = await fetchList('clickcount', false);
+    topLoaded = true;
     if (activeMode === 'top') render(topStations);
   }
   async function loadFilters(){
@@ -306,16 +343,20 @@
     if (!q && !country && !tag){ setMode('top'); return; }
     setMode('search');
     listEl.innerHTML = '<li class="hint">Searching…</li>';
-    let path = '/json/stations/search?limit=40&hidebroken=true&order=clickcount&reverse=true';
-    if (q) path += '&name=' + encodeURIComponent(q);
-    if (country) path += '&country=' + encodeURIComponent(country);
-    if (tag) path += '&tag=' + encodeURIComponent(tag);
-    searchStations = await apiFetch(path);
+    searchStations = await fetchList('clickcount', true);
     if (activeMode === 'search') render(searchStations);
   }
   searchInput.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 450); });
-  countrySelect.addEventListener('change', runSearch);
-  tagSelect.addEventListener('change', runSearch);
+  function onFilterChange(){
+    topLoaded = false; trendingLoaded = false; newLoaded = false;
+    updateFilterStatus();
+    if (activeMode === 'top') loadTop();
+    else if (activeMode === 'trending') loadTrending();
+    else if (activeMode === 'new') loadNew();
+    else runSearch();
+  }
+  countrySelect.addEventListener('change', onFilterChange);
+  tagSelect.addEventListener('change', onFilterChange);
 
   // ---------- Add your own station ----------
   const addToggleBtn = document.getElementById('addToggleBtn');
@@ -423,6 +464,31 @@
     else if (e.code === 'ArrowUp'){ volume.value = Math.min(1, parseFloat(volume.value)+0.05); volume.dispatchEvent(new Event('input')); }
     else if (e.code === 'ArrowDown'){ volume.value = Math.max(0, parseFloat(volume.value)-0.05); volume.dispatchEvent(new Event('input')); }
   });
+
+  // ---------- Vote & share ----------
+  async function voteStation(st, btn){
+    if (btn.classList.contains('voted')) return;
+    try{ await apiFetch('/json/vote/' + st.stationuuid); btn.classList.add('voted'); btn.textContent = '✓'; }
+    catch(e){ /* vote failed silently, e.g. offline */ }
+  }
+  async function shareStation(st){
+    const shareData = { title: st.name || 'Radio station', text: 'Listen to ' + (st.name || 'this station') + ' on TUNE', url: st.url_resolved || st.url };
+    if (navigator.share){ try{ await navigator.share(shareData); }catch(e){ /* user cancelled */ } }
+    else if (navigator.clipboard){ try{ await navigator.clipboard.writeText(shareData.url); alert('Stream link copied to clipboard.'); }catch(e){ alert(shareData.url); } }
+    else alert(shareData.url);
+  }
+
+  // ---------- Offline detection ----------
+  const offlineBanner = document.getElementById('offlineBanner');
+  function updateOnlineStatus(){ offlineBanner.classList.toggle('hidden', navigator.onLine); }
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+  updateOnlineStatus();
+
+  // ---------- PWA install support ----------
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  }
 
   loadTop();
   loadFilters();
