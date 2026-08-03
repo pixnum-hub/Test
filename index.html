@@ -72,6 +72,7 @@
   .add-form input{padding:10px 12px;border-radius:10px;border:1px solid var(--edge);background:var(--panel);color:var(--fg);font-size:14px;}
   .add-form button{background:var(--accent);color:#111;border:none;padding:10px;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px;align-self:flex-start;padding-left:16px;padding-right:16px;}
   .add-toggle{width:100%;background:transparent;border:1px dashed var(--edge);color:var(--muted);padding:9px;border-radius:10px;font-size:13px;cursor:pointer;margin-top:8px;}
+  #clearListBtn{border-color:var(--danger);color:var(--danger);margin-bottom:8px;}
   .st-remove{background:none;border:none;color:var(--danger);font-size:15px;cursor:pointer;}
   .st-vote,.st-share{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;}
   .st-vote.voted{color:var(--accent2);}
@@ -86,7 +87,6 @@
 </head>
 <body>
 <div class="app">
-
   <div id="offlineBanner" class="offline-banner hidden" role="status">You're offline — playback may be interrupted.</div>
 
   <header class="topbar">
@@ -150,6 +150,7 @@
       <button class="tab" data-mode="recent">Recent</button>
       <button class="tab" data-mode="custom">My Stations</button>
     </div>
+    <button id="clearListBtn" class="add-toggle hidden" type="button">Clear all</button>
     <ul id="stationList" class="station-list" aria-live="polite"><li class="hint">Loading stations…</li></ul>
   </section>
   </main>
@@ -174,10 +175,8 @@
     themeBtn.textContent = {dark:'◐',light:'☀',oled:'●',hc:'◆'}[t];
   }
   themeBtn.addEventListener('click', () => { theme = THEMES[(THEMES.indexOf(theme)+1) % THEMES.length]; applyTheme(theme); });
-
   // ---------- Footer year ----------
   document.getElementById('year').textContent = new Date().getFullYear();
-
   // ---------- API ----------
   const HOSTS = ['https://de1.api.radio-browser.info','https://at1.api.radio-browser.info','https://nl1.api.radio-browser.info'];
   async function apiFetch(path){
@@ -187,7 +186,6 @@
     }
     return [];
   }
-
   // ---------- Elements ----------
   const listEl = document.getElementById('stationList');
   const tabs = document.querySelectorAll('.tab');
@@ -208,10 +206,8 @@
   const countrySelect = document.getElementById('countrySelect');
   const tagSelect = document.getElementById('tagSelect');
   const searchInput = document.getElementById('searchInput');
-
   let topStations = [], topLoaded = false, searchStations = [], trendingStations = [], trendingLoaded = false, newStations = [], newLoaded = false, activeMode = 'top', lastStation = null;
   let sleepTimeout = null, sleepInterval = null;
-
   // ---------- Favorites & Recent (localStorage) ----------
   const FAV_KEY='tune-favorites', RECENT_KEY='tune-recent', VOL_KEY='tune-volume', CUSTOM_KEY='tune-custom';
   let favorites = JSON.parse(localStorage.getItem(FAV_KEY) || '{}');
@@ -235,7 +231,24 @@
     localStorage.setItem(CUSTOM_KEY, JSON.stringify(customStations));
     setMode('custom');
   }
-
+  function removeRecent(uuid){
+    recent = recent.filter(s => s.stationuuid !== uuid);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+    setMode('recent');
+  }
+  const clearListBtn = document.getElementById('clearListBtn');
+  function updateClearBtn(){
+    const show = activeMode === 'fav' || activeMode === 'recent' || activeMode === 'custom';
+    clearListBtn.classList.toggle('hidden', !show);
+    clearListBtn.textContent = { fav: 'Clear all favorites', recent: 'Clear all recent', custom: 'Clear all my stations' }[activeMode] || 'Clear all';
+  }
+  clearListBtn.addEventListener('click', () => {
+    if (!confirm('Clear all stations from this list? This cannot be undone.')) return;
+    if (activeMode === 'fav'){ favorites = {}; localStorage.setItem(FAV_KEY, '{}'); }
+    else if (activeMode === 'recent'){ recent = []; localStorage.setItem(RECENT_KEY, '[]'); }
+    else if (activeMode === 'custom'){ customStations = []; localStorage.setItem(CUSTOM_KEY, '[]'); }
+    setMode(activeMode);
+  });
   // ---------- Rendering ----------
   function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function render(stations){
@@ -257,10 +270,14 @@
           ${(st.bitrate || st.codec) ? `<span class="st-badge">${[st.codec, st.bitrate ? st.bitrate+'k' : ''].filter(Boolean).join(' · ')}</span>` : ''}
           ${!isCustom ? `<button class="st-vote" aria-label="Vote for station">👍</button><button class="st-share" aria-label="Share station">⤴</button>` : ''}
           ${isCustom ? `<button class="st-remove" aria-label="Remove station">✕</button>` : `<button class="st-fav ${isFav?'active':''}" aria-label="Toggle favorite">★</button>`}
+          ${(!isCustom && activeMode === 'recent') ? `<button class="st-remove" aria-label="Remove from recent">✕</button>` : ''}
           <span class="st-play">▶</span>
         </div>`;
       if (isCustom) li.querySelector('.st-remove').addEventListener('click', e => { e.stopPropagation(); removeCustomStation(st.stationuuid); });
       else li.querySelector('.st-fav').addEventListener('click', e => { e.stopPropagation(); toggleFavorite(st); });
+      if (!isCustom && activeMode === 'recent'){
+        li.querySelectorAll('.st-remove').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); removeRecent(st.stationuuid); }));
+      }
       if (!isCustom){
         li.querySelector('.st-vote').addEventListener('click', e => { e.stopPropagation(); voteStation(st, e.currentTarget); });
         li.querySelector('.st-share').addEventListener('click', e => { e.stopPropagation(); shareStation(st); });
@@ -269,10 +286,10 @@
       listEl.appendChild(li);
     });
   }
-
   function setMode(mode){
     activeMode = mode;
     tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+    updateClearBtn();
     if (mode === 'top') loadTop();
     else if (mode === 'trending') loadTrending();
     else if (mode === 'new') loadNew();
@@ -308,7 +325,6 @@
   }
   setInterval(autoRefresh, 4 * 60 * 1000);
   tabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
-
   // Builds a Radio Browser search query using the current country/genre filters (and optionally the text search box).
   function fetchList(order, includeName){
     let path = '/json/stations/search?limit=40&hidebroken=true&order=' + order + '&reverse=true';
@@ -321,7 +337,6 @@
     const parts = [countrySelect.value, tagSelect.value].filter(Boolean);
     document.getElementById('filterStatus').textContent = parts.length ? 'Filtering by: ' + parts.join(' · ') : '';
   }
-
   // ---------- Loading ----------
   async function loadTop(){
     if (topLoaded){ render(topStations); return; }
@@ -336,7 +351,6 @@
     const tags = await apiFetch('/json/tags?order=stationcount&reverse=true&limit=40');
     tags.forEach(t => { if(!t.name) return; const o=document.createElement('option'); o.value=t.name; o.textContent=t.name; tagSelect.appendChild(o); });
   }
-
   let searchTimer;
   async function runSearch(){
     const q = searchInput.value.trim(), country = countrySelect.value, tag = tagSelect.value;
@@ -357,7 +371,6 @@
   }
   countrySelect.addEventListener('change', onFilterChange);
   tagSelect.addEventListener('change', onFilterChange);
-
   // ---------- Add your own station ----------
   const addToggleBtn = document.getElementById('addToggleBtn');
   const addForm = document.getElementById('addForm');
@@ -373,7 +386,6 @@
     addName.value = ''; addUrl.value = ''; addForm.classList.add('hidden');
     setMode('custom');
   });
-
   // ---------- Playback ----------
   async function playStation(st){
     lastStation = st;
@@ -402,7 +414,6 @@
     }
   }
   retryBtn.addEventListener('click', () => { if (lastStation) playStation(lastStation); });
-
   function setPlaying(isPlaying){
     playBtn.textContent = isPlaying ? '❚❚' : '▶';
     eq.classList.toggle('playing', isPlaying);
@@ -419,7 +430,6 @@
     spinner.classList.add('hidden'); setPlaying(false);
     if (lastStation){ nameEl.textContent = 'Playback error — tap retry'; retryBtn.classList.remove('hidden'); }
   });
-
   // ---------- Volume & mute ----------
   volume.value = localStorage.getItem(VOL_KEY) || 0.85;
   audio.volume = parseFloat(volume.value);
@@ -432,7 +442,6 @@
     audio.muted = !audio.muted;
     muteBtn.textContent = audio.muted ? '🔇' : '🔊';
   });
-
   // ---------- Media Session (lock-screen controls) ----------
   function setMediaSession(st){
     if (!('mediaSession' in navigator)) return;
@@ -443,7 +452,6 @@
     navigator.mediaSession.setActionHandler('play', () => { audio.play(); setPlaying(true); });
     navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); setPlaying(false); });
   }
-
   // ---------- Sleep timer ----------
   sleepSelect.addEventListener('change', () => {
     clearTimeout(sleepTimeout); clearInterval(sleepInterval);
@@ -456,7 +464,6 @@
       clearInterval(sleepInterval); sleepSelect.value = '0';
     }, mins * 60000);
   });
-
   // ---------- Keyboard shortcuts ----------
   document.addEventListener('keydown', e => {
     if (['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)) return;
@@ -464,7 +471,6 @@
     else if (e.code === 'ArrowUp'){ volume.value = Math.min(1, parseFloat(volume.value)+0.05); volume.dispatchEvent(new Event('input')); }
     else if (e.code === 'ArrowDown'){ volume.value = Math.max(0, parseFloat(volume.value)-0.05); volume.dispatchEvent(new Event('input')); }
   });
-
   // ---------- Vote & share ----------
   async function voteStation(st, btn){
     if (btn.classList.contains('voted')) return;
@@ -477,19 +483,16 @@
     else if (navigator.clipboard){ try{ await navigator.clipboard.writeText(shareData.url); alert('Stream link copied to clipboard.'); }catch(e){ alert(shareData.url); } }
     else alert(shareData.url);
   }
-
   // ---------- Offline detection ----------
   const offlineBanner = document.getElementById('offlineBanner');
   function updateOnlineStatus(){ offlineBanner.classList.toggle('hidden', navigator.onLine); }
   window.addEventListener('online', updateOnlineStatus);
   window.addEventListener('offline', updateOnlineStatus);
   updateOnlineStatus();
-
   // ---------- PWA install support ----------
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
     window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
   }
-
   loadTop();
   loadFilters();
 </script>
