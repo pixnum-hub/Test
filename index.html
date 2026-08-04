@@ -1,662 +1,1049 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#12161c">
-<title>PRAVAH — YouTube Player + Recorder</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SlangForge — Slang Generator</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
-*{box-sizing:border-box}
-:root{
- --bg:#eef1f6;--card:#ffffffb8;--txt:#12161c;--muted:#5b6674;
- --accent:#e6332a;   /* record tally */
- --accent2:#1f9d63;  /* ready / confirm tally */
- --accent3:#d98f16;  /* paused / caution tally */
- --line:#ffffff88;--shadow:0 12px 35px #0002;--panel:#0000000d;
-}
-body{margin:0;min-height:100vh;background:var(--bg);color:var(--txt);
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;
-justify-content:center;align-items:center;text-align:center;-webkit-tap-highlight-color:transparent}
-.app{width:min(100%,650px);min-height:100vh;padding:10px;display:flex;
-flex-direction:column;justify-content:center;gap:10px}
-header,.card,footer{background:var(--card);border:1px solid var(--line);
-box-shadow:var(--shadow);backdrop-filter:blur(18px);border-radius:20px}
-header{padding:13px}
-h1{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.02em;
-font-size:1.25rem;margin:0 0 3px;text-transform:uppercase}
-.sub{font-size:.72rem;color:var(--muted);letter-spacing:.03em}
-.status{font-size:.75rem;color:var(--muted)}
-.modes{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:9px}
-button,input,select{border:0;border-radius:11px;padding:10px;font:inherit;color:inherit}
-button{background:#fff;color:#111;cursor:pointer;font-weight:650;transition:transform .08s}
-button:active{transform:scale(.96)}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
-.modes button{font-size:.68rem;padding:7px 9px}
-.card{padding:11px}
-.eyebrow{font-family:'Oswald',sans-serif;font-size:.66rem;font-weight:600;
-letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;margin:0 0 7px 2px}
-.inputrow{display:flex;gap:6px}
-input,select{width:100%;background:#ffffffd9;color:#111;outline:0}
-.badge{margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:.7rem;
-color:var(--muted);text-align:left;padding-left:2px}
+  :root {
+    --radius: 14px;
+    --gap: 1.2rem;
+    --font: system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+    --trans: 0.22s cubic-bezier(.4,0,.2,1);
+  }
+  [data-theme="dark"] {
+    --bg:#0f1117;--surface:#181c27;--border:#2a2f42;
+    --accent:#f0c040;--accent2:#e0598b;--text:#e8eaf0;
+    --muted:#7a7f9a;--tag-bg:#22273a;--tag-text:#a8b0d0;
+    --glow:rgba(240,192,64,.18);--btn-text:#0f1117;
+  }
+  [data-theme="light"] {
+    --bg:#f4f1eb;--surface:#fffdf8;--border:#ddd9cf;
+    --accent:#c0480a;--accent2:#7c3aed;--text:#1a1612;
+    --muted:#8a8070;--tag-bg:#ede9df;--tag-text:#5a5040;
+    --glow:rgba(192,72,10,.12);--btn-text:#fffdf8;
+  }
+  [data-theme="oled"] {
+    --bg:#000;--surface:#0a0a0a;--border:#1a1a1a;
+    --accent:#00e5ff;--accent2:#ff2d78;--text:#f0f0f0;
+    --muted:#555;--tag-bg:#111;--tag-text:#888;
+    --glow:rgba(0,229,255,.15);--btn-text:#000;
+  }
+  [data-theme="hc"] {
+    --bg:#000;--surface:#000;--border:#fff;
+    --accent:#ffff00;--accent2:#00ff88;--text:#fff;
+    --muted:#ccc;--tag-bg:#111;--tag-text:#ffff00;
+    --glow:rgba(255,255,0,.2);--btn-text:#000;
+  }
+  [data-theme="hc"] * { outline-offset:2px; }
+  [data-theme="hc"] button:focus-visible { outline:3px solid var(--accent); }
 
-.results{margin-top:8px;max-height:320px;overflow-y:auto;display:none;
-flex-direction:column;gap:6px;text-align:left}
-.results.show{display:flex}
-.result{display:flex;gap:8px;padding:6px;border-radius:11px;background:#fff6;
-cursor:pointer;align-items:center;transition:transform .08s}
-.result:active{transform:scale(.98)}
-.result img{width:88px;height:50px;object-fit:cover;border-radius:8px;flex:none;background:#000}
-.result .meta{overflow:hidden;flex:1}
-.result .t{font-size:.76rem;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.result .c{font-size:.68rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.result .d{font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--muted);
-flex:none;padding-left:6px}
-.results .hint{padding:8px;font-size:.72rem;color:var(--muted)}
-body.dark .result,body.oled .result{background:#ffffff12}
-body.hc .result{background:#000;border:1px solid #fff}
-.badge b{color:var(--txt)}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:var(--font);background:var(--bg);color:var(--text);
+    min-height:100dvh;display:flex;flex-direction:column;
+    transition:background var(--trans),color var(--trans);
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.4;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+  [data-theme="hc"] body::before{display:none;}
 
-.player{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;
-border-radius:15px;background:#000;margin-top:9px}
-iframe{width:100%;height:100%;border:0}
-.ov{position:absolute;pointer-events:none;font-family:'JetBrains Mono',monospace;
-font-size:.68rem;font-weight:700;color:#fff;letter-spacing:.04em;
-background:#00000080;border-radius:8px;padding:4px 8px;display:flex;align-items:center;gap:5px}
-.ov-tc{right:7px;bottom:7px}
-.ov-rec{left:7px;top:7px;display:none}
-.ov-rec.on{display:flex}
+  .wrapper{
+    flex:1;display:flex;flex-direction:column;align-items:center;
+    width:100%;max-width:640px;margin:0 auto;
+    padding:1.5rem 1rem 2rem;gap:var(--gap);
+  }
 
-.tally{width:8px;height:8px;border-radius:50%;background:#8a99;flex:none}
-.tally.live{background:var(--accent);animation:pulse 1.3s infinite}
-.tally.ready{background:var(--accent2)}
-.tally.pause{background:var(--accent3)}
-@keyframes pulse{0%{box-shadow:0 0 0 0 #e6332a80}70%{box-shadow:0 0 0 9px #e6332a00}100%{box-shadow:0 0 0 0 #e6332a00}}
+  /* HEADER */
+  header{
+    width:100%;display:flex;align-items:center;
+    justify-content:space-between;padding-bottom:.6rem;
+    border-bottom:1px solid var(--border);
+  }
+  .logo{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;color:var(--text);line-height:1;}
+  .logo span{color:var(--accent);}
+  .theme-bar{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+  .theme-btn{
+    border:1px solid var(--border);border-radius:8px;background:var(--surface);
+    color:var(--muted);font-family:var(--font);font-size:.63rem;padding:4px 7px;
+    cursor:pointer;transition:all var(--trans);line-height:1;white-space:nowrap;
+  }
+  .theme-btn:hover,.theme-btn.active{background:var(--accent);color:var(--btn-text);border-color:var(--accent);}
 
-.row{display:grid;gap:6px;margin-top:7px}
-.row3{grid-template-columns:repeat(3,1fr)}
-.row4{grid-template-columns:repeat(4,1fr)}
-.row2{grid-template-columns:repeat(2,1fr)}
-.row button{font-size:.72rem}
-.row button.active{background:var(--accent2);color:#fff}
+  /* HERO */
+  .hero{width:100%;text-align:center;padding:1rem 0 .5rem;}
+  .hero h1{
+    font-size:clamp(1.1rem,4vw,1.5rem);font-weight:700;letter-spacing:-.02em;line-height:1.2;
+    background:linear-gradient(135deg,var(--text) 40%,var(--accent));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+  .hero p{margin-top:.5rem;font-size:.82rem;color:var(--muted);}
 
-.volrow{display:flex;align-items:center;gap:8px;margin-top:8px}
-.volrow input[type=range]{padding:0;background:transparent;accent-color:var(--accent2)}
-.volrow select{width:auto;flex:none;font-size:.72rem}
+  /* DAILY SLANG BANNER */
+  .daily-banner{
+    width:100%;background:var(--surface);border:1px solid var(--accent);
+    border-radius:var(--radius);padding:1rem 1.1rem;
+    position:relative;animation:slideUp .35s cubic-bezier(.22,1,.36,1) both;
+  }
+  .daily-label{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.35rem;font-weight:700;}
+  .daily-term{font-size:1.4rem;font-weight:800;color:var(--text);margin-bottom:.25rem;}
+  .daily-def{font-size:.82rem;color:var(--muted);line-height:1.55;}
 
-.record{margin-top:9px;padding:11px;border-radius:15px;background:var(--panel)}
-.options{display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left;font-size:.73rem}
-.options label{padding:8px;background:#fff6;border-radius:9px;display:flex;align-items:center;gap:6px}
-.options input{width:auto}
-.options label.wide{grid-column:1/-1}
-.qualityrow{margin-top:6px}
-.qualityrow select{font-size:.75rem}
+  /* CARD */
+  .card{
+    width:100%;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:1.2rem;
+    transition:background var(--trans),border-color var(--trans);
+  }
 
-.timecode{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;
-font-weight:700;letter-spacing:.05em;background:var(--panel);border-radius:10px;
-padding:9px;margin:8px 0 0;font-size:1.35rem;display:flex;align-items:center;
-justify-content:center;gap:9px}
+  /* CONTROLS */
+  label{display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.45rem;}
+  select,input[type="text"]{
+    width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;
+    color:var(--text);font-family:var(--font);font-size:.88rem;
+    padding:.65rem .9rem;appearance:none;-webkit-appearance:none;outline:none;
+    transition:border-color var(--trans),box-shadow var(--trans);
+  }
+  select:focus,input[type="text"]:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow);}
+  .select-wrap{position:relative;}
+  .select-wrap::after{
+    content:'▾';position:absolute;right:.9rem;top:50%;
+    transform:translateY(-50%);color:var(--muted);pointer-events:none;
+  }
+  .row{display:flex;gap:.8rem;}
+  .row>*{flex:1;}
+  .section-gap{height:.4rem;}
 
-.recBtns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:7px}
-.recBtns button{font-size:.72rem}
-#pause,#stop,#download,#discard{display:none}
-.primary{background:var(--accent);color:#fff}
+  /* QUANTITY PILLS */
+  .qty-pills{display:flex;gap:6px;margin-top:.3rem;}
+  .qty-pill{
+    flex:1;border:1px solid var(--border);border-radius:9px;
+    background:var(--tag-bg);color:var(--tag-text);font-family:var(--font);
+    font-size:.82rem;font-weight:600;padding:.5rem;cursor:pointer;
+    transition:all var(--trans);text-align:center;
+  }
+  .qty-pill:hover,.qty-pill.active{background:var(--accent);color:var(--btn-text);border-color:var(--accent);}
 
-.stats{font-size:.68rem;color:var(--muted);margin:6px 0 0;font-family:'JetBrains Mono',monospace}
-.preview{display:none;margin-top:9px;text-align:left}
-.preview video{width:100%;border-radius:12px;background:#000;display:block}
-.preview .recBtns{margin-top:8px}
+  /* CHIPS */
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:.3rem;}
+  .chip{
+    border:1px solid var(--border);border-radius:20px;background:var(--tag-bg);
+    color:var(--tag-text);font-size:.72rem;padding:4px 12px;cursor:pointer;
+    transition:all var(--trans);user-select:none;
+  }
+  .chip.active,.chip:hover{background:var(--accent2);border-color:var(--accent2);color:#fff;}
 
-.kbd{font-family:'JetBrains Mono',monospace;font-size:.65rem;background:#8882;
-border-radius:5px;padding:1px 5px;margin:0 2px}
-footer{padding:10px;font-size:.68rem;color:var(--muted);line-height:1.7}
+  /* TOGGLES (multi-word, rhyme) */
+  .toggle-row{display:flex;gap:.6rem;margin-top:.3rem;flex-wrap:wrap;}
+  .toggle-chip{
+    border:1px solid var(--border);border-radius:9px;background:var(--tag-bg);
+    color:var(--tag-text);font-size:.75rem;padding:5px 13px;cursor:pointer;
+    transition:all var(--trans);user-select:none;display:flex;align-items:center;gap:5px;
+  }
+  .toggle-chip.active{background:var(--accent2);border-color:var(--accent2);color:#fff;}
+  .toggle-chip .dot{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.6;}
 
-.toasts{position:fixed;left:0;right:0;bottom:14px;display:flex;flex-direction:column;
-align-items:center;gap:6px;pointer-events:none;z-index:99}
-.toast{background:#12161cf0;color:#fff;font-size:.75rem;padding:9px 15px;
-border-radius:11px;box-shadow:0 8px 22px #0004;max-width:88%;opacity:0;
-transform:translateY(8px);transition:opacity .2s,transform .2s}
-.toast.show{opacity:1;transform:translateY(0)}
-.toast.warn{background:#d98f16f0}
-.toast.err{background:#e6332af0}
-.toast.ok{background:#1f9d63f0}
+  /* TONE SLIDER */
+  .slider-row{display:flex;align-items:center;gap:.75rem;margin-top:.3rem;}
+  .slider-wrap{flex:1;position:relative;}
+  input[type="range"]{
+    -webkit-appearance:none;appearance:none;width:100%;height:5px;
+    border-radius:99px;background:var(--border);outline:none;cursor:pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;
+    background:var(--accent);box-shadow:0 0 0 3px var(--glow);cursor:pointer;
+  }
+  input[type="range"]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;}
+  .slider-ticks{display:flex;justify-content:space-between;padding:0 2px;margin-top:4px;}
+  .slider-ticks span{font-size:.6rem;color:var(--muted);}
+  .tone-badge,.len-badge{
+    min-width:52px;text-align:center;background:var(--accent);color:var(--btn-text);
+    font-weight:800;font-size:.95rem;border-radius:9px;padding:5px 8px;
+    line-height:1.2;flex-shrink:0;transition:background var(--trans),color var(--trans);
+  }
+  .tone-badge small,.len-badge small{
+    display:block;font-size:.5rem;font-weight:400;opacity:.75;
+    letter-spacing:.06em;text-transform:uppercase;
+  }
 
-body.dark{--bg:#12161c;--card:#1b2028e8;--txt:#eef2f7;--muted:#93a0b3;--line:#fff2;--panel:#ffffff10}
-body.dark input,body.dark select,body.dark button{background:#252b35;color:#fff}
-body.dark button.primary{background:var(--accent)}
-body.oled{--bg:#000;--card:#080808;--txt:#fff;--muted:#aaa;--line:#222;--panel:#ffffff10}
-body.oled input,body.oled select,body.oled button{background:#111;color:#fff}
-body.hc{--bg:#000;--card:#000;--txt:#fff;--muted:#fff;--line:#fff;--shadow:none;--panel:#000}
-body.hc input,body.hc select,body.hc button{background:#000;color:#fff;border:2px solid #fff}
-body.hc .primary{background:#fff;color:#000}
-body.hc .tally.live{background:#fff}
+  /* GENERATE BUTTON */
+  .btn-gen{
+    width:100%;background:var(--accent);color:var(--btn-text);
+    font-weight:800;font-size:1rem;letter-spacing:.05em;
+    border:none;border-radius:var(--radius);padding:.95rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:.5rem;
+    transition:transform .12s,box-shadow .12s,opacity var(--trans);
+    box-shadow:0 4px 20px var(--glow);text-transform:uppercase;
+  }
+  .btn-gen:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--glow);}
+  .btn-gen:active{transform:scale(.97);}
+  .btn-gen:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+  .btn-gen .spinner{
+    width:18px;height:18px;border:2px solid var(--btn-text);
+    border-top-color:transparent;border-radius:50%;
+    animation:spin .7s linear infinite;display:none;
+  }
+  .btn-gen.loading .spinner{display:block;}
+  .btn-gen.loading .btn-label{display:none;}
+  @keyframes spin{to{transform:rotate(360deg);}}
 
-@media(max-width:430px){
- .app{padding:7px}.inputrow{flex-direction:column}
- .row3,.row4{grid-template-columns:repeat(2,1fr)}
- .options{grid-template-columns:1fr}
- .volrow{flex-wrap:wrap}
-}
+  /* ERROR */
+  .error-box{
+    background:rgba(224,89,139,.12);border:1px solid var(--accent2);
+    border-radius:var(--radius);padding:.9rem 1rem;font-size:.82rem;
+    color:var(--accent2);display:none;width:100%;
+  }
+  .error-box.visible{display:block;}
+
+  /* OUTPUT */
+  .output-section{display:none;flex-direction:column;gap:.8rem;width:100%;}
+  .output-section.visible{display:flex;}
+
+  /* SLANG CARD */
+  .slang-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:1.3rem 1.2rem;position:relative;
+    animation:slideUp .35s cubic-bezier(.22,1,.36,1) both;
+  }
+  @keyframes slideUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+  .slang-card .term{font-size:1.6rem;font-weight:800;color:var(--accent);letter-spacing:-.02em;line-height:1.1;margin-bottom:.4rem;}
+  .slang-card .phonetic{font-size:.75rem;color:var(--muted);margin-bottom:.7rem;font-style:italic;}
+  .slang-card .definition{font-size:.88rem;line-height:1.65;color:var(--text);margin-bottom:.6rem;}
+  .slang-card .example{
+    font-size:.8rem;color:var(--muted);border-left:2px solid var(--accent2);
+    padding-left:.7rem;font-style:italic;line-height:1.55;
+  }
+  .slang-card .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:.9rem;}
+  .badge{
+    font-size:.65rem;padding:3px 10px;border-radius:20px;
+    background:var(--tag-bg);color:var(--tag-text);
+    border:1px solid var(--border);letter-spacing:.04em;text-transform:uppercase;
+  }
+
+  /* CARD ACTION BUTTONS */
+  .card-actions{position:absolute;top:.8rem;right:.8rem;display:flex;gap:5px;}
+  .card-btn{
+    background:var(--tag-bg);border:1px solid var(--border);color:var(--muted);
+    border-radius:7px;padding:4px 9px;font-size:.68rem;font-family:var(--font);
+    cursor:pointer;transition:all var(--trans);
+  }
+  .card-btn:hover{background:var(--accent);color:var(--btn-text);border-color:var(--accent);}
+  .card-btn.fav-btn.starred{background:var(--accent2);color:#fff;border-color:var(--accent2);}
+  .card-btn.copied{background:var(--accent2);color:#fff;border-color:var(--accent2);}
+
+  /* REGEN ROW */
+  .regen-row{display:flex;gap:.7rem;}
+  .btn-secondary{
+    flex:1;background:var(--tag-bg);color:var(--text);border:1px solid var(--border);
+    border-radius:var(--radius);font-family:var(--font);font-size:.8rem;
+    padding:.75rem;cursor:pointer;transition:all var(--trans);text-align:center;
+  }
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* DUPLICATE TOAST */
+  .dup-toast{
+    background:rgba(240,192,64,.15);border:1px solid var(--accent);
+    border-radius:var(--radius);padding:.7rem 1rem;font-size:.8rem;
+    color:var(--accent);display:none;width:100%;text-align:center;
+  }
+  .dup-toast.visible{display:block;animation:slideUp .3s ease both;}
+
+  /* STORE BAR */
+  .store-bar{width:100%;display:none;gap:.6rem;flex-wrap:wrap;}
+  .store-bar.visible{display:flex;}
+  .btn-store{
+    flex:1;min-width:100px;background:var(--tag-bg);color:var(--text);
+    border:1px solid var(--border);border-radius:var(--radius);
+    font-family:var(--font);font-size:.78rem;padding:.65rem .5rem;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    gap:.35rem;transition:all var(--trans);text-align:center;
+  }
+  .btn-store:hover{border-color:var(--accent);color:var(--accent);}
+  .btn-store.danger:hover{border-color:var(--accent2);color:var(--accent2);}
+  .btn-store.highlight{background:var(--accent);color:var(--btn-text);border-color:var(--accent);font-weight:700;}
+  .btn-store.highlight:hover{opacity:.88;color:var(--btn-text);}
+  .saved-count{font-size:.68rem;color:var(--muted);text-align:center;letter-spacing:.05em;display:none;}
+  .saved-count span{color:var(--accent);font-weight:700;}
+
+  /* HISTORY */
+  .history-title{
+    font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);border-bottom:1px solid var(--border);
+    padding-bottom:.4rem;margin-bottom:.6rem;
+  }
+  .history-list{
+    display:flex;flex-direction:column;gap:.5rem;
+    max-height:220px;overflow-y:auto;
+    scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+  }
+  .hist-item{
+    display:flex;align-items:baseline;justify-content:space-between;
+    gap:.5rem;padding:.5rem .7rem;background:var(--bg);
+    border:1px solid var(--border);border-radius:9px;cursor:pointer;
+    transition:border-color var(--trans);
+  }
+  .hist-item:hover{border-color:var(--accent);}
+  .hist-term{font-weight:700;font-size:.9rem;color:var(--accent);}
+  .hist-vibe{font-size:.7rem;color:var(--muted);}
+
+  /* SHARE IMAGE MODAL */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+    z-index:1000;align-items:center;justify-content:center;padding:1rem;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:1.4rem;max-width:400px;width:100%;display:flex;flex-direction:column;gap:.9rem;
+  }
+  .modal-title{font-weight:800;font-size:1rem;color:var(--text);}
+  .modal-box canvas{width:100%;border-radius:10px;border:1px solid var(--border);}
+  .modal-actions{display:flex;gap:.6rem;}
+  .modal-btn{
+    flex:1;padding:.65rem;border-radius:9px;border:1px solid var(--border);
+    background:var(--tag-bg);color:var(--text);font-family:var(--font);
+    font-size:.82rem;cursor:pointer;transition:all var(--trans);text-align:center;
+  }
+  .modal-btn.primary{background:var(--accent);color:var(--btn-text);border-color:var(--accent);font-weight:700;}
+  .modal-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .modal-btn.primary:hover{opacity:.88;color:var(--btn-text);}
+
+  footer{
+    text-align:center;padding:1.2rem 1rem 1.5rem;font-size:.7rem;
+    color:var(--muted);border-top:1px solid var(--border);line-height:1.8;margin-top:auto;
+  }
+  footer strong{color:var(--text);}
+  footer .dot{color:var(--accent);margin:0 4px;}
 </style>
 </head>
 <body>
-<main class="app">
 
-<header>
-<h1>▶ PRAVAH</h1>
-<div class="modes">
-<button data-theme="light">☀ Light</button>
-<button data-theme="dark">◐ Dark</button>
-<button data-theme="oled">● OLED</button>
-<button data-theme="hc">HC</button>
-</div>
-</header>
+<div class="wrapper">
 
-<section class="card">
-<p class="eyebrow">Source</p>
-<div class="inputrow">
-<input id="url" placeholder="YouTube URL or Video ID" autocomplete="off">
-<button id="loadBtn">Load</button>
-</div>
-<div class="badge">Loaded: <b id="loadedId">none</b></div>
+  <!-- HEADER -->
+  <header>
+    <div class="logo">Slang<span>Forge</span></div>
+    <div class="theme-bar">
+      <button class="theme-btn active" data-t="dark">Dark</button>
+      <button class="theme-btn" data-t="light">Light</button>
+      <button class="theme-btn" data-t="oled">OLED</button>
+      <button class="theme-btn" data-t="hc">HC</button>
+    </div>
+  </header>
 
-<div class="inputrow" style="margin-top:8px">
-<input id="searchQ" placeholder="Search YouTube — songs or videos" autocomplete="off">
-<button id="searchBtn">🔎 Search</button>
-</div>
-<div class="results" id="searchResults"></div>
+  <!-- HERO -->
+  <div class="hero">
+    <h1>Generate Fresh Slang</h1>
+    <p>AI-powered slang words &amp; phrases for any vibe, era, or subculture.</p>
+  </div>
 
-<div class="player">
-<iframe id="yt" allow="autoplay;encrypted-media;picture-in-picture"
-allowfullscreen src="about:blank"></iframe>
-<div class="ov ov-rec" id="ovRec"><span class="tally live"></span>REC</div>
-<div class="ov ov-tc" id="ovTc">00:00 / 00:00</div>
-</div>
+  <!-- DAILY SLANG BANNER -->
+  <div class="daily-banner" id="dailyBanner" style="display:none">
+    <div class="daily-label">☀️ Daily Slang</div>
+    <div class="daily-term" id="dailyTerm"></div>
+    <div class="daily-def" id="dailyDef"></div>
+  </div>
 
-<div class="row row4">
-<button id="playBtn">▶ Play</button>
-<button id="pauseBtn">⏸ Pause</button>
-<button id="stopBtn">■ Stop</button>
-<button id="reloadBtn">↻ Reload</button>
-</div>
-<div class="row row4">
-<button id="skipBackBtn">⏪ 10s</button>
-<button id="skipFwdBtn">⏩ 10s</button>
-<button id="loopBtn">⟲ Loop</button>
-<button id="muteBtn">🔊 Mute</button>
-</div>
-<div class="volrow">
-<input id="vol" type="range" min="0" max="100" value="100" aria-label="Volume">
-<select id="speed" aria-label="Playback speed">
-<option value="0.25">0.25×</option><option value="0.5">0.5×</option>
-<option value="0.75">0.75×</option><option value="1" selected>1×</option>
-<option value="1.25">1.25×</option><option value="1.5">1.5×</option>
-<option value="2">2×</option>
-</select>
-</div>
-<div class="row row2">
-<button id="fullBtn">⛶ Fullscreen</button>
-<button id="copyBtn">🔗 Copy URL</button>
-</div>
+  <!-- CONTROLS CARD -->
+  <div class="card">
 
-<div class="record">
-<p class="eyebrow">Recorder</p>
-<div id="status" class="status"><span class="tally ready" id="recTally"></span> Recorder ready</div>
+    <!-- Row 1: Era + Category -->
+    <div class="row">
+      <div>
+        <label for="era">Era / Origin</label>
+        <div class="select-wrap">
+          <select id="era">
+            <option value="2020s">2020s Internet</option>
+            <option value="2010s">2010s Tumblr</option>
+            <option value="y2k">Y2K / 2000s</option>
+            <option value="90s">90s</option>
+            <option value="80s">80s</option>
+            <option value="future">Futuristic</option>
+            <option value="timeless">Timeless</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label for="category">Category</label>
+        <div class="select-wrap">
+          <select id="category">
+            <option value="general">General</option>
+            <option value="compliment">Compliments</option>
+            <option value="insult">Playful Burns</option>
+            <option value="reaction">Reactions</option>
+            <option value="verb">Actions / Verbs</option>
+            <option value="adjective">Adjectives</option>
+            <option value="greeting">Greetings</option>
+          </select>
+        </div>
+      </div>
+    </div>
 
-<div class="options">
-<label><input id="mic" type="checkbox"> 🎤 Microphone</label>
-<label><input id="audio" type="checkbox" checked> 🔊 System audio</label>
-<label class="wide"><input id="audioOnly" type="checkbox"> 🎵 Audio only</label>
-</div>
-<div class="qualityrow" id="videoQualityRow">
-<select id="quality" aria-label="Recording quality">
-<option value="std">Standard · 2.5 Mbps</option>
-<option value="hd" selected>HD · 8 Mbps</option>
-<option value="max">Max · 16 Mbps</option>
-</select>
-</div>
-<div class="qualityrow" id="audioQualityRow" style="display:none">
-<select id="audioQuality" aria-label="Audio quality">
-<option value="128000">Standard · 128 kbps</option>
-<option value="192000" selected>High · 192 kbps</option>
-<option value="320000">Max · 320 kbps</option>
-</select>
-</div>
+    <div class="section-gap"></div>
 
-<input id="filename" value="youtube-recording" placeholder="Recording filename"
-style="width:100%;margin-top:6px">
+    <!-- Row 2: Region -->
+    <label for="region">Region</label>
+    <div class="select-wrap">
+      <select id="region">
+        <option value="global">Global / Neutral</option>
+        <option value="us">American (US)</option>
+        <option value="uk">British (UK)</option>
+        <option value="au">Australian</option>
+        <option value="in">Indian</option>
+        <option value="african">African</option>
+        <option value="caribbean">Caribbean</option>
+      </select>
+    </div>
 
-<div class="timecode"><span class="tally" id="tcTally"></span><span id="timer">00:00:00</span></div>
+    <div class="section-gap"></div>
 
-<div class="recBtns">
-<button id="start" class="primary">● Record</button>
-<button id="pause">Ⅱ Pause</button>
-<button id="stop">■ Stop</button>
-<button id="resume">▶ Resume</button>
-</div>
+    <!-- Quantity -->
+    <label>Quantity</label>
+    <div class="qty-pills" id="qtyPills">
+      <div class="qty-pill active" data-q="1">1</div>
+      <div class="qty-pill" data-q="3">3</div>
+      <div class="qty-pill" data-q="5">5</div>
+    </div>
 
-<div id="stats" class="stats">Duration: 00:00:00 · Size: 0 MB</div>
+    <div class="section-gap"></div>
 
-<div class="preview" id="preview">
-<video id="previewVid" controls playsinline></video>
-<audio id="previewAudio" controls style="display:none"></audio>
-<div class="recBtns">
-<button id="download">⬇ Download</button>
-<button id="discard">✕ Discard</button>
+    <!-- Vibe Chips -->
+    <label>Vibe</label>
+    <div class="chips" id="vibeChips">
+      <span class="chip active" data-v="gen-z">Gen Z</span>
+      <span class="chip" data-v="urban">Urban</span>
+      <span class="chip" data-v="gamer">Gamer</span>
+      <span class="chip" data-v="fandom">Fandom</span>
+      <span class="chip" data-v="corporate">Corporate Satire</span>
+      <span class="chip" data-v="beach">Beach / Surf</span>
+      <span class="chip" data-v="academia">Dark Academia</span>
+      <span class="chip" data-v="cottagecore">Cottagecore</span>
+    </div>
+
+    <div class="section-gap"></div>
+
+    <!-- Options toggles: Multi-word + Rhyme -->
+    <label>Options</label>
+    <div class="toggle-row">
+      <div class="toggle-chip" id="multiWordToggle" onclick="toggleOption('multiWordToggle')">
+        <span class="dot"></span> Multi-word phrase
+      </div>
+      <div class="toggle-chip" id="rhymeToggle" onclick="toggleOption('rhymeToggle')">
+        <span class="dot"></span> Rhyme mode
+      </div>
+    </div>
+
+    <div id="rhymeInputWrap" style="display:none;margin-top:.6rem;">
+      <label for="rhymeWord">Rhymes with</label>
+      <input type="text" id="rhymeWord" placeholder="e.g. cool, flex, vibe…" maxlength="30">
+    </div>
+
+    <div class="section-gap"></div>
+
+    <!-- Tone slider -->
+    <label for="toneSlider">Tone</label>
+    <div class="slider-row">
+      <div class="slider-wrap">
+        <input type="range" id="toneSlider" min="1" max="5" value="3" step="1"
+               oninput="updateToneBadge(this.value)">
+        <div class="slider-ticks">
+          <span>Mild</span><span></span><span>Balanced</span><span></span><span>Wild</span>
+        </div>
+      </div>
+      <div class="tone-badge" id="toneBadge">😐<small>balanced</small></div>
+    </div>
+
+    <div class="section-gap"></div>
+
+    <!-- Keyword -->
+    <label for="keyword">Keyword (optional)</label>
+    <input type="text" id="keyword" placeholder="e.g. vibes, money, fail…" maxlength="40">
+
+    <div class="section-gap"></div>
+
+    <!-- Letter length slider -->
+    <label for="letterLen">Term Length <span style="color:var(--muted);font-size:.65rem;">(letters)</span></label>
+    <div class="slider-row">
+      <div class="slider-wrap">
+        <input type="range" id="letterLen" min="3" max="12" value="6" step="1"
+               oninput="updateLenBadge(this.value)">
+        <div class="slider-ticks">
+          <span>3</span><span>5</span><span>7</span><span>9</span><span>12</span>
+        </div>
+      </div>
+      <div class="len-badge" id="lenBadge">6<small>letters</small></div>
+    </div>
+
+  </div><!-- /card -->
+
+  <!-- GENERATE BUTTON -->
+  <button class="btn-gen" id="genBtn" onclick="generateSlang()">
+    <div class="spinner"></div>
+    <span class="btn-label">⚡ Generate Slang</span>
+  </button>
+
+  <!-- ERROR -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- DUPLICATE TOAST -->
+  <div class="dup-toast" id="dupToast"></div>
+
+  <!-- OUTPUT -->
+  <div class="output-section" id="outputSection">
+    <div id="slangCards"></div>
+    <div class="regen-row">
+      <button class="btn-secondary" onclick="generateSlang()">↺ Regenerate</button>
+      <button class="btn-secondary" onclick="generateMore()">✦ Get More</button>
+    </div>
+  </div>
+
+  <!-- STORAGE / EXPORT BAR -->
+  <div class="store-bar" id="storeBar">
+    <button class="btn-store highlight" onclick="saveAllToStorage()">💾 Save All</button>
+    <button class="btn-store" onclick="exportTxt()">📄 TXT</button>
+    <button class="btn-store" onclick="exportJson()">{ } JSON</button>
+    <button class="btn-store" onclick="exportCsv()">📊 CSV</button>
+    <button class="btn-store danger" onclick="clearStorage()">🗑 Clear</button>
+  </div>
+  <div class="saved-count" id="savedCount"></div>
+
+  <!-- HISTORY -->
+  <div class="card" id="historyCard" style="display:none">
+    <div class="history-title">Recent Slang</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<!-- SHARE IMAGE MODAL -->
+<div class="modal-overlay" id="shareModal">
+  <div class="modal-box">
+    <div class="modal-title">📸 Share as Image</div>
+    <canvas id="shareCanvas" width="600" height="320"></canvas>
+    <div class="modal-actions">
+      <button class="modal-btn primary" onclick="downloadShareImage()">⬇ Download PNG</button>
+      <button class="modal-btn" onclick="closeShareModal()">Close</button>
+    </div>
+  </div>
 </div>
-</div>
-</div>
-</section>
 
 <footer>
-<span class="kbd">Space</span>Play/Pause
-<span class="kbd">M</span>Mute
-<span class="kbd">←/→</span>Seek 5s
-<br>© <span id="year"></span> Manik Roy. All Rights Reserved.
+  <span>&copy; <span id="footerYear"></span> Manik Roy</span><span class="dot">·</span><span>All Rights Reserved.</span>
 </footer>
-</main>
-
-<div class="toasts" id="toasts"></div>
 
 <script>
-const $=x=>document.getElementById(x);
-
-/* ---------- theme ---------- */
-function safeGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
-function safeSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
-
-$("year").textContent=new Date().getFullYear();
-mode(safeGet("pravah_theme")||"dark");
-function mode(x){document.body.className=x;safeSet("pravah_theme",x)}
-document.querySelectorAll(".modes button").forEach(btn=>{
- btn.addEventListener("click",()=>mode(btn.dataset.theme));
+/* ── BOOT ──────────────────────────────────────────────── */
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+window.addEventListener('DOMContentLoaded', function() {
+  updateSavedCount();
+  loadDailySlang();
 });
 
-/* ---------- wire up every other control (no inline handlers anywhere) ---------- */
-function wireControls(){
- $("loadBtn").addEventListener("click",loadVideo);
- $("searchBtn").addEventListener("click",searchYT);
- $("searchQ").addEventListener("keydown",e=>{
-  if(e.key==="Enter"){e.preventDefault();searchYT()}
- });
- $("playBtn").addEventListener("click",()=>cmd("playVideo"));
- $("pauseBtn").addEventListener("click",()=>cmd("pauseVideo"));
- $("stopBtn").addEventListener("click",()=>cmd("stopVideo"));
- $("reloadBtn").addEventListener("click",reload);
- $("skipBackBtn").addEventListener("click",()=>skip(-10));
- $("skipFwdBtn").addEventListener("click",()=>skip(10));
- $("loopBtn").addEventListener("click",toggleLoop);
- $("muteBtn").addEventListener("click",toggleMute);
- $("vol").addEventListener("input",e=>setVol(e.target.value));
- $("speed").addEventListener("change",e=>cmd("setPlaybackRate",[parseFloat(e.target.value)]));
- $("fullBtn").addEventListener("click",full);
- $("copyBtn").addEventListener("click",copyURL);
- $("start").addEventListener("click",startRec);
- $("pause").addEventListener("click",pauseRec);
- $("stop").addEventListener("click",stopRec);
- $("resume").addEventListener("click",resumeRec);
- $("download").addEventListener("click",downloadRec);
- $("discard").addEventListener("click",discardRec);
- $("audioOnly").addEventListener("change",e=>{
-  let on=e.target.checked;
-  $("videoQualityRow").style.display=on?"none":"block";
-  $("audioQualityRow").style.display=on?"block":"none";
- });
-}
-wireControls();
-
-/* ---------- toast ---------- */
-function toast(msg,type=""){
- let t=document.createElement("div");
- t.className="toast"+(type?" "+type:"");
- t.textContent=msg;
- $("toasts").appendChild(t);
- requestAnimationFrame(()=>t.classList.add("show"));
- setTimeout(()=>{t.classList.remove("show");setTimeout(()=>t.remove(),250)},3000);
-}
-
-/* ---------- player state ---------- */
-let currentVideoId=null,currentTime=0,videoDuration=0,playerState=-1;
-let loopEnabled=false,isMuted=false,lastVolume=100;
-
-function id(v){
- v=(v||"").trim();
- if(/^[\w-]{11}$/.test(v))return v;
- try{
-  let u=new URL(v);
-  if(u.hostname.includes("youtu.be"))return u.pathname.slice(1);
-  if(u.searchParams.get("v"))return u.searchParams.get("v");
-  let p=u.pathname.split("/"),i=p.indexOf("embed");
-  return i>=0?p[i+1]:"";
- }catch(e){return ""}
-}
-function loadVideo(){
- let x=id($("url").value);
- if(!x)return toast("Enter a valid YouTube URL or Video ID.","err");
- loadById(x);
-}
-function loadById(vidId){
- currentVideoId=vidId;
- $("url").value="https://youtu.be/"+vidId;
- safeSet("pravah_lastUrl",$("url").value);
- $("loadedId").textContent=vidId;
- $("yt").src="https://www.youtube.com/embed/"+vidId+
-  "?enablejsapi=1&autoplay=1&playsinline=1";
- currentTime=0;videoDuration=0;playerState=-1;
- updateOverlay();
-}
-
-/* ---------- search (keyless — uses public Invidious mirrors, tries each in turn) ---------- */
-const INVIDIOUS_INSTANCES=[
- "https://invidious.nerdvpn.de","https://yt.artemislena.eu",
- "https://invidious.jing.rocks","https://iv.melmac.space",
- "https://invidious.reallyaweso.me"
-];
-async function searchYT(){
- let q=$("searchQ").value.trim();
- if(!q)return toast("Enter something to search for.","warn");
- let box=$("searchResults");
- box.classList.add("show");
- box.innerHTML='<div class="hint">Searching…</div>';
- for(let base of INVIDIOUS_INSTANCES){
-  try{
-   let ctrl=new AbortController();
-   let t=setTimeout(()=>ctrl.abort(),4500);
-   let res=await fetch(base+"/api/v1/search?q="+encodeURIComponent(q)+"&type=video",{signal:ctrl.signal});
-   clearTimeout(t);
-   if(!res.ok)continue;
-   let data=await res.json();
-   let vids=(Array.isArray(data)?data:[]).filter(d=>d.type==="video"&&d.videoId);
-   if(!vids.length){box.innerHTML='<div class="hint">No results found. Try different words.</div>';return}
-   renderResults(vids.slice(0,15));
-   return;
-  }catch(e){continue}
- }
- box.innerHTML='<div class="hint">Search is temporarily unavailable — paste a YouTube link or ID above instead.</div>';
-}
-function renderResults(vids){
- let box=$("searchResults");
- box.innerHTML="";
- vids.forEach(v=>{
-  let thumbs=v.videoThumbnails||[];
-  let thumb=thumbs.find(t=>t.quality==="medium")||thumbs[0]||{};
-  let item=document.createElement("div");
-  item.className="result";item.tabIndex=0;item.setAttribute("role","button");
-  item.setAttribute("aria-label","Play "+(v.title||"video"));
-  let img=document.createElement("img");
-  img.loading="lazy";img.alt="";img.src=thumb.url||"";
-  let meta=document.createElement("div");meta.className="meta";
-  let t=document.createElement("div");t.className="t";t.textContent=v.title||"Untitled";
-  let c=document.createElement("div");c.className="c";c.textContent=v.author||"";
-  meta.append(t,c);
-  let d=document.createElement("div");d.className="d";d.textContent=fmtShort(v.lengthSeconds||0);
-  item.append(img,meta,d);
-  let pick=()=>{
-   loadById(v.videoId);
-   toast("Playing: "+(v.title||v.videoId),"ok");
-   box.classList.remove("show");
-   document.querySelector(".player").scrollIntoView({behavior:"smooth",block:"center"});
-  };
-  item.addEventListener("click",pick);
-  item.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick()}});
-  box.appendChild(item);
- });
-}
-function reload(){
- if(!currentVideoId)return toast("Load a video first.","warn");
- $("yt").src="https://www.youtube.com/embed/"+currentVideoId+
-  "?enablejsapi=1&autoplay=1&playsinline=1";
-}
-$("yt").addEventListener("load",()=>{
- if(currentVideoId)postMsg({event:"listening",id:currentVideoId});
-});
-
-function postMsg(obj){
- try{$("yt").contentWindow.postMessage(JSON.stringify(obj),"*")}catch(e){}
-}
-function cmd(func,args=[]){
- if(!currentVideoId)return toast("Load a video first.","warn");
- postMsg({event:"command",func,args});
-}
-function skip(sec){
- if(!currentVideoId)return toast("Load a video first.","warn");
- cmd("seekTo",[Math.max(0,currentTime+sec),true]);
-}
-function toggleLoop(){
- loopEnabled=!loopEnabled;
- $("loopBtn").classList.toggle("active",loopEnabled);
- toast(loopEnabled?"Loop on":"Loop off");
-}
-function toggleMute(){
- isMuted=!isMuted;
- if(isMuted){cmd("mute");$("muteBtn").textContent="🔇 Unmute"}
- else{cmd("unMute");$("muteBtn").textContent="🔊 Mute"}
- $("muteBtn").classList.toggle("active",isMuted);
-}
-function setVol(v){
- lastVolume=v;
- cmd("setVolume",[Number(v)]);
- if(Number(v)==0 && !isMuted){isMuted=true;$("muteBtn").textContent="🔇 Unmute";$("muteBtn").classList.add("active")}
- if(Number(v)>0 && isMuted){isMuted=false;$("muteBtn").textContent="🔊 Mute";$("muteBtn").classList.remove("active")}
-}
-function full(){
- let el=$("yt");
- let req=el.requestFullscreen||el.webkitRequestFullscreen||el.webkitEnterFullscreen;
- if(req)req.call(el).catch?.(()=>toast("Fullscreen was blocked.","warn"));
- else toast("Fullscreen isn't supported on this browser.","warn");
-}
-async function copyURL(){
- if(!currentVideoId)return toast("Load a video first.","warn");
- let link="https://youtu.be/"+currentVideoId;
- try{
-  await navigator.clipboard.writeText(link);
-  toast("Link copied.","ok");
- }catch(e){
-  let ta=document.createElement("textarea");
-  ta.value=link;ta.style.position="fixed";ta.style.opacity="0";
-  document.body.appendChild(ta);ta.select();
-  try{document.execCommand("copy");toast("Link copied.","ok")}
-  catch(_){toast(link,"warn")}
-  ta.remove();
- }
-}
-
-/* listen for YouTube player info (works without loading the iframe_api script) */
-window.addEventListener("message",e=>{
- if(typeof e.origin==="string" && !e.origin.includes("youtube.com"))return;
- let data;
- try{data=JSON.parse(e.data)}catch(_){return}
- if(data.event==="infoDelivery" && data.info){
-  let info=data.info;
-  if(typeof info.currentTime==="number")currentTime=info.currentTime;
-  if(typeof info.duration==="number")videoDuration=info.duration;
-  if(typeof info.playerState==="number"){
-   let prev=playerState;playerState=info.playerState;
-   if(playerState===0 && prev!==0 && loopEnabled){cmd("seekTo",[0,true]);cmd("playVideo")}
-  }
-  updateOverlay();
- }
-});
-function fmtShort(s){
- s=Math.max(0,Math.floor(s||0));
- let m=Math.floor(s/60),z=s%60;
- return m+":"+String(z).padStart(2,"0");
-}
-function updateOverlay(){
- $("ovTc").textContent=fmtShort(currentTime)+" / "+fmtShort(videoDuration);
-}
-
-/* ---------- keyboard shortcuts ---------- */
-window.addEventListener("keydown",e=>{
- let tag=(e.target.tagName||"").toLowerCase();
- if(tag==="input"||tag==="select"||tag==="textarea")return;
- if(e.code==="Space"){e.preventDefault();cmd(playerState===1?"pauseVideo":"playVideo")}
- else if(e.key==="m"||e.key==="M"){toggleMute()}
- else if(e.key==="ArrowLeft"){skip(-5)}
- else if(e.key==="ArrowRight"){skip(5)}
-});
-
-/* ---------- recording ---------- */
-let rec=null,chunks=[],blob=null,timer=null,seconds=0,started=0,elapsedBeforePause=0;
-let recIsAudioOnly=false;
-
-const QUALITY={std:2500000,hd:8000000,max:16000000};
-
-function fmtLong(s){
- let h=Math.floor(s/3600),m=Math.floor(s%3600/60),z=s%60;
- return [h,m,z].map(x=>String(x).padStart(2,"0")).join(":");
-}
-function updateRecUI(){
- $("timer").textContent=fmtLong(seconds);
- $("stats").textContent="Duration: "+fmtLong(seconds)+" · Size: "+
-  (blob?(blob.size/1048576).toFixed(2):"0")+" MB";
-}
-function setTally(state){
- // state: ready | live | pause
- let t1=$("recTally"),t2=$("tcTally");
- [t1,t2].forEach(t=>t.className="tally "+state);
-}
-
-async function startRec(){
- if(!navigator.mediaDevices?.getDisplayMedia){
-  return toast("Screen recording isn't supported on this browser/device — try desktop Chrome, Edge, or Firefox.","err");
- }
- let audioOnly=$("audioOnly").checked;
- if(audioOnly && !$("audio").checked && !$("mic").checked){
-  return toast("Turn on System audio or Microphone for an audio-only recording.","warn");
- }
- resetRecordingUI();
- recIsAudioOnly=audioOnly;
- try{
-  // getDisplayMedia always requires a video request per spec, even for an audio-only recording —
-  // we simply drop the video track right after capture and never encode it.
-  let screen=await navigator.mediaDevices.getDisplayMedia({
-   video:{frameRate:30},audio:$("audio").checked
+/* ── THEME ─────────────────────────────────────────────── */
+document.querySelectorAll('.theme-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.documentElement.setAttribute('data-theme', btn.dataset.t);
+    document.querySelectorAll('.theme-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
   });
-  let videoTracks=screen.getVideoTracks();
-  let tracks=audioOnly?[]:[...videoTracks];
-  if($("audio").checked)tracks.push(...screen.getAudioTracks());
+});
 
-  if($("mic").checked){
-   try{
-    let ms=await navigator.mediaDevices.getUserMedia({audio:true});
-    tracks.push(...ms.getAudioTracks());
-   }catch(e){toast("Microphone permission was denied — recording system audio only.","warn")}
+/* ── VIBE CHIPS ────────────────────────────────────────── */
+document.querySelectorAll('.chip').forEach(function(chip) {
+  chip.addEventListener('click', function() {
+    document.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
+    chip.classList.add('active');
+  });
+});
+
+/* ── QUANTITY PILLS ────────────────────────────────────── */
+document.querySelectorAll('.qty-pill').forEach(function(pill) {
+  pill.addEventListener('click', function() {
+    document.querySelectorAll('.qty-pill').forEach(function(p) { p.classList.remove('active'); });
+    pill.classList.add('active');
+  });
+});
+function getQty() {
+  var active = document.querySelector('.qty-pill.active');
+  return active ? parseInt(active.dataset.q) : 1;
+}
+
+/* ── OPTION TOGGLES ────────────────────────────────────── */
+function toggleOption(id) {
+  var el = document.getElementById(id);
+  el.classList.toggle('active');
+  if (id === 'rhymeToggle') {
+    document.getElementById('rhymeInputWrap').style.display =
+      el.classList.contains('active') ? 'block' : 'none';
   }
+}
 
-  if(audioOnly){
-   videoTracks.forEach(t=>t.stop()); // release the screen capture immediately, keep only audio
-   if(!tracks.length){
-    toast("No audio track was available to record.","err");
-    return;
-   }
+/* ── TONE BADGE ────────────────────────────────────────── */
+var toneLabels = {1:'mild',2:'chill',3:'balanced',4:'spicy',5:'wild'};
+var toneEmoji  = {1:'😊',2:'😏',3:'😐',4:'🤪',5:'🤯'};
+function updateToneBadge(val) {
+  var b = document.getElementById('toneBadge');
+  b.innerHTML = toneEmoji[val] + '<small>' + toneLabels[val] + '</small>';
+}
+
+/* ── LEN BADGE ─────────────────────────────────────────── */
+function updateLenBadge(val) {
+  document.getElementById('lenBadge').innerHTML = val + '<small>letters</small>';
+}
+
+/* ── STORAGE ───────────────────────────────────────────── */
+var LS_KEY = 'slangforge_saved';
+var LS_DAILY = 'slangforge_daily';
+
+function loadFromStorage() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch(e) { return []; }
+}
+function persistToStorage(items) {
+  localStorage.setItem(LS_KEY, JSON.stringify(items));
+}
+function updateSavedCount() {
+  var saved = loadFromStorage();
+  var el = document.getElementById('savedCount');
+  if (saved.length) {
+    el.style.display = 'block';
+    el.innerHTML = '<span>' + saved.length + '</span> term' + (saved.length !== 1 ? 's' : '') + ' saved to device';
+  } else {
+    el.style.display = 'none';
   }
+}
 
-  let stream=new MediaStream(tracks);
-  let type,opts;
-  if(audioOnly){
-   type=MediaRecorder.isTypeSupported("audio/webm;codecs=opus")?"audio/webm;codecs=opus":"audio/webm";
-   opts={mimeType:type,audioBitsPerSecond:Number($("audioQuality").value)};
-  }else{
-   type=MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")?"video/webm;codecs=vp9,opus":
-    MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")?"video/webm;codecs=vp8,opus":"video/webm";
-   opts={mimeType:type,videoBitsPerSecond:QUALITY[$("quality").value]};
+function saveAllToStorage() {
+  var existing = loadFromStorage();
+  var existingTerms = new Set(existing.map(function(s) { return s.term.toLowerCase(); }));
+  var newItems = allGenerated.filter(function(s) { return !existingTerms.has(s.term.toLowerCase()); });
+  persistToStorage(existing.concat(newItems));
+  updateSavedCount();
+  var btn = document.querySelector('.btn-store.highlight');
+  var orig = btn.innerHTML;
+  btn.innerHTML = '✓ Saved!';
+  setTimeout(function() { btn.innerHTML = orig; }, 1600);
+}
+
+function clearStorage() {
+  if (!confirm('Clear all saved slang from this device?')) return;
+  localStorage.removeItem(LS_KEY);
+  updateSavedCount();
+}
+
+/* ── DAILY SLANG ───────────────────────────────────────── */
+function loadDailySlang() {
+  try {
+    var stored = JSON.parse(localStorage.getItem(LS_DAILY) || 'null');
+    var today = new Date().toDateString();
+    if (stored && stored.date === today && stored.item) {
+      showDailyBanner(stored.item);
+    } else {
+      fetchDailySlang();
+    }
+  } catch(e) { fetchDailySlang(); }
+}
+
+function showDailyBanner(item) {
+  var banner = document.getElementById('dailyBanner');
+  document.getElementById('dailyTerm').textContent = item.term;
+  document.getElementById('dailyDef').textContent = item.definition + ' — "' + item.example + '"';
+  banner.style.display = 'block';
+}
+
+async function fetchDailySlang() {
+  var seed = new Date().toDateString();
+  var prompt = 'Generate 1 unique slang word for today. Seed: ' + seed + '. Return ONLY valid JSON (no markdown) as an array of 1 object: [{"term":"...","phonetic":"...","definition":"...","example":"...","tags":["daily"]}]';
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:300,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    var data = await res.json();
+    var raw = data.content.map(function(b){return b.text||'';}).join('');
+    var match = raw.match(/\[[\s\S]*\]/);
+    if (!match) return;
+    var items = JSON.parse(match[0]);
+    if (items && items[0]) {
+      localStorage.setItem(LS_DAILY, JSON.stringify({date: new Date().toDateString(), item: items[0]}));
+      showDailyBanner(items[0]);
+    }
+  } catch(e) { /* silently skip daily if offline */ }
+}
+
+/* ── DUPLICATE DETECTOR ────────────────────────────────── */
+function checkDuplicates(items) {
+  var saved = loadFromStorage();
+  var savedTerms = new Set(saved.map(function(s) { return s.term.toLowerCase(); }));
+  var dups = items.filter(function(s) { return savedTerms.has(s.term.toLowerCase()); });
+  if (dups.length) {
+    var toast = document.getElementById('dupToast');
+    toast.textContent = '⚠ "' + dups.map(function(d){return d.term;}).join('", "') + '" already exist in saved — still shown below.';
+    toast.classList.add('visible');
+    setTimeout(function() { toast.classList.remove('visible'); }, 4000);
   }
-  rec=new MediaRecorder(stream,opts);
-  chunks=[];blob=null;seconds=0;elapsedBeforePause=0;updateRecUI();
+}
 
-  rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
-  rec.onstop=()=>{
-   blob=new Blob(chunks,{type:recIsAudioOnly?"audio/webm":"video/webm"});
-   let url=URL.createObjectURL(blob);
-   if(recIsAudioOnly){
-    $("previewAudio").src=url;
-    $("previewAudio").style.display="block";
-    $("previewVid").style.display="none";
-   }else{
-    $("previewVid").src=url;
-    $("previewVid").style.display="block";
-    $("previewAudio").style.display="none";
-   }
-   $("preview").style.display="block";
-   $("status").innerHTML='<span class="tally ready" id="recTally"></span> Recording ready';
-   $("ovRec").classList.remove("on");
-   setTally("ready");
-   updateRecUI();
+/* ── EXPORT HELPERS ────────────────────────────────────── */
+function downloadFile(content, filename, type) {
+  var blob = new Blob([content], {type: type});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportPool() {
+  var saved = loadFromStorage();
+  return saved.length ? saved : allGenerated;
+}
+
+function exportTxt() {
+  var pool = exportPool();
+  if (!pool.length) { alert('No slang to export yet.'); return; }
+  var lines = pool.map(function(s, i) {
+    var parts = [(i+1) + '. ' + s.term.toUpperCase()];
+    if (s.phonetic) parts.push('   ' + s.phonetic);
+    parts.push('   Definition : ' + s.definition);
+    parts.push('   Example    : "' + s.example + '"');
+    if (s.tags && s.tags.length) parts.push('   Tags       : ' + s.tags.join(', '));
+    parts.push('');
+    return parts.join('\n');
+  }).join('\n');
+  var header = '===== SLANGFORGE EXPORT =====\nGenerated: ' + new Date().toLocaleString() + '\nTotal: ' + pool.length + '\n\n';
+  var foot = '\n\u00a9 ' + new Date().getFullYear() + ' Manik Roy \u00b7 All Rights Reserved.';
+  downloadFile(header + lines + foot, 'slangforge_' + Date.now() + '.txt', 'text/plain;charset=utf-8');
+}
+
+function exportJson() {
+  var pool = exportPool();
+  if (!pool.length) { alert('No slang to export yet.'); return; }
+  var out = {
+    exported: new Date().toISOString(),
+    count: pool.length,
+    terms: pool
   };
-  rec.start(1000);
-  started=Date.now();
-  timer=setInterval(()=>{seconds=elapsedBeforePause+Math.floor((Date.now()-started)/1000);updateRecUI()},500);
-  $("start").style.display="none";
-  $("pause").style.display="block";
-  $("stop").style.display="block";
-  $("status").innerHTML='<span class="tally live" id="recTally"></span> Recording'+(audioOnly?" (audio only)":"")+'…';
-  $("ovRec").classList.add("on");
-  setTally("live");
-  if(!audioOnly)videoTracks[0].onended=stopRec;
- }catch(e){
-  toast("Recording was cancelled.","warn");
- }
-}
-function pauseRec(){
- if(rec?.state==="recording"){
-  rec.pause();clearInterval(timer);elapsedBeforePause=seconds;
-  $("pause").style.display="none";$("resume").style.display="block";
-  $("status").innerHTML='<span class="tally pause" id="recTally"></span> Recording paused';
-  setTally("pause");
- }
-}
-function resumeRec(){
- if(rec?.state==="paused"){
-  rec.resume();started=Date.now();
-  timer=setInterval(()=>{seconds=elapsedBeforePause+Math.floor((Date.now()-started)/1000);updateRecUI()},500);
-  $("pause").style.display="block";$("resume").style.display="none";
-  $("status").innerHTML='<span class="tally live" id="recTally"></span> Recording'+(recIsAudioOnly?" (audio only)":"")+'…';
-  setTally("live");
- }
-}
-function stopRec(){
- if(!rec||rec.state==="inactive")return;
- rec.stop();rec.stream?.getTracks().forEach(t=>t.stop());
- clearInterval(timer);
- $("start").style.display="block";$("pause").style.display="none";
- $("resume").style.display="none";$("stop").style.display="none";
-}
-function downloadRec(){
- if(!blob)return;
- let name=$("filename").value.trim()||"youtube-recording";
- safeSet("pravah_filename",name);
- let a=document.createElement("a");
- a.href=URL.createObjectURL(blob);
- a.download=name.replace(/\s+/g,"-")+(recIsAudioOnly?".weba":".webm");
- a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
- toast("Download started.","ok");
-}
-function discardRec(){
- if($("previewVid").src)URL.revokeObjectURL($("previewVid").src);
- if($("previewAudio").src)URL.revokeObjectURL($("previewAudio").src);
- resetRecordingUI();
- toast("Recording discarded.");
-}
-function resetRecordingUI(){
- blob=null;chunks=[];seconds=0;elapsedBeforePause=0;updateRecUI();
- $("preview").style.display="none";
- $("previewVid").removeAttribute("src");
- $("previewAudio").removeAttribute("src");
- $("status").innerHTML='<span class="tally ready" id="recTally"></span> Recorder ready';
- setTally("ready");
- $("ovRec").classList.remove("on");
+  downloadFile(JSON.stringify(out, null, 2), 'slangforge_' + Date.now() + '.json', 'application/json');
 }
 
-/* ---------- restore saved preferences ---------- */
-{
- let savedName=safeGet("pravah_filename");
- if(savedName)$("filename").value=savedName;
- let savedUrl=safeGet("pravah_lastUrl");
- if(savedUrl)$("url").value=savedUrl;
+function exportCsv() {
+  var pool = exportPool();
+  if (!pool.length) { alert('No slang to export yet.'); return; }
+  var header = 'Term,Phonetic,Definition,Example,Tags\n';
+  var rows = pool.map(function(s) {
+    function q(v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; }
+    return [q(s.term), q(s.phonetic), q(s.definition), q(s.example), q((s.tags||[]).join('; '))].join(',');
+  }).join('\n');
+  downloadFile(header + rows, 'slangforge_' + Date.now() + '.csv', 'text/csv;charset=utf-8');
 }
-$("filename").addEventListener("change",()=>safeSet("pravah_filename",$("filename").value.trim()));
+
+/* ── SHARE AS IMAGE ────────────────────────────────────── */
+var shareItem = null;
+
+function openShareModal(item) {
+  shareItem = item;
+  var canvas = document.getElementById('shareCanvas');
+  var ctx = canvas.getContext('2d');
+  var theme = document.documentElement.getAttribute('data-theme');
+  var palette = {
+    dark:  {bg:'#0f1117', surface:'#181c27', accent:'#f0c040', text:'#e8eaf0', muted:'#7a7f9a', accent2:'#e0598b'},
+    light: {bg:'#f4f1eb', surface:'#fffdf8', accent:'#c0480a', text:'#1a1612', muted:'#8a8070', accent2:'#7c3aed'},
+    oled:  {bg:'#000000', surface:'#0a0a0a', accent:'#00e5ff', text:'#f0f0f0', muted:'#555', accent2:'#ff2d78'},
+    hc:    {bg:'#000000', surface:'#000000', accent:'#ffff00', text:'#ffffff', muted:'#cccccc', accent2:'#00ff88'}
+  };
+  var c = palette[theme] || palette.dark;
+  var W = 600, H = 320;
+  canvas.width = W; canvas.height = H;
+
+  // Background
+  ctx.fillStyle = c.surface;
+  ctx.fillRect(0, 0, W, H);
+
+  // Accent bar
+  ctx.fillStyle = c.accent;
+  ctx.fillRect(0, 0, 6, H);
+
+  // Term
+  ctx.font = 'bold 42px system-ui, sans-serif';
+  ctx.fillStyle = c.accent;
+  ctx.fillText(item.term, 32, 70);
+
+  // Phonetic
+  if (item.phonetic) {
+    ctx.font = 'italic 16px system-ui, sans-serif';
+    ctx.fillStyle = c.muted;
+    ctx.fillText(item.phonetic, 34, 96);
+  }
+
+  // Divider
+  ctx.strokeStyle = c.accent2;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(32, 112); ctx.lineTo(W - 32, 112); ctx.stroke();
+
+  // Definition (word wrap)
+  ctx.font = '16px system-ui, sans-serif';
+  ctx.fillStyle = c.text;
+  wrapText(ctx, item.definition, 32, 138, W - 64, 24);
+
+  // Example
+  ctx.font = 'italic 14px system-ui, sans-serif';
+  ctx.fillStyle = c.muted;
+  wrapText(ctx, '"' + item.example + '"', 32, 220, W - 64, 22);
+
+  // Footer
+  ctx.font = '12px system-ui, sans-serif';
+  ctx.fillStyle = c.muted;
+  ctx.fillText('SlangForge \u00b7 \u00a9 ' + new Date().getFullYear() + ' Manik Roy', 32, H - 20);
+
+  document.getElementById('shareModal').classList.add('open');
+}
+
+function wrapText(ctx, text, x, y, maxW, lineH) {
+  var words = text.split(' ');
+  var line = '';
+  var lineCount = 0;
+  for (var i = 0; i < words.length; i++) {
+    var test = line + words[i] + ' ';
+    if (ctx.measureText(test).width > maxW && i > 0) {
+      ctx.fillText(line, x, y + lineCount * lineH);
+      line = words[i] + ' ';
+      lineCount++;
+      if (lineCount >= 3) { ctx.fillText(line + '…', x, y + lineCount * lineH); return; }
+    } else { line = test; }
+  }
+  ctx.fillText(line, x, y + lineCount * lineH);
+}
+
+function downloadShareImage() {
+  var canvas = document.getElementById('shareCanvas');
+  var a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'slang_' + (shareItem ? shareItem.term.replace(/\s+/g,'_') : 'card') + '.png';
+  a.click();
+}
+
+function closeShareModal() {
+  document.getElementById('shareModal').classList.remove('open');
+}
+
+/* ── HISTORY ───────────────────────────────────────────── */
+var history = [];
+var allGenerated = [];
+
+function addToHistory(term, vibe) {
+  history.unshift({term: term, vibe: vibe});
+  if (history.length > 12) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  if (!history.length) return;
+  var card = document.getElementById('historyCard');
+  var list = document.getElementById('historyList');
+  card.style.display = 'block';
+  list.innerHTML = history.map(function(h) {
+    return '<div class="hist-item"><span class="hist-term">' + h.term + '</span><span class="hist-vibe">' + h.vibe + '</span></div>';
+  }).join('');
+}
+
+/* ── COPY ──────────────────────────────────────────────── */
+function copyTerm(btn, text) {
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = '✓';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+/* ── BUILD CARD ────────────────────────────────────────── */
+function buildCard(item, delay, notLast) {
+  var card = document.createElement('div');
+  card.className = 'slang-card';
+  card.style.animationDelay = delay + 'ms';
+  if (notLast) card.style.marginBottom = '0.8rem';
+
+  // Action buttons
+  var actions = document.createElement('div');
+  actions.className = 'card-actions';
+
+  var shareBtn = document.createElement('button');
+  shareBtn.className = 'card-btn';
+  shareBtn.textContent = '🖼';
+  shareBtn.title = 'Share as image';
+  shareBtn.addEventListener('click', function() { openShareModal(item); });
+
+  var favBtn = document.createElement('button');
+  favBtn.className = 'card-btn fav-btn';
+  favBtn.textContent = '☆';
+  favBtn.title = 'Favourite';
+  favBtn.addEventListener('click', function() {
+    var isFav = favBtn.classList.toggle('starred');
+    favBtn.textContent = isFav ? '★' : '☆';
+    if (isFav) {
+      var existing = loadFromStorage();
+      var has = existing.some(function(s) { return s.term.toLowerCase() === item.term.toLowerCase(); });
+      if (!has) { existing.unshift(item); persistToStorage(existing); updateSavedCount(); }
+    }
+  });
+
+  var copyBtn = document.createElement('button');
+  copyBtn.className = 'card-btn';
+  copyBtn.textContent = 'Copy';
+  copyBtn.addEventListener('click', function() { copyTerm(copyBtn, item.term); });
+
+  actions.appendChild(shareBtn);
+  actions.appendChild(favBtn);
+  actions.appendChild(copyBtn);
+
+  var termEl = document.createElement('div');
+  termEl.className = 'term';
+  termEl.textContent = item.term;
+
+  var phoneticEl = document.createElement('div');
+  phoneticEl.className = 'phonetic';
+  phoneticEl.textContent = item.phonetic || '';
+
+  var defEl = document.createElement('div');
+  defEl.className = 'definition';
+  defEl.textContent = item.definition;
+
+  var exEl = document.createElement('div');
+  exEl.className = 'example';
+  exEl.textContent = '"' + item.example + '"';
+
+  var meta = document.createElement('div');
+  meta.className = 'meta';
+  (item.tags || []).forEach(function(t) {
+    var b = document.createElement('span');
+    b.className = 'badge'; b.textContent = t; meta.appendChild(b);
+  });
+  var lenB = document.createElement('span');
+  lenB.className = 'badge';
+  lenB.style.color = 'var(--accent)';
+  lenB.style.borderColor = 'var(--accent)';
+  lenB.textContent = item.term.replace(/\s/g,'').length + ' letters';
+  meta.appendChild(lenB);
+
+  card.appendChild(actions);
+  card.appendChild(termEl);
+  card.appendChild(phoneticEl);
+  card.appendChild(defEl);
+  card.appendChild(exEl);
+  card.appendChild(meta);
+  return card;
+}
+
+function renderCards(items, append) {
+  var existingTerms = new Set(allGenerated.map(function(s) { return s.term.toLowerCase(); }));
+  items.forEach(function(s) { if (!existingTerms.has(s.term.toLowerCase())) allGenerated.unshift(s); });
+
+  var container = document.getElementById('slangCards');
+  if (!append) container.innerHTML = '';
+  items.forEach(function(item, i) {
+    var notLast = append ? false : i < items.length - 1;
+    var card = buildCard(item, i * 80, notLast);
+    if (append) { card.style.marginTop = '0.8rem'; }
+    container.appendChild(card);
+    if (i === 0 && !append) addToHistory(item.term, (item.tags && item.tags[0]) || '');
+  });
+
+  document.getElementById('storeBar').classList.add('visible');
+  updateSavedCount();
+  checkDuplicates(items);
+}
+
+/* ── GENERATE ──────────────────────────────────────────── */
+async function generateSlang(append) {
+  var era      = document.getElementById('era').value;
+  var category = document.getElementById('category').value;
+  var region   = document.getElementById('region').value;
+  var keyword  = document.getElementById('keyword').value.trim();
+  var vibe     = (document.querySelector('.chip.active') || {}).dataset.v || 'gen-z';
+  var letterLen = document.getElementById('letterLen').value;
+  var tone     = document.getElementById('toneSlider').value;
+  var qty      = getQty();
+  var multiWord = document.getElementById('multiWordToggle').classList.contains('active');
+  var rhyme    = document.getElementById('rhymeToggle').classList.contains('active');
+  var rhymeWord = document.getElementById('rhymeWord').value.trim();
+
+  var btn = document.getElementById('genBtn');
+  var errorBox = document.getElementById('errorBox');
+  var outputSection = document.getElementById('outputSection');
+
+  btn.classList.add('loading');
+  btn.disabled = true;
+  errorBox.classList.remove('visible');
+
+  var usedTerms = history.map(function(h) { return h.term; }).join(', ');
+  var randomSeed = Math.random().toString(36).slice(2, 8);
+  var toneDesc = {1:'very mild, clean, kid-friendly',2:'chill and casual',3:'balanced everyday slang',4:'edgy and spicy',5:'wild, absurd, internet-brain humor'};
+
+  var prompt = 'You are a creative slang linguist. Generate ' + qty + ' unique slang word(s)/phrase(s).\n\n' +
+    'Parameters:\n' +
+    '- Era/Origin: ' + era + '\n' +
+    '- Category: ' + category + '\n' +
+    '- Region/Dialect: ' + region + '\n' +
+    '- Vibe/Subculture: ' + vibe + '\n' +
+    '- Tone: ' + toneDesc[tone] + '\n' +
+    (keyword ? '- Must relate to keyword: "' + keyword + '"\n' : '') +
+    '- Term length: approximately ' + letterLen + ' letters (\u00b11 acceptable)\n' +
+    (multiWord ? '- Must be a multi-word phrase, not a single word\n' : '- Prefer a single coined word\n') +
+    (rhyme && rhymeWord ? '- MUST rhyme with: "' + rhymeWord + '"\n' : '') +
+    '- Creativity seed (vary output each call): ' + randomSeed + '\n\n' +
+    'Return ONLY valid JSON (no markdown) as an array:\n' +
+    '[{"term":"...","phonetic":"/.../'  + '","definition":"...","example":"...","tags":["' + vibe + '","' + era + '","' + category + '"]}]\n\n' +
+    'Rules:\n' +
+    '- Authentic to era, region, and vibe\n' +
+    '- Definitions playful but clear\n' +
+    '- Examples feel natural\n' +
+    '- No offensive, racist, sexist, or harmful content\n' +
+    '- CRITICAL: coin BRAND NEW terms every call\n' +
+    (usedTerms ? '- Do NOT reuse: ' + usedTerms + '\n' : '') +
+    '- Be inventive and surprising';
+
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1200,
+        messages: [{role: 'user', content: prompt}]
+      })
+    });
+    if (!res.ok) throw new Error('API error: ' + res.status);
+    var data = await res.json();
+    var raw = data.content.map(function(b) { return b.text || ''; }).join('');
+    var match = raw.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error('No JSON found in response.');
+    var items = JSON.parse(match[0]);
+    if (!Array.isArray(items) || !items.length) throw new Error('Invalid response structure.');
+
+    renderCards(items, !!append);
+    outputSection.classList.add('visible');
+    if (!append) outputSection.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  } catch(err) {
+    errorBox.textContent = '\u26a0 ' + (err.message || 'Something went wrong. Try again.');
+    errorBox.classList.add('visible');
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function generateMore() {
+  generateSlang(true);
+}
 </script>
 </body>
 </html>
