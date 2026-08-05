@@ -1,259 +1,662 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lot &amp; Ledger — Property Price Checker</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12161c">
+<title>PRAVAH — YouTube Player + Recorder</title>
 <style>
-  :root{
-    --bg:#F7F4EC; --surface:#FFFFFF; --ink:#211E1A; --muted:#736C5E;
-    --line:#DAD3C2; --accent:#A13D2B; --accent-ink:#FFF6EF; --focus:#1B6EF3;
-  }
-  html[data-theme="dark"]{
-    --bg:#14181D; --surface:#1C2129; --ink:#EDEAE2; --muted:#9498A0;
-    --line:#2B313A; --accent:#E07A55; --accent-ink:#1B120D; --focus:#7FB2FF;
-  }
-  html[data-theme="oled"]{
-    --bg:#000000; --surface:#0A0A0A; --ink:#F2F0EA; --muted:#8F8B82;
-    --line:#1C1C1C; --accent:#FF8A5F; --accent-ink:#000000; --focus:#7FB2FF;
-  }
-  html[data-theme="hc"]{
-    --bg:#000000; --surface:#000000; --ink:#FFFFFF; --muted:#FFFF00;
-    --line:#FFFFFF; --accent:#FFFF00; --accent-ink:#000000; --focus:#00FFFF;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg); color:var(--ink); min-height:100dvh;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    display:flex; flex-direction:column; align-items:center;
-    transition:background .25s ease,color .25s ease;
-  }
-  .wrap{width:100%; max-width:480px; padding:20px 16px 12px; flex:1; display:flex; flex-direction:column;}
-  header{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;}
-  .eyebrow{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 4px;}
-  h1{font-family:Georgia,"Times New Roman",serif; font-size:26px; margin:0; line-height:1.15; font-weight:700;}
-  .theme-btn{
-    background:var(--surface); border:1px solid var(--line); color:var(--ink);
-    border-radius:999px; padding:8px 12px; font-size:12px; cursor:pointer;
-    white-space:nowrap; margin-left:10px; font-family:inherit;
-  }
-  .theme-btn:focus-visible, input:focus-visible, select:focus-visible, button:focus-visible{
-    outline:3px solid var(--focus); outline-offset:2px;
-  }
-  .card{
-    background:var(--surface); border:1px solid var(--line); border-radius:14px;
-    padding:18px; margin-bottom:16px;
-  }
-  label{display:block; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:14px 0 6px;}
-  label:first-of-type{margin-top:0;}
-  input, select{
-    width:100%; background:transparent; border:1px solid var(--line); color:var(--ink);
-    border-radius:8px; padding:11px 12px; font-size:15px; font-family:inherit;
-  }
-  .row{display:flex; gap:10px;}
-  .row > div{flex:1;}
-  button.run{
-    width:100%; margin-top:18px; background:var(--accent); color:var(--accent-ink);
-    border:none; border-radius:8px; padding:14px; font-size:15px; font-weight:700;
-    letter-spacing:.03em; cursor:pointer; font-family:Georgia,serif;
-  }
-  button.run:disabled{opacity:.6; cursor:progress;}
-  .msg{font-size:13px; color:var(--muted); margin-top:10px; min-height:16px;}
-  .ledger{position:relative; overflow:hidden;}
-  .ledger h2{font-family:Georgia,serif; font-size:15px; margin:0 0 12px; letter-spacing:.03em;}
-  .li-row{
-    display:flex; justify-content:space-between; align-items:baseline; gap:8px;
-    font-family:"Courier New",monospace; font-size:13.5px; padding:6px 0;
-    border-bottom:1px dotted var(--line);
-  }
-  .li-row span:first-child{color:var(--muted);}
-  .total-row{display:flex; justify-content:space-between; align-items:baseline; margin-top:14px;}
-  .total-row .lbl{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted);}
-  .total-row .val{font-family:"Courier New",monospace; font-size:28px; font-weight:700;}
-  .seal{
-    position:absolute; top:8px; right:-18px; width:104px; height:104px;
-    border:3px double var(--accent); border-radius:50%; color:var(--accent);
-    display:flex; align-items:center; justify-content:center; text-align:center;
-    transform:rotate(14deg); font-family:Georgia,serif; font-size:10.5px;
-    letter-spacing:.08em; text-transform:uppercase; line-height:1.3; opacity:.9;
-  }
-  .note{font-size:11.5px; color:var(--muted); line-height:1.5; margin-top:14px;}
-  footer{
-    width:100%; max-width:480px; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; text-align:center;
-    padding:18px 16px 22px; gap:4px; color:var(--muted); font-size:12px;
-  }
-  footer .theme-name{text-transform:capitalize;}
-  @media (min-width:520px){
-    .wrap{padding-top:36px;}
-    h1{font-size:29px;}
-  }
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+*{box-sizing:border-box}
+:root{
+ --bg:#eef1f6;--card:#ffffffb8;--txt:#12161c;--muted:#5b6674;
+ --accent:#e6332a;   /* record tally */
+ --accent2:#1f9d63;  /* ready / confirm tally */
+ --accent3:#d98f16;  /* paused / caution tally */
+ --line:#ffffff88;--shadow:0 12px 35px #0002;--panel:#0000000d;
+}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--txt);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;
+justify-content:center;align-items:center;text-align:center;-webkit-tap-highlight-color:transparent}
+.app{width:min(100%,650px);min-height:100vh;padding:10px;display:flex;
+flex-direction:column;justify-content:center;gap:10px}
+header,.card,footer{background:var(--card);border:1px solid var(--line);
+box-shadow:var(--shadow);backdrop-filter:blur(18px);border-radius:20px}
+header{padding:13px}
+h1{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.02em;
+font-size:1.25rem;margin:0 0 3px;text-transform:uppercase}
+.sub{font-size:.72rem;color:var(--muted);letter-spacing:.03em}
+.status{font-size:.75rem;color:var(--muted)}
+.modes{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:9px}
+button,input,select{border:0;border-radius:11px;padding:10px;font:inherit;color:inherit}
+button{background:#fff;color:#111;cursor:pointer;font-weight:650;transition:transform .08s}
+button:active{transform:scale(.96)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+.modes button{font-size:.68rem;padding:7px 9px}
+.card{padding:11px}
+.eyebrow{font-family:'Oswald',sans-serif;font-size:.66rem;font-weight:600;
+letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;margin:0 0 7px 2px}
+.inputrow{display:flex;gap:6px}
+input,select{width:100%;background:#ffffffd9;color:#111;outline:0}
+.badge{margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:.7rem;
+color:var(--muted);text-align:left;padding-left:2px}
+
+.results{margin-top:8px;max-height:320px;overflow-y:auto;display:none;
+flex-direction:column;gap:6px;text-align:left}
+.results.show{display:flex}
+.result{display:flex;gap:8px;padding:6px;border-radius:11px;background:#fff6;
+cursor:pointer;align-items:center;transition:transform .08s}
+.result:active{transform:scale(.98)}
+.result img{width:88px;height:50px;object-fit:cover;border-radius:8px;flex:none;background:#000}
+.result .meta{overflow:hidden;flex:1}
+.result .t{font-size:.76rem;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result .c{font-size:.68rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result .d{font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--muted);
+flex:none;padding-left:6px}
+.results .hint{padding:8px;font-size:.72rem;color:var(--muted)}
+body.dark .result,body.oled .result{background:#ffffff12}
+body.hc .result{background:#000;border:1px solid #fff}
+.badge b{color:var(--txt)}
+
+.player{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;
+border-radius:15px;background:#000;margin-top:9px}
+iframe{width:100%;height:100%;border:0}
+.ov{position:absolute;pointer-events:none;font-family:'JetBrains Mono',monospace;
+font-size:.68rem;font-weight:700;color:#fff;letter-spacing:.04em;
+background:#00000080;border-radius:8px;padding:4px 8px;display:flex;align-items:center;gap:5px}
+.ov-tc{right:7px;bottom:7px}
+.ov-rec{left:7px;top:7px;display:none}
+.ov-rec.on{display:flex}
+
+.tally{width:8px;height:8px;border-radius:50%;background:#8a99;flex:none}
+.tally.live{background:var(--accent);animation:pulse 1.3s infinite}
+.tally.ready{background:var(--accent2)}
+.tally.pause{background:var(--accent3)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 #e6332a80}70%{box-shadow:0 0 0 9px #e6332a00}100%{box-shadow:0 0 0 0 #e6332a00}}
+
+.row{display:grid;gap:6px;margin-top:7px}
+.row3{grid-template-columns:repeat(3,1fr)}
+.row4{grid-template-columns:repeat(4,1fr)}
+.row2{grid-template-columns:repeat(2,1fr)}
+.row button{font-size:.72rem}
+.row button.active{background:var(--accent2);color:#fff}
+
+.volrow{display:flex;align-items:center;gap:8px;margin-top:8px}
+.volrow input[type=range]{padding:0;background:transparent;accent-color:var(--accent2)}
+.volrow select{width:auto;flex:none;font-size:.72rem}
+
+.record{margin-top:9px;padding:11px;border-radius:15px;background:var(--panel)}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left;font-size:.73rem}
+.options label{padding:8px;background:#fff6;border-radius:9px;display:flex;align-items:center;gap:6px}
+.options input{width:auto}
+.options label.wide{grid-column:1/-1}
+.qualityrow{margin-top:6px}
+.qualityrow select{font-size:.75rem}
+
+.timecode{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;
+font-weight:700;letter-spacing:.05em;background:var(--panel);border-radius:10px;
+padding:9px;margin:8px 0 0;font-size:1.35rem;display:flex;align-items:center;
+justify-content:center;gap:9px}
+
+.recBtns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:7px}
+.recBtns button{font-size:.72rem}
+#pause,#stop,#download,#discard{display:none}
+.primary{background:var(--accent);color:#fff}
+
+.stats{font-size:.68rem;color:var(--muted);margin:6px 0 0;font-family:'JetBrains Mono',monospace}
+.preview{display:none;margin-top:9px;text-align:left}
+.preview video{width:100%;border-radius:12px;background:#000;display:block}
+.preview .recBtns{margin-top:8px}
+
+.kbd{font-family:'JetBrains Mono',monospace;font-size:.65rem;background:#8882;
+border-radius:5px;padding:1px 5px;margin:0 2px}
+footer{padding:10px;font-size:.68rem;color:var(--muted);line-height:1.7}
+
+.toasts{position:fixed;left:0;right:0;bottom:14px;display:flex;flex-direction:column;
+align-items:center;gap:6px;pointer-events:none;z-index:99}
+.toast{background:#12161cf0;color:#fff;font-size:.75rem;padding:9px 15px;
+border-radius:11px;box-shadow:0 8px 22px #0004;max-width:88%;opacity:0;
+transform:translateY(8px);transition:opacity .2s,transform .2s}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.warn{background:#d98f16f0}
+.toast.err{background:#e6332af0}
+.toast.ok{background:#1f9d63f0}
+
+body.dark{--bg:#12161c;--card:#1b2028e8;--txt:#eef2f7;--muted:#93a0b3;--line:#fff2;--panel:#ffffff10}
+body.dark input,body.dark select,body.dark button{background:#252b35;color:#fff}
+body.dark button.primary{background:var(--accent)}
+body.oled{--bg:#000;--card:#080808;--txt:#fff;--muted:#aaa;--line:#222;--panel:#ffffff10}
+body.oled input,body.oled select,body.oled button{background:#111;color:#fff}
+body.hc{--bg:#000;--card:#000;--txt:#fff;--muted:#fff;--line:#fff;--shadow:none;--panel:#000}
+body.hc input,body.hc select,body.hc button{background:#000;color:#fff;border:2px solid #fff}
+body.hc .primary{background:#fff;color:#000}
+body.hc .tally.live{background:#fff}
+
+@media(max-width:430px){
+ .app{padding:7px}.inputrow{flex-direction:column}
+ .row3,.row4{grid-template-columns:repeat(2,1fr)}
+ .options{grid-template-columns:1fr}
+ .volrow{flex-wrap:wrap}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <p class="eyebrow">Lot &amp; Ledger</p>
-      <h1>Property Price<br>Checker</h1>
-    </div>
-    <button class="theme-btn" id="themeBtn" type="button" aria-label="Cycle theme">☀ Light</button>
-  </header>
+<main class="app">
 
-  <div class="card">
-    <label for="address">Address or area</label>
-    <input id="address" type="text" placeholder="e.g. Andheri, Mumbai" autocomplete="off">
+<header>
+<h1>▶ PRAVAH</h1>
+<div class="modes">
+<button data-theme="light">☀ Light</button>
+<button data-theme="dark">◐ Dark</button>
+<button data-theme="oled">● OLED</button>
+<button data-theme="hc">HC</button>
+</div>
+</header>
 
-    <label for="type">Property type</label>
-    <select id="type">
-      <option value="apartment">Apartment / Flat</option>
-      <option value="house">House</option>
-      <option value="villa">Villa</option>
-      <option value="land">Land / Plot</option>
-      <option value="commercial">Commercial</option>
-    </select>
+<section class="card">
+<p class="eyebrow">Source</p>
+<div class="inputrow">
+<input id="url" placeholder="YouTube URL or Video ID" autocomplete="off">
+<button id="loadBtn">Load</button>
+</div>
+<div class="badge">Loaded: <b id="loadedId">none</b></div>
 
-    <div class="row">
-      <div>
-        <label for="beds">Bedrooms</label>
-        <input id="beds" type="number" min="0" value="2">
-      </div>
-      <div>
-        <label for="baths">Bathrooms</label>
-        <input id="baths" type="number" min="0" value="2">
-      </div>
-    </div>
+<div class="inputrow" style="margin-top:8px">
+<input id="searchQ" placeholder="Search YouTube — songs or videos" autocomplete="off">
+<button id="searchBtn">🔎 Search</button>
+</div>
+<div class="results" id="searchResults"></div>
 
-    <label for="sqft">Size (sq ft)</label>
-    <input id="sqft" type="number" min="1" value="1000">
-
-    <button class="run" id="runBtn" type="button">Run Appraisal</button>
-    <p class="msg" id="msg"></p>
-  </div>
-
-  <div class="card ledger" id="result" hidden>
-    <div class="seal" id="seal">Estimated<br>Preview</div>
-    <h2>Appraisal Ledger</h2>
-    <div id="lineItems"></div>
-    <div class="total-row">
-      <span class="lbl">Estimated value</span>
-      <span class="val" id="totalVal">—</span>
-    </div>
-    <p class="note">Indicative estimate only, generated from open geocoding data (OpenStreetMap Nominatim) and a regional rate model. Not a licensed valuation — verify with a local appraiser or agent before any transaction.</p>
-  </div>
+<div class="player">
+<iframe id="yt" allow="autoplay;encrypted-media;picture-in-picture"
+allowfullscreen src="about:blank"></iframe>
+<div class="ov ov-rec" id="ovRec"><span class="tally live"></span>REC</div>
+<div class="ov ov-tc" id="ovTc">00:00 / 00:00</div>
 </div>
 
+<div class="row row4">
+<button id="playBtn">▶ Play</button>
+<button id="pauseBtn">⏸ Pause</button>
+<button id="stopBtn">■ Stop</button>
+<button id="reloadBtn">↻ Reload</button>
+</div>
+<div class="row row4">
+<button id="skipBackBtn">⏪ 10s</button>
+<button id="skipFwdBtn">⏩ 10s</button>
+<button id="loopBtn">⟲ Loop</button>
+<button id="muteBtn">🔊 Mute</button>
+</div>
+<div class="volrow">
+<input id="vol" type="range" min="0" max="100" value="100" aria-label="Volume">
+<select id="speed" aria-label="Playback speed">
+<option value="0.25">0.25×</option><option value="0.5">0.5×</option>
+<option value="0.75">0.75×</option><option value="1" selected>1×</option>
+<option value="1.25">1.25×</option><option value="1.5">1.5×</option>
+<option value="2">2×</option>
+</select>
+</div>
+<div class="row row2">
+<button id="fullBtn">⛶ Fullscreen</button>
+<button id="copyBtn">🔗 Copy URL</button>
+</div>
+
+<div class="record">
+<p class="eyebrow">Recorder</p>
+<div id="status" class="status"><span class="tally ready" id="recTally"></span> Recorder ready</div>
+
+<div class="options">
+<label><input id="mic" type="checkbox"> 🎤 Microphone</label>
+<label><input id="audio" type="checkbox" checked> 🔊 System audio</label>
+<label class="wide"><input id="audioOnly" type="checkbox"> 🎵 Audio only</label>
+</div>
+<div class="qualityrow" id="videoQualityRow">
+<select id="quality" aria-label="Recording quality">
+<option value="std">Standard · 2.5 Mbps</option>
+<option value="hd" selected>HD · 8 Mbps</option>
+<option value="max">Max · 16 Mbps</option>
+</select>
+</div>
+<div class="qualityrow" id="audioQualityRow" style="display:none">
+<select id="audioQuality" aria-label="Audio quality">
+<option value="128000">Standard · 128 kbps</option>
+<option value="192000" selected>High · 192 kbps</option>
+<option value="320000">Max · 320 kbps</option>
+</select>
+</div>
+
+<input id="filename" value="youtube-recording" placeholder="Recording filename"
+style="width:100%;margin-top:6px">
+
+<div class="timecode"><span class="tally" id="tcTally"></span><span id="timer">00:00:00</span></div>
+
+<div class="recBtns">
+<button id="start" class="primary">● Record</button>
+<button id="pause">Ⅱ Pause</button>
+<button id="stop">■ Stop</button>
+<button id="resume">▶ Resume</button>
+</div>
+
+<div id="stats" class="stats">Duration: 00:00:00 · Size: 0 MB</div>
+
+<div class="preview" id="preview">
+<video id="previewVid" controls playsinline></video>
+<audio id="previewAudio" controls style="display:none"></audio>
+<div class="recBtns">
+<button id="download">⬇ Download</button>
+<button id="discard">✕ Discard</button>
+</div>
+</div>
+</div>
+</section>
+
 <footer>
-  <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
-  <div>Theme: <span class="theme-name" id="themeLabel">Light</span></div>
+<span class="kbd">Space</span>Play/Pause
+<span class="kbd">M</span>Mute
+<span class="kbd">←/→</span>Seek 5s
+<br>© <span id="year"></span> Manik Roy. All Rights Reserved.
 </footer>
+</main>
+
+<div class="toasts" id="toasts"></div>
 
 <script>
-(function(){
-  var THEMES = [
-    {key:"light", label:"Light", icon:"☀"},
-    {key:"dark", label:"Dark", icon:"☾"},
-    {key:"oled", label:"OLED Black", icon:"●"},
-    {key:"hc", label:"High Contrast", icon:"◐"}
-  ];
-  var idx = 0;
-  var html = document.documentElement;
-  var btn = document.getElementById("themeBtn");
-  var themeLabel = document.getElementById("themeLabel");
+const $=x=>document.getElementById(x);
 
-  function applyTheme(i){
-    idx = i % THEMES.length;
-    var t = THEMES[idx];
-    html.setAttribute("data-theme", t.key);
-    btn.textContent = t.icon + " " + t.label;
-    themeLabel.textContent = t.label;
-    try{ localStorage.setItem("ppc-theme", String(idx)); }catch(e){}
-  }
-  (function initTheme(){
-    var saved = 0;
-    try{
-      var s = localStorage.getItem("ppc-theme");
-      if(s !== null) saved = parseInt(s,10) || 0;
-    }catch(e){}
-    applyTheme(saved);
-  })();
-  btn.addEventListener("click", function(){ applyTheme(idx+1); });
+/* ---------- theme ---------- */
+function safeGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function safeSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 
-  document.getElementById("year").textContent = new Date().getFullYear();
+$("year").textContent=new Date().getFullYear();
+mode(safeGet("pravah_theme")||"dark");
+function mode(x){document.body.className=x;safeSet("pravah_theme",x)}
+document.querySelectorAll(".modes button").forEach(btn=>{
+ btn.addEventListener("click",()=>mode(btn.dataset.theme));
+});
 
-  // Base USD-equivalent rate per sq ft by country, plus a fallback average.
-  var RATES = {
-    "united states":220, "united kingdom":330, "canada":210, "australia":260,
-    "india":75, "united arab emirates":230, "singapore":950, "germany":300,
-    "france":320, "japan":380, "china":260, "brazil":120, "pakistan":55,
-    "bangladesh":45, "nigeria":90, "south africa":100, "mexico":140,
-    "spain":210, "italy":230, "netherlands":340, "ireland":300
+/* ---------- wire up every other control (no inline handlers anywhere) ---------- */
+function wireControls(){
+ $("loadBtn").addEventListener("click",loadVideo);
+ $("searchBtn").addEventListener("click",searchYT);
+ $("searchQ").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){e.preventDefault();searchYT()}
+ });
+ $("playBtn").addEventListener("click",()=>cmd("playVideo"));
+ $("pauseBtn").addEventListener("click",()=>cmd("pauseVideo"));
+ $("stopBtn").addEventListener("click",()=>cmd("stopVideo"));
+ $("reloadBtn").addEventListener("click",reload);
+ $("skipBackBtn").addEventListener("click",()=>skip(-10));
+ $("skipFwdBtn").addEventListener("click",()=>skip(10));
+ $("loopBtn").addEventListener("click",toggleLoop);
+ $("muteBtn").addEventListener("click",toggleMute);
+ $("vol").addEventListener("input",e=>setVol(e.target.value));
+ $("speed").addEventListener("change",e=>cmd("setPlaybackRate",[parseFloat(e.target.value)]));
+ $("fullBtn").addEventListener("click",full);
+ $("copyBtn").addEventListener("click",copyURL);
+ $("start").addEventListener("click",startRec);
+ $("pause").addEventListener("click",pauseRec);
+ $("stop").addEventListener("click",stopRec);
+ $("resume").addEventListener("click",resumeRec);
+ $("download").addEventListener("click",downloadRec);
+ $("discard").addEventListener("click",discardRec);
+ $("audioOnly").addEventListener("change",e=>{
+  let on=e.target.checked;
+  $("videoQualityRow").style.display=on?"none":"block";
+  $("audioQualityRow").style.display=on?"block":"none";
+ });
+}
+wireControls();
+
+/* ---------- toast ---------- */
+function toast(msg,type=""){
+ let t=document.createElement("div");
+ t.className="toast"+(type?" "+type:"");
+ t.textContent=msg;
+ $("toasts").appendChild(t);
+ requestAnimationFrame(()=>t.classList.add("show"));
+ setTimeout(()=>{t.classList.remove("show");setTimeout(()=>t.remove(),250)},3000);
+}
+
+/* ---------- player state ---------- */
+let currentVideoId=null,currentTime=0,videoDuration=0,playerState=-1;
+let loopEnabled=false,isMuted=false,lastVolume=100;
+
+function id(v){
+ v=(v||"").trim();
+ if(/^[\w-]{11}$/.test(v))return v;
+ try{
+  let u=new URL(v);
+  if(u.hostname.includes("youtu.be"))return u.pathname.slice(1);
+  if(u.searchParams.get("v"))return u.searchParams.get("v");
+  let p=u.pathname.split("/"),i=p.indexOf("embed");
+  return i>=0?p[i+1]:"";
+ }catch(e){return ""}
+}
+function loadVideo(){
+ let x=id($("url").value);
+ if(!x)return toast("Enter a valid YouTube URL or Video ID.","err");
+ loadById(x);
+}
+function loadById(vidId){
+ currentVideoId=vidId;
+ $("url").value="https://youtu.be/"+vidId;
+ safeSet("pravah_lastUrl",$("url").value);
+ $("loadedId").textContent=vidId;
+ $("yt").src="https://www.youtube.com/embed/"+vidId+
+  "?enablejsapi=1&autoplay=1&playsinline=1";
+ currentTime=0;videoDuration=0;playerState=-1;
+ updateOverlay();
+}
+
+/* ---------- search (keyless — uses public Invidious mirrors, tries each in turn) ---------- */
+const INVIDIOUS_INSTANCES=[
+ "https://invidious.nerdvpn.de","https://yt.artemislena.eu",
+ "https://invidious.jing.rocks","https://iv.melmac.space",
+ "https://invidious.reallyaweso.me"
+];
+async function searchYT(){
+ let q=$("searchQ").value.trim();
+ if(!q)return toast("Enter something to search for.","warn");
+ let box=$("searchResults");
+ box.classList.add("show");
+ box.innerHTML='<div class="hint">Searching…</div>';
+ for(let base of INVIDIOUS_INSTANCES){
+  try{
+   let ctrl=new AbortController();
+   let t=setTimeout(()=>ctrl.abort(),4500);
+   let res=await fetch(base+"/api/v1/search?q="+encodeURIComponent(q)+"&type=video",{signal:ctrl.signal});
+   clearTimeout(t);
+   if(!res.ok)continue;
+   let data=await res.json();
+   let vids=(Array.isArray(data)?data:[]).filter(d=>d.type==="video"&&d.videoId);
+   if(!vids.length){box.innerHTML='<div class="hint">No results found. Try different words.</div>';return}
+   renderResults(vids.slice(0,15));
+   return;
+  }catch(e){continue}
+ }
+ box.innerHTML='<div class="hint">Search is temporarily unavailable — paste a YouTube link or ID above instead.</div>';
+}
+function renderResults(vids){
+ let box=$("searchResults");
+ box.innerHTML="";
+ vids.forEach(v=>{
+  let thumbs=v.videoThumbnails||[];
+  let thumb=thumbs.find(t=>t.quality==="medium")||thumbs[0]||{};
+  let item=document.createElement("div");
+  item.className="result";item.tabIndex=0;item.setAttribute("role","button");
+  item.setAttribute("aria-label","Play "+(v.title||"video"));
+  let img=document.createElement("img");
+  img.loading="lazy";img.alt="";img.src=thumb.url||"";
+  let meta=document.createElement("div");meta.className="meta";
+  let t=document.createElement("div");t.className="t";t.textContent=v.title||"Untitled";
+  let c=document.createElement("div");c.className="c";c.textContent=v.author||"";
+  meta.append(t,c);
+  let d=document.createElement("div");d.className="d";d.textContent=fmtShort(v.lengthSeconds||0);
+  item.append(img,meta,d);
+  let pick=()=>{
+   loadById(v.videoId);
+   toast("Playing: "+(v.title||v.videoId),"ok");
+   box.classList.remove("show");
+   document.querySelector(".player").scrollIntoView({behavior:"smooth",block:"center"});
   };
-  var FALLBACK_RATE = 150;
-  var TYPE_MULT = {apartment:1.0, house:1.1, villa:1.45, land:0.4, commercial:1.3};
+  item.addEventListener("click",pick);
+  item.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick()}});
+  box.appendChild(item);
+ });
+}
+function reload(){
+ if(!currentVideoId)return toast("Load a video first.","warn");
+ $("yt").src="https://www.youtube.com/embed/"+currentVideoId+
+  "?enablejsapi=1&autoplay=1&playsinline=1";
+}
+$("yt").addEventListener("load",()=>{
+ if(currentVideoId)postMsg({event:"listening",id:currentVideoId});
+});
 
-  var msg = document.getElementById("msg");
-  var runBtn = document.getElementById("runBtn");
-  var result = document.getElementById("result");
-  var lineItems = document.getElementById("lineItems");
-  var totalVal = document.getElementById("totalVal");
+function postMsg(obj){
+ try{$("yt").contentWindow.postMessage(JSON.stringify(obj),"*")}catch(e){}
+}
+function cmd(func,args=[]){
+ if(!currentVideoId)return toast("Load a video first.","warn");
+ postMsg({event:"command",func,args});
+}
+function skip(sec){
+ if(!currentVideoId)return toast("Load a video first.","warn");
+ cmd("seekTo",[Math.max(0,currentTime+sec),true]);
+}
+function toggleLoop(){
+ loopEnabled=!loopEnabled;
+ $("loopBtn").classList.toggle("active",loopEnabled);
+ toast(loopEnabled?"Loop on":"Loop off");
+}
+function toggleMute(){
+ isMuted=!isMuted;
+ if(isMuted){cmd("mute");$("muteBtn").textContent="🔇 Unmute"}
+ else{cmd("unMute");$("muteBtn").textContent="🔊 Mute"}
+ $("muteBtn").classList.toggle("active",isMuted);
+}
+function setVol(v){
+ lastVolume=v;
+ cmd("setVolume",[Number(v)]);
+ if(Number(v)==0 && !isMuted){isMuted=true;$("muteBtn").textContent="🔇 Unmute";$("muteBtn").classList.add("active")}
+ if(Number(v)>0 && isMuted){isMuted=false;$("muteBtn").textContent="🔊 Mute";$("muteBtn").classList.remove("active")}
+}
+function full(){
+ let el=$("yt");
+ let req=el.requestFullscreen||el.webkitRequestFullscreen||el.webkitEnterFullscreen;
+ if(req)req.call(el).catch?.(()=>toast("Fullscreen was blocked.","warn"));
+ else toast("Fullscreen isn't supported on this browser.","warn");
+}
+async function copyURL(){
+ if(!currentVideoId)return toast("Load a video first.","warn");
+ let link="https://youtu.be/"+currentVideoId;
+ try{
+  await navigator.clipboard.writeText(link);
+  toast("Link copied.","ok");
+ }catch(e){
+  let ta=document.createElement("textarea");
+  ta.value=link;ta.style.position="fixed";ta.style.opacity="0";
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand("copy");toast("Link copied.","ok")}
+  catch(_){toast(link,"warn")}
+  ta.remove();
+ }
+}
 
-  function addLine(label, value){
-    var row = document.createElement("div");
-    row.className = "li-row";
-    row.innerHTML = "<span>"+label+"</span><span>"+value+"</span>";
-    lineItems.appendChild(row);
+/* listen for YouTube player info (works without loading the iframe_api script) */
+window.addEventListener("message",e=>{
+ if(typeof e.origin==="string" && !e.origin.includes("youtube.com"))return;
+ let data;
+ try{data=JSON.parse(e.data)}catch(_){return}
+ if(data.event==="infoDelivery" && data.info){
+  let info=data.info;
+  if(typeof info.currentTime==="number")currentTime=info.currentTime;
+  if(typeof info.duration==="number")videoDuration=info.duration;
+  if(typeof info.playerState==="number"){
+   let prev=playerState;playerState=info.playerState;
+   if(playerState===0 && prev!==0 && loopEnabled){cmd("seekTo",[0,true]);cmd("playVideo")}
   }
+  updateOverlay();
+ }
+});
+function fmtShort(s){
+ s=Math.max(0,Math.floor(s||0));
+ let m=Math.floor(s/60),z=s%60;
+ return m+":"+String(z).padStart(2,"0");
+}
+function updateOverlay(){
+ $("ovTc").textContent=fmtShort(currentTime)+" / "+fmtShort(videoDuration);
+}
 
-  async function geocode(query){
-    var url = "https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=" + encodeURIComponent(query);
-    var res = await fetch(url, {headers:{"Accept":"application/json"}});
-    if(!res.ok) throw new Error("Lookup failed");
-    var data = await res.json();
-    if(!data.length) throw new Error("Location not found");
-    return data[0];
-  }
+/* ---------- keyboard shortcuts ---------- */
+window.addEventListener("keydown",e=>{
+ let tag=(e.target.tagName||"").toLowerCase();
+ if(tag==="input"||tag==="select"||tag==="textarea")return;
+ if(e.code==="Space"){e.preventDefault();cmd(playerState===1?"pauseVideo":"playVideo")}
+ else if(e.key==="m"||e.key==="M"){toggleMute()}
+ else if(e.key==="ArrowLeft"){skip(-5)}
+ else if(e.key==="ArrowRight"){skip(5)}
+});
 
-  runBtn.addEventListener("click", async function(){
-    var address = document.getElementById("address").value.trim();
-    var type = document.getElementById("type").value;
-    var beds = parseFloat(document.getElementById("beds").value) || 0;
-    var baths = parseFloat(document.getElementById("baths").value) || 0;
-    var sqft = parseFloat(document.getElementById("sqft").value) || 0;
+/* ---------- recording ---------- */
+let rec=null,chunks=[],blob=null,timer=null,seconds=0,started=0,elapsedBeforePause=0;
+let recIsAudioOnly=false;
 
-    if(!address){ msg.textContent = "Enter an address or area first."; return; }
-    if(sqft <= 0){ msg.textContent = "Enter a size greater than 0."; return; }
+const QUALITY={std:2500000,hd:8000000,max:16000000};
 
-    runBtn.disabled = true;
-    msg.textContent = "Looking up location…";
-    result.hidden = true;
+function fmtLong(s){
+ let h=Math.floor(s/3600),m=Math.floor(s%3600/60),z=s%60;
+ return [h,m,z].map(x=>String(x).padStart(2,"0")).join(":");
+}
+function updateRecUI(){
+ $("timer").textContent=fmtLong(seconds);
+ $("stats").textContent="Duration: "+fmtLong(seconds)+" · Size: "+
+  (blob?(blob.size/1048576).toFixed(2):"0")+" MB";
+}
+function setTally(state){
+ // state: ready | live | pause
+ let t1=$("recTally"),t2=$("tcTally");
+ [t1,t2].forEach(t=>t.className="tally "+state);
+}
 
-    try{
-      var place = await geocode(address);
-      var country = ((place.address && place.address.country) || "").toLowerCase();
-      var rate = RATES[country] || FALLBACK_RATE;
-      var mult = TYPE_MULT[type] || 1.0;
-      var base = sqft * rate * mult;
-      var roomAdj = (beds * 4500) + (baths * 2500);
-      var total = base + roomAdj;
-
-      lineItems.innerHTML = "";
-      addLine("Location", place.display_name.split(",").slice(0,2).join(","));
-      addLine("Base rate / sq ft", "$" + rate + " × " + mult.toFixed(2) + "×");
-      addLine("Size", sqft + " sq ft");
-      addLine("Room adjustment", "+$" + roomAdj.toLocaleString());
-      totalVal.textContent = "$" + Math.round(total).toLocaleString();
-
-      result.hidden = false;
-      msg.textContent = "";
-    }catch(err){
-      msg.textContent = "Couldn't complete lookup: " + err.message;
-    }finally{
-      runBtn.disabled = false;
-    }
+async function startRec(){
+ if(!navigator.mediaDevices?.getDisplayMedia){
+  return toast("Screen recording isn't supported on this browser/device — try desktop Chrome, Edge, or Firefox.","err");
+ }
+ let audioOnly=$("audioOnly").checked;
+ if(audioOnly && !$("audio").checked && !$("mic").checked){
+  return toast("Turn on System audio or Microphone for an audio-only recording.","warn");
+ }
+ resetRecordingUI();
+ recIsAudioOnly=audioOnly;
+ try{
+  // getDisplayMedia always requires a video request per spec, even for an audio-only recording —
+  // we simply drop the video track right after capture and never encode it.
+  let screen=await navigator.mediaDevices.getDisplayMedia({
+   video:{frameRate:30},audio:$("audio").checked
   });
-})();
+  let videoTracks=screen.getVideoTracks();
+  let tracks=audioOnly?[]:[...videoTracks];
+  if($("audio").checked)tracks.push(...screen.getAudioTracks());
+
+  if($("mic").checked){
+   try{
+    let ms=await navigator.mediaDevices.getUserMedia({audio:true});
+    tracks.push(...ms.getAudioTracks());
+   }catch(e){toast("Microphone permission was denied — recording system audio only.","warn")}
+  }
+
+  if(audioOnly){
+   videoTracks.forEach(t=>t.stop()); // release the screen capture immediately, keep only audio
+   if(!tracks.length){
+    toast("No audio track was available to record.","err");
+    return;
+   }
+  }
+
+  let stream=new MediaStream(tracks);
+  let type,opts;
+  if(audioOnly){
+   type=MediaRecorder.isTypeSupported("audio/webm;codecs=opus")?"audio/webm;codecs=opus":"audio/webm";
+   opts={mimeType:type,audioBitsPerSecond:Number($("audioQuality").value)};
+  }else{
+   type=MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")?"video/webm;codecs=vp9,opus":
+    MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")?"video/webm;codecs=vp8,opus":"video/webm";
+   opts={mimeType:type,videoBitsPerSecond:QUALITY[$("quality").value]};
+  }
+  rec=new MediaRecorder(stream,opts);
+  chunks=[];blob=null;seconds=0;elapsedBeforePause=0;updateRecUI();
+
+  rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  rec.onstop=()=>{
+   blob=new Blob(chunks,{type:recIsAudioOnly?"audio/webm":"video/webm"});
+   let url=URL.createObjectURL(blob);
+   if(recIsAudioOnly){
+    $("previewAudio").src=url;
+    $("previewAudio").style.display="block";
+    $("previewVid").style.display="none";
+   }else{
+    $("previewVid").src=url;
+    $("previewVid").style.display="block";
+    $("previewAudio").style.display="none";
+   }
+   $("preview").style.display="block";
+   $("status").innerHTML='<span class="tally ready" id="recTally"></span> Recording ready';
+   $("ovRec").classList.remove("on");
+   setTally("ready");
+   updateRecUI();
+  };
+  rec.start(1000);
+  started=Date.now();
+  timer=setInterval(()=>{seconds=elapsedBeforePause+Math.floor((Date.now()-started)/1000);updateRecUI()},500);
+  $("start").style.display="none";
+  $("pause").style.display="block";
+  $("stop").style.display="block";
+  $("status").innerHTML='<span class="tally live" id="recTally"></span> Recording'+(audioOnly?" (audio only)":"")+'…';
+  $("ovRec").classList.add("on");
+  setTally("live");
+  if(!audioOnly)videoTracks[0].onended=stopRec;
+ }catch(e){
+  toast("Recording was cancelled.","warn");
+ }
+}
+function pauseRec(){
+ if(rec?.state==="recording"){
+  rec.pause();clearInterval(timer);elapsedBeforePause=seconds;
+  $("pause").style.display="none";$("resume").style.display="block";
+  $("status").innerHTML='<span class="tally pause" id="recTally"></span> Recording paused';
+  setTally("pause");
+ }
+}
+function resumeRec(){
+ if(rec?.state==="paused"){
+  rec.resume();started=Date.now();
+  timer=setInterval(()=>{seconds=elapsedBeforePause+Math.floor((Date.now()-started)/1000);updateRecUI()},500);
+  $("pause").style.display="block";$("resume").style.display="none";
+  $("status").innerHTML='<span class="tally live" id="recTally"></span> Recording'+(recIsAudioOnly?" (audio only)":"")+'…';
+  setTally("live");
+ }
+}
+function stopRec(){
+ if(!rec||rec.state==="inactive")return;
+ rec.stop();rec.stream?.getTracks().forEach(t=>t.stop());
+ clearInterval(timer);
+ $("start").style.display="block";$("pause").style.display="none";
+ $("resume").style.display="none";$("stop").style.display="none";
+}
+function downloadRec(){
+ if(!blob)return;
+ let name=$("filename").value.trim()||"youtube-recording";
+ safeSet("pravah_filename",name);
+ let a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download=name.replace(/\s+/g,"-")+(recIsAudioOnly?".weba":".webm");
+ a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+ toast("Download started.","ok");
+}
+function discardRec(){
+ if($("previewVid").src)URL.revokeObjectURL($("previewVid").src);
+ if($("previewAudio").src)URL.revokeObjectURL($("previewAudio").src);
+ resetRecordingUI();
+ toast("Recording discarded.");
+}
+function resetRecordingUI(){
+ blob=null;chunks=[];seconds=0;elapsedBeforePause=0;updateRecUI();
+ $("preview").style.display="none";
+ $("previewVid").removeAttribute("src");
+ $("previewAudio").removeAttribute("src");
+ $("status").innerHTML='<span class="tally ready" id="recTally"></span> Recorder ready';
+ setTally("ready");
+ $("ovRec").classList.remove("on");
+}
+
+/* ---------- restore saved preferences ---------- */
+{
+ let savedName=safeGet("pravah_filename");
+ if(savedName)$("filename").value=savedName;
+ let savedUrl=safeGet("pravah_lastUrl");
+ if(savedUrl)$("url").value=savedUrl;
+}
+$("filename").addEventListener("change",()=>safeSet("pravah_filename",$("filename").value.trim()));
 </script>
 </body>
 </html>
