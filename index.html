@@ -2,291 +2,257 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#EEF0EC">
-<title>Loupe — Digital Magnifier</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lot &amp; Ledger — Property Price Checker</title>
 <style>
   :root{
-    --bg:#EEF0EC; --surface:#FFFFFF; --ink:#132420; --sub:#54615C;
-    --accent:#B8823A; --line:rgba(19,36,32,0.14); --ring-tick:rgba(19,36,32,0.16);
-    --shadow:0 10px 30px rgba(19,36,32,0.12); --bw:1px;
+    --bg:#F7F4EC; --surface:#FFFFFF; --ink:#211E1A; --muted:#736C5E;
+    --line:#DAD3C2; --accent:#A13D2B; --accent-ink:#FFF6EF; --focus:#1B6EF3;
   }
   html[data-theme="dark"]{
-    --bg:#101615; --surface:#182220; --ink:#F2F0EA; --sub:#9AA39D;
-    --accent:#D9A354; --line:rgba(242,240,234,0.12); --ring-tick:rgba(242,240,234,0.18);
-    --shadow:0 10px 30px rgba(0,0,0,0.5);
+    --bg:#14181D; --surface:#1C2129; --ink:#EDEAE2; --muted:#9498A0;
+    --line:#2B313A; --accent:#E07A55; --accent-ink:#1B120D; --focus:#7FB2FF;
   }
   html[data-theme="oled"]{
-    --bg:#000000; --surface:#050505; --ink:#F5F5F5; --sub:#8C8C8C;
-    --accent:#D9A354; --line:rgba(245,245,245,0.10); --ring-tick:rgba(245,245,245,0.16);
-    --shadow:0 0 0 1px rgba(255,255,255,0.06);
+    --bg:#000000; --surface:#0A0A0A; --ink:#F2F0EA; --muted:#8F8B82;
+    --line:#1C1C1C; --accent:#FF8A5F; --accent-ink:#000000; --focus:#7FB2FF;
   }
   html[data-theme="hc"]{
-    --bg:#000000; --surface:#000000; --ink:#FFFFFF; --sub:#FFFFFF;
-    --accent:#FFE600; --line:#FFFFFF; --ring-tick:#FFFFFF; --bw:2px;
-    --shadow:none;
+    --bg:#000000; --surface:#000000; --ink:#FFFFFF; --muted:#FFFF00;
+    --line:#FFFFFF; --accent:#FFFF00; --accent-ink:#000000; --focus:#00FFFF;
   }
   *{box-sizing:border-box;}
-  html,body{height:100%;}
+  html,body{margin:0;padding:0;}
   body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    display:flex; flex-direction:column; min-height:100dvh;
-    transition:background .25s ease, color .25s ease;
+    background:var(--bg); color:var(--ink); min-height:100dvh;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    transition:background .25s ease,color .25s ease;
   }
-  header{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:16px 18px; border-bottom:var(--bw) solid var(--line);
+  .wrap{width:100%; max-width:480px; padding:20px 16px 12px; flex:1; display:flex; flex-direction:column;}
+  header{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;}
+  .eyebrow{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 4px;}
+  h1{font-family:Georgia,"Times New Roman",serif; font-size:26px; margin:0; line-height:1.15; font-weight:700;}
+  .theme-btn{
+    background:var(--surface); border:1px solid var(--line); color:var(--ink);
+    border-radius:999px; padding:8px 12px; font-size:12px; cursor:pointer;
+    white-space:nowrap; margin-left:10px; font-family:inherit;
   }
-  .brand{display:flex; align-items:baseline; gap:8px;}
-  .brand b{
-    font-size:20px; letter-spacing:0.02em; font-weight:800;
+  .theme-btn:focus-visible, input:focus-visible, select:focus-visible, button:focus-visible{
+    outline:3px solid var(--focus); outline-offset:2px;
   }
-  .brand span{font-size:11px; color:var(--sub); letter-spacing:0.14em; text-transform:uppercase;}
-  #themeBtn{
-    border:var(--bw) solid var(--line); background:var(--surface); color:var(--ink);
-    border-radius:999px; padding:8px 14px; font-size:13px; font-weight:600;
-    display:flex; align-items:center; gap:6px; cursor:pointer;
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:18px; margin-bottom:16px;
   }
-  main{
-    flex:1; display:flex; flex-direction:column; align-items:center;
-    justify-content:flex-start; padding:20px 16px 8px; gap:14px;
+  label{display:block; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:14px 0 6px;}
+  label:first-of-type{margin-top:0;}
+  input, select{
+    width:100%; background:transparent; border:1px solid var(--line); color:var(--ink);
+    border-radius:8px; padding:11px 12px; font-size:15px; font-family:inherit;
   }
-  .lens-wrap{
-    position:relative; width:min(84vw, 380px); aspect-ratio:1/1;
-    border-radius:50%;
-    padding:14px;
-    background:
-      repeating-conic-gradient(var(--ring-tick) 0deg 1.2deg, transparent 1.2deg 9deg);
-    display:flex; align-items:center; justify-content:center;
+  .row{display:flex; gap:10px;}
+  .row > div{flex:1;}
+  button.run{
+    width:100%; margin-top:18px; background:var(--accent); color:var(--accent-ink);
+    border:none; border-radius:8px; padding:14px; font-size:15px; font-weight:700;
+    letter-spacing:.03em; cursor:pointer; font-family:Georgia,serif;
   }
-  .lens{
-    position:relative; width:100%; height:100%; border-radius:50%;
-    overflow:hidden; background:#000; box-shadow:var(--shadow);
-    border:3px solid var(--accent);
+  button.run:disabled{opacity:.6; cursor:progress;}
+  .msg{font-size:13px; color:var(--muted); margin-top:10px; min-height:16px;}
+  .ledger{position:relative; overflow:hidden;}
+  .ledger h2{font-family:Georgia,serif; font-size:15px; margin:0 0 12px; letter-spacing:.03em;}
+  .li-row{
+    display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+    font-family:"Courier New",monospace; font-size:13.5px; padding:6px 0;
+    border-bottom:1px dotted var(--line);
   }
-  canvas{width:100%; height:100%; object-fit:cover; display:block;}
-  .crosshair{
-    position:absolute; inset:0; pointer-events:none;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .crosshair::before, .crosshair::after{
-    content:""; position:absolute; background:var(--accent); opacity:.55;
-  }
-  .crosshair::before{width:22px; height:1.5px;}
-  .crosshair::after{width:1.5px; height:22px;}
-  .readout{
-    font-variant-numeric:tabular-nums; font-weight:700; font-size:26px;
-    letter-spacing:0.02em;
-  }
-  .readout small{font-size:12px; font-weight:600; color:var(--sub); margin-left:4px;}
-  .status{font-size:12px; color:var(--sub); text-align:center; min-height:16px;}
-  .zoomRow{
-    width:min(84vw,380px); display:flex; align-items:center; gap:10px;
-  }
-  input[type=range]{
-    -webkit-appearance:none; flex:1; height:var(--bw); background:var(--line);
-    border-radius:2px; outline:none;
-  }
-  input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none; width:22px; height:22px; border-radius:50%;
-    background:var(--accent); border:var(--bw) solid var(--surface); cursor:pointer;
-    box-shadow:0 1px 4px rgba(0,0,0,.3);
-  }
-  input[type=range]::-moz-range-thumb{
-    width:22px; height:22px; border-radius:50%; background:var(--accent);
-    border:var(--bw) solid var(--surface); cursor:pointer;
-  }
-  .zoomLbl{font-size:12px; color:var(--sub); width:34px; text-align:center;}
-  .controls{
-    display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; justify-content:center;
-  }
-  .ctrlBtn{
-    border:var(--bw) solid var(--line); background:var(--surface); color:var(--ink);
-    border-radius:14px; padding:10px 16px; font-size:14px; font-weight:600;
-    display:flex; align-items:center; gap:8px; cursor:pointer; min-width:96px;
-    justify-content:center;
-  }
-  .ctrlBtn.active{background:var(--accent); color:#1a1206; border-color:var(--accent);}
-  .ctrlBtn:disabled{opacity:.4; cursor:not-allowed;}
-  button:focus-visible, input:focus-visible{
-    outline:3px solid var(--accent); outline-offset:2px;
-  }
-  footer{
-    border-top:var(--bw) solid var(--line); padding:14px 12px;
+  .li-row span:first-child{color:var(--muted);}
+  .total-row{display:flex; justify-content:space-between; align-items:baseline; margin-top:14px;}
+  .total-row .lbl{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted);}
+  .total-row .val{font-family:"Courier New",monospace; font-size:28px; font-weight:700;}
+  .seal{
+    position:absolute; top:8px; right:-18px; width:104px; height:104px;
+    border:3px double var(--accent); border-radius:50%; color:var(--accent);
     display:flex; align-items:center; justify-content:center; text-align:center;
-    min-height:52px;
+    transform:rotate(14deg); font-family:Georgia,serif; font-size:10.5px;
+    letter-spacing:.08em; text-transform:uppercase; line-height:1.3; opacity:.9;
   }
-  footer p{
-    margin:0; font-size:12px; color:var(--sub); line-height:1.5;
-    display:flex; align-items:center; justify-content:center;
+  .note{font-size:11.5px; color:var(--muted); line-height:1.5; margin-top:14px;}
+  footer{
+    width:100%; max-width:480px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    padding:18px 16px 22px; gap:4px; color:var(--muted); font-size:12px;
   }
-  @media (min-width:640px){
-    .lens-wrap{width:min(60vw,420px);}
-    .zoomRow{width:min(60vw,420px);}
+  footer .theme-name{text-transform:capitalize;}
+  @media (min-width:520px){
+    .wrap{padding-top:36px;}
+    h1{font-size:29px;}
   }
 </style>
 </head>
 <body>
-
-<header>
-  <div class="brand"><b>Loupe</b><span>Digital Magnifier</span></div>
-  <button id="themeBtn" type="button" aria-label="Change theme">☀ Light</button>
-</header>
-
-<main>
-  <div class="lens-wrap">
-    <div class="lens" id="lens">
-      <canvas id="canvas"></canvas>
-      <div class="crosshair"></div>
+<div class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">Lot &amp; Ledger</p>
+      <h1>Property Price<br>Checker</h1>
     </div>
-  </div>
-  <div class="readout" id="readout">1.0<small>×</small></div>
-  <div class="status" id="status">Point your camera at something small</div>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Cycle theme">☀ Light</button>
+  </header>
 
-  <div class="zoomRow">
-    <span class="zoomLbl">1×</span>
-    <input id="zoom" type="range" min="1" max="6" step="0.1" value="1" aria-label="Zoom level">
-    <span class="zoomLbl">6×</span>
+  <div class="card">
+    <label for="address">Address or area</label>
+    <input id="address" type="text" placeholder="e.g. Andheri, Mumbai" autocomplete="off">
+
+    <label for="type">Property type</label>
+    <select id="type">
+      <option value="apartment">Apartment / Flat</option>
+      <option value="house">House</option>
+      <option value="villa">Villa</option>
+      <option value="land">Land / Plot</option>
+      <option value="commercial">Commercial</option>
+    </select>
+
+    <div class="row">
+      <div>
+        <label for="beds">Bedrooms</label>
+        <input id="beds" type="number" min="0" value="2">
+      </div>
+      <div>
+        <label for="baths">Bathrooms</label>
+        <input id="baths" type="number" min="0" value="2">
+      </div>
+    </div>
+
+    <label for="sqft">Size (sq ft)</label>
+    <input id="sqft" type="number" min="1" value="1000">
+
+    <button class="run" id="runBtn" type="button">Run Appraisal</button>
+    <p class="msg" id="msg"></p>
   </div>
 
-  <div class="controls">
-    <button class="ctrlBtn" id="torchBtn" type="button" disabled>🔦 Torch</button>
-    <button class="ctrlBtn" id="freezeBtn" type="button">⏸ Freeze</button>
-    <button class="ctrlBtn" id="flipBtn" type="button">🔄 Flip</button>
+  <div class="card ledger" id="result" hidden>
+    <div class="seal" id="seal">Estimated<br>Preview</div>
+    <h2>Appraisal Ledger</h2>
+    <div id="lineItems"></div>
+    <div class="total-row">
+      <span class="lbl">Estimated value</span>
+      <span class="val" id="totalVal">—</span>
+    </div>
+    <p class="note">Indicative estimate only, generated from open geocoding data (OpenStreetMap Nominatim) and a regional rate model. Not a licensed valuation — verify with a local appraiser or agent before any transaction.</p>
   </div>
-</main>
+</div>
 
 <footer>
-  <p>&copy; <span id="year"></span> Manik Roy. All Rights Reserved.</p>
+  <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
+  <div>Theme: <span class="theme-name" id="themeLabel">Light</span></div>
 </footer>
 
 <script>
 (function(){
-  var video = document.createElement('video');
-  video.playsInline = true; video.muted = true; video.autoplay = true;
-  var canvas = document.getElementById('canvas');
-  var ctx = canvas.getContext('2d');
-  var lens = document.getElementById('lens');
-  var zoomInput = document.getElementById('zoom');
-  var readout = document.getElementById('readout');
-  var status = document.getElementById('status');
-  var torchBtn = document.getElementById('torchBtn');
-  var freezeBtn = document.getElementById('freezeBtn');
-  var flipBtn = document.getElementById('flipBtn');
-  var themeBtn = document.getElementById('themeBtn');
-
-  var stream = null, track = null, frozen = false, facing = 'environment';
-  var zoom = 1;
-
-  document.getElementById('year').textContent = new Date().getFullYear();
-
-  var themes = [
-    {id:'light', label:'☀ Light', color:'#EEF0EC'},
-    {id:'dark',  label:'🌙 Dark',  color:'#101615'},
-    {id:'oled',  label:'⬛ OLED',  color:'#000000'},
-    {id:'hc',    label:'◐ HC',    color:'#000000'}
+  var THEMES = [
+    {key:"light", label:"Light", icon:"☀"},
+    {key:"dark", label:"Dark", icon:"☾"},
+    {key:"oled", label:"OLED Black", icon:"●"},
+    {key:"hc", label:"High Contrast", icon:"◐"}
   ];
-  var themeIdx = 0;
-  function applyTheme(){
-    var t = themes[themeIdx];
-    document.documentElement.setAttribute('data-theme', t.id);
-    themeBtn.textContent = t.label;
-    document.querySelector('meta[name=theme-color]').setAttribute('content', t.color);
+  var idx = 0;
+  var html = document.documentElement;
+  var btn = document.getElementById("themeBtn");
+  var themeLabel = document.getElementById("themeLabel");
+
+  function applyTheme(i){
+    idx = i % THEMES.length;
+    var t = THEMES[idx];
+    html.setAttribute("data-theme", t.key);
+    btn.textContent = t.icon + " " + t.label;
+    themeLabel.textContent = t.label;
+    try{ localStorage.setItem("ppc-theme", String(idx)); }catch(e){}
   }
-  themeBtn.addEventListener('click', function(){
-    themeIdx = (themeIdx + 1) % themes.length;
-    applyTheme();
-  });
-  applyTheme();
+  (function initTheme(){
+    var saved = 0;
+    try{
+      var s = localStorage.getItem("ppc-theme");
+      if(s !== null) saved = parseInt(s,10) || 0;
+    }catch(e){}
+    applyTheme(saved);
+  })();
+  btn.addEventListener("click", function(){ applyTheme(idx+1); });
 
-  function fitCanvas(){
-    var r = lens.getBoundingClientRect();
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(r.width * dpr);
-    canvas.height = Math.round(r.height * dpr);
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  // Base USD-equivalent rate per sq ft by country, plus a fallback average.
+  var RATES = {
+    "united states":220, "united kingdom":330, "canada":210, "australia":260,
+    "india":75, "united arab emirates":230, "singapore":950, "germany":300,
+    "france":320, "japan":380, "china":260, "brazil":120, "pakistan":55,
+    "bangladesh":45, "nigeria":90, "south africa":100, "mexico":140,
+    "spain":210, "italy":230, "netherlands":340, "ireland":300
+  };
+  var FALLBACK_RATE = 150;
+  var TYPE_MULT = {apartment:1.0, house:1.1, villa:1.45, land:0.4, commercial:1.3};
+
+  var msg = document.getElementById("msg");
+  var runBtn = document.getElementById("runBtn");
+  var result = document.getElementById("result");
+  var lineItems = document.getElementById("lineItems");
+  var totalVal = document.getElementById("totalVal");
+
+  function addLine(label, value){
+    var row = document.createElement("div");
+    row.className = "li-row";
+    row.innerHTML = "<span>"+label+"</span><span>"+value+"</span>";
+    lineItems.appendChild(row);
   }
-  window.addEventListener('resize', fitCanvas);
 
-  function stopStream(){
-    if (stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; track = null; }
+  async function geocode(query){
+    var url = "https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=" + encodeURIComponent(query);
+    var res = await fetch(url, {headers:{"Accept":"application/json"}});
+    if(!res.ok) throw new Error("Lookup failed");
+    var data = await res.json();
+    if(!data.length) throw new Error("Location not found");
+    return data[0];
   }
 
-  function startCamera(){
-    stopStream();
-    status.textContent = 'Requesting camera…';
-    var constraints = { video: { facingMode: { ideal: facing }, width:{ideal:1920}, height:{ideal:1080} }, audio:false };
-    navigator.mediaDevices.getUserMedia(constraints).then(function(s){
-      stream = s; track = s.getVideoTracks()[0];
-      video.srcObject = s;
-      video.onloadedmetadata = function(){ video.play(); fitCanvas(); status.textContent=''; };
-      var caps = track.getCapabilities ? track.getCapabilities() : {};
-      torchBtn.disabled = !(caps && caps.torch);
-    }).catch(function(err){
-      status.textContent = 'Camera unavailable: ' + err.message;
-    });
-  }
+  runBtn.addEventListener("click", async function(){
+    var address = document.getElementById("address").value.trim();
+    var type = document.getElementById("type").value;
+    var beds = parseFloat(document.getElementById("beds").value) || 0;
+    var baths = parseFloat(document.getElementById("baths").value) || 0;
+    var sqft = parseFloat(document.getElementById("sqft").value) || 0;
 
-  function draw(){
-    requestAnimationFrame(draw);
-    if (frozen || !video.videoWidth) return;
-    var vw = video.videoWidth, vh = video.videoHeight;
-    var side = Math.min(vw, vh) / zoom;
-    var sx = (vw - side) / 2, sy = (vh - side) / 2;
-    var cw = canvas.width, ch = canvas.height;
-    ctx.save();
-    if (facing === 'user'){ ctx.translate(cw,0); ctx.scale(-1,1); }
-    ctx.drawImage(video, sx, sy, side, side, 0, 0, cw, ch);
-    ctx.restore();
-  }
-  requestAnimationFrame(draw);
+    if(!address){ msg.textContent = "Enter an address or area first."; return; }
+    if(sqft <= 0){ msg.textContent = "Enter a size greater than 0."; return; }
 
-  zoomInput.addEventListener('input', function(){
-    zoom = parseFloat(zoomInput.value);
-    readout.innerHTML = zoom.toFixed(1) + '<small>×</small>';
-  });
+    runBtn.disabled = true;
+    msg.textContent = "Looking up location…";
+    result.hidden = true;
 
-  // pinch to zoom
-  var pinchStart = null, zoomStart = 1;
-  lens.addEventListener('touchstart', function(e){
-    if (e.touches.length === 2){
-      pinchStart = dist(e.touches[0], e.touches[1]);
-      zoomStart = zoom;
+    try{
+      var place = await geocode(address);
+      var country = ((place.address && place.address.country) || "").toLowerCase();
+      var rate = RATES[country] || FALLBACK_RATE;
+      var mult = TYPE_MULT[type] || 1.0;
+      var base = sqft * rate * mult;
+      var roomAdj = (beds * 4500) + (baths * 2500);
+      var total = base + roomAdj;
+
+      lineItems.innerHTML = "";
+      addLine("Location", place.display_name.split(",").slice(0,2).join(","));
+      addLine("Base rate / sq ft", "$" + rate + " × " + mult.toFixed(2) + "×");
+      addLine("Size", sqft + " sq ft");
+      addLine("Room adjustment", "+$" + roomAdj.toLocaleString());
+      totalVal.textContent = "$" + Math.round(total).toLocaleString();
+
+      result.hidden = false;
+      msg.textContent = "";
+    }catch(err){
+      msg.textContent = "Couldn't complete lookup: " + err.message;
+    }finally{
+      runBtn.disabled = false;
     }
-  }, {passive:true});
-  lens.addEventListener('touchmove', function(e){
-    if (e.touches.length === 2 && pinchStart){
-      var d = dist(e.touches[0], e.touches[1]);
-      var next = clamp(zoomStart * (d / pinchStart), 1, 6);
-      zoom = next; zoomInput.value = next.toFixed(1);
-      readout.innerHTML = next.toFixed(1) + '<small>×</small>';
-    }
-  }, {passive:true});
-  function dist(a,b){ return Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY); }
-  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-
-  freezeBtn.addEventListener('click', function(){
-    frozen = !frozen;
-    freezeBtn.textContent = frozen ? '▶ Resume' : '⏸ Freeze';
-    freezeBtn.classList.toggle('active', frozen);
   });
-
-  flipBtn.addEventListener('click', function(){
-    facing = facing === 'environment' ? 'user' : 'environment';
-    startCamera();
-  });
-
-  torchBtn.addEventListener('click', function(){
-    if (!track) return;
-    var on = torchBtn.classList.toggle('active');
-    track.applyConstraints({ advanced: [{ torch: on }] }).catch(function(){
-      torchBtn.classList.toggle('active');
-      status.textContent = 'Torch not supported on this device';
-    });
-  });
-
-  fitCanvas();
-  startCamera();
 })();
 </script>
 </body>
