@@ -30,14 +30,8 @@ body{
   display:flex; flex-direction:column; align-items:center;
   transition:background .2s,color .2s;
 }
-.app{
-  width:100%; max-width:480px; min-height:100vh;
-  display:flex; flex-direction:column;
-  background:var(--bg);
-}
-header{
-  padding:12px 14px 8px; display:flex; align-items:center; justify-content:space-between; gap:8px;
-}
+.app{ width:100%; max-width:480px; min-height:100vh; display:flex; flex-direction:column; background:var(--bg); }
+header{ padding:12px 14px 8px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
 header h1{font-size:1.05rem; margin:0; letter-spacing:.2px;}
 .theme-toggle{display:flex; gap:4px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:3px;}
 .theme-toggle button{
@@ -47,7 +41,7 @@ header h1{font-size:1.05rem; margin:0; letter-spacing:.2px;}
 .theme-toggle button.active{background:var(--accent); color:#fff;}
 [data-theme="hc"] .theme-toggle button.active{color:#000;}
 
-.controls{padding:0 14px 8px; display:flex; flex-direction:column; gap:8px;}
+.controls{padding:0 14px 8px; display:flex; flex-direction:column; gap:6px;}
 .field-row{display:flex; gap:6px;}
 input[type="text"]{
   flex:1; padding:11px 12px; border-radius:10px; border:1px solid var(--border);
@@ -65,16 +59,27 @@ button.icon-btn{
 }
 button.icon-btn.active{background:var(--accent); color:#fff; border-color:var(--accent);}
 [data-theme="hc"] button.icon-btn.active{color:#000;}
-#map.measuring{cursor:crosshair;}
+.grow{flex:1;}
+#map.measuring, #map.tapping{cursor:crosshair;}
+
 .suggestions{
   background:var(--surface); border:1px solid var(--border); border-radius:10px;
-  max-height:160px; overflow-y:auto; display:none;
+  max-height:170px; overflow-y:auto; display:none;
 }
 .suggestions div{padding:9px 12px; font-size:.82rem; border-bottom:1px solid var(--border); cursor:pointer;}
 .suggestions div:last-child{border-bottom:none;}
 .suggestions div:hover{background:var(--surface2);}
+.suggestions .tag{font-size:.65rem; color:var(--accent); font-weight:700; margin-right:4px;}
 
-#map{flex:1; width:100%; min-height:300px;}
+.chips{display:flex; gap:6px; overflow-x:auto; padding:2px 0; display:none;}
+.chips.show{display:flex;}
+.chip{
+  display:flex; align-items:center; gap:5px; background:var(--surface); border:1px solid var(--border);
+  border-radius:20px; padding:6px 10px; font-size:.75rem; white-space:nowrap; cursor:pointer; flex-shrink:0;
+}
+.chip .x{color:var(--muted); font-weight:700; cursor:pointer;}
+
+#map{flex:1; width:100%; min-height:280px;}
 
 .route-info{
   padding:10px 14px; background:var(--surface); border-top:1px solid var(--border);
@@ -85,17 +90,28 @@ button.icon-btn.active{background:var(--accent); color:#fff; border-color:var(--
 .route-info .stat b{color:var(--text); font-size:.95rem;}
 .route-info .clear{color:var(--danger); background:none; border:none; font-size:.8rem; font-weight:600; cursor:pointer;}
 
-.status{
-  padding:6px 14px; font-size:.72rem; color:var(--muted); text-align:center; min-height:18px;
+.steps-panel{background:var(--surface); border-top:1px solid var(--border); display:none;}
+.steps-panel.show{display:block;}
+.steps-header{
+  padding:9px 14px; font-size:.78rem; font-weight:700; display:flex; justify-content:space-between;
+  cursor:pointer; color:var(--text);
 }
+.steps-list{max-height:180px; overflow-y:auto; display:none; padding:0 14px 10px;}
+.steps-list.open{display:block;}
+.step-item{font-size:.78rem; padding:6px 0; border-bottom:1px solid var(--border); color:var(--text);}
+.step-item:last-child{border-bottom:none;}
+.step-item span{color:var(--muted); font-size:.7rem;}
+
+.status{ padding:6px 14px; font-size:.72rem; color:var(--muted); text-align:center; min-height:18px; }
 
 footer{
   padding:10px 14px 16px; text-align:center; font-size:.72rem; color:var(--muted);
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
   border-top:1px solid var(--border);
 }
-
 .leaflet-control-attribution{font-size:9px !important;}
+.heading-arrow{ width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
+.heading-arrow svg{ filter:drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
 </style>
 </head>
 <body>
@@ -116,11 +132,33 @@ footer{
       <button class="icon-btn" id="locBtn" title="Use my location">📍</button>
     </div>
     <div class="suggestions" id="fromSuggest"></div>
+
+    <div class="field-row">
+      <button class="icon-btn" id="swapBtn" title="Swap start & destination">⇅</button>
+      <div class="theme-toggle grow" id="profileToggle">
+        <button data-profile="driving" class="active">🚗 Drive</button>
+        <button data-profile="cycling">🚴 Bike</button>
+        <button data-profile="walking">🚶 Walk</button>
+      </div>
+    </div>
+
     <div class="field-row">
       <input type="text" id="toInput" placeholder="Destination">
       <button class="btn" id="goBtn">Go</button>
     </div>
     <div class="suggestions" id="toSuggest"></div>
+
+    <div class="chips" id="favChips"></div>
+
+    <div class="field-row">
+      <button class="icon-btn grow" id="tapSetBtn">📌 Tap map: off</button>
+      <button class="icon-btn" id="favBtn" title="Save destination as favorite">⭐</button>
+    </div>
+    <div class="field-row">
+      <button class="icon-btn grow" id="liveBtn">🛰️ Live tracking</button>
+      <button class="icon-btn" id="recenterBtn" title="Recenter on me">🎯</button>
+      <button class="icon-btn" id="voiceBtn" title="Voice guidance">🔇</button>
+    </div>
     <button class="icon-btn" id="measureBtn" style="width:100%;">📏 Measure distance</button>
   </div>
 
@@ -138,6 +176,11 @@ footer{
     <div class="stat">Distance<br><b id="distVal">–</b></div>
     <div class="stat">Time<br><b id="timeVal">–</b></div>
     <button class="clear" id="clearBtn">Clear</button>
+  </div>
+
+  <div class="steps-panel" id="stepsPanel">
+    <div class="steps-header" id="stepsHeader">Turn-by-turn directions <span id="stepsCaret">▾</span></div>
+    <div class="steps-list" id="stepsList"></div>
   </div>
 
   <footer>
@@ -159,7 +202,7 @@ if (typeof L === 'undefined') {
 document.getElementById('year').textContent = new Date().getFullYear();
 
 // ---------- Theme ----------
-const themeBtns = document.querySelectorAll('.theme-toggle button');
+const themeBtns = document.querySelectorAll('.theme-toggle#themeToggle button');
 function applyTheme(t){
   document.documentElement.setAttribute('data-theme', t);
   localStorage.setItem('navmap-theme', t);
@@ -174,55 +217,87 @@ if (typeof L === 'undefined') {
 }
 const map = L.map('map', {zoomControl:true}).setView([20.5937,78.9629], 5);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom:19,
-  attribution:'&copy; OpenStreetMap contributors'
+  maxZoom:19, attribution:'&copy; OpenStreetMap contributors'
 }).addTo(map);
 
 let fromMarker=null, toMarker=null, routeLine=null;
 let fromCoords=null, toCoords=null;
+let profile = 'driving';
 
 const statusEl = document.getElementById('status');
 function setStatus(msg){ statusEl.textContent = msg || ''; }
+const mapEl = document.getElementById('map');
+const fromInput = document.getElementById('fromInput');
+const toInput = document.getElementById('toInput');
+const fromSuggest = document.getElementById('fromSuggest');
+const toSuggest = document.getElementById('toSuggest');
 
-// ---------- Geocoding (Nominatim, free, no key) ----------
+// ---------- Geocoding & reverse geocoding (Nominatim, free, no key) ----------
 async function geocode(query){
   const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}`;
   const res = await fetch(url, {headers:{'Accept':'application/json'}});
   if(!res.ok) throw new Error('Geocoding failed');
   return res.json();
 }
+async function reverseGeocode(lat, lon){
+  try{
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+    const res = await fetch(url, {headers:{'Accept':'application/json'}});
+    const data = await res.json();
+    return data.display_name || `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+  }catch(e){ return `${lat.toFixed(5)}, ${lon.toFixed(5)}`; }
+}
+
+// ---------- Recent searches ----------
+function getRecents(){ try{ return JSON.parse(localStorage.getItem('navmap-recents')||'[]'); }catch(e){ return []; } }
+function addRecent(item){
+  let list = getRecents().filter(r => r.name !== item.name);
+  list.unshift(item);
+  list = list.slice(0,6);
+  localStorage.setItem('navmap-recents', JSON.stringify(list));
+}
 
 function wireSuggest(inputEl, suggestEl, onPick){
   let timer=null;
+  function renderRecents(){
+    const recents = getRecents();
+    if(!recents.length){ suggestEl.style.display='none'; return; }
+    suggestEl.innerHTML = recents.map((r,i) => `<div data-idx="${i}"><span class="tag">RECENT</span>${r.name}</div>`).join('');
+    suggestEl.style.display='block';
+    suggestEl.querySelectorAll('div').forEach(div => {
+      div.addEventListener('click', () => {
+        const r = recents[div.dataset.idx];
+        inputEl.value = r.name;
+        suggestEl.style.display='none';
+        onPick(r);
+      });
+    });
+  }
+  inputEl.addEventListener('focus', () => { if(!inputEl.value.trim()) renderRecents(); });
   inputEl.addEventListener('input', () => {
     clearTimeout(timer);
     const q = inputEl.value.trim();
-    if(q.length < 3){ suggestEl.style.display='none'; suggestEl.innerHTML=''; return; }
+    if(q.length < 3){ if(!q) renderRecents(); else { suggestEl.style.display='none'; suggestEl.innerHTML=''; } return; }
     timer = setTimeout(async () => {
       try{
         const results = await geocode(q);
         if(!results.length){ suggestEl.style.display='none'; return; }
-        suggestEl.innerHTML = results.map((r,i) =>
-          `<div data-idx="${i}">${r.display_name}</div>`).join('');
+        suggestEl.innerHTML = results.map((r,i) => `<div data-idx="${i}">${r.display_name}</div>`).join('');
         suggestEl.style.display='block';
         suggestEl.querySelectorAll('div').forEach(div => {
           div.addEventListener('click', () => {
             const r = results[div.dataset.idx];
+            const loc = {lat:parseFloat(r.lat), lon:parseFloat(r.lon), name:r.display_name};
             inputEl.value = r.display_name;
             suggestEl.style.display='none';
-            onPick({lat:parseFloat(r.lat), lon:parseFloat(r.lon), name:r.display_name});
+            addRecent(loc);
+            onPick(loc);
           });
         });
       }catch(e){ setStatus('Search unavailable, try again.'); }
     }, 500);
   });
 }
-
-const fromInput = document.getElementById('fromInput');
-const toInput = document.getElementById('toInput');
-const fromSuggest = document.getElementById('fromSuggest');
-const toSuggest = document.getElementById('toSuggest');
-
 wireSuggest(fromInput, fromSuggest, (loc) => setPoint('from', loc));
 wireSuggest(toInput, toSuggest, (loc) => setPoint('to', loc));
 
@@ -240,17 +315,153 @@ function setPoint(which, loc){
   map.setView(latlng, 13);
 }
 
-// ---------- Geolocation ----------
+// ---------- Swap ----------
+document.getElementById('swapBtn').addEventListener('click', () => {
+  const tmpCoords = fromCoords; fromCoords = toCoords; toCoords = tmpCoords;
+  const tmpVal = fromInput.value; fromInput.value = toInput.value; toInput.value = tmpVal;
+  if(fromCoords) setPoint('from', {lat:fromCoords[0], lon:fromCoords[1]}); else if(fromMarker){ map.removeLayer(fromMarker); fromMarker=null; }
+  if(toCoords) setPoint('to', {lat:toCoords[0], lon:toCoords[1]}); else if(toMarker){ map.removeLayer(toMarker); toMarker=null; }
+});
+
+// ---------- Travel mode ----------
+document.querySelectorAll('#profileToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    profile = b.dataset.profile;
+    document.querySelectorAll('#profileToggle button').forEach(x => x.classList.toggle('active', x===b));
+  });
+});
+
+// ---------- Geolocation (with reverse geocoding) ----------
+let lastKnownPos = null;
 document.getElementById('locBtn').addEventListener('click', () => {
   if(!navigator.geolocation){ setStatus('Geolocation not supported.'); return; }
   setStatus('Locating…');
-  navigator.geolocation.getCurrentPosition(pos => {
+  navigator.geolocation.getCurrentPosition(async pos => {
     const {latitude, longitude} = pos.coords;
-    fromInput.value = 'My location';
+    lastKnownPos = [latitude, longitude];
     setPoint('from', {lat:latitude, lon:longitude});
+    setStatus('Finding your address…');
+    fromInput.value = await reverseGeocode(latitude, longitude);
     setStatus('');
   }, () => setStatus('Could not get your location.'), {enableHighAccuracy:true, timeout:10000});
 });
+
+// ---------- Favorites ----------
+function getFavorites(){ try{ return JSON.parse(localStorage.getItem('navmap-favorites')||'[]'); }catch(e){ return []; } }
+function renderFavorites(){
+  const favs = getFavorites();
+  const chips = document.getElementById('favChips');
+  chips.classList.toggle('show', favs.length > 0);
+  chips.innerHTML = favs.map((f,i) => `<div class="chip" data-idx="${i}"><span class="label">⭐ ${f.label}</span><span class="x" data-del="${i}">✕</span></div>`).join('');
+  chips.querySelectorAll('.label').forEach(el => {
+    el.addEventListener('click', () => {
+      const f = favs[el.parentElement.dataset.idx];
+      toInput.value = f.label;
+      setPoint('to', {lat:f.lat, lon:f.lon});
+    });
+  });
+  chips.querySelectorAll('.x').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const list = getFavorites();
+      list.splice(el.dataset.del, 1);
+      localStorage.setItem('navmap-favorites', JSON.stringify(list));
+      renderFavorites();
+    });
+  });
+}
+renderFavorites();
+document.getElementById('favBtn').addEventListener('click', () => {
+  if(!toCoords){ setStatus('Set a destination first to save it.'); return; }
+  const label = prompt('Save this destination as:', toInput.value.split(',')[0] || 'Favorite');
+  if(!label) return;
+  const list = getFavorites();
+  list.unshift({label, lat:toCoords[0], lon:toCoords[1]});
+  localStorage.setItem('navmap-favorites', JSON.stringify(list.slice(0,10)));
+  renderFavorites();
+});
+
+// ---------- Tap map to set start/destination ----------
+let tapMode = null; // null -> 'from' -> 'to' -> null
+const tapSetBtn = document.getElementById('tapSetBtn');
+tapSetBtn.addEventListener('click', () => {
+  tapMode = tapMode === null ? 'from' : (tapMode === 'from' ? 'to' : null);
+  tapSetBtn.textContent = tapMode === null ? '📌 Tap map: off' : `📌 Tap map: set ${tapMode === 'from' ? 'start' : 'destination'}`;
+  tapSetBtn.classList.toggle('active', tapMode !== null);
+  mapEl.classList.toggle('tapping', tapMode !== null);
+});
+
+// ---------- Live GPS tracking with heading arrow ----------
+let watchId = null;
+let userMarker = null;
+const liveBtn = document.getElementById('liveBtn');
+function headingIcon(heading){
+  const rot = typeof heading === 'number' ? heading : 0;
+  return L.divIcon({
+    className:'heading-arrow',
+    html:`<div class="heading-arrow"><svg width="22" height="22" viewBox="0 0 24 24" style="transform:rotate(${rot}deg)"><path d="M12 2 L19 21 L12 17 L5 21 Z" fill="#4f8cff" stroke="#fff" stroke-width="1"/></svg></div>`,
+    iconSize:[22,22], iconAnchor:[11,11]
+  });
+}
+liveBtn.addEventListener('click', () => {
+  if(watchId){
+    navigator.geolocation.clearWatch(watchId); watchId = null;
+    liveBtn.classList.remove('active'); liveBtn.textContent = '🛰️ Live tracking';
+    if(userMarker){ map.removeLayer(userMarker); userMarker = null; }
+    return;
+  }
+  if(!navigator.geolocation){ setStatus('Geolocation not supported.'); return; }
+  liveBtn.classList.add('active'); liveBtn.textContent = '🛰️ Tracking…';
+  watchId = navigator.geolocation.watchPosition(pos => {
+    const {latitude, longitude, heading} = pos.coords;
+    lastKnownPos = [latitude, longitude];
+    const icon = headingIcon(heading);
+    if(userMarker) userMarker.setLatLng(lastKnownPos).setIcon(icon);
+    else userMarker = L.marker(lastKnownPos, {icon}).addTo(map);
+    checkVoiceAnnouncement(lastKnownPos);
+  }, () => setStatus('Live tracking failed — check location permission.'), {enableHighAccuracy:true, maximumAge:2000});
+});
+document.getElementById('recenterBtn').addEventListener('click', () => {
+  if(lastKnownPos) map.setView(lastKnownPos, 16);
+  else setStatus('No known location yet — enable live tracking or use 📍.');
+});
+
+// ---------- Voice guidance ----------
+let voiceEnabled = false;
+const voiceBtn = document.getElementById('voiceBtn');
+voiceBtn.addEventListener('click', () => {
+  voiceEnabled = !voiceEnabled;
+  voiceBtn.classList.toggle('active', voiceEnabled);
+  voiceBtn.textContent = voiceEnabled ? '🔊' : '🔇';
+});
+function speak(text){
+  if(!voiceEnabled || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+}
+let routeStepPoints = []; // [{lat,lon,text}]
+let nextStepIdx = 0;
+function checkVoiceAnnouncement(pos){
+  if(!voiceEnabled || nextStepIdx >= routeStepPoints.length) return;
+  const step = routeStepPoints[nextStepIdx];
+  const d = haversine(pos, [step.lat, step.lon]) * 1000; // meters
+  if(d < 40){
+    speak(step.text);
+    nextStepIdx++;
+  }
+}
+
+// ---------- Turn-by-turn instruction text ----------
+function maneuverText(step){
+  const type = step.maneuver.type;
+  const modifier = step.maneuver.modifier;
+  const name = step.name ? ` onto ${step.name}` : '';
+  if(type === 'depart') return `Head out${name}`;
+  if(type === 'arrive') return 'Arrive at your destination';
+  if(type === 'roundabout') return `Enter the roundabout${name}`;
+  const dir = modifier ? modifier.replace('slight ', 'slight ').replace('sharp ', 'sharp ') : '';
+  return `${type === 'turn' ? 'Turn' : type.charAt(0).toUpperCase()+type.slice(1)} ${dir}${name}`.trim();
+}
 
 // ---------- Routing (OSRM public demo server, free, no key) ----------
 document.getElementById('goBtn').addEventListener('click', async () => {
@@ -261,12 +472,10 @@ document.getElementById('goBtn').addEventListener('click', async () => {
   setStatus('Finding route…');
   try{
     const coordsStr = `${fromCoords[1]},${fromCoords[0]};${toCoords[1]},${toCoords[0]}`;
-    const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+    const url = `https://router.project-osrm.org/route/v1/${profile}/${coordsStr}?overview=full&geometries=geojson&steps=true`;
     const res = await fetch(url);
     const data = await res.json();
-    if(data.code !== 'Ok' || !data.routes.length){
-      setStatus('No route found.'); return;
-    }
+    if(data.code !== 'Ok' || !data.routes.length){ setStatus('No route found.'); return; }
     const route = data.routes[0];
     if(routeLine) map.removeLayer(routeLine);
     const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
@@ -280,10 +489,24 @@ document.getElementById('goBtn').addEventListener('click', async () => {
     document.getElementById('distVal').textContent = `${km} km`;
     document.getElementById('timeVal').textContent = hrs > 0 ? `${hrs}h ${remMins}m` : `${mins} min`;
     document.getElementById('routeInfo').classList.add('show');
+
+    const steps = (route.legs[0] && route.legs[0].steps) || [];
+    routeStepPoints = steps.map(s => ({lat:s.maneuver.location[1], lon:s.maneuver.location[0], text:maneuverText(s)}));
+    nextStepIdx = 0;
+    const stepsList = document.getElementById('stepsList');
+    stepsList.innerHTML = steps.map((s,i) => `<div class="step-item">${i+1}. ${maneuverText(s)} <span>(${Math.round(s.distance)} m)</span></div>`).join('');
+    document.getElementById('stepsPanel').classList.add('show');
+    if(voiceEnabled && routeStepPoints.length) speak(routeStepPoints[0].text);
     setStatus('');
   }catch(e){
     setStatus('Routing service unavailable. Try again.');
   }
+});
+
+document.getElementById('stepsHeader').addEventListener('click', () => {
+  document.getElementById('stepsList').classList.toggle('open');
+  const caret = document.getElementById('stepsCaret');
+  caret.textContent = document.getElementById('stepsList').classList.contains('open') ? '▴' : '▾';
 });
 
 document.getElementById('clearBtn').addEventListener('click', () => {
@@ -294,6 +517,8 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   fromCoords=toCoords=null;
   fromInput.value=''; toInput.value='';
   document.getElementById('routeInfo').classList.remove('show');
+  document.getElementById('stepsPanel').classList.remove('show');
+  routeStepPoints = []; nextStepIdx = 0;
   setStatus('');
 });
 
@@ -302,7 +527,7 @@ document.addEventListener('click', (e) => {
   if(!toSuggest.contains(e.target) && e.target !== toInput) toSuggest.style.display='none';
 });
 
-// ---------- Distance measurement (straight-line, tap-to-add points) ----------
+// ---------- Distance measurement (straight-line, tap-to-add draggable points) ----------
 let measuring = false;
 let measurePoints = [];
 let measureMarkers = [];
@@ -311,10 +536,9 @@ const measureBtn = document.getElementById('measureBtn');
 const measureInfo = document.getElementById('measureInfo');
 const measurePtsEl = document.getElementById('measurePts');
 const measureDistEl = document.getElementById('measureDist');
-const mapEl = document.getElementById('map');
 
 function haversine(a, b){
-  const R = 6371; // km
+  const R = 6371;
   const toRad = d => d * Math.PI / 180;
   const dLat = toRad(b[0]-a[0]);
   const dLon = toRad(b[1]-a[1]);
@@ -335,22 +559,44 @@ function toggleMeasure(on){
   measuring = on;
   measureBtn.classList.toggle('active', on);
   mapEl.classList.toggle('measuring', on);
+  if(on){ tapMode = null; tapSetBtn.textContent = '📌 Tap map: off'; tapSetBtn.classList.remove('active'); mapEl.classList.remove('tapping'); }
   setStatus(on ? 'Tap the map to add measurement points.' : '');
 }
-
 measureBtn.addEventListener('click', () => toggleMeasure(!measuring));
 
-map.on('click', (e) => {
-  if(!measuring) return;
-  const pt = [e.latlng.lat, e.latlng.lng];
-  measurePoints.push(pt);
-  const marker = L.circleMarker(pt, {radius:6, color:'#ff9800', fillColor:'#ff9800', fillOpacity:1}).addTo(map);
-  measureMarkers.push(marker);
+const measureIcon = L.divIcon({
+  className: 'measure-pin',
+  html: '<div style="width:16px;height:16px;border-radius:50%;background:#ff9800;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>',
+  iconSize:[16,16], iconAnchor:[8,8]
+});
+function redrawMeasureLine(){
   if(measureLine) map.removeLayer(measureLine);
-  if(measurePoints.length > 1){
-    measureLine = L.polyline(measurePoints, {color:'#ff9800', weight:4, dashArray:'6,6'}).addTo(map);
+  measureLine = measurePoints.length > 1 ? L.polyline(measurePoints, {color:'#ff9800', weight:4, dashArray:'6,6'}).addTo(map) : null;
+}
+
+// ---------- Combined map click: measuring OR tap-to-set ----------
+map.on('click', async (e) => {
+  const pt = [e.latlng.lat, e.latlng.lng];
+  if(measuring){
+    const idx = measurePoints.length;
+    measurePoints.push(pt);
+    const marker = L.marker(pt, {icon: measureIcon, draggable:true}).addTo(map);
+    marker.on('drag', (ev) => {
+      const ll = ev.target.getLatLng();
+      measurePoints[idx] = [ll.lat, ll.lng];
+      redrawMeasureLine(); updateMeasureUI();
+    });
+    measureMarkers.push(marker);
+    redrawMeasureLine(); updateMeasureUI();
+    return;
   }
-  updateMeasureUI();
+  if(tapMode){
+    setStatus('Finding address…');
+    const addr = await reverseGeocode(pt[0], pt[1]);
+    if(tapMode === 'from'){ fromInput.value = addr; setPoint('from', {lat:pt[0], lon:pt[1]}); }
+    else { toInput.value = addr; setPoint('to', {lat:pt[0], lon:pt[1]}); }
+    setStatus('');
+  }
 });
 
 document.getElementById('measureClearBtn').addEventListener('click', () => {
