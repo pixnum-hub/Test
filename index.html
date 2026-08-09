@@ -2,611 +2,330 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>NavMap — Free Navigation</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rashi Graha — Vedic Astrology Calculator</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rashi Graha">
+<meta name="theme-color" content="#c9a84c">
+<meta name="description" content="Vedic astrology calculator — planetary positions, nakshatra, lagna & Vimshottari Dasha">
+
+<!-- Icons -->
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
 <style>
-:root{
-  --bg:#12141a; --surface:#1c1f27; --surface2:#252934; --text:#eef0f4; --muted:#9aa2b1;
-  --accent:#4f8cff; --border:#2e3340; --danger:#ff5a5a;
-}
-[data-theme="light"]{
-  --bg:#f4f6f9; --surface:#ffffff; --surface2:#eef1f6; --text:#161a22; --muted:#5c6470;
-  --accent:#2f6fed; --border:#dde2ea; --danger:#d63b3b;
-}
-[data-theme="oled"]{
-  --bg:#000000; --surface:#0a0a0a; --surface2:#141414; --text:#f2f2f2; --muted:#8a8a8a;
-  --accent:#4f8cff; --border:#1f1f1f; --danger:#ff5a5a;
-}
-[data-theme="hc"]{
-  --bg:#000000; --surface:#000000; --surface2:#000000; --text:#ffffff; --muted:#ffffff;
-  --accent:#ffff00; --border:#ffffff; --danger:#ff6b6b;
-}
-*{box-sizing:border-box;}
-html,body{height:100%;margin:0;}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  background:var(--bg); color:var(--text);
-  display:flex; flex-direction:column; align-items:center;
-  transition:background .2s,color .2s;
-}
-.app{ width:100%; max-width:480px; min-height:100vh; display:flex; flex-direction:column; background:var(--bg); }
-header{ padding:12px 14px 8px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
-header h1{font-size:1.05rem; margin:0; letter-spacing:.2px;}
-.theme-toggle{display:flex; gap:4px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:3px;}
-.theme-toggle button{
-  border:none; background:transparent; color:var(--muted); font-size:.65rem; font-weight:600;
-  padding:6px 7px; border-radius:7px; cursor:pointer;
-}
-.theme-toggle button.active{background:var(--accent); color:#fff;}
-[data-theme="hc"] .theme-toggle button.active{color:#000;}
-
-.controls{padding:0 14px 8px; display:flex; flex-direction:column; gap:6px;}
-.field-row{display:flex; gap:6px;}
-input[type="text"]{
-  flex:1; padding:11px 12px; border-radius:10px; border:1px solid var(--border);
-  background:var(--surface); color:var(--text); font-size:.9rem; outline:none;
-}
-input[type="text"]:focus{border-color:var(--accent);}
-button.btn{
-  border:none; border-radius:10px; padding:11px 14px; font-size:.85rem; font-weight:600;
-  cursor:pointer; background:var(--accent); color:#fff; white-space:nowrap;
-}
-[data-theme="hc"] button.btn{color:#000;}
-button.icon-btn{
-  border:1px solid var(--border); background:var(--surface); color:var(--text);
-  border-radius:10px; padding:11px 12px; cursor:pointer; font-size:.9rem;
-}
-button.icon-btn.active{background:var(--accent); color:#fff; border-color:var(--accent);}
-[data-theme="hc"] button.icon-btn.active{color:#000;}
-.grow{flex:1;}
-#map.measuring, #map.tapping{cursor:crosshair;}
-
-.suggestions{
-  background:var(--surface); border:1px solid var(--border); border-radius:10px;
-  max-height:170px; overflow-y:auto; display:none;
-}
-.suggestions div{padding:9px 12px; font-size:.82rem; border-bottom:1px solid var(--border); cursor:pointer;}
-.suggestions div:last-child{border-bottom:none;}
-.suggestions div:hover{background:var(--surface2);}
-.suggestions .tag{font-size:.65rem; color:var(--accent); font-weight:700; margin-right:4px;}
-
-.chips{display:flex; gap:6px; overflow-x:auto; padding:2px 0; display:none;}
-.chips.show{display:flex;}
-.chip{
-  display:flex; align-items:center; gap:5px; background:var(--surface); border:1px solid var(--border);
-  border-radius:20px; padding:6px 10px; font-size:.75rem; white-space:nowrap; cursor:pointer; flex-shrink:0;
-}
-.chip .x{color:var(--muted); font-weight:700; cursor:pointer;}
-
-#map{flex:1; width:100%; min-height:280px;}
-
-.route-info{
-  padding:10px 14px; background:var(--surface); border-top:1px solid var(--border);
-  display:none; align-items:center; justify-content:space-between; gap:10px;
-}
-.route-info.show{display:flex;}
-.route-info .stat{font-size:.8rem; color:var(--muted);}
-.route-info .stat b{color:var(--text); font-size:.95rem;}
-.route-info .clear{color:var(--danger); background:none; border:none; font-size:.8rem; font-weight:600; cursor:pointer;}
-
-.steps-panel{background:var(--surface); border-top:1px solid var(--border); display:none;}
-.steps-panel.show{display:block;}
-.steps-header{
-  padding:9px 14px; font-size:.78rem; font-weight:700; display:flex; justify-content:space-between;
-  cursor:pointer; color:var(--text);
-}
-.steps-list{max-height:180px; overflow-y:auto; display:none; padding:0 14px 10px;}
-.steps-list.open{display:block;}
-.step-item{font-size:.78rem; padding:6px 0; border-bottom:1px solid var(--border); color:var(--text);}
-.step-item:last-child{border-bottom:none;}
-.step-item span{color:var(--muted); font-size:.7rem;}
-
-.status{ padding:6px 14px; font-size:.72rem; color:var(--muted); text-align:center; min-height:18px; }
-
-footer{
-  padding:10px 14px 16px; text-align:center; font-size:.72rem; color:var(--muted);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-  border-top:1px solid var(--border);
-}
-.leaflet-control-attribution{font-size:9px !important;}
-.heading-arrow{ width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
-.heading-arrow svg{ filter:drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+:root{--bg:#0f0c1a;--surface:#1a1630;--surface2:#241e3a;--border:#3a3258;--gold:#c9a84c;--gold2:#e8c97a;--accent:#7b5ea7;--accent2:#a07fd4;--text:#e8e0f5;--muted:#9888c0;--red:#e05c7a;--green:#5cc4a0;--radius:12px;--shadow:0 8px 32px rgba(0,0,0,.5);--font-head:system-ui,-apple-system,'Segoe UI',sans-serif;--font-body:system-ui,-apple-system,'Segoe UI',sans-serif;}
+[data-theme="light"]{--bg:#f5f0e8;--surface:#fffdf7;--surface2:#ede8dc;--border:#d0c8b0;--gold:#8a6a1a;--gold2:#a07820;--accent:#5a3e8a;--accent2:#7a5caa;--text:#1a1530;--muted:#6a5880;--shadow:0 8px 32px rgba(0,0,0,.12);}
+[data-theme="oled"]{--bg:#000;--surface:#090909;--surface2:#111;--border:#222;--gold:#d4aa50;--gold2:#f0cc80;--accent:#8866bb;--accent2:#aa88dd;--text:#f0e8ff;--muted:#7766aa;}
+[data-theme="hc"]{--bg:#000;--surface:#000;--surface2:#000;--border:#fff;--gold:#ff0;--gold2:#ff0;--accent:#0ff;--accent2:#0ff;--text:#fff;--muted:#ccc;--red:#f66;--green:#0f0;}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;display:flex;flex-direction:column;align-items:center;transition:background .3s,color .3s;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle at 20% 30%,rgba(123,94,167,.15) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(201,168,76,.08) 0%,transparent 50%);}
+[data-theme="light"] body::before,[data-theme="hc"] body::before{display:none}
+header{width:100%;max-width:600px;text-align:center;padding:2rem 1rem 1rem;position:relative;z-index:1;}
+.brand{font-family:var(--font-head);font-size:clamp(1.6rem,5vw,2.4rem);color:var(--gold2);letter-spacing:.08em;text-shadow:0 0 24px rgba(201,168,76,.4);line-height:1.2;}
+.brand span{color:var(--accent2)}
+.tagline{font-family:var(--font-body);font-style:italic;color:var(--muted);font-size:.95rem;margin-top:.3rem;letter-spacing:.04em;}
+.divider{width:180px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:.8rem auto;}
+.theme-bar{display:flex;justify-content:center;gap:.4rem;flex-wrap:wrap;padding:.5rem;margin-bottom:.5rem;}
+.t-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:var(--font-head);font-size:.62rem;letter-spacing:.06em;padding:.3rem .6rem;border-radius:20px;cursor:pointer;transition:all .2s;}
+.t-btn.active,.t-btn:hover{background:var(--gold);color:#000;border-color:var(--gold)}
+main{width:100%;max-width:600px;padding:0 1rem 1.5rem;position:relative;z-index:1;flex:1}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;margin-bottom:1rem;box-shadow:var(--shadow);}
+.card-title{font-family:var(--font-head);font-size:.75rem;letter-spacing:.12em;color:var(--gold);text-transform:uppercase;margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem;}
+.card-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem}
+.form-row.triple{grid-template-columns:1fr 1fr 1fr}
+.form-row.full{grid-template-columns:1fr}
+label{font-size:.75rem;color:var(--muted);letter-spacing:.05em;display:block;margin-bottom:.25rem;font-family:var(--font-head);}
+input,select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.55rem .7rem;font-family:var(--font-body);font-size:.95rem;outline:none;transition:border .2s,box-shadow .2s;}
+input:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,168,76,.2)}
+select option{background:var(--surface2)}
+.city-wrap{position:relative;}
+.city-drop{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--gold);border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;z-index:99;display:none;box-shadow:var(--shadow);}
+.city-drop.open{display:block}
+.city-opt{padding:.5rem .75rem;cursor:pointer;font-size:.88rem;border-bottom:1px solid var(--border);line-height:1.3;transition:background .12s;}
+.city-opt:last-child{border:none}
+.city-opt:hover,.city-opt.hi{background:var(--surface2);color:var(--gold2);}
+.city-opt small{display:block;font-size:.7rem;color:var(--muted);font-style:italic}
+.coords-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;margin-bottom:.6rem}
+.btn{width:100%;padding:.75rem;border:none;border-radius:8px;cursor:pointer;font-family:var(--font-head);font-size:.85rem;letter-spacing:.1em;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1200;font-weight:700;transition:all .2s;margin-top:.3rem;}
+.btn:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,168,76,.3)}
+.btn:active{transform:translateY(0)}
+#results{display:none}
+.chart-name{font-family:var(--font-head);font-size:1rem;color:var(--gold2);text-align:center;letter-spacing:.06em;margin-bottom:.9rem;padding:.5rem;background:linear-gradient(135deg,rgba(123,94,167,.15),rgba(201,168,76,.1));border-radius:8px;border:1px solid var(--border);}
+.planet-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.planet-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.7rem;text-align:center;}
+.planet-name{font-family:var(--font-head);font-size:.65rem;letter-spacing:.1em;color:var(--gold);margin-bottom:.2rem;}
+.planet-sign{font-size:1rem;font-weight:500;line-height:1.2}
+.planet-deg{font-size:.75rem;color:var(--muted)}
+.planet-retro{color:var(--red);font-size:.65rem}
+.nk-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.8rem;}
+.nk-lbl{font-family:var(--font-head);font-size:.65rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.3rem}
+.nk-name{font-size:1.1rem;font-weight:500}
+.nk-sub{font-size:.8rem;color:var(--muted);font-style:italic}
+.dasha-list{list-style:none}
+.dasha-list li{display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border);font-size:.88rem;}
+.dasha-list li:last-child{border:none}
+.dasha-list li.cur{color:var(--gold2);font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:.4rem;display:inline-block;flex-shrink:0}
+.dot.a{background:var(--gold2)}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.info-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .8rem}
+.info-lbl{font-size:.65rem;color:var(--muted);font-family:var(--font-head);letter-spacing:.08em}
+.info-val{font-size:.95rem;margin-top:.1rem}
+.asc-badge{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1200;font-family:var(--font-head);font-size:.7rem;letter-spacing:.08em;padding:.25rem .6rem;border-radius:10px;display:inline-block;margin-left:.3rem;}
+.err{background:rgba(224,92,122,.12);border:1px solid var(--red);color:var(--red);border-radius:8px;padding:.7rem;font-size:.85rem;text-align:center;display:none;margin-bottom:.7rem;}
+footer{width:100%;max-width:600px;text-align:center;padding:1rem;position:relative;z-index:1;border-top:1px solid var(--border);margin-top:.5rem;}
+.foot{font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+.foot span{color:var(--gold)}
+@media(max-width:400px){.form-row.triple,.coords-row{grid-template-columns:1fr 1fr}.planet-grid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
-<body>
-<div class="app">
-  <header>
-    <h1>🧭 NavMap</h1>
-    <div class="theme-toggle" id="themeToggle">
-      <button data-theme="dark">Dark</button>
-      <button data-theme="light">Light</button>
-      <button data-theme="oled">OLED</button>
-      <button data-theme="hc">HC</button>
-    </div>
-  </header>
+<body data-theme="dark">
 
-  <div class="controls">
-    <div class="field-row">
-      <input type="text" id="fromInput" placeholder="Start (or use my location)">
-      <button class="icon-btn" id="locBtn" title="Use my location">📍</button>
-    </div>
-    <div class="suggestions" id="fromSuggest"></div>
+<header>
+  <div class="theme-bar">
+    <button class="t-btn active" onclick="setTheme('dark')">🌙 Dark</button>
+    <button class="t-btn" onclick="setTheme('light')">☀️ Light</button>
+    <button class="t-btn" onclick="setTheme('oled')">⬛ OLED</button>
+    <button class="t-btn" onclick="setTheme('hc')">◈ HC</button>
+  </div>
+  <div class="brand">Rashi <span>Graha</span></div>
+  <div class="divider"></div>
+</header>
 
-    <div class="field-row">
-      <button class="icon-btn" id="swapBtn" title="Swap start & destination">⇅</button>
-      <div class="theme-toggle grow" id="profileToggle">
-        <button data-profile="driving" class="active">🚗 Drive</button>
-        <button data-profile="cycling">🚴 Bike</button>
-        <button data-profile="walking">🚶 Walk</button>
+<main>
+  <div class="card">
+    <div class="card-title">Personal Details</div>
+    <div class="form-row full">
+      <div><label>Full Name</label><input type="text" id="bname" placeholder="Enter your full name" autocomplete="name"></div>
+    </div>
+
+    <div class="card-title" style="margin-top:.6rem">Birth Date &amp; Time</div>
+    <div class="form-row full">
+      <div>
+        <label>Date &amp; Time <span style="color:var(--gold);font-size:.65rem">(auto-filled · editable)</span></label>
+        <input type="datetime-local" id="bdatetime" style="font-size:.9rem">
       </div>
     </div>
 
-    <div class="field-row">
-      <input type="text" id="toInput" placeholder="Destination">
-      <button class="btn" id="goBtn">Go</button>
+    <div class="card-title" style="margin-top:.6rem">Birth Place</div>
+    <div class="form-row full" style="margin-bottom:.6rem">
+      <div class="city-wrap">
+        <label>Search City (150+ cities worldwide)</label>
+        <input type="text" id="cityQ" placeholder="Type city name…" autocomplete="off"
+          oninput="filterC()" onkeydown="cityKey(event)" onfocus="openD()">
+        <div class="city-drop" id="cityD"></div>
+      </div>
     </div>
-    <div class="suggestions" id="toSuggest"></div>
-
-    <div class="chips" id="favChips"></div>
-
-    <div class="field-row">
-      <button class="icon-btn grow" id="tapSetBtn">📌 Tap map: off</button>
-      <button class="icon-btn" id="favBtn" title="Save destination as favorite">⭐</button>
+    <div class="coords-row">
+      <div><label>Latitude (°N)</label><input type="number" id="blat" step="0.0001" placeholder="28.6300"></div>
+      <div><label>Longitude (°E)</label><input type="number" id="blon" step="0.0001" placeholder="77.2200"></div>
+      <div><label>Timezone</label><select id="btz" style="font-size:.8rem"></select></div>
     </div>
-    <div class="field-row">
-      <button class="icon-btn grow" id="liveBtn">🛰️ Live tracking</button>
-      <button class="icon-btn" id="recenterBtn" title="Recenter on me">🎯</button>
-      <button class="icon-btn" id="voiceBtn" title="Voice guidance">🔇</button>
+    <div id="errMsg" class="err"></div>
+    <button class="btn" onclick="calc()">✦ Calculate Chart ✦</button>
+  </div>
+
+  <div id="results">
+    <div class="card">
+      <div id="r-name" class="chart-name" style="display:none"></div>
+      <div class="card-title">Lagna &amp; Core Signs</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-lbl">Ascendant (Lagna)</div><div class="info-val" id="r-asc">—</div></div>
+        <div class="info-item"><div class="info-lbl">Moon Sign (Rashi)</div><div class="info-val" id="r-moon">—</div></div>
+        <div class="info-item"><div class="info-lbl">Sun Sign (Surya)</div><div class="info-val" id="r-sun">—</div></div>
+        <div class="info-item"><div class="info-lbl">Ayanamsa (Lahiri)</div><div class="info-val" id="r-ay">—</div></div>
+      </div>
     </div>
-    <button class="icon-btn" id="measureBtn" style="width:100%;">📏 Measure distance</button>
+    <div class="card">
+      <div class="card-title">Nakshatra</div>
+      <div class="nk-box">
+        <div class="nk-lbl">Moon Nakshatra</div>
+        <div class="nk-name" id="r-nkn">—</div>
+        <div class="nk-sub" id="r-nks">—</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Planetary Positions · Sidereal</div>
+      <div class="planet-grid" id="r-planets"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Vimshottari Dasha</div>
+      <ul class="dasha-list" id="r-dasha"></ul>
+    </div>
   </div>
+</main>
 
-  <div class="status" id="status"></div>
+<footer>
+  <div class="foot">© <span id="yr"></span> Manik Roy. All Rights Reserved.</div>
+</footer>
 
-  <div id="map"></div>
-
-  <div class="route-info" id="measureInfo">
-    <div class="stat">Points<br><b id="measurePts">0</b></div>
-    <div class="stat">Straight-line distance<br><b id="measureDist">–</b></div>
-    <button class="clear" id="measureClearBtn">Clear</button>
-  </div>
-
-  <div class="route-info" id="routeInfo">
-    <div class="stat">Distance<br><b id="distVal">–</b></div>
-    <div class="stat">Time<br><b id="timeVal">–</b></div>
-    <button class="clear" id="clearBtn">Clear</button>
-  </div>
-
-  <div class="steps-panel" id="stepsPanel">
-    <div class="steps-header" id="stepsHeader">Turn-by-turn directions <span id="stepsCaret">▾</span></div>
-    <div class="steps-list" id="stepsList"></div>
-  </div>
-
-  <footer>
-    <div>Free routing via OSRM · Map data © OpenStreetMap contributors</div>
-    <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
-  </footer>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
-if (typeof L === 'undefined') {
-  document.write('<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>');
-}
-</script>
-<script>
-if (typeof L === 'undefined') {
-  document.getElementById('status') && (document.getElementById('status').textContent = 'Map library failed to load. Check your internet connection and reload.');
-}
-document.getElementById('year').textContent = new Date().getFullYear();
+// Init
+document.getElementById('yr').textContent=new Date().getFullYear();
+// Auto-fill current date & time
+(function(){const now=new Date(),pad=n=>String(n).padStart(2,'0');document.getElementById('bdatetime').value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;})();
+const tzSel=document.getElementById('btz');
+[[-12],[-11],[-10],[-9],[-8],[-7],[-6],[-5],[-4],[-3.5],[-3],[-2],[-1],[0],[1],[2],[3],[3.5],[4],[4.5],[5],[5.5],[5.75],[6],[6.5],[7],[8],[9],[9.5],[10],[10.5],[11],[12]].forEach(([v])=>{const o=new Option('UTC'+(v>=0?'+':'')+v,v);if(v===5.5)o.selected=true;tzSel.add(o);});
+function setTheme(t){document.body.dataset.theme=t;document.querySelectorAll('.t-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');}
 
-// ---------- Theme ----------
-const themeBtns = document.querySelectorAll('.theme-toggle#themeToggle button');
-function applyTheme(t){
-  document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem('navmap-theme', t);
-  themeBtns.forEach(b => b.classList.toggle('active', b.dataset.theme === t));
+// Cities [name, lat, lon, tz]
+const C=[
+  ['New Delhi, India',28.63,77.22,5.5],['Mumbai, India',19.076,72.878,5.5],['Kolkata, India',22.573,88.364,5.5],
+  ['Chennai, India',13.083,80.271,5.5],['Bengaluru, India',12.972,77.595,5.5],['Hyderabad, India',17.385,78.487,5.5],
+  ['Ahmedabad, India',23.023,72.571,5.5],['Pune, India',18.52,73.857,5.5],['Jaipur, India',26.912,75.787,5.5],
+  ['Lucknow, India',26.847,80.946,5.5],['Varanasi, India',25.318,82.974,5.5],['Patna, India',25.594,85.138,5.5],
+  ['Bhopal, India',23.26,77.413,5.5],['Indore, India',22.72,75.858,5.5],['Nagpur, India',21.146,79.088,5.5],
+  ['Surat, India',21.17,72.831,5.5],['Kanpur, India',26.45,80.332,5.5],['Visakhapatnam, India',17.687,83.219,5.5],
+  ['Amritsar, India',31.634,74.872,5.5],['Chandigarh, India',30.733,76.779,5.5],['Kochi, India',9.931,76.267,5.5],
+  ['Thiruvananthapuram, India',8.524,76.937,5.5],['Guwahati, India',26.145,91.736,5.5],['Dehradun, India',30.317,78.032,5.5],
+  ['Mysuru, India',12.296,76.639,5.5],['Agra, India',27.177,78.008,5.5],['Nashik, India',19.998,73.79,5.5],
+  ['Coimbatore, India',11.017,76.956,5.5],['Madurai, India',9.925,78.12,5.5],['Jodhpur, India',26.239,73.024,5.5],
+  ['Udaipur, India',24.585,73.713,5.5],['Ranchi, India',23.344,85.31,5.5],['Bhubaneswar, India',20.296,85.825,5.5],
+  ['Raipur, India',21.251,81.63,5.5],['Kolhapur, India',16.705,74.243,5.5],['Mangaluru, India',12.914,74.856,5.5],
+  ['Dhaka, Bangladesh',23.81,90.413,6],['Chittagong, Bangladesh',22.357,91.783,6],
+  ['Colombo, Sri Lanka',6.927,79.861,5.5],['Kathmandu, Nepal',27.717,85.324,5.75],
+  ['Karachi, Pakistan',24.861,67.001,5],['Lahore, Pakistan',31.52,74.359,5],['Islamabad, Pakistan',33.684,73.048,5],
+  ['Kabul, Afghanistan',34.555,69.208,4.5],['Yangon, Myanmar',16.866,96.195,6.5],
+  ['Beijing, China',39.904,116.407,8],['Shanghai, China',31.23,121.474,8],['Guangzhou, China',23.129,113.264,8],
+  ['Shenzhen, China',22.543,114.058,8],['Chengdu, China',30.573,104.067,8],['Hong Kong',22.319,114.169,8],
+  ['Tokyo, Japan',35.676,139.65,9],['Osaka, Japan',34.694,135.502,9],['Seoul, South Korea',37.567,126.978,9],
+  ['Taipei, Taiwan',25.033,121.565,8],['Singapore',1.352,103.82,8],['Bangkok, Thailand',13.756,100.502,7],
+  ['Jakarta, Indonesia',-6.209,106.846,7],['Kuala Lumpur, Malaysia',3.139,101.687,8],
+  ['Manila, Philippines',14.6,120.984,8],['Ho Chi Minh City, Vietnam',10.823,106.63,7],['Hanoi, Vietnam',21.029,105.854,7],
+  ['Dubai, UAE',25.205,55.271,4],['Abu Dhabi, UAE',24.454,54.377,4],
+  ['Riyadh, Saudi Arabia',24.714,46.675,3],['Jeddah, Saudi Arabia',21.285,39.238,3],
+  ['Doha, Qatar',25.285,51.531,3],['Tehran, Iran',35.689,51.389,3.5],
+  ['Istanbul, Turkey',41.008,28.978,3],['Tashkent, Uzbekistan',41.3,69.24,5],
+  ['Almaty, Kazakhstan',43.222,76.851,6],['Baku, Azerbaijan',40.409,49.867,4],['Tbilisi, Georgia',41.694,44.802,4],
+  ['Cairo, Egypt',30.044,31.236,2],['Lagos, Nigeria',6.524,3.379,1],['Nairobi, Kenya',-1.292,36.822,3],
+  ['Johannesburg, South Africa',-26.204,28.047,2],['Cape Town, South Africa',-33.925,18.424,2],
+  ['Addis Ababa, Ethiopia',9.032,38.747,3],['Casablanca, Morocco',33.573,-7.59,1],['Accra, Ghana',5.604,-0.187,0],
+  ['Dakar, Senegal',14.717,-17.468,0],['Khartoum, Sudan',15.501,32.56,3],
+  ['London, UK',51.507,-0.128,0],['Paris, France',48.857,2.352,1],['Berlin, Germany',52.52,13.405,1],
+  ['Madrid, Spain',40.417,-3.704,1],['Rome, Italy',41.903,12.496,1],['Amsterdam, Netherlands',52.368,4.904,1],
+  ['Brussels, Belgium',50.85,4.352,1],['Vienna, Austria',48.208,16.374,1],['Zurich, Switzerland',47.377,8.542,1],
+  ['Stockholm, Sweden',59.329,18.069,1],['Oslo, Norway',59.914,10.752,1],['Copenhagen, Denmark',55.676,12.568,1],
+  ['Helsinki, Finland',60.17,24.938,2],['Warsaw, Poland',52.23,21.012,1],['Prague, Czech Republic',50.076,14.438,1],
+  ['Budapest, Hungary',47.498,19.04,1],['Athens, Greece',37.984,23.728,2],['Lisbon, Portugal',38.722,-9.139,0],
+  ['Barcelona, Spain',41.385,2.173,1],['Munich, Germany',48.135,11.582,1],
+  ['Moscow, Russia',55.756,37.617,3],['St. Petersburg, Russia',59.931,30.361,3],['Kyiv, Ukraine',50.45,30.523,2],
+  ['New York, USA',40.713,-74.006,-5],['Los Angeles, USA',34.052,-118.244,-8],['Chicago, USA',41.878,-87.63,-6],
+  ['Houston, USA',29.76,-95.37,-6],['Phoenix, USA',33.448,-112.074,-7],['San Francisco, USA',37.775,-122.419,-8],
+  ['Seattle, USA',47.606,-122.332,-8],['Miami, USA',25.762,-80.192,-5],['Washington DC, USA',38.907,-77.037,-5],
+  ['Boston, USA',42.36,-71.059,-5],['Dallas, USA',32.777,-96.797,-6],['Atlanta, USA',33.749,-84.388,-5],
+  ['Toronto, Canada',43.653,-79.383,-5],['Vancouver, Canada',49.283,-123.121,-8],['Montreal, Canada',45.502,-73.567,-5],
+  ['Mexico City, Mexico',19.433,-99.133,-6],['São Paulo, Brazil',-23.551,-46.633,-3],
+  ['Rio de Janeiro, Brazil',-22.907,-43.173,-3],['Buenos Aires, Argentina',-34.604,-58.382,-3],
+  ['Lima, Peru',-12.046,-77.043,-5],['Bogotá, Colombia',4.711,-74.072,-5],['Santiago, Chile',-33.451,-70.665,-4],
+  ['Sydney, Australia',-33.869,151.209,10],['Melbourne, Australia',-37.814,144.963,10],
+  ['Brisbane, Australia',-27.47,153.025,10],['Perth, Australia',-31.951,115.861,8],
+  ['Auckland, New Zealand',-36.849,174.763,12],
+];
+
+let focIdx=-1;
+function filterC(){
+  const q=document.getElementById('cityQ').value.trim().toLowerCase();
+  const dr=document.getElementById('cityD');focIdx=-1;
+  if(!q){dr.classList.remove('open');return;}
+  const hits=C.filter(c=>c[0].toLowerCase().includes(q)).slice(0,9);
+  if(!hits.length){dr.classList.remove('open');return;}
+  dr.innerHTML=hits.map(c=>`<div class="city-opt" onclick="pickC(${C.indexOf(c)})">${c[0]}<small>${c[1].toFixed(4)}°N &nbsp;${c[2].toFixed(4)}°E &nbsp;UTC${c[3]>=0?'+':''}${c[3]}</small></div>`).join('');
+  dr.classList.add('open');
 }
-themeBtns.forEach(b => b.addEventListener('click', () => applyTheme(b.dataset.theme)));
-applyTheme(localStorage.getItem('navmap-theme') || 'dark');
-
-// ---------- Map ----------
-if (typeof L === 'undefined') {
-  throw new Error('Leaflet failed to load — check your internet connection and reload the page.');
+function openD(){if(document.getElementById('cityQ').value.trim())filterC();}
+function pickC(i){const c=C[i];document.getElementById('cityQ').value=c[0];document.getElementById('blat').value=c[1];document.getElementById('blon').value=c[2];document.getElementById('btz').value=c[3];document.getElementById('cityD').classList.remove('open');}
+function cityKey(e){
+  const dr=document.getElementById('cityD'),opts=dr.querySelectorAll('.city-opt');
+  if(e.key==='ArrowDown'){e.preventDefault();focIdx=Math.min(focIdx+1,opts.length-1);}
+  else if(e.key==='ArrowUp'){e.preventDefault();focIdx=Math.max(focIdx-1,0);}
+  else if(e.key==='Enter'&&focIdx>=0){opts[focIdx].click();return;}
+  else if(e.key==='Escape'){dr.classList.remove('open');return;}
+  opts.forEach((o,i)=>o.classList.toggle('hi',i===focIdx));
 }
-const map = L.map('map', {zoomControl:true}).setView([20.5937,78.9629], 5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom:19, attribution:'&copy; OpenStreetMap contributors'
-}).addTo(map);
+document.addEventListener('click',e=>{if(!e.target.closest('.city-wrap'))document.getElementById('cityD').classList.remove('open');});
 
-let fromMarker=null, toMarker=null, routeLine=null;
-let fromCoords=null, toCoords=null;
-let profile = 'driving';
-
-const statusEl = document.getElementById('status');
-function setStatus(msg){ statusEl.textContent = msg || ''; }
-const mapEl = document.getElementById('map');
-const fromInput = document.getElementById('fromInput');
-const toInput = document.getElementById('toInput');
-const fromSuggest = document.getElementById('fromSuggest');
-const toSuggest = document.getElementById('toSuggest');
-
-// ---------- Geocoding & reverse geocoding (Nominatim, free, no key) ----------
-async function geocode(query){
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}`;
-  const res = await fetch(url, {headers:{'Accept':'application/json'}});
-  if(!res.ok) throw new Error('Geocoding failed');
-  return res.json();
+// Astronomy — Meeus
+function jd(y,m,d,h){if(m<=2){y--;m+=12;}const A=Math.floor(y/100);return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+h/24+2-A+Math.floor(A/4)-1524.5;}
+const n360=a=>((a%360)+360)%360;
+// Lahiri (Chitrapaksha) ayanamsa: ~23.85° at J2000.0, rate 1.39722°/century (50.2910 arcsec/yr)
+const ayn=j=>23.85045+1.39722*(j-2451545)/36525;
+function sunL(j){const T=(j-2451545)/36525,L=280.46646+36000.76983*T,M=(357.52911+35999.05029*T)*Math.PI/180;return n360(L+(1.914602-0.004817*T)*Math.sin(M)+(0.019993-0.000101*T)*Math.sin(2*M)+0.000289*Math.sin(3*M));}
+function moonL(j){
+  const T=(j-2451545)/36525,L=218.3164477+481267.88123421*T-0.0015786*T*T;
+  const D=(297.8501921+445267.1114034*T-0.001884*T*T)*Math.PI/180;
+  const M=(357.5291092+35999.0502909*T)*Math.PI/180;
+  const Mp=(93.272095+477198.8675055*T+0.0088553*T*T)*Math.PI/180;
+  const F=(93.272099+483202.0175233*T-0.0036539*T*T)*Math.PI/180;
+  return n360(L+6.288774*Math.sin(Mp)+1.274027*Math.sin(2*D-Mp)+0.658314*Math.sin(2*D)+0.213618*Math.sin(2*Mp)-0.185116*Math.sin(M)-0.114332*Math.sin(2*F)+0.058793*Math.sin(2*D-2*Mp)+0.057066*Math.sin(2*D-M-Mp)+0.053322*Math.sin(2*D+Mp)+0.045758*Math.sin(2*D-M));
 }
-async function reverseGeocode(lat, lon){
-  try{
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
-    const res = await fetch(url, {headers:{'Accept':'application/json'}});
-    const data = await res.json();
-    return data.display_name || `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
-  }catch(e){ return `${lat.toFixed(5)}, ${lon.toFixed(5)}`; }
-}
+function plL(j){const T=(j-2451545)/36525,Ra=n360(125.0445-1934.1363*T);return{Mars:n360(355.433+19140.2993*T),Mercury:n360(252.251+149472.6746*T),Jupiter:n360(34.351+3034.9057*T),Venus:n360(181.979+58517.8156*T),Saturn:n360(50.077+1222.1138*T),Rahu:Ra,Ketu:n360(Ra+180)};}
+function asc(j,la,lo){const T=(j-2451545)/36525,e=(23.439291111-0.013004167*T)*Math.PI/180,L=n360(280.46061837+360.98564736629*(j-2451545)+0.000387933*T*T+lo)*Math.PI/180;return n360(Math.atan2(-Math.cos(L),Math.sin(L)*Math.cos(e)+Math.tan(la*Math.PI/180)*Math.sin(e))*180/Math.PI);}
+const sid=(l,a)=>n360(l-a),sOf=d=>Math.floor(n360(d)/30),diS=d=>n360(d)%30;
+function dms(d){const g=Math.floor(d),m=Math.floor((d-g)*60),s=Math.floor(((d-g)*60-m)*60);return`${g}°${m}'${s}"`;}
 
-// ---------- Recent searches ----------
-function getRecents(){ try{ return JSON.parse(localStorage.getItem('navmap-recents')||'[]'); }catch(e){ return []; } }
-function addRecent(item){
-  let list = getRecents().filter(r => r.name !== item.name);
-  list.unshift(item);
-  list = list.slice(0,6);
-  localStorage.setItem('navmap-recents', JSON.stringify(list));
-}
+const SG='♈,♉,♊,♋,♌,♍,♎,♏,♐,♑,♒,♓'.split(',');
+const SN='Mesha,Vrishabha,Mithuna,Karka,Simha,Kanya,Tula,Vrishchika,Dhanu,Makara,Kumbha,Meena'.split(',');
+const NK=[['Ashwini','Ketu'],['Bharani','Venus'],['Krittika','Sun'],['Rohini','Moon'],['Mrigashira','Mars'],['Ardra','Rahu'],['Punarvasu','Jupiter'],['Pushya','Saturn'],['Ashlesha','Mercury'],['Magha','Ketu'],['Purva Phalguni','Venus'],['Uttara Phalguni','Sun'],['Hasta','Moon'],['Chitra','Mars'],['Swati','Rahu'],['Vishakha','Jupiter'],['Anuradha','Saturn'],['Jyeshtha','Mercury'],['Mula','Ketu'],['Purva Ashadha','Venus'],['Uttara Ashadha','Sun'],['Shravana','Moon'],['Dhanishtha','Mars'],['Shatabhisha','Rahu'],['Purva Bhadrapada','Jupiter'],['Uttara Bhadrapada','Saturn'],['Revati','Mercury']];
+const DY=[6,10,7,18,16,19,17,7,20],DL='Ketu,Venus,Sun,Moon,Mars,Rahu,Jupiter,Saturn,Mercury'.split(',');
 
-function wireSuggest(inputEl, suggestEl, onPick){
-  let timer=null;
-  function renderRecents(){
-    const recents = getRecents();
-    if(!recents.length){ suggestEl.style.display='none'; return; }
-    suggestEl.innerHTML = recents.map((r,i) => `<div data-idx="${i}"><span class="tag">RECENT</span>${r.name}</div>`).join('');
-    suggestEl.style.display='block';
-    suggestEl.querySelectorAll('div').forEach(div => {
-      div.addEventListener('click', () => {
-        const r = recents[div.dataset.idx];
-        inputEl.value = r.name;
-        suggestEl.style.display='none';
-        onPick(r);
-      });
-    });
-  }
-  inputEl.addEventListener('focus', () => { if(!inputEl.value.trim()) renderRecents(); });
-  inputEl.addEventListener('input', () => {
-    clearTimeout(timer);
-    const q = inputEl.value.trim();
-    if(q.length < 3){ if(!q) renderRecents(); else { suggestEl.style.display='none'; suggestEl.innerHTML=''; } return; }
-    timer = setTimeout(async () => {
-      try{
-        const results = await geocode(q);
-        if(!results.length){ suggestEl.style.display='none'; return; }
-        suggestEl.innerHTML = results.map((r,i) => `<div data-idx="${i}">${r.display_name}</div>`).join('');
-        suggestEl.style.display='block';
-        suggestEl.querySelectorAll('div').forEach(div => {
-          div.addEventListener('click', () => {
-            const r = results[div.dataset.idx];
-            const loc = {lat:parseFloat(r.lat), lon:parseFloat(r.lon), name:r.display_name};
-            inputEl.value = r.display_name;
-            suggestEl.style.display='none';
-            addRecent(loc);
-            onPick(loc);
-          });
-        });
-      }catch(e){ setStatus('Search unavailable, try again.'); }
-    }, 500);
-  });
-}
-wireSuggest(fromInput, fromSuggest, (loc) => setPoint('from', loc));
-wireSuggest(toInput, toSuggest, (loc) => setPoint('to', loc));
-
-function setPoint(which, loc){
-  const latlng = [loc.lat, loc.lon];
-  if(which === 'from'){
-    fromCoords = latlng;
-    if(fromMarker) map.removeLayer(fromMarker);
-    fromMarker = L.marker(latlng, {title:'Start'}).addTo(map);
-  } else {
-    toCoords = latlng;
-    if(toMarker) map.removeLayer(toMarker);
-    toMarker = L.marker(latlng, {title:'Destination'}).addTo(map);
-  }
-  map.setView(latlng, 13);
+// NK span = 13°20' = 13+1/3 degrees exactly. Pada span = 3°20' = 10/3 degrees.
+// NK ruling lord sequence (Vimshottari): Ketu(0),Venus(1),Sun(2),Moon(3),Mars(4),Rahu(5),Jupiter(6),Saturn(7),Mercury(8)
+// NK index 0=Ashwini→Ketu, 1=Bharani→Venus, 2=Krittika→Sun ... maps directly: lordIdx = nkIdx % 9
+const NK_SPAN=40/3; // 13.3333...° exact
+function nkOf(sm){const lon=n360(sm),ni=Math.min(Math.floor(lon/NK_SPAN),26),degInNk=lon%NK_SPAN,pada=Math.min(Math.floor(degInNk/(NK_SPAN/4))+1,4);return{ni,pada,degInNk};}
+function dashas(sm,bd){
+  const{ni,degInNk}=nkOf(sm),li=ni%9,bal=DY[li]*(1-degInNk/NK_SPAN);
+  const out=[];let d=new Date(bd),fl=true,cl=li;
+  for(let i=0;i<9;i++){const y=fl?bal:DY[cl],e=new Date(d);e.setDate(e.getDate()+Math.round(y*365.25));out.push({l:DL[cl],s:new Date(d),e});d=new Date(e);cl=(cl+1)%9;fl=false;}
+  return out;
 }
 
-// ---------- Swap ----------
-document.getElementById('swapBtn').addEventListener('click', () => {
-  const tmpCoords = fromCoords; fromCoords = toCoords; toCoords = tmpCoords;
-  const tmpVal = fromInput.value; fromInput.value = toInput.value; toInput.value = tmpVal;
-  if(fromCoords) setPoint('from', {lat:fromCoords[0], lon:fromCoords[1]}); else if(fromMarker){ map.removeLayer(fromMarker); fromMarker=null; }
-  if(toCoords) setPoint('to', {lat:toCoords[0], lon:toCoords[1]}); else if(toMarker){ map.removeLayer(toMarker); toMarker=null; }
-});
-
-// ---------- Travel mode ----------
-document.querySelectorAll('#profileToggle button').forEach(b => {
-  b.addEventListener('click', () => {
-    profile = b.dataset.profile;
-    document.querySelectorAll('#profileToggle button').forEach(x => x.classList.toggle('active', x===b));
-  });
-});
-
-// ---------- Geolocation (with reverse geocoding) ----------
-let lastKnownPos = null;
-document.getElementById('locBtn').addEventListener('click', () => {
-  if(!navigator.geolocation){ setStatus('Geolocation not supported.'); return; }
-  setStatus('Locating…');
-  navigator.geolocation.getCurrentPosition(async pos => {
-    const {latitude, longitude} = pos.coords;
-    lastKnownPos = [latitude, longitude];
-    setPoint('from', {lat:latitude, lon:longitude});
-    setStatus('Finding your address…');
-    fromInput.value = await reverseGeocode(latitude, longitude);
-    setStatus('');
-  }, () => setStatus('Could not get your location.'), {enableHighAccuracy:true, timeout:10000});
-});
-
-// ---------- Favorites ----------
-function getFavorites(){ try{ return JSON.parse(localStorage.getItem('navmap-favorites')||'[]'); }catch(e){ return []; } }
-function renderFavorites(){
-  const favs = getFavorites();
-  const chips = document.getElementById('favChips');
-  chips.classList.toggle('show', favs.length > 0);
-  chips.innerHTML = favs.map((f,i) => `<div class="chip" data-idx="${i}"><span class="label">⭐ ${f.label}</span><span class="x" data-del="${i}">✕</span></div>`).join('');
-  chips.querySelectorAll('.label').forEach(el => {
-    el.addEventListener('click', () => {
-      const f = favs[el.parentElement.dataset.idx];
-      toInput.value = f.label;
-      setPoint('to', {lat:f.lat, lon:f.lon});
-    });
-  });
-  chips.querySelectorAll('.x').forEach(el => {
-    el.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      const list = getFavorites();
-      list.splice(el.dataset.del, 1);
-      localStorage.setItem('navmap-favorites', JSON.stringify(list));
-      renderFavorites();
-    });
-  });
+function calc(){
+  const er=document.getElementById('errMsg');er.style.display='none';
+  const nm=document.getElementById('bname').value.trim();
+  const dtVal=document.getElementById('bdatetime').value;
+  if(!dtVal){er.textContent='Please enter a birth date & time.';er.style.display='block';return;}
+  const dt=new Date(dtVal);
+  const dy=dt.getDate(),mo=dt.getMonth()+1,yr=dt.getFullYear(),hr=dt.getHours(),mn=dt.getMinutes();
+  const tz=+document.getElementById('btz').value;
+  const la=+document.getElementById('blat').value,lo=+document.getElementById('blon').value;
+  if(!la&&!lo){er.textContent='Please select a city or enter coordinates.';er.style.display='block';return;}
+  const J=jd(yr,mo,dy,hr-tz+mn/60),ay=ayn(J);
+  const sS=sid(sunL(J),ay),sM=sid(moonL(J),ay),sA=sid(asc(J,la,lo),ay);
+  const pl=plL(J);
+  const pd=[{n:'Sun',s:'☉',l:sS},{n:'Moon',s:'☽',l:sM},{n:'Mars',s:'♂',l:sid(pl.Mars,ay)},{n:'Mercury',s:'☿',l:sid(pl.Mercury,ay)},{n:'Jupiter',s:'♃',l:sid(pl.Jupiter,ay)},{n:'Venus',s:'♀',l:sid(pl.Venus,ay)},{n:'Saturn',s:'♄',l:sid(pl.Saturn,ay)},{n:'Rahu',s:'☊',l:sid(pl.Rahu,ay),r:1},{n:'Ketu',s:'☋',l:sid(pl.Ketu,ay),r:1}];
+  const rn=document.getElementById('r-name');
+  if(nm){rn.textContent=`✦  ${nm}'s Vedic Birth Chart  ✦`;rn.style.display='block';}else rn.style.display='none';
+  document.getElementById('r-asc').innerHTML=`${SG[sOf(sA)]} ${SN[sOf(sA)]} <span class="asc-badge">${dms(diS(sA))}</span>`;
+  document.getElementById('r-moon').innerHTML=`${SG[sOf(sM)]} ${SN[sOf(sM)]}`;
+  document.getElementById('r-sun').innerHTML=`${SG[sOf(sS)]} ${SN[sOf(sS)]}`;
+  document.getElementById('r-ay').textContent=`${ay.toFixed(4)}°`;
+  const{ni,pada}=nkOf(sM);
+  document.getElementById('r-nkn').textContent=`${NK[ni][0]}  (Pada ${pada})`;
+  document.getElementById('r-nks').innerHTML=`Ruling Lord: <strong>${NK[ni][1]}</strong> &nbsp;·&nbsp; Moon: ${dms(sM)} sidereal`;
+  const pg=document.getElementById('r-planets');pg.innerHTML='';
+  pd.forEach(p=>{const s=sOf(p.l);pg.innerHTML+=`<div class="planet-card"><div class="planet-name">${p.s} ${p.n}</div><div class="planet-sign">${SG[s]} ${SN[s]}</div><div class="planet-deg">${dms(diS(p.l))}${p.r?' <span class="planet-retro">℞</span>':''}</div></div>`;});
+  const now=new Date(),bd=new Date(yr,mo-1,dy,hr,mn),dl=document.getElementById('r-dasha');dl.innerHTML='';
+  dashas(sM,bd).forEach(d=>{const c=now>=d.s&&now<d.e,f=x=>x.toLocaleDateString('en-GB',{year:'numeric',month:'short'});dl.innerHTML+=`<li class="${c?'cur':''}"><span><span class="dot ${c?'a':''}"></span>${d.l} Dasha</span><span style="font-size:.78rem;color:var(--muted)">${f(d.s)}–${f(d.e)}</span></li>`;});
+  document.getElementById('results').style.display='block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
 }
-renderFavorites();
-document.getElementById('favBtn').addEventListener('click', () => {
-  if(!toCoords){ setStatus('Set a destination first to save it.'); return; }
-  const label = prompt('Save this destination as:', toInput.value.split(',')[0] || 'Favorite');
-  if(!label) return;
-  const list = getFavorites();
-  list.unshift({label, lat:toCoords[0], lon:toCoords[1]});
-  localStorage.setItem('navmap-favorites', JSON.stringify(list.slice(0,10)));
-  renderFavorites();
-});
-
-// ---------- Tap map to set start/destination ----------
-let tapMode = null; // null -> 'from' -> 'to' -> null
-const tapSetBtn = document.getElementById('tapSetBtn');
-tapSetBtn.addEventListener('click', () => {
-  tapMode = tapMode === null ? 'from' : (tapMode === 'from' ? 'to' : null);
-  tapSetBtn.textContent = tapMode === null ? '📌 Tap map: off' : `📌 Tap map: set ${tapMode === 'from' ? 'start' : 'destination'}`;
-  tapSetBtn.classList.toggle('active', tapMode !== null);
-  mapEl.classList.toggle('tapping', tapMode !== null);
-});
-
-// ---------- Live GPS tracking with heading arrow ----------
-let watchId = null;
-let userMarker = null;
-const liveBtn = document.getElementById('liveBtn');
-function headingIcon(heading){
-  const rot = typeof heading === 'number' ? heading : 0;
-  return L.divIcon({
-    className:'heading-arrow',
-    html:`<div class="heading-arrow"><svg width="22" height="22" viewBox="0 0 24 24" style="transform:rotate(${rot}deg)"><path d="M12 2 L19 21 L12 17 L5 21 Z" fill="#4f8cff" stroke="#fff" stroke-width="1"/></svg></div>`,
-    iconSize:[22,22], iconAnchor:[11,11]
-  });
+// Service Worker registration
+if('serviceWorker' in navigator){
+  const onLoad=()=>navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  window.addEventListener('load', onLoad);
 }
-liveBtn.addEventListener('click', () => {
-  if(watchId){
-    navigator.geolocation.clearWatch(watchId); watchId = null;
-    liveBtn.classList.remove('active'); liveBtn.textContent = '🛰️ Live tracking';
-    if(userMarker){ map.removeLayer(userMarker); userMarker = null; }
-    return;
-  }
-  if(!navigator.geolocation){ setStatus('Geolocation not supported.'); return; }
-  liveBtn.classList.add('active'); liveBtn.textContent = '🛰️ Tracking…';
-  watchId = navigator.geolocation.watchPosition(pos => {
-    const {latitude, longitude, heading} = pos.coords;
-    lastKnownPos = [latitude, longitude];
-    const icon = headingIcon(heading);
-    if(userMarker) userMarker.setLatLng(lastKnownPos).setIcon(icon);
-    else userMarker = L.marker(lastKnownPos, {icon}).addTo(map);
-    checkVoiceAnnouncement(lastKnownPos);
-  }, () => setStatus('Live tracking failed — check location permission.'), {enableHighAccuracy:true, maximumAge:2000});
-});
-document.getElementById('recenterBtn').addEventListener('click', () => {
-  if(lastKnownPos) map.setView(lastKnownPos, 16);
-  else setStatus('No known location yet — enable live tracking or use 📍.');
-});
-
-// ---------- Voice guidance ----------
-let voiceEnabled = false;
-const voiceBtn = document.getElementById('voiceBtn');
-voiceBtn.addEventListener('click', () => {
-  voiceEnabled = !voiceEnabled;
-  voiceBtn.classList.toggle('active', voiceEnabled);
-  voiceBtn.textContent = voiceEnabled ? '🔊' : '🔇';
-});
-function speak(text){
-  if(!voiceEnabled || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-}
-let routeStepPoints = []; // [{lat,lon,text}]
-let nextStepIdx = 0;
-function checkVoiceAnnouncement(pos){
-  if(!voiceEnabled || nextStepIdx >= routeStepPoints.length) return;
-  const step = routeStepPoints[nextStepIdx];
-  const d = haversine(pos, [step.lat, step.lon]) * 1000; // meters
-  if(d < 40){
-    speak(step.text);
-    nextStepIdx++;
-  }
-}
-
-// ---------- Turn-by-turn instruction text ----------
-function maneuverText(step){
-  const type = step.maneuver.type;
-  const modifier = step.maneuver.modifier;
-  const name = step.name ? ` onto ${step.name}` : '';
-  if(type === 'depart') return `Head out${name}`;
-  if(type === 'arrive') return 'Arrive at your destination';
-  if(type === 'roundabout') return `Enter the roundabout${name}`;
-  const dir = modifier ? modifier.replace('slight ', 'slight ').replace('sharp ', 'sharp ') : '';
-  return `${type === 'turn' ? 'Turn' : type.charAt(0).toUpperCase()+type.slice(1)} ${dir}${name}`.trim();
-}
-
-// ---------- Routing (OSRM public demo server, free, no key) ----------
-document.getElementById('goBtn').addEventListener('click', async () => {
-  if(!fromCoords || !toCoords){
-    setStatus('Pick both a start and a destination from the suggestions.');
-    return;
-  }
-  setStatus('Finding route…');
-  try{
-    const coordsStr = `${fromCoords[1]},${fromCoords[0]};${toCoords[1]},${toCoords[0]}`;
-    const url = `https://router.project-osrm.org/route/v1/${profile}/${coordsStr}?overview=full&geometries=geojson&steps=true`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if(data.code !== 'Ok' || !data.routes.length){ setStatus('No route found.'); return; }
-    const route = data.routes[0];
-    if(routeLine) map.removeLayer(routeLine);
-    const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
-    routeLine = L.polyline(latlngs, {color:getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4f8cff', weight:5}).addTo(map);
-    map.fitBounds(routeLine.getBounds(), {padding:[30,30]});
-
-    const km = (route.distance/1000).toFixed(1);
-    const mins = Math.round(route.duration/60);
-    const hrs = Math.floor(mins/60);
-    const remMins = mins%60;
-    document.getElementById('distVal').textContent = `${km} km`;
-    document.getElementById('timeVal').textContent = hrs > 0 ? `${hrs}h ${remMins}m` : `${mins} min`;
-    document.getElementById('routeInfo').classList.add('show');
-
-    const steps = (route.legs[0] && route.legs[0].steps) || [];
-    routeStepPoints = steps.map(s => ({lat:s.maneuver.location[1], lon:s.maneuver.location[0], text:maneuverText(s)}));
-    nextStepIdx = 0;
-    const stepsList = document.getElementById('stepsList');
-    stepsList.innerHTML = steps.map((s,i) => `<div class="step-item">${i+1}. ${maneuverText(s)} <span>(${Math.round(s.distance)} m)</span></div>`).join('');
-    document.getElementById('stepsPanel').classList.add('show');
-    if(voiceEnabled && routeStepPoints.length) speak(routeStepPoints[0].text);
-    setStatus('');
-  }catch(e){
-    setStatus('Routing service unavailable. Try again.');
-  }
-});
-
-document.getElementById('stepsHeader').addEventListener('click', () => {
-  document.getElementById('stepsList').classList.toggle('open');
-  const caret = document.getElementById('stepsCaret');
-  caret.textContent = document.getElementById('stepsList').classList.contains('open') ? '▴' : '▾';
-});
-
-document.getElementById('clearBtn').addEventListener('click', () => {
-  if(routeLine) map.removeLayer(routeLine);
-  if(fromMarker) map.removeLayer(fromMarker);
-  if(toMarker) map.removeLayer(toMarker);
-  routeLine=fromMarker=toMarker=null;
-  fromCoords=toCoords=null;
-  fromInput.value=''; toInput.value='';
-  document.getElementById('routeInfo').classList.remove('show');
-  document.getElementById('stepsPanel').classList.remove('show');
-  routeStepPoints = []; nextStepIdx = 0;
-  setStatus('');
-});
-
-document.addEventListener('click', (e) => {
-  if(!fromSuggest.contains(e.target) && e.target !== fromInput) fromSuggest.style.display='none';
-  if(!toSuggest.contains(e.target) && e.target !== toInput) toSuggest.style.display='none';
-});
-
-// ---------- Distance measurement (straight-line, tap-to-add draggable points) ----------
-let measuring = false;
-let measurePoints = [];
-let measureMarkers = [];
-let measureLine = null;
-const measureBtn = document.getElementById('measureBtn');
-const measureInfo = document.getElementById('measureInfo');
-const measurePtsEl = document.getElementById('measurePts');
-const measureDistEl = document.getElementById('measureDist');
-
-function haversine(a, b){
-  const R = 6371;
-  const toRad = d => d * Math.PI / 180;
-  const dLat = toRad(b[0]-a[0]);
-  const dLon = toRad(b[1]-a[1]);
-  const lat1 = toRad(a[0]), lat2 = toRad(b[0]);
-  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
-
-function updateMeasureUI(){
-  measurePtsEl.textContent = measurePoints.length;
-  let total = 0;
-  for(let i=1; i<measurePoints.length; i++) total += haversine(measurePoints[i-1], measurePoints[i]);
-  measureDistEl.textContent = total >= 1 ? `${total.toFixed(2)} km` : `${Math.round(total*1000)} m`;
-  measureInfo.classList.toggle('show', measurePoints.length > 0);
-}
-
-function toggleMeasure(on){
-  measuring = on;
-  measureBtn.classList.toggle('active', on);
-  mapEl.classList.toggle('measuring', on);
-  if(on){ tapMode = null; tapSetBtn.textContent = '📌 Tap map: off'; tapSetBtn.classList.remove('active'); mapEl.classList.remove('tapping'); }
-  setStatus(on ? 'Tap the map to add measurement points.' : '');
-}
-measureBtn.addEventListener('click', () => toggleMeasure(!measuring));
-
-const measureIcon = L.divIcon({
-  className: 'measure-pin',
-  html: '<div style="width:16px;height:16px;border-radius:50%;background:#ff9800;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>',
-  iconSize:[16,16], iconAnchor:[8,8]
-});
-function redrawMeasureLine(){
-  if(measureLine) map.removeLayer(measureLine);
-  measureLine = measurePoints.length > 1 ? L.polyline(measurePoints, {color:'#ff9800', weight:4, dashArray:'6,6'}).addTo(map) : null;
-}
-
-// ---------- Combined map click: measuring OR tap-to-set ----------
-map.on('click', async (e) => {
-  const pt = [e.latlng.lat, e.latlng.lng];
-  if(measuring){
-    const idx = measurePoints.length;
-    measurePoints.push(pt);
-    const marker = L.marker(pt, {icon: measureIcon, draggable:true}).addTo(map);
-    marker.on('drag', (ev) => {
-      const ll = ev.target.getLatLng();
-      measurePoints[idx] = [ll.lat, ll.lng];
-      redrawMeasureLine(); updateMeasureUI();
-    });
-    measureMarkers.push(marker);
-    redrawMeasureLine(); updateMeasureUI();
-    return;
-  }
-  if(tapMode){
-    setStatus('Finding address…');
-    const addr = await reverseGeocode(pt[0], pt[1]);
-    if(tapMode === 'from'){ fromInput.value = addr; setPoint('from', {lat:pt[0], lon:pt[1]}); }
-    else { toInput.value = addr; setPoint('to', {lat:pt[0], lon:pt[1]}); }
-    setStatus('');
-  }
-});
-
-document.getElementById('measureClearBtn').addEventListener('click', () => {
-  measurePoints = [];
-  measureMarkers.forEach(m => map.removeLayer(m));
-  measureMarkers = [];
-  if(measureLine) map.removeLayer(measureLine);
-  measureLine = null;
-  updateMeasureUI();
-});
 </script>
 </body>
 </html>
