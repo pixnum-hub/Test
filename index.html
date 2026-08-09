@@ -63,6 +63,9 @@ button.icon-btn{
   border:1px solid var(--border); background:var(--surface); color:var(--text);
   border-radius:10px; padding:11px 12px; cursor:pointer; font-size:.9rem;
 }
+button.icon-btn.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+[data-theme="hc"] button.icon-btn.active{color:#000;}
+#map.measuring{cursor:crosshair;}
 .suggestions{
   background:var(--surface); border:1px solid var(--border); border-radius:10px;
   max-height:160px; overflow-y:auto; display:none;
@@ -118,11 +121,18 @@ footer{
       <button class="btn" id="goBtn">Go</button>
     </div>
     <div class="suggestions" id="toSuggest"></div>
+    <button class="icon-btn" id="measureBtn" style="width:100%;">📏 Measure distance</button>
   </div>
 
   <div class="status" id="status"></div>
 
   <div id="map"></div>
+
+  <div class="route-info" id="measureInfo">
+    <div class="stat">Points<br><b id="measurePts">0</b></div>
+    <div class="stat">Straight-line distance<br><b id="measureDist">–</b></div>
+    <button class="clear" id="measureClearBtn">Clear</button>
+  </div>
 
   <div class="route-info" id="routeInfo">
     <div class="stat">Distance<br><b id="distVal">–</b></div>
@@ -290,6 +300,66 @@ document.getElementById('clearBtn').addEventListener('click', () => {
 document.addEventListener('click', (e) => {
   if(!fromSuggest.contains(e.target) && e.target !== fromInput) fromSuggest.style.display='none';
   if(!toSuggest.contains(e.target) && e.target !== toInput) toSuggest.style.display='none';
+});
+
+// ---------- Distance measurement (straight-line, tap-to-add points) ----------
+let measuring = false;
+let measurePoints = [];
+let measureMarkers = [];
+let measureLine = null;
+const measureBtn = document.getElementById('measureBtn');
+const measureInfo = document.getElementById('measureInfo');
+const measurePtsEl = document.getElementById('measurePts');
+const measureDistEl = document.getElementById('measureDist');
+const mapEl = document.getElementById('map');
+
+function haversine(a, b){
+  const R = 6371; // km
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(b[0]-a[0]);
+  const dLon = toRad(b[1]-a[1]);
+  const lat1 = toRad(a[0]), lat2 = toRad(b[0]);
+  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function updateMeasureUI(){
+  measurePtsEl.textContent = measurePoints.length;
+  let total = 0;
+  for(let i=1; i<measurePoints.length; i++) total += haversine(measurePoints[i-1], measurePoints[i]);
+  measureDistEl.textContent = total >= 1 ? `${total.toFixed(2)} km` : `${Math.round(total*1000)} m`;
+  measureInfo.classList.toggle('show', measurePoints.length > 0);
+}
+
+function toggleMeasure(on){
+  measuring = on;
+  measureBtn.classList.toggle('active', on);
+  mapEl.classList.toggle('measuring', on);
+  setStatus(on ? 'Tap the map to add measurement points.' : '');
+}
+
+measureBtn.addEventListener('click', () => toggleMeasure(!measuring));
+
+map.on('click', (e) => {
+  if(!measuring) return;
+  const pt = [e.latlng.lat, e.latlng.lng];
+  measurePoints.push(pt);
+  const marker = L.circleMarker(pt, {radius:6, color:'#ff9800', fillColor:'#ff9800', fillOpacity:1}).addTo(map);
+  measureMarkers.push(marker);
+  if(measureLine) map.removeLayer(measureLine);
+  if(measurePoints.length > 1){
+    measureLine = L.polyline(measurePoints, {color:'#ff9800', weight:4, dashArray:'6,6'}).addTo(map);
+  }
+  updateMeasureUI();
+});
+
+document.getElementById('measureClearBtn').addEventListener('click', () => {
+  measurePoints = [];
+  measureMarkers.forEach(m => map.removeLayer(m));
+  measureMarkers = [];
+  if(measureLine) map.removeLayer(measureLine);
+  measureLine = null;
+  updateMeasureUI();
 });
 </script>
 </body>
