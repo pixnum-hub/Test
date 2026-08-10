@@ -1,817 +1,274 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MapOrb — Free Navigation</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TubePlay — No-Key YouTube Player</title>
 <style>
-:root{
-  --bg:#12141a; --surface:#1c1f27; --surface2:#252934; --text:#eef0f4; --muted:#9aa2b1;
-  --accent:#4f8cff; --border:#2e3340; --danger:#ff5a5a;
-}
-[data-theme="light"]{
-  --bg:#f4f6f9; --surface:#ffffff; --surface2:#eef1f6; --text:#161a22; --muted:#5c6470;
-  --accent:#2f6fed; --border:#dde2ea; --danger:#d63b3b;
-}
-[data-theme="oled"]{
-  --bg:#000000; --surface:#0a0a0a; --surface2:#141414; --text:#f2f2f2; --muted:#8a8a8a;
-  --accent:#4f8cff; --border:#1f1f1f; --danger:#ff5a5a;
-}
-[data-theme="hc"]{
-  --bg:#000000; --surface:#000000; --surface2:#000000; --text:#ffffff; --muted:#ffffff;
-  --accent:#ffff00; --border:#ffffff; --danger:#ff6b6b;
-}
-*{box-sizing:border-box;}
-html,body{height:100%;margin:0;}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  background:var(--bg); color:var(--text);
-  display:flex; flex-direction:column; align-items:center;
-  transition:background .2s,color .2s;
-}
-.app{ width:100%; max-width:480px; min-height:100vh; display:flex; flex-direction:column; background:var(--bg); }
-header{ padding:12px 14px 8px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
-header h1{font-size:1.05rem; margin:0; letter-spacing:.2px;}
-.theme-toggle{display:flex; gap:4px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:3px;}
-.theme-toggle button{
-  border:none; background:transparent; color:var(--muted); font-size:.65rem; font-weight:600;
-  padding:6px 7px; border-radius:7px; cursor:pointer;
-}
-.theme-toggle button.active{background:var(--accent); color:#fff;}
-[data-theme="hc"] .theme-toggle button.active{color:#000;}
-
-.controls{padding:0 14px 8px; display:flex; flex-direction:column; gap:6px;}
-.field-row{display:flex; gap:6px;}
-input[type="text"]{
-  flex:1; padding:11px 12px; border-radius:10px; border:1px solid var(--border);
-  background:var(--surface); color:var(--text); font-size:.9rem; outline:none;
-}
-input[type="text"]:focus{border-color:var(--accent);}
-button.btn{
-  border:none; border-radius:10px; padding:11px 14px; font-size:.85rem; font-weight:600;
-  cursor:pointer; background:var(--accent); color:#fff; white-space:nowrap;
-}
-[data-theme="hc"] button.btn{color:#000;}
-button.icon-btn{
-  border:1px solid var(--border); background:var(--surface); color:var(--text);
-  border-radius:10px; padding:11px 12px; cursor:pointer; font-size:.9rem;
-}
-button.icon-btn.active{background:var(--accent); color:#fff; border-color:var(--accent);}
-[data-theme="hc"] button.icon-btn.active{color:#000;}
-.grow{flex:1;}
-#map.measuring, #map.tapping{cursor:crosshair;}
-#map{position:relative;}
-
-.suggestions{
-  background:var(--surface); border:1px solid var(--border); border-radius:10px;
-  max-height:170px; overflow-y:auto; display:none;
-}
-.suggestions div{padding:9px 12px; font-size:.82rem; border-bottom:1px solid var(--border); cursor:pointer;}
-.suggestions div:last-child{border-bottom:none;}
-.suggestions div:hover{background:var(--surface2);}
-.suggestions .tag{font-size:.65rem; color:var(--accent); font-weight:700; margin-right:4px;}
-
-.chips{display:flex; gap:6px; overflow-x:auto; padding:2px 0; display:none;}
-.chips.show{display:flex;}
-.chip{
-  display:flex; align-items:center; gap:5px; background:var(--surface); border:1px solid var(--border);
-  border-radius:20px; padding:6px 10px; font-size:.75rem; white-space:nowrap; cursor:pointer; flex-shrink:0;
-}
-.chip.active{background:var(--accent); color:#fff; border-color:var(--accent);}
-[data-theme="hc"] .chip.active{color:#000;}
-.chip .x{color:var(--muted); font-weight:700; cursor:pointer;}
-
-#mapWrap{flex:1; width:100%; min-height:280px; position:relative;}
-#map{width:100%; height:100%;}
-.compass-badge{
-  position:absolute; top:10px; right:10px; z-index:500; background:var(--surface); border:1px solid var(--border);
-  border-radius:50%; width:42px; height:42px; display:flex; align-items:center; justify-content:center;
-  font-size:.62rem; font-weight:700; cursor:pointer; color:var(--text); flex-direction:column; user-select:none;
-}
-.compass-badge .arrow{font-size:.9rem; transition:transform .15s linear;}
-
-.route-info{
-  padding:10px 14px; background:var(--surface); border-top:1px solid var(--border);
-  display:none; align-items:center; justify-content:space-between; gap:10px;
-}
-.route-info.show{display:flex;}
-.route-info .stat{font-size:.8rem; color:var(--muted);}
-.route-info .stat b{color:var(--text); font-size:.95rem;}
-.route-info .clear{color:var(--danger); background:none; border:none; font-size:.8rem; font-weight:600; cursor:pointer;}
-.route-info .side-actions{display:flex; gap:6px; align-items:center;}
-
-.spinner{
-  width:14px; height:14px; border:2px solid var(--muted); border-top-color:var(--accent);
-  border-radius:50%; display:inline-block; animation:spin .7s linear infinite; margin-right:6px; vertical-align:middle;
-}
-@keyframes spin{ to{ transform:rotate(360deg); } }
-
-.steps-panel, .elev-panel{background:var(--surface); border-top:1px solid var(--border); display:none;}
-.steps-panel.show, .elev-panel.show{display:block;}
-.steps-header{
-  padding:9px 14px; font-size:.78rem; font-weight:700; display:flex; justify-content:space-between;
-  cursor:pointer; color:var(--text);
-}
-.steps-list{max-height:180px; overflow-y:auto; display:none; padding:0 14px 10px;}
-.steps-list.open{display:block;}
-.step-item{font-size:.78rem; padding:6px 0; border-bottom:1px solid var(--border); color:var(--text); cursor:pointer;}
-.step-item:last-child{border-bottom:none;}
-.step-item span{color:var(--muted); font-size:.7rem;}
-.step-item.current{color:var(--accent); font-weight:700;}
-.elev-panel{padding:10px 14px;}
-.elev-panel .elev-stats{font-size:.7rem; color:var(--muted); margin-top:4px; display:flex; justify-content:space-between;}
-
-.status{ padding:6px 14px; font-size:.72rem; color:var(--muted); text-align:center; min-height:18px; }
-
-footer{
-  padding:10px 14px 16px; text-align:center; font-size:.72rem; color:var(--muted);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-  border-top:1px solid var(--border);
-}
-.privacy-toggle{background:none; border:none; color:var(--muted); text-decoration:underline; font-size:.7rem; cursor:pointer; padding:2px;}
-.privacy-note{font-size:.68rem; color:var(--muted); max-width:400px; display:none; line-height:1.4;}
-.privacy-note.open{display:block;}
-.leaflet-control-attribution{font-size:9px !important;}
-.heading-arrow{ width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
-.heading-arrow svg{ filter:drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+  :root{
+    --radius:14px;
+    --gap:12px;
+    --font: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  [data-theme="dark"]{
+    --bg:#101114; --bg2:#17181c; --card:#1c1d22; --fg:#eceef2; --muted:#9a9ca6;
+    --accent:#ff3b3b; --border:#2a2b31; --shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+  [data-theme="light"]{
+    --bg:#f4f5f7; --bg2:#ffffff; --card:#ffffff; --fg:#15161a; --muted:#5c5e68;
+    --accent:#e01e1e; --border:#e2e3e8; --shadow:0 6px 18px rgba(20,20,30,.08);
+  }
+  [data-theme="oled"]{
+    --bg:#000000; --bg2:#000000; --card:#050505; --fg:#f2f2f2; --muted:#8a8a8a;
+    --accent:#ff2d2d; --border:#1a1a1a; --shadow:0 0 0 1px #1a1a1a;
+  }
+  [data-theme="hc"]{
+    --bg:#000000; --bg2:#000000; --card:#000000; --fg:#ffffff; --muted:#ffff00;
+    --accent:#ffff00; --border:#ffffff; --shadow:none;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--fg); font-family:var(--font);
+    min-height:100vh; display:flex; flex-direction:column;
+    transition:background .25s ease, color .25s ease;
+  }
+  header{
+    position:sticky; top:0; z-index:10;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:var(--gap); padding:14px 16px; background:var(--bg2);
+    border-bottom:1px solid var(--border);
+  }
+  .brand{display:flex; align-items:center; gap:8px; font-weight:800; font-size:1.05rem; letter-spacing:.2px;}
+  .brand .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 10px var(--accent);}
+  #themeBtn{
+    border:1px solid var(--border); background:var(--card); color:var(--fg);
+    padding:8px 12px; border-radius:999px; font-size:.85rem; cursor:pointer;
+    font-weight:600;
+  }
+  #themeBtn:focus-visible, input:focus-visible, button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .search-bar{
+    display:flex; gap:8px; padding:14px 16px; background:var(--bg);
+  }
+  .search-bar input{
+    flex:1; padding:12px 14px; border-radius:12px; border:1px solid var(--border);
+    background:var(--card); color:var(--fg); font-size:1rem;
+  }
+  .search-bar button{
+    padding:12px 18px; border-radius:12px; border:none; background:var(--accent);
+    color:#fff; font-weight:700; cursor:pointer; font-size:.95rem;
+  }
+  [data-theme="hc"] .search-bar button{color:#000;}
+  .player-wrap{
+    margin:0 16px 6px; border-radius:var(--radius); overflow:hidden;
+    background:#000; box-shadow:var(--shadow); border:1px solid var(--border);
+    aspect-ratio:16/9;
+  }
+  .player-wrap.hidden{display:none;}
+  .player-wrap iframe{width:100%; height:100%; border:0; display:block;}
+  .status{padding:0 16px; color:var(--muted); font-size:.9rem; min-height:1.2em;}
+  .results-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:var(--gap); padding:12px 16px 24px; flex:1;
+  }
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; cursor:pointer; box-shadow:var(--shadow); display:flex; flex-direction:column;
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .card:hover, .card:focus-visible{transform:translateY(-2px); border-color:var(--accent);}
+  .card img{width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:#333;}
+  .card .info{padding:8px 10px 10px;}
+  .card .title{font-size:.85rem; font-weight:600; line-height:1.3; max-height:2.6em; overflow:hidden;}
+  .card .channel{font-size:.75rem; color:var(--muted); margin-top:4px;}
+  footer{
+    padding:18px 12px; border-top:1px solid var(--border); background:var(--bg2);
+    display:flex; align-items:center; justify-content:center; text-align:center;
+  }
+  footer p{margin:0; font-size:.8rem; color:var(--muted);}
+  @media (max-width:420px){
+    .brand{font-size:.95rem;}
+    #themeBtn{padding:7px 10px; font-size:.78rem;}
+  }
 </style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <h1>🧭 MapOrb</h1>
-    <div class="theme-toggle" id="themeToggle">
-      <button data-theme="dark">Dark</button>
-      <button data-theme="light">Light</button>
-      <button data-theme="oled">OLED</button>
-      <button data-theme="hc">HC</button>
-    </div>
-  </header>
 
-  <div class="controls">
-    <div class="field-row">
-      <input type="text" id="fromInput" placeholder="Start (or use my location)">
-      <button class="icon-btn" id="locBtn" title="Use my location">📍</button>
-    </div>
-    <div class="suggestions" id="fromSuggest"></div>
+<header>
+  <div class="brand"><span class="dot"></span> TubePlay</div>
+  <button id="themeBtn" type="button">🌓 Theme: Dark</button>
+</header>
 
-    <div class="field-row">
-      <button class="icon-btn" id="swapBtn" title="Swap start & destination">⇅</button>
-      <div class="theme-toggle grow" id="profileToggle">
-        <button data-profile="driving" class="active">🚗 Drive</button>
-        <button data-profile="cycling">🚴 Bike</button>
-        <button data-profile="walking">🚶 Walk</button>
-      </div>
-    </div>
-
-    <div class="field-row">
-      <input type="text" id="toInput" placeholder="Destination">
-      <button class="btn" id="goBtn">Go</button>
-    </div>
-    <div class="suggestions" id="toSuggest"></div>
-
-    <div class="chips" id="favChips"></div>
-
-    <div class="field-row">
-      <button class="icon-btn grow" id="tapSetBtn">📌 Tap map: off</button>
-      <button class="icon-btn" id="favBtn" title="Save destination as favorite">⭐</button>
-    </div>
-    <div class="field-row">
-      <button class="icon-btn grow" id="liveBtn">🛰️ Live tracking</button>
-      <button class="icon-btn" id="recenterBtn" title="Recenter on me">🎯</button>
-      <button class="icon-btn" id="voiceBtn" title="Voice guidance">🔇</button>
-    </div>
-    <div class="field-row">
-      <button class="icon-btn grow" id="shareBtn">🔗 Share route</button>
-      <button class="icon-btn" id="unitsBtn" title="Toggle units">km</button>
-    </div>
-    <button class="icon-btn" id="measureBtn" style="width:100%;">📏 Measure distance</button>
-  </div>
-
-  <div class="status" id="status"></div>
-
-  <div id="mapWrap">
-    <div id="map"></div>
-    <div class="compass-badge" id="compassBadge" title="Tap to enable compass heading">
-      <span class="arrow" id="compassArrow">⬆️</span><span id="compassDeg">off</span>
-    </div>
-  </div>
-
-  <div class="chips" id="routeAlts"></div>
-
-  <div class="route-info" id="measureInfo">
-    <div class="stat">Points<br><b id="measurePts">0</b></div>
-    <div class="stat">Straight-line distance<br><b id="measureDist">–</b></div>
-    <button class="clear" id="measureClearBtn">Clear</button>
-  </div>
-
-  <div class="route-info" id="routeInfo">
-    <div class="stat">Distance<br><b id="distVal">–</b></div>
-    <div class="stat">Time · ETA<br><b id="timeVal">–</b></div>
-    <div class="side-actions"><button class="clear" id="clearBtn">Clear</button></div>
-  </div>
-
-  <div class="elev-panel" id="elevPanel">
-    <svg id="elevSvg" viewBox="0 0 300 60" width="100%" height="60" preserveAspectRatio="none"></svg>
-    <div class="elev-stats" id="elevStats"></div>
-  </div>
-
-  <div class="steps-panel" id="stepsPanel">
-    <div class="steps-header" id="stepsHeader">Turn-by-turn directions <span id="stepsCaret">▾</span></div>
-    <div class="steps-list" id="stepsList"></div>
-  </div>
-
-  <footer>
-    <div>Free routing via OSRM · Map data © OpenStreetMap contributors</div>
-    <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
-    <button class="privacy-toggle" id="privacyToggle">ℹ️ Privacy & data</button>
-    <div class="privacy-note" id="privacyNote">
-      Searches go to OpenStreetMap Nominatim, routes go to the OSRM demo server, and elevation lookups go to
-      Open-Elevation — all free, keyless public services. No accounts, ads, or analytics. Recents, favorites and
-      theme are stored only on this device via localStorage.
-    </div>
-  </footer>
+<div class="search-bar">
+  <input id="searchInput" type="text" placeholder="Search YouTube videos…" autocomplete="off">
+  <button id="searchBtn" type="button">Search</button>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script>
-if (typeof L === 'undefined') {
-  document.write('<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>');
-}
-</script>
-<script>
-if (typeof L === 'undefined') {
-  document.getElementById('status') && (document.getElementById('status').textContent = 'Map library failed to load. Check your internet connection and reload.');
-}
-document.getElementById('year').textContent = new Date().getFullYear();
+<div id="playerWrap" class="player-wrap hidden">
+  <iframe id="player" title="YouTube video player"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+    allowfullscreen></iframe>
+</div>
 
-// ---------- Retry helper (graceful degradation + exponential backoff) ----------
-async function fetchWithRetry(url, options, retries=2, delayMs=600){
-  for(let attempt=0; attempt<=retries; attempt++){
-    try{
-      const res = await fetch(url, options);
-      if(!res.ok) throw new Error('HTTP ' + res.status);
-      return res;
-    }catch(e){
-      if(attempt === retries) throw e;
-      await new Promise(r => setTimeout(r, delayMs * Math.pow(2, attempt)));
+<p id="status" class="status">Search for a video to get started — no login or API key needed.</p>
+<div id="results" class="results-grid"></div>
+
+<footer>
+  <p>© Manik Roy <span id="year"></span>. All Rights Reserved.</p>
+</footer>
+
+<script>
+(function(){
+  // ---------- Theme handling ----------
+  var THEMES = ["dark","light","oled","hc"];
+  var LABELS = {dark:"Dark", light:"Light", oled:"OLED", hc:"High Contrast"};
+  var root = document.documentElement;
+  var themeBtn = document.getElementById("themeBtn");
+
+  function applyTheme(t){
+    root.setAttribute("data-theme", t);
+    themeBtn.textContent = "🌓 Theme: " + LABELS[t];
+    localStorage.setItem("tubeplay-theme", t);
+  }
+  var saved = localStorage.getItem("tubeplay-theme");
+  applyTheme(THEMES.indexOf(saved) > -1 ? saved : "dark");
+
+  themeBtn.addEventListener("click", function(){
+    var current = root.getAttribute("data-theme");
+    var next = THEMES[(THEMES.indexOf(current) + 1) % THEMES.length];
+    applyTheme(next);
+  });
+
+  // ---------- Footer year ----------
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  // ---------- Search (no key, no login — public Piped/Invidious mirrors) ----------
+  // Piped instances enable CORS by default, so they're tried first.
+  var SOURCES = [
+    {kind:"piped", base:"https://pipedapi.kavin.rocks"},
+    {kind:"piped", base:"https://api.piped.yt"},
+    {kind:"piped", base:"https://piped-api.lunar.icu"},
+    {kind:"piped", base:"https://pipedapi.adminforge.de"},
+    {kind:"invidious", base:"https://yewtu.be"},
+    {kind:"invidious", base:"https://invidious.jing.rocks"},
+    {kind:"invidious", base:"https://inv.nadeko.net"}
+  ];
+
+  var input = document.getElementById("searchInput");
+  var searchBtn = document.getElementById("searchBtn");
+  var statusEl = document.getElementById("status");
+  var resultsEl = document.getElementById("results");
+  var playerWrap = document.getElementById("playerWrap");
+  var player = document.getElementById("player");
+
+  function setStatus(msg){ statusEl.textContent = msg; }
+
+  function fetchWithTimeout(url, ms){
+    var controller = new AbortController();
+    var timer = setTimeout(function(){ controller.abort(); }, ms);
+    return fetch(url, {mode:"cors", signal:controller.signal}).finally(function(){
+      clearTimeout(timer);
+    });
+  }
+
+  // Normalize Piped's stream items into a common shape.
+  function fromPiped(item){
+    if (!item.url) return null;
+    var m = item.url.match(/[?&]v=([^&]+)/);
+    if (!m) return null;
+    return {
+      videoId: m[1],
+      title: item.title || "Untitled",
+      author: item.uploaderName || "",
+      thumb: item.thumbnail || ("https://i.ytimg.com/vi/" + m[1] + "/hqdefault.jpg")
+    };
+  }
+
+  // Normalize Invidious's video items into a common shape.
+  function fromInvidious(item){
+    if (!item.videoId) return null;
+    var thumb = "https://i.ytimg.com/vi/" + item.videoId + "/hqdefault.jpg";
+    if (item.videoThumbnails && item.videoThumbnails.length){
+      var t = item.videoThumbnails.find(function(x){return x.quality==="medium";});
+      thumb = (t || item.videoThumbnails[0]).url;
     }
+    return {
+      videoId: item.videoId,
+      title: item.title || "Untitled",
+      author: item.author || "",
+      thumb: thumb
+    };
   }
-}
 
-// ---------- Theme ----------
-const themeBtns = document.querySelectorAll('.theme-toggle#themeToggle button');
-function applyTheme(t){
-  document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem('maporb-theme', t);
-  themeBtns.forEach(b => b.classList.toggle('active', b.dataset.theme === t));
-}
-themeBtns.forEach(b => b.addEventListener('click', () => applyTheme(b.dataset.theme)));
-applyTheme(localStorage.getItem('maporb-theme') || 'dark');
-
-// ---------- Map ----------
-if (typeof L === 'undefined') {
-  throw new Error('Leaflet failed to load — check your internet connection and reload the page.');
-}
-const map = L.map('map', {zoomControl:true}).setView([20.5937,78.9629], 5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom:19, attribution:'&copy; OpenStreetMap contributors'
-}).addTo(map);
-
-let fromMarker=null, toMarker=null, routeLine=null;
-let fromCoords=null, toCoords=null;
-let profile = 'driving';
-
-const statusEl = document.getElementById('status');
-function setStatus(msg, spinning){ statusEl.innerHTML = (spinning ? '<span class="spinner"></span>' : '') + (msg||''); }
-const mapEl = document.getElementById('map');
-const fromInput = document.getElementById('fromInput');
-const toInput = document.getElementById('toInput');
-const fromSuggest = document.getElementById('fromSuggest');
-const toSuggest = document.getElementById('toSuggest');
-
-// ---------- Units (km / miles) ----------
-let units = localStorage.getItem('maporb-units') || 'km';
-document.getElementById('unitsBtn').textContent = units;
-function formatDistance(meters){
-  if(units === 'mi'){ const mi = meters/1609.34; return mi < 1 ? `${Math.round(mi*5280)} ft` : `${mi.toFixed(1)} mi`; }
-  return meters < 1000 ? `${Math.round(meters)} m` : `${(meters/1000).toFixed(1)} km`;
-}
-let lastDistanceMeters=null, lastDurationSeconds=null;
-function renderRouteStats(){
-  if(lastDistanceMeters==null) return;
-  const mins = Math.round(lastDurationSeconds/60);
-  const hrs = Math.floor(mins/60), remMins = mins%60;
-  const durText = hrs>0 ? `${hrs}h ${remMins}m` : `${mins} min`;
-  const eta = new Date(Date.now() + lastDurationSeconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-  document.getElementById('distVal').textContent = formatDistance(lastDistanceMeters);
-  document.getElementById('timeVal').textContent = `${durText} · ETA ${eta}`;
-}
-document.getElementById('unitsBtn').addEventListener('click', () => {
-  units = units === 'km' ? 'mi' : 'km';
-  localStorage.setItem('maporb-units', units);
-  document.getElementById('unitsBtn').textContent = units;
-  renderRouteStats();
-  updateMeasureUI();
-});
-
-// ---------- Geocoding & reverse geocoding (Nominatim, free, no key) ----------
-let lastKnownPos = null;
-async function geocode(query){
-  let url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}`;
-  if(lastKnownPos){
-    const [lat,lon]=lastKnownPos;
-    url += `&viewbox=${lon-2},${lat+2},${lon+2},${lat-2}&bounded=0`; // soft bias toward current location
+  function renderResults(list){
+    resultsEl.innerHTML = "";
+    list.forEach(function(v){
+      if (!v) return;
+      var card = document.createElement("div");
+      card.className = "card";
+      card.tabIndex = 0;
+      card.innerHTML =
+        '<img loading="lazy" src="' + v.thumb + '" alt="">' +
+        '<div class="info">' +
+          '<div class="title">' + v.title + '</div>' +
+          '<div class="channel">' + v.author + '</div>' +
+        '</div>';
+      function play(){ playVideo(v.videoId, v.title); }
+      card.addEventListener("click", play);
+      card.addEventListener("keydown", function(e){ if(e.key==="Enter") play(); });
+      resultsEl.appendChild(card);
+    });
   }
-  const res = await fetchWithRetry(url, {headers:{'Accept':'application/json'}});
-  return res.json();
-}
-async function reverseGeocode(lat, lon){
-  try{
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
-    const res = await fetchWithRetry(url, {headers:{'Accept':'application/json'}});
-    const data = await res.json();
-    return data.display_name || `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
-  }catch(e){ return `${lat.toFixed(5)}, ${lon.toFixed(5)}`; }
-}
 
-// ---------- Recent searches ----------
-function getRecents(){ try{ return JSON.parse(localStorage.getItem('maporb-recents')||'[]'); }catch(e){ return []; } }
-function addRecent(item){
-  let list = getRecents().filter(r => r.name !== item.name);
-  list.unshift(item); list = list.slice(0,6);
-  localStorage.setItem('maporb-recents', JSON.stringify(list));
-}
-function wireSuggest(inputEl, suggestEl, onPick){
-  let timer=null;
-  function renderRecents(){
-    const recents = getRecents();
-    if(!recents.length){ suggestEl.style.display='none'; return; }
-    suggestEl.innerHTML = recents.map((r,i) => `<div data-idx="${i}"><span class="tag">RECENT</span>${r.name}</div>`).join('');
-    suggestEl.style.display='block';
-    suggestEl.querySelectorAll('div').forEach(div => {
-      div.addEventListener('click', () => {
-        const r = recents[div.dataset.idx];
-        inputEl.value = r.name; suggestEl.style.display='none'; onPick(r);
+  function playVideo(id, title){
+    player.src = "https://www.youtube.com/embed/" + id + "?autoplay=1&rel=0";
+    playerWrap.classList.remove("hidden");
+    setStatus("Now playing: " + (title || id));
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  function trySource(i, query){
+    if (i >= SOURCES.length){
+      setStatus("Couldn't reach any search source right now. Check your connection or try again in a moment.");
+      return;
+    }
+    var src = SOURCES[i];
+    setStatus("Searching… (source " + (i + 1) + " of " + SOURCES.length + ")");
+    var url = src.kind === "piped"
+      ? src.base + "/search?q=" + encodeURIComponent(query) + "&filter=videos"
+      : src.base + "/api/v1/search?q=" + encodeURIComponent(query) + "&type=video";
+
+    fetchWithTimeout(url, 6000)
+      .then(function(res){ if(!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+      .then(function(data){
+        var rawList = src.kind === "piped" ? (data.items || []) : data;
+        if (!Array.isArray(rawList)) throw new Error("Unexpected response shape");
+        var normalize = src.kind === "piped" ? fromPiped : fromInvidious;
+        var list = rawList.map(normalize).filter(Boolean);
+        if (list.length === 0){
+          setStatus("No results found for “" + query + "”.");
+          resultsEl.innerHTML = "";
+          return;
+        }
+        setStatus("Results for “" + query + "” — via " + src.base.replace("https://","") + ":");
+        renderResults(list);
+      })
+      .catch(function(err){
+        console.warn("Search source failed:", src.base, err);
+        trySource(i + 1, query);
       });
-    });
   }
-  inputEl.addEventListener('focus', () => { if(!inputEl.value.trim()) renderRecents(); });
-  inputEl.addEventListener('input', () => {
-    clearTimeout(timer);
-    const q = inputEl.value.trim();
-    if(q.length < 3){ if(!q) renderRecents(); else { suggestEl.style.display='none'; suggestEl.innerHTML=''; } return; }
-    timer = setTimeout(async () => {
-      try{
-        const results = await geocode(q);
-        if(!results.length){ suggestEl.style.display='none'; return; }
-        suggestEl.innerHTML = results.map((r,i) => `<div data-idx="${i}">${r.display_name}</div>`).join('');
-        suggestEl.style.display='block';
-        suggestEl.querySelectorAll('div').forEach(div => {
-          div.addEventListener('click', () => {
-            const r = results[div.dataset.idx];
-            const loc = {lat:parseFloat(r.lat), lon:parseFloat(r.lon), name:r.display_name};
-            inputEl.value = r.display_name; suggestEl.style.display='none';
-            addRecent(loc); onPick(loc);
-          });
-        });
-      }catch(e){ setStatus('Search unavailable, try again.'); }
-    }, 500);
-  });
-}
-wireSuggest(fromInput, fromSuggest, (loc) => setPoint('from', loc));
-wireSuggest(toInput, toSuggest, (loc) => setPoint('to', loc));
 
-function setPoint(which, loc){
-  const latlng = [loc.lat, loc.lon];
-  if(which === 'from'){
-    fromCoords = latlng;
-    if(fromMarker) map.removeLayer(fromMarker);
-    fromMarker = L.marker(latlng, {title:'Start'}).addTo(map);
-  } else {
-    toCoords = latlng;
-    if(toMarker) map.removeLayer(toMarker);
-    toMarker = L.marker(latlng, {title:'Destination'}).addTo(map);
+  function doSearch(){
+    var q = input.value.trim();
+    if (!q) { setStatus("Type something to search for."); return; }
+    resultsEl.innerHTML = "";
+    trySource(0, q);
   }
-  map.setView(latlng, 13);
-}
 
-// ---------- Swap ----------
-document.getElementById('swapBtn').addEventListener('click', () => {
-  const tmpCoords = fromCoords; fromCoords = toCoords; toCoords = tmpCoords;
-  const tmpVal = fromInput.value; fromInput.value = toInput.value; toInput.value = tmpVal;
-  if(fromCoords) setPoint('from', {lat:fromCoords[0], lon:fromCoords[1]}); else if(fromMarker){ map.removeLayer(fromMarker); fromMarker=null; }
-  if(toCoords) setPoint('to', {lat:toCoords[0], lon:toCoords[1]}); else if(toMarker){ map.removeLayer(toMarker); toMarker=null; }
-});
-
-// ---------- Travel mode ----------
-document.querySelectorAll('#profileToggle button').forEach(b => {
-  b.addEventListener('click', () => {
-    profile = b.dataset.profile;
-    document.querySelectorAll('#profileToggle button').forEach(x => x.classList.toggle('active', x===b));
-  });
-});
-
-// ---------- Geolocation (with reverse geocoding) ----------
-document.getElementById('locBtn').addEventListener('click', () => {
-  if(!navigator.geolocation){ setStatus('Geolocation not supported.'); return; }
-  setStatus('Locating…', true);
-  navigator.geolocation.getCurrentPosition(async pos => {
-    const {latitude, longitude} = pos.coords;
-    lastKnownPos = [latitude, longitude];
-    setPoint('from', {lat:latitude, lon:longitude});
-    setStatus('Finding your address…', true);
-    fromInput.value = await reverseGeocode(latitude, longitude);
-    setStatus('');
-  }, () => setStatus('Could not get your location.'), {enableHighAccuracy:true, timeout:10000});
-});
-
-// ---------- Favorites ----------
-function getFavorites(){ try{ return JSON.parse(localStorage.getItem('maporb-favorites')||'[]'); }catch(e){ return []; } }
-function renderFavorites(){
-  const favs = getFavorites();
-  const chips = document.getElementById('favChips');
-  chips.classList.toggle('show', favs.length > 0);
-  chips.innerHTML = favs.map((f,i) => `<div class="chip" data-idx="${i}"><span class="label">⭐ ${f.label}</span><span class="x" data-del="${i}">✕</span></div>`).join('');
-  chips.querySelectorAll('.label').forEach(el => {
-    el.addEventListener('click', () => {
-      const f = favs[el.parentElement.dataset.idx];
-      toInput.value = f.label; setPoint('to', {lat:f.lat, lon:f.lon});
-    });
-  });
-  chips.querySelectorAll('.x').forEach(el => {
-    el.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      const list = getFavorites(); list.splice(el.dataset.del, 1);
-      localStorage.setItem('maporb-favorites', JSON.stringify(list));
-      renderFavorites();
-    });
-  });
-}
-renderFavorites();
-document.getElementById('favBtn').addEventListener('click', () => {
-  if(!toCoords){ setStatus('Set a destination first to save it.'); return; }
-  const label = prompt('Save this destination as:', toInput.value.split(',')[0] || 'Favorite');
-  if(!label) return;
-  const list = getFavorites();
-  list.unshift({label, lat:toCoords[0], lon:toCoords[1]});
-  localStorage.setItem('maporb-favorites', JSON.stringify(list.slice(0,10)));
-  renderFavorites();
-});
-
-// ---------- Tap map to set start/destination ----------
-let tapMode = null;
-const tapSetBtn = document.getElementById('tapSetBtn');
-tapSetBtn.addEventListener('click', () => {
-  tapMode = tapMode === null ? 'from' : (tapMode === 'from' ? 'to' : null);
-  tapSetBtn.textContent = tapMode === null ? '📌 Tap map: off' : `📌 Tap map: set ${tapMode === 'from' ? 'start' : 'destination'}`;
-  tapSetBtn.classList.toggle('active', tapMode !== null);
-  mapEl.classList.toggle('tapping', tapMode !== null);
-});
-
-// ---------- Live GPS tracking with heading arrow ----------
-let watchId = null;
-let userMarker = null;
-const liveBtn = document.getElementById('liveBtn');
-function headingIcon(heading){
-  const rot = typeof heading === 'number' ? heading : 0;
-  return L.divIcon({
-    className:'heading-arrow',
-    html:`<div class="heading-arrow"><svg width="22" height="22" viewBox="0 0 24 24" style="transform:rotate(${rot}deg)"><path d="M12 2 L19 21 L12 17 L5 21 Z" fill="#4f8cff" stroke="#fff" stroke-width="1"/></svg></div>`,
-    iconSize:[22,22], iconAnchor:[11,11]
-  });
-}
-liveBtn.addEventListener('click', () => {
-  if(watchId){
-    navigator.geolocation.clearWatch(watchId); watchId = null;
-    liveBtn.classList.remove('active'); liveBtn.textContent = '🛰️ Live tracking';
-    if(userMarker){ map.removeLayer(userMarker); userMarker = null; }
-    return;
-  }
-  if(!navigator.geolocation){ setStatus('Geolocation not supported.'); return; }
-  liveBtn.classList.add('active'); liveBtn.textContent = '🛰️ Tracking…';
-  watchId = navigator.geolocation.watchPosition(pos => {
-    const {latitude, longitude, heading} = pos.coords;
-    lastKnownPos = [latitude, longitude];
-    const icon = headingIcon(heading);
-    if(userMarker) userMarker.setLatLng(lastKnownPos).setIcon(icon);
-    else userMarker = L.marker(lastKnownPos, {icon}).addTo(map);
-    checkStepAdvance(lastKnownPos);
-  }, () => setStatus('Live tracking failed — check location permission.'), {enableHighAccuracy:true, maximumAge:2000});
-});
-document.getElementById('recenterBtn').addEventListener('click', () => {
-  if(lastKnownPos) map.setView(lastKnownPos, 16);
-  else setStatus('No known location yet — enable live tracking or use 📍.');
-});
-
-// ---------- Compass heading badge ----------
-let compassOn = false;
-const compassBadge = document.getElementById('compassBadge');
-const compassArrow = document.getElementById('compassArrow');
-const compassDeg = document.getElementById('compassDeg');
-function onOrientation(e){
-  const heading = e.webkitCompassHeading != null ? e.webkitCompassHeading : (360 - e.alpha);
-  if(heading == null || isNaN(heading)) return;
-  compassArrow.style.transform = `rotate(${heading}deg)`;
-  compassDeg.textContent = Math.round(heading) + '°';
-}
-compassBadge.addEventListener('click', async () => {
-  if(compassOn){
-    window.removeEventListener('deviceorientationabsolute', onOrientation);
-    window.removeEventListener('deviceorientation', onOrientation);
-    compassOn = false; compassDeg.textContent = 'off'; compassArrow.style.transform = 'rotate(0deg)';
-    return;
-  }
-  try{
-    if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
-      const perm = await DeviceOrientationEvent.requestPermission();
-      if(perm !== 'granted'){ setStatus('Compass permission denied.'); return; }
-    }
-    window.addEventListener('deviceorientationabsolute', onOrientation);
-    window.addEventListener('deviceorientation', onOrientation);
-    compassOn = true; compassDeg.textContent = '…';
-  }catch(e){ setStatus('Compass not available on this device.'); }
-});
-
-// ---------- Voice guidance + haptics + step highlighting ----------
-let voiceEnabled = false;
-const voiceBtn = document.getElementById('voiceBtn');
-voiceBtn.addEventListener('click', () => {
-  voiceEnabled = !voiceEnabled;
-  voiceBtn.classList.toggle('active', voiceEnabled);
-  voiceBtn.textContent = voiceEnabled ? '🔊' : '🔇';
-});
-function speak(text){
-  if(!voiceEnabled || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-}
-let routeStepPoints = [];
-let nextStepIdx = 0;
-function highlightStep(idx){
-  document.querySelectorAll('.step-item').forEach(el => el.classList.toggle('current', +el.dataset.idx === idx));
-}
-function checkStepAdvance(pos){
-  if(nextStepIdx >= routeStepPoints.length) return;
-  const step = routeStepPoints[nextStepIdx];
-  const d = haversine(pos, [step.lat, step.lon]) * 1000;
-  if(d < 40){
-    speak(step.text);
-    if(navigator.vibrate) navigator.vibrate(200);
-    highlightStep(nextStepIdx);
-    nextStepIdx++;
-  }
-}
-
-// ---------- Turn-by-turn instruction text ----------
-function maneuverText(step){
-  const type = step.maneuver.type;
-  const modifier = step.maneuver.modifier;
-  const name = step.name ? ` onto ${step.name}` : '';
-  if(type === 'depart') return `Head out${name}`;
-  if(type === 'arrive') return 'Arrive at your destination';
-  if(type === 'roundabout') return `Enter the roundabout${name}`;
-  const dir = modifier || '';
-  return `${type === 'turn' ? 'Turn' : type.charAt(0).toUpperCase()+type.slice(1)} ${dir}${name}`.trim();
-}
-
-// ---------- Elevation profile (Open-Elevation, free, no key) ----------
-async function loadElevationProfile(coords){
-  const panel = document.getElementById('elevPanel');
-  if(profile === 'driving' || coords.length < 2){ panel.classList.remove('show'); return; }
-  const step = Math.max(1, Math.floor(coords.length / 20));
-  const sampled = coords.filter((_,i) => i % step === 0).slice(0,20);
-  try{
-    const res = await fetchWithRetry('https://api.open-elevation.com/api/v1/lookup', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({locations: sampled.map(c => ({latitude:c[1], longitude:c[0]}))})
-    }, 1, 500);
-    const data = await res.json();
-    const elevs = data.results.map(r => r.elevation);
-    const min = Math.min(...elevs), max = Math.max(...elevs);
-    let ascent = 0;
-    for(let i=1;i<elevs.length;i++) if(elevs[i] > elevs[i-1]) ascent += elevs[i]-elevs[i-1];
-    const svg = document.getElementById('elevSvg');
-    const w=300,h=60, range = Math.max(1, max-min);
-    const pts = elevs.map((e,i) => `${(i/(elevs.length-1))*w},${h - ((e-min)/range)*h}`).join(' ');
-    svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
-    document.getElementById('elevStats').textContent = `Min ${Math.round(min)} m · Max ${Math.round(max)} m · Ascent ~${Math.round(ascent)} m`;
-    panel.classList.add('show');
-  }catch(e){ panel.classList.remove('show'); }
-}
-
-// ---------- Route rendering (supports alternatives) ----------
-let currentRoutes = [];
-let selectedRouteIdx = 0;
-function renderRouteAlternatives(){
-  const wrap = document.getElementById('routeAlts');
-  if(currentRoutes.length < 2){ wrap.classList.remove('show'); wrap.innerHTML=''; return; }
-  wrap.innerHTML = currentRoutes.map((r,i) => `<div class="chip${i===selectedRouteIdx?' active':''}" data-idx="${i}">Route ${i+1} · ${formatDistance(r.distance)}</div>`).join('');
-  wrap.classList.add('show');
-  wrap.querySelectorAll('.chip').forEach(el => el.addEventListener('click', () => { selectedRouteIdx = +el.dataset.idx; displaySelectedRoute(); }));
-}
-function displaySelectedRoute(){
-  const route = currentRoutes[selectedRouteIdx];
-  if(!route) return;
-  if(routeLine) map.removeLayer(routeLine);
-  const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
-  routeLine = L.polyline(latlngs, {color:getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4f8cff', weight:5}).addTo(map);
-  map.fitBounds(routeLine.getBounds(), {padding:[30,30]});
-
-  lastDistanceMeters = route.distance; lastDurationSeconds = route.duration;
-  renderRouteStats();
-  document.getElementById('routeInfo').classList.add('show');
-  renderRouteAlternatives();
-
-  const steps = (route.legs[0] && route.legs[0].steps) || [];
-  routeStepPoints = steps.map(s => ({lat:s.maneuver.location[1], lon:s.maneuver.location[0], text:maneuverText(s)}));
-  nextStepIdx = 0;
-  const stepsList = document.getElementById('stepsList');
-  stepsList.innerHTML = steps.map((s,i) => `<div class="step-item" data-idx="${i}">${i+1}. ${maneuverText(s)} <span>(${formatDistance(s.distance)})</span></div>`).join('');
-  stepsList.querySelectorAll('.step-item').forEach(el => {
-    el.addEventListener('click', () => {
-      const pt = routeStepPoints[+el.dataset.idx];
-      map.setView([pt.lat, pt.lon], 17);
-      const flash = L.circleMarker([pt.lat, pt.lon], {radius:12, color:'#ff9800', weight:3, fillOpacity:0}).addTo(map);
-      setTimeout(() => map.removeLayer(flash), 1500);
-    });
-  });
-  document.getElementById('stepsPanel').classList.add('show');
-  if(voiceEnabled && routeStepPoints.length) speak(routeStepPoints[0].text);
-  loadElevationProfile(latlngs.map(c => [c[1], c[0]]));
-}
-
-// ---------- Routing (OSRM public demo server, free, no key) ----------
-async function handleGo(){
-  if(!fromCoords || !toCoords){ setStatus('Pick both a start and a destination from the suggestions.'); return; }
-  setStatus('Finding route…', true);
-  try{
-    const coordsStr = `${fromCoords[1]},${fromCoords[0]};${toCoords[1]},${toCoords[0]}`;
-    const url = `https://router.project-osrm.org/route/v1/${profile}/${coordsStr}?overview=full&geometries=geojson&steps=true&alternatives=true`;
-    const res = await fetchWithRetry(url);
-    const data = await res.json();
-    if(data.code !== 'Ok' || !data.routes.length){ setStatus('No route found.'); return; }
-    currentRoutes = data.routes; selectedRouteIdx = 0;
-    displaySelectedRoute();
-    setStatus('');
-  }catch(e){
-    setStatus('Routing service unavailable after retries. Try again shortly.');
-  }
-}
-document.getElementById('goBtn').addEventListener('click', handleGo);
-
-document.getElementById('stepsHeader').addEventListener('click', () => {
-  document.getElementById('stepsList').classList.toggle('open');
-  const caret = document.getElementById('stepsCaret');
-  caret.textContent = document.getElementById('stepsList').classList.contains('open') ? '▴' : '▾';
-});
-
-document.getElementById('clearBtn').addEventListener('click', () => {
-  if(routeLine) map.removeLayer(routeLine);
-  if(fromMarker) map.removeLayer(fromMarker);
-  if(toMarker) map.removeLayer(toMarker);
-  routeLine=fromMarker=toMarker=null;
-  fromCoords=toCoords=null;
-  fromInput.value=''; toInput.value='';
-  document.getElementById('routeInfo').classList.remove('show');
-  document.getElementById('stepsPanel').classList.remove('show');
-  document.getElementById('elevPanel').classList.remove('show');
-  document.getElementById('routeAlts').classList.remove('show');
-  currentRoutes=[]; routeStepPoints = []; nextStepIdx = 0; lastDistanceMeters=null;
-  setStatus('');
-});
-
-// ---------- Share route (URL params) ----------
-document.getElementById('shareBtn').addEventListener('click', async () => {
-  if(!fromCoords || !toCoords){ setStatus('Set a start and destination first.'); return; }
-  const url = `${location.origin}${location.pathname}?from=${fromCoords[0]},${fromCoords[1]}&to=${toCoords[0]},${toCoords[1]}&profile=${profile}`;
-  if(navigator.share){ try{ await navigator.share({title:'MapOrb route', url}); return; }catch(e){} }
-  try{ await navigator.clipboard.writeText(url); setStatus('Route link copied to clipboard.'); }
-  catch(e){ setStatus(url); }
-});
-(async function loadFromShareLink(){
-  const params = new URLSearchParams(location.search);
-  if(!params.has('from') || !params.has('to')) return;
-  try{
-    const [flat,flon] = params.get('from').split(',').map(Number);
-    const [tlat,tlon] = params.get('to').split(',').map(Number);
-    if(params.get('profile')){ profile = params.get('profile'); document.querySelectorAll('#profileToggle button').forEach(b => b.classList.toggle('active', b.dataset.profile===profile)); }
-    setPoint('from', {lat:flat, lon:flon}); setPoint('to', {lat:tlat, lon:tlon});
-    fromInput.value = await reverseGeocode(flat, flon);
-    toInput.value = await reverseGeocode(tlat, tlon);
-    handleGo();
-  }catch(e){ /* ignore malformed share link */ }
+  searchBtn.addEventListener("click", doSearch);
+  input.addEventListener("keydown", function(e){ if(e.key === "Enter") doSearch(); });
 })();
-
-document.addEventListener('click', (e) => {
-  if(!fromSuggest.contains(e.target) && e.target !== fromInput) fromSuggest.style.display='none';
-  if(!toSuggest.contains(e.target) && e.target !== toInput) toSuggest.style.display='none';
-});
-
-// ---------- Privacy note ----------
-document.getElementById('privacyToggle').addEventListener('click', () => {
-  document.getElementById('privacyNote').classList.toggle('open');
-});
-
-// ---------- Distance measurement (straight-line, tap-to-add draggable points) ----------
-let measuring = false;
-let measurePoints = [];
-let measureMarkers = [];
-let measureLine = null;
-const measureBtn = document.getElementById('measureBtn');
-const measureInfo = document.getElementById('measureInfo');
-const measurePtsEl = document.getElementById('measurePts');
-const measureDistEl = document.getElementById('measureDist');
-
-function haversine(a, b){
-  const R = 6371;
-  const toRad = d => d * Math.PI / 180;
-  const dLat = toRad(b[0]-a[0]);
-  const dLon = toRad(b[1]-a[1]);
-  const lat1 = toRad(a[0]), lat2 = toRad(b[0]);
-  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
-function updateMeasureUI(){
-  measurePtsEl.textContent = measurePoints.length;
-  let totalKm = 0;
-  for(let i=1; i<measurePoints.length; i++) totalKm += haversine(measurePoints[i-1], measurePoints[i]);
-  measureDistEl.textContent = formatDistance(totalKm*1000);
-  measureInfo.classList.toggle('show', measurePoints.length > 0);
-}
-function toggleMeasure(on){
-  measuring = on;
-  measureBtn.classList.toggle('active', on);
-  mapEl.classList.toggle('measuring', on);
-  if(on){ tapMode = null; tapSetBtn.textContent = '📌 Tap map: off'; tapSetBtn.classList.remove('active'); mapEl.classList.remove('tapping'); }
-  setStatus(on ? 'Tap the map to add measurement points.' : '');
-}
-measureBtn.addEventListener('click', () => toggleMeasure(!measuring));
-
-const measureIcon = L.divIcon({
-  className: 'measure-pin',
-  html: '<div style="width:16px;height:16px;border-radius:50%;background:#ff9800;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>',
-  iconSize:[16,16], iconAnchor:[8,8]
-});
-function redrawMeasureLine(){
-  if(measureLine) map.removeLayer(measureLine);
-  measureLine = measurePoints.length > 1 ? L.polyline(measurePoints, {color:'#ff9800', weight:4, dashArray:'6,6'}).addTo(map) : null;
-}
-
-map.on('click', async (e) => {
-  const pt = [e.latlng.lat, e.latlng.lng];
-  if(measuring){
-    const idx = measurePoints.length;
-    measurePoints.push(pt);
-    const marker = L.marker(pt, {icon: measureIcon, draggable:true}).addTo(map);
-    marker.on('drag', (ev) => {
-      const ll = ev.target.getLatLng();
-      measurePoints[idx] = [ll.lat, ll.lng];
-      redrawMeasureLine(); updateMeasureUI();
-    });
-    measureMarkers.push(marker);
-    redrawMeasureLine(); updateMeasureUI();
-    return;
-  }
-  if(tapMode){
-    setStatus('Finding address…', true);
-    const addr = await reverseGeocode(pt[0], pt[1]);
-    if(tapMode === 'from'){ fromInput.value = addr; setPoint('from', {lat:pt[0], lon:pt[1]}); }
-    else { toInput.value = addr; setPoint('to', {lat:pt[0], lon:pt[1]}); }
-    setStatus('');
-  }
-});
-
-document.getElementById('measureClearBtn').addEventListener('click', () => {
-  measurePoints = [];
-  measureMarkers.forEach(m => map.removeLayer(m));
-  measureMarkers = [];
-  if(measureLine) map.removeLayer(measureLine);
-  measureLine = null;
-  updateMeasureUI();
-});
-
-// ---------- Offline app-shell + tile caching via Service Worker ----------
-if('serviceWorker' in navigator){
-  const swCode = `
-    const SHELL = 'maporb-shell-v1';
-    self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(SHELL).then(c => c.add(self.registration.scope))); });
-    self.addEventListener('activate', e => self.clients.claim());
-    self.addEventListener('fetch', e => {
-      const url = e.request.url;
-      if(url.includes('tile.openstreetmap.org')){
-        e.respondWith(caches.open('maporb-tiles-v1').then(c => c.match(e.request).then(hit => hit || fetch(e.request).then(res => { c.put(e.request, res.clone()); return res; }).catch(()=>hit))));
-      } else if(e.request.mode === 'navigate'){
-        e.respondWith(fetch(e.request).catch(() => caches.match(self.registration.scope)));
-      }
-    });
-  `;
-  try{
-    const blobUrl = URL.createObjectURL(new Blob([swCode], {type:'text/javascript'}));
-    navigator.serviceWorker.register(blobUrl).catch(() => { /* offline caching unavailable in this environment */ });
-  }catch(e){ /* SW registration unsupported here — app still works fully online */ }
-}
 </script>
 </body>
 </html>
