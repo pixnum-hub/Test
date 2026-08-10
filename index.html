@@ -171,6 +171,18 @@
     });
   }
 
+  // Try a URL directly; if that fails (often a CORS block), retry once
+  // through a free, keyless CORS proxy before giving up on this source.
+  function fetchJSON(url, ms){
+    return fetchWithTimeout(url, ms)
+      .then(function(res){ if(!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+      .catch(function(){
+        var proxied = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+        return fetchWithTimeout(proxied, ms)
+          .then(function(res){ if(!res.ok) throw new Error("proxy HTTP " + res.status); return res.json(); });
+      });
+  }
+
   // Normalize Piped's stream items into a common shape.
   function fromPiped(item){
     if (!item.url) return null;
@@ -227,9 +239,11 @@
     window.scrollTo({top:0, behavior:"smooth"});
   }
 
-  function trySource(i, query){
+  function trySource(i, query, lastErr){
     if (i >= SOURCES.length){
-      setStatus("Couldn't reach any search source right now. Check your connection or try again in a moment.");
+      setStatus("Couldn't reach any search source. Last error: " +
+        (lastErr ? lastErr.message : "unknown") +
+        ". Open the browser console for full details.");
       return;
     }
     var src = SOURCES[i];
@@ -238,8 +252,7 @@
       ? src.base + "/search?q=" + encodeURIComponent(query) + "&filter=videos"
       : src.base + "/api/v1/search?q=" + encodeURIComponent(query) + "&type=video";
 
-    fetchWithTimeout(url, 6000)
-      .then(function(res){ if(!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+    fetchJSON(url, 7000)
       .then(function(data){
         var rawList = src.kind === "piped" ? (data.items || []) : data;
         if (!Array.isArray(rawList)) throw new Error("Unexpected response shape");
@@ -255,7 +268,7 @@
       })
       .catch(function(err){
         console.warn("Search source failed:", src.base, err);
-        trySource(i + 1, query);
+        trySource(i + 1, query, err);
       });
   }
 
@@ -263,7 +276,7 @@
     var q = input.value.trim();
     if (!q) { setStatus("Type something to search for."); return; }
     resultsEl.innerHTML = "";
-    trySource(0, q);
+    trySource(0, q, null);
   }
 
   searchBtn.addEventListener("click", doSearch);
