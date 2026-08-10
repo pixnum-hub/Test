@@ -3,377 +3,359 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>DECK.YT — Media Player</title>
+<title>Munchy — Food Nutrition Lookup</title>
+<meta name="theme-color" content="#15171B">
+<meta name="description" content="Search 98 common foods and see full Nutrition Facts, entirely offline.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
 <style>
   :root{
-    --radius:14px;
-    --gap:12px;
+    --thick:6px; --thin:1px; --radius:3px; --focus:#2F6FED; --maxw:480px;
   }
-  [data-theme="dark"]{
-    --bg:#0B0D10; --panel:#14171B; --panel2:#1B1F24; --text:#E7E9EC;
-    --muted:#8A929B; --accent:#FF8A3D; --accent2:#2DD4BF; --border:#262B31;
+  html[data-theme="light"]{
+    --bg:#FAF7F0; --panel:#FFFFFF; --ink:#1B1B1B; --sub:#63604F;
+    --line:#1B1B1B; --accent:#4C6444; --accent2:#B23A2F; --field:#FFFFFF; --border:#D8D2C2;
   }
-  [data-theme="light"]{
-    --bg:#F5F3EF; --panel:#FFFFFF; --panel2:#ECE9E3; --text:#1A1D21;
-    --muted:#6B7280; --accent:#E85D2C; --accent2:#0E8F82; --border:#DDD8CF;
+  html[data-theme="dark"]{
+    --bg:#15171B; --panel:#1E2126; --ink:#ECEAE4; --sub:#A9A497;
+    --line:#ECEAE4; --accent:#8CB27A; --accent2:#E2665A; --field:#22262B; --border:#33383F;
   }
-  [data-theme="oled"]{
-    --bg:#000000; --panel:#000000; --panel2:#0A0A0A; --text:#F2F2F2;
-    --muted:#8A929B; --accent:#FF8A3D; --accent2:#2DD4BF; --border:#1A1A1A;
+  html[data-theme="oled"]{
+    --bg:#000000; --panel:#000000; --ink:#FFFFFF; --sub:#9A9A9A;
+    --line:#FFFFFF; --accent:#8CB27A; --accent2:#FF7A6B; --field:#0A0A0A; --border:#2A2A2A;
   }
-  [data-theme="hc"]{
-    --bg:#000000; --panel:#000000; --panel2:#000000; --text:#FFFFFF;
-    --muted:#FFFF00; --accent:#FFFF00; --accent2:#00FFFF; --border:#FFFFFF;
+  html[data-theme="hc"]{
+    --bg:#000000; --panel:#000000; --ink:#FFFFFF; --sub:#FFFFFF;
+    --line:#FFFFFF; --accent:#B7FFA0; --accent2:#FFB199; --field:#000000; --border:#FFFFFF;
+    --thick:8px; --thin:2px;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0; height:100%;}
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
   body{
-    background:var(--bg); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
-    display:flex; flex-direction:column; min-height:100dvh;
-    transition:background .2s,color .2s;
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    min-height:100vh; transition:background .2s,color .2s;
+    padding-bottom:env(safe-area-inset-bottom);
   }
-  .app{max-width:640px; width:100%; margin:0 auto; display:flex; flex-direction:column; flex:1; padding:14px; gap:16px;}
+  .app{max-width:var(--maxw); margin:0 auto; padding:16px 16px 8px; display:flex; flex-direction:column; gap:14px; position:relative;}
 
-  .topbar{display:flex; align-items:center; justify-content:space-between;}
-  .brand{font-weight:800; letter-spacing:.06em; font-size:18px;}
-  .brand .dot{display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--accent2); margin-right:8px; box-shadow:0 0 8px var(--accent2);}
-  .brand .accent{color:var(--accent);}
-  .theme-btn{
-    background:var(--panel2); color:var(--text); border:1px solid var(--border);
-    border-radius:999px; padding:8px 14px; font-size:11px; font-weight:700;
-    letter-spacing:.08em; cursor:pointer;
+  header{position:relative; padding-right:120px;}
+  h1{
+    font-family:"Helvetica Neue Condensed","Arial Narrow",sans-serif;
+    font-weight:800; letter-spacing:.5px; font-size:clamp(22px,7vw,28px); margin:0; line-height:1.05;
   }
-  .theme-btn:focus-visible, button:focus-visible, input:focus-visible{outline:2px solid var(--accent2); outline-offset:2px;}
+  h1 small{display:block; font-family:inherit; font-weight:500; font-size:12px; color:var(--sub); letter-spacing:.3px; margin-top:2px;}
 
-  .screen{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:10px; display:flex; flex-direction:column; gap:10px;}
-  .frame{position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:10px; overflow:hidden;}
-  #player{position:absolute; inset:0; width:100%; height:100%; border:0;}
-  .placeholder{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; color:var(--muted); font-size:13px; padding:0 20px;}
-
-  .nowplaying{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); min-height:18px;}
-  .rec{width:8px; height:8px; border-radius:50%; background:var(--accent); flex:0 0 auto;}
-  .rec.live{animation:blink 1s infinite;}
-  @keyframes blink{50%{opacity:.25;}}
-  #npTitle{color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-
-  .controls{display:flex; align-items:center; justify-content:center; gap:14px;}
-  .controls button{
-    background:var(--panel2); color:var(--text); border:1px solid var(--border);
-    width:52px; height:52px; border-radius:50%; font-size:18px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
+  button{ font:inherit; cursor:pointer; }
+  #themeBtn{
+    position:absolute; top:0; right:0; white-space:nowrap;
+    background:var(--panel); color:var(--ink); border:var(--thin) solid var(--border);
+    border-radius:20px; padding:8px 12px; font-size:11px; font-weight:600; min-height:36px;
   }
-  #playBtn{width:64px; height:64px; background:var(--accent); color:#0B0D10; border:none; font-size:22px;}
-
-  .inputbar{display:flex; gap:8px;}
-  #queryInput{
-    flex:1; background:var(--panel); border:1px solid var(--border); color:var(--text);
-    border-radius:10px; padding:13px 14px; font-size:15px; min-width:0;
+  form#searchForm{display:flex; gap:8px;}
+  #q{
+    flex:1; min-width:0; padding:11px 12px; border-radius:var(--radius);
+    border:var(--thin) solid var(--border); background:var(--field); color:var(--ink); font-size:16px;
   }
-  #searchBtn{background:var(--accent2); color:#06110F; border:none; border-radius:10px; padding:0 16px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:6px; white-space:nowrap;}
-
-  .results{display:flex; flex-direction:column; gap:8px;}
-  .results-head{display:flex; align-items:center; justify-content:space-between; margin:2px 2px 0;}
-  .results-head h2{font-size:11px; letter-spacing:.1em; color:var(--muted); margin:0; font-weight:700;}
-  .results-close{background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer; padding:4px 6px;}
-  .ritem{display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:8px; cursor:pointer;}
-  .rthumb{width:76px; height:43px; flex:0 0 auto; border-radius:6px; object-fit:cover; background:var(--panel2);}
-  .rmeta{flex:1; min-width:0;}
-  .rtitle{font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .rsub{font-size:11px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .radd{background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:8px; width:32px; height:32px; font-size:15px; cursor:pointer; flex:0 0 auto;}
-  .rstatus{font-size:12.5px; color:var(--muted); padding:8px 2px;}
-
-  .queue{display:flex; flex-direction:column; gap:8px; padding-bottom:6px;}
-  .queue h2{font-size:11px; letter-spacing:.1em; color:var(--muted); margin:2px 2px 0; font-weight:700;}
-  .qitem{
-    display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--border);
-    border-left:3px solid var(--border); border-radius:10px; padding:9px 10px; cursor:pointer;
+  #q:focus-visible, button:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+  #searchForm button{
+    background:var(--ink); color:var(--bg); border:none; border-radius:var(--radius);
+    padding:0 16px; font-weight:700; font-size:14px; min-height:44px;
   }
-  .qitem.active{border-left-color:var(--accent);}
-  .ch{font-size:11px; font-weight:800; color:var(--muted); min-width:38px;}
-  .qtitle{flex:1; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .bars{display:flex; align-items:flex-end; gap:2px; height:14px; width:14px; flex:0 0 auto;}
-  .bars span{width:3px; background:var(--accent2); animation:eq .6s ease-in-out infinite alternate;}
-  .bars span:nth-child(2){animation-delay:.15s;} .bars span:nth-child(3){animation-delay:.3s;}
-  @keyframes eq{from{height:4px;} to{height:14px;}}
-  .rm{background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding:4px 6px;}
-  .empty{font-size:12.5px; color:var(--muted); padding:10px 2px;}
 
-  .site-footer{
-    margin-top:auto; display:flex; align-items:center; justify-content:center; text-align:center;
-    padding:18px 10px; border-top:1px solid var(--border); min-height:56px;
+  #status{font-size:13px; color:var(--sub); min-height:16px;}
+  #status.err{color:var(--accent2); font-weight:600;}
+
+  #results{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+  #results li{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px;
+    border:var(--thin) solid var(--border); border-radius:var(--radius); background:var(--panel); cursor:pointer;
   }
-  .site-footer p{margin:0; font-size:12px; color:var(--muted); line-height:1.5; display:flex; align-items:center;}
+  #results li:hover, #results li:focus-visible{border-color:var(--accent);}
+  .r-text{min-width:0;}
+  .r-name{font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .r-brand{font-size:11px; color:var(--sub); text-transform:uppercase; letter-spacing:.4px;}
+  .r-kcal{font-size:12px; font-weight:700; color:var(--accent); white-space:nowrap; flex-shrink:0;}
+
+  /* Nutrition Facts label */
+  .label{
+    background:var(--panel); border:var(--thick) solid var(--line); border-radius:2px;
+    padding:10px 14px 14px; font-family:"Helvetica Neue Condensed","Arial Narrow",Arial,sans-serif;
+  }
+  .label h2{margin:0; font-size:30px; font-weight:900; letter-spacing:-.5px;}
+  .serving{margin:4px 0 8px; font-size:13px; font-weight:600; color:var(--sub);}
+  .serving b{color:var(--ink);}
+  .rule{background:var(--line); width:100%;}
+  .rule.thick{height:var(--thick); margin:4px 0;}
+  .rule.thin{height:var(--thin); margin:5px 0; background:var(--border);}
+  .calories{display:flex; justify-content:space-between; align-items:baseline; padding:4px 0;}
+  .calories span{font-weight:800; font-size:20px;}
+  .calories strong{font-size:32px;}
+  .dv-header{display:flex; justify-content:flex-end; font-size:11px; font-weight:700; color:var(--sub);}
+  .row{display:flex; justify-content:space-between; font-size:14px; padding:3px 0;}
+  .row.bold{font-weight:800;}
+  .row.indent{padding-left:16px; font-weight:500;}
+  .row span:last-child{font-weight:700;}
+  .footnote{font-size:10px; color:var(--sub); margin:8px 0 0; line-height:1.4;}
+  #panel[hidden]{display:none;}
+
+  footer{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; gap:2px; padding:22px 0 18px; color:var(--sub); font-size:12px; line-height:1.5;
+  }
+  footer strong{color:var(--ink); font-weight:700;}
+
+  @media (min-width:520px){ .app{padding-top:28px;} }
 </style>
 </head>
 <body>
 <div class="app">
-
-  <header class="topbar">
-    <div class="brand"><span class="dot"></span>DECK<span class="accent">.YT</span></div>
-    <button id="themeBtn" class="theme-btn" type="button">DARK</button>
+  <header>
+    <h1>Munchy<small>98 common foods. Works fully offline.</small></h1>
+    <button id="themeBtn" type="button" aria-live="polite">Dark</button>
   </header>
 
-  <main style="display:flex; flex-direction:column; gap:16px;">
-    <section class="screen">
-      <div class="frame" id="frameWrap">
-        <div id="player"></div>
-        <div class="placeholder" id="placeholder">No signal — paste a link or search below</div>
-      </div>
-      <div class="nowplaying"><span class="rec" id="rec"></span><span id="npTitle">STANDBY</span></div>
-      <div class="controls">
-        <button id="prevBtn" type="button" aria-label="Previous">⏮</button>
-        <button id="playBtn" type="button" aria-label="Play">▶</button>
-        <button id="nextBtn" type="button" aria-label="Next">⏭</button>
-      </div>
-    </section>
+  <form id="searchForm">
+    <input id="q" type="search" placeholder="e.g. banana, chicken breast, oats" autocomplete="off">
+    <button type="submit">Search</button>
+  </form>
 
-    <section class="inputbar-wrap">
-      <div class="inputbar">
-        <input id="queryInput" placeholder="Search any video, song, podcast… or paste a link" />
-        <button id="searchBtn" type="button">🔍 Search</button>
-      </div>
-    </section>
+  <div id="status"></div>
+  <ul id="results"></ul>
 
-    <section class="results" id="resultsSection" style="display:none;">
-      <div class="results-head">
-        <h2>RESULTS</h2>
-        <button class="results-close" id="resultsClose" type="button">✕ Close</button>
-      </div>
-      <div id="resultsList"></div>
-    </section>
+  <section class="label" id="panel" hidden aria-live="polite">
+    <h2>Nutrition Facts</h2>
+    <p class="serving">Amount per 100 g — <b id="prodName"></b></p>
+    <div class="rule thick"></div>
+    <div class="calories"><span>Calories</span><strong id="kcal">0</strong></div>
+    <div class="rule thick"></div>
+    <div class="dv-header"><span>% Daily Value*</span></div>
+    <div class="rule thin"></div>
+    <div class="row bold"><span>Total Fat <b id="fat">0g</b></span><span id="fatDV">0%</span></div>
+    <div class="row indent"><span>Saturated Fat <b id="satfat">0g</b></span><span id="satfatDV">0%</span></div>
+    <div class="rule thin"></div>
+    <div class="row bold"><span>Sodium <b id="sodium">0mg</b></span><span id="sodiumDV">0%</span></div>
+    <div class="rule thin"></div>
+    <div class="row bold"><span>Total Carbohydrate <b id="carb">0g</b></span><span id="carbDV">0%</span></div>
+    <div class="row indent"><span>Dietary Fiber <b id="fiber">0g</b></span><span id="fiberDV">0%</span></div>
+    <div class="row indent"><span>Total Sugars <b id="sugar">0g</b></span></div>
+    <div class="rule thin"></div>
+    <div class="row bold"><span>Protein <b id="protein">0g</b></span><span id="proteinDV">0%</span></div>
+    <div class="rule thick"></div>
+    <p class="footnote">*% Daily Value based on a 2,000 calorie diet. Approximate values, stored on-device — no internet required.</p>
+  </section>
 
-    <section class="queue">
-      <h2>QUEUE</h2>
-      <div id="queueList"></div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <p>© Manik Roy <span id="year"></span>. All Rights Reserved.</p>
+  <footer>
+    <div>© <span id="year"></span> <strong>Manik Roy</strong>. All Rights Reserved.</div>
+    <div>Nutrition data stored on-device — 100% offline</div>
   </footer>
 </div>
 
 <script>
 (function(){
-  var y1 = 2026, now = new Date().getFullYear();
-  document.getElementById('year').textContent = now > y1 ? (y1 + '–' + now) : String(y1);
+  const THEMES=["dark","light","oled","hc"];
+  const THEME_LABELS={dark:"Dark", light:"Light", oled:"OLED Black", hc:"High Contrast"};
+  let themeIdx=0;
+  const html=document.documentElement;
+  const themeBtn=document.getElementById("themeBtn");
+
+  function applyTheme(){
+    html.setAttribute("data-theme", THEMES[themeIdx]);
+    themeBtn.textContent=THEME_LABELS[THEMES[themeIdx]];
+  }
+  themeBtn.addEventListener("click",function(){
+    themeIdx=(themeIdx+1)%THEMES.length;
+    applyTheme();
+  });
+  applyTheme();
+
+  document.getElementById("year").textContent=new Date().getFullYear();
+
+  const form=document.getElementById("searchForm");
+  const input=document.getElementById("q");
+  const statusEl=document.getElementById("status");
+  const resultsEl=document.getElementById("results");
+  const panel=document.getElementById("panel");
+
+  const DV={fat:78, satfat:20, sodium:2300, carb:275, fiber:28, protein:50};
+  const pct=(val,ref)=>(val==null||isNaN(val))?"—":Math.round((val/ref)*100)+"%";
+  const g=(n)=>(n==null||isNaN(n))?"—g":(Math.round(n*10)/10)+"g";
+
+  // Offline nutrition database — per 100g. [name, category, kcal, fat, satfat, carb, sugar, fiber, protein, sodiumMg]
+  const FOODS=[
+  ["Banana","Fruit",89,0.3,0.1,23,12,2.6,1.1,1],
+  ["Apple","Fruit",52,0.2,0,14,10,2.4,0.3,1],
+  ["Orange","Fruit",47,0.1,0,12,9,2.4,0.9,0],
+  ["Strawberry","Fruit",32,0.3,0,7.7,4.9,2,0.7,1],
+  ["Blueberry","Fruit",57,0.3,0,14.5,10,2.4,0.7,1],
+  ["Grapes","Fruit",69,0.2,0.1,18,16,0.9,0.7,2],
+  ["Watermelon","Fruit",30,0.2,0,7.6,6.2,0.4,0.6,1],
+  ["Mango","Fruit",60,0.4,0.1,15,14,1.6,0.8,1],
+  ["Pineapple","Fruit",50,0.1,0,13,10,1.4,0.5,1],
+  ["Avocado","Fruit",160,15,2.1,9,0.7,7,2,7],
+  ["Lemon","Fruit",29,0.3,0,9.3,2.5,2.8,1.1,2],
+  ["Kiwi","Fruit",61,0.5,0,15,9,3,1.1,3],
+  ["Pear","Fruit",57,0.1,0,15,10,3.1,0.4,1],
+  ["Peach","Fruit",39,0.3,0,10,8.4,1.5,0.9,0],
+  ["Cherry","Fruit",63,0.2,0,16,13,2.1,1.1,0],
+  ["Raspberry","Fruit",52,0.7,0,12,4.4,6.5,1.2,1],
+  ["Papaya","Fruit",43,0.3,0.1,11,7.8,1.7,0.5,8],
+  ["Pomegranate","Fruit",83,1.2,0.1,19,14,4,1.7,3],
+  ["Plum","Fruit",46,0.3,0,11,10,1.4,0.7,0],
+  ["Dates","Fruit",277,0.4,0,75,66,7,1.8,1],
+  ["Broccoli","Vegetable",34,0.4,0.1,7,1.7,2.6,2.8,33],
+  ["Carrot","Vegetable",41,0.2,0,10,4.7,2.8,0.9,69],
+  ["Spinach","Vegetable",23,0.4,0.1,3.6,0.4,2.2,2.9,79],
+  ["Potato","Vegetable",77,0.1,0,17,0.8,2.2,2,6],
+  ["Sweet Potato","Vegetable",86,0.1,0,20,4.2,3,1.6,55],
+  ["Tomato","Vegetable",18,0.2,0,3.9,2.6,1.2,0.9,5],
+  ["Cucumber","Vegetable",15,0.1,0,3.6,1.7,0.5,0.7,2],
+  ["Onion","Vegetable",40,0.1,0,9.3,4.2,1.7,1.1,4],
+  ["Garlic","Vegetable",149,0.5,0.1,33,1,2.1,6.4,17],
+  ["Bell Pepper","Vegetable",31,0.3,0,6,4.2,2.1,1,4],
+  ["Lettuce","Vegetable",15,0.2,0,2.9,0.8,1.3,1.4,28],
+  ["Cauliflower","Vegetable",25,0.3,0.1,5,1.9,2,1.9,30],
+  ["Zucchini","Vegetable",17,0.3,0.1,3.1,2.5,1,1.2,8],
+  ["Corn","Vegetable",96,1.5,0.2,21,4.5,2.4,3.4,15],
+  ["Peas","Vegetable",81,0.4,0.1,14,5.7,5.7,5.4,5],
+  ["Mushroom","Vegetable",22,0.3,0,3.3,2,1,3.1,5],
+  ["Cabbage","Vegetable",25,0.1,0,5.8,3.2,2.5,1.3,18],
+  ["Asparagus","Vegetable",20,0.1,0,3.9,1.9,2.1,2.2,2],
+  ["Beet","Vegetable",43,0.2,0,10,7,2.8,1.6,78],
+  ["Kale","Vegetable",49,0.9,0.1,9,2.3,3.6,4.3,38],
+  ["White Rice, cooked","Grain",130,0.3,0.1,28,0.1,0.4,2.7,1],
+  ["Brown Rice, cooked","Grain",123,1,0.2,26,0.4,1.6,2.7,4],
+  ["Oats, dry","Grain",389,6.9,1.2,66,0,10.6,16.9,2],
+  ["Quinoa, cooked","Grain",120,1.9,0.2,21,0.9,2.8,4.4,7],
+  ["Whole Wheat Bread","Grain",247,3.4,0.7,41,6,7,13,400],
+  ["White Bread","Grain",265,3.2,0.7,49,5,2.7,9,490],
+  ["Pasta, cooked","Grain",131,1.1,0.2,25,0.6,1.8,5,1],
+  ["Corn Tortilla","Grain",218,2.9,0.4,44,1,4.2,5.7,15],
+  ["Bagel","Grain",250,1.5,0.2,49,5,2.1,10,430],
+  ["Cornflakes","Grain",357,0.4,0.1,84,8,3,7.5,660],
+  ["Chicken Breast, cooked","Protein",165,3.6,1,0,0,0,31,74],
+  ["Chicken Thigh, cooked","Protein",209,11,3,0,0,0,26,90],
+  ["Beef, ground, cooked","Protein",250,17,6.7,0,0,0,26,66],
+  ["Pork Chop, cooked","Protein",231,14,4.9,0,0,0,25,62],
+  ["Salmon, cooked","Protein",206,13,3.1,0,0,0,22,61],
+  ["Tuna, canned","Protein",116,0.8,0.2,0,0,0,26,247],
+  ["Shrimp, cooked","Protein",99,0.3,0.1,0.2,0,0,24,111],
+  ["Egg, whole","Protein",155,11,3.3,1.1,1.1,0,13,124],
+  ["Tofu","Protein",76,4.8,0.7,1.9,0.6,0.3,8,7],
+  ["Lentils, cooked","Protein",116,0.4,0.1,20,1.8,7.9,9,2],
+  ["Chickpeas, cooked","Protein",164,2.6,0.3,27,4.8,7.6,8.9,7],
+  ["Black Beans, cooked","Protein",132,0.5,0.1,24,0.3,8.7,8.9,1],
+  ["Kidney Beans, cooked","Protein",127,0.5,0.1,23,0.3,6.4,8.7,1],
+  ["Almonds","Protein",579,50,3.8,22,4.4,12.5,21,1],
+  ["Peanuts","Protein",567,49,6.3,16,4,8.5,26,18],
+  ["Walnuts","Protein",654,65,6.1,14,2.6,6.7,15,2],
+  ["Cashews","Protein",553,44,7.8,30,5.9,3.3,18,12],
+  ["Peanut Butter","Protein",588,50,10,20,9,6,25,459],
+  ["Whole Milk","Dairy",61,3.3,1.9,4.8,5.1,0,3.2,44],
+  ["Skim Milk","Dairy",34,0.1,0.1,5,5.1,0,3.4,44],
+  ["Cheddar Cheese","Dairy",403,33,21,1.3,0.5,0,25,621],
+  ["Mozzarella","Dairy",280,17,10,3.1,1,0,28,627],
+  ["Greek Yogurt, plain","Dairy",59,0.4,0.1,3.6,3.2,0,10,36],
+  ["Plain Yogurt","Dairy",61,3.3,2.1,4.7,4.7,0,3.5,46],
+  ["Butter","Dairy",717,81,51,0.1,0.1,0,0.9,11],
+  ["Cream Cheese","Dairy",342,34,19,4.1,3.2,0,6,321],
+  ["Cottage Cheese","Dairy",98,4.3,2.7,3.4,2.7,0,11,364],
+  ["Ice Cream","Dairy",207,11,6.8,24,21,0.7,3.5,80],
+  ["Dark Chocolate","Snack",546,31,19,61,24,7,4.9,20],
+  ["Milk Chocolate","Snack",535,30,18,59,52,3.4,7.7,79],
+  ["Potato Chips","Snack",536,35,3.1,53,0.2,4.4,7,525],
+  ["Popcorn, air-popped","Snack",387,4.5,0.6,78,0.9,14.5,13,8],
+  ["Pretzels","Snack",380,2.6,0.6,79,3,3.4,10,1200],
+  ["Honey","Other",304,0,0,82,82,0.2,0.3,4],
+  ["Sugar, white","Other",387,0,0,100,100,0,0,0],
+  ["Olive Oil","Other",884,100,14,0,0,0,0,2],
+  ["Coconut Oil","Other",862,99,83,0,0,0,0,0],
+  ["Ketchup","Other",101,0.1,0,27,22,0.3,1.3,1110],
+  ["Mayonnaise","Other",680,75,12,0.6,0.6,0,1,635],
+  ["Pizza, cheese slice","Meal",266,10,4.5,33,3.8,2.3,11,598],
+  ["Hamburger, fast food","Meal",295,14,5,26,5,2,17,414],
+  ["French Fries","Meal",312,15,2.3,41,0.3,3.8,3.4,210],
+  ["Hummus","Other",166,9.6,1.4,14,0.3,6,7.9,379],
+  ["Granola Bar","Snack",471,20,3,64,29,5,10,255],
+  ["Cola Soda","Drink",41,0,0,10.6,10.6,0,0,4],
+  ["Orange Juice","Drink",45,0.2,0,10.4,8.4,0.2,0.7,1],
+  ["Coffee, black","Drink",2,0,0,0,0,0,0.3,2],
+  ["Tea, black","Drink",1,0,0,0.3,0,0,0,3]
+  ];
+
+  function search(term){
+    const t=term.trim().toLowerCase();
+    if(!t) return [];
+    return FOODS.filter(f=>f[0].toLowerCase().includes(t)).map(f=>({
+      name:f[0], category:f[1], kcal:f[2], fat:f[3], satfat:f[4],
+      carb:f[5], sugar:f[6], fiber:f[7], protein:f[8], sodiumMg:f[9]
+    }));
+  }
+
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    const term=input.value.trim();
+    panel.hidden=true;
+    resultsEl.innerHTML="";
+    if(!term){
+      statusEl.className="err";
+      statusEl.textContent="Type a food name first, e.g. banana or chicken breast.";
+      return;
+    }
+    const items=search(term);
+    if(items.length===0){
+      statusEl.className="err";
+      statusEl.textContent="No matches in the offline database. Try a different food.";
+      return;
+    }
+    statusEl.className="";
+    statusEl.textContent=items.length+" result"+(items.length>1?"s":"");
+    items.slice(0,20).forEach(item=>{
+      const li=document.createElement("li");
+      li.tabIndex=0;
+      li.innerHTML='<div class="r-text"><div class="r-name"></div><div class="r-brand"></div></div><span class="r-kcal"></span>';
+      li.querySelector(".r-name").textContent=item.name;
+      li.querySelector(".r-brand").textContent=item.category;
+      li.querySelector(".r-kcal").textContent=item.kcal+" kcal";
+      const open=()=>showPanel(item);
+      li.addEventListener("click",open);
+      li.addEventListener("keydown",ev=>{ if(ev.key==="Enter") open(); });
+      resultsEl.appendChild(li);
+    });
+  });
+
+  function showPanel(item){
+    document.getElementById("prodName").textContent=item.name;
+    document.getElementById("kcal").textContent=item.kcal==null?"—":item.kcal;
+    document.getElementById("fat").textContent=g(item.fat);
+    document.getElementById("fatDV").textContent=pct(item.fat,DV.fat);
+    document.getElementById("satfat").textContent=g(item.satfat);
+    document.getElementById("satfatDV").textContent=pct(item.satfat,DV.satfat);
+    document.getElementById("sodium").textContent=item.sodiumMg==null?"—":Math.round(item.sodiumMg)+"mg";
+    document.getElementById("sodiumDV").textContent=pct(item.sodiumMg,DV.sodium);
+    document.getElementById("carb").textContent=g(item.carb);
+    document.getElementById("carbDV").textContent=pct(item.carb,DV.carb);
+    document.getElementById("fiber").textContent=g(item.fiber);
+    document.getElementById("fiberDV").textContent=pct(item.fiber,DV.fiber);
+    document.getElementById("sugar").textContent=g(item.sugar);
+    document.getElementById("protein").textContent=g(item.protein);
+    document.getElementById("proteinDV").textContent=pct(item.protein,DV.protein);
+
+    panel.hidden=false;
+    panel.scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  // Enables offline reuse when hosted online (e.g. add-to-home-screen).
+  // Silently does nothing on file:// or unsupported browsers — the app
+  // works fully offline either way since all data is already embedded.
+  if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(()=>{});
+    });
+  }
 })();
-
-function storeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
-function storeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
-
-var THEMES = ['dark','light','oled','hc'];
-var themeBtn = document.getElementById('themeBtn');
-function applyTheme(t){
-  document.documentElement.setAttribute('data-theme', t);
-  themeBtn.textContent = t.toUpperCase();
-  storeSet('deckyt-theme', t);
-}
-applyTheme(storeGet('deckyt-theme') || 'dark');
-themeBtn.addEventListener('click', function(){
-  var cur = document.documentElement.getAttribute('data-theme');
-  var next = THEMES[(THEMES.indexOf(cur)+1) % THEMES.length];
-  applyTheme(next);
-});
-
-var queue = [];
-var currentIndex = -1;
-var player, playerReady = false, isPlaying = false;
-
-var tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-document.body.appendChild(tag);
-
-window.onYouTubeIframeAPIReady = function(){
-  player = new YT.Player('player', {
-    height:'100%', width:'100%',
-    playerVars:{ playsinline:1, rel:0 },
-    events:{
-      onReady:function(){ playerReady = true; },
-      onStateChange:onPlayerState
-    }
-  });
-};
-
-function onPlayerState(e){
-  isPlaying = (e.data === YT.PlayerState.PLAYING);
-  document.getElementById('playBtn').textContent = isPlaying ? '⏸' : '▶';
-  document.getElementById('rec').classList.toggle('live', isPlaying);
-  renderQueue();
-  if(e.data === YT.PlayerState.ENDED) playAt(currentIndex+1);
-}
-
-function extractId(input){
-  input = input.trim();
-  if(/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
-  var m = input.match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([a-zA-Z0-9_-]{11})/);
-  return m ? m[1] : null;
-}
-
-function addToQueue(id, title, autoplay){
-  var item = {id:id, title:title || ('Video ' + id)};
-  queue.push(item);
-  renderQueue();
-  if(autoplay) playAt(queue.length - 1);
-}
-
-function playAt(i){
-  if(i < 0 || i >= queue.length) return;
-  currentIndex = i;
-  var item = queue[i];
-  document.getElementById('placeholder').style.display = 'none';
-  document.getElementById('npTitle').textContent = item.title;
-  if(playerReady){ player.loadVideoById(item.id); player.playVideo(); }
-  renderQueue();
-}
-
-function renderQueue(){
-  var list = document.getElementById('queueList');
-  list.innerHTML = '';
-  if(queue.length === 0){
-    list.innerHTML = '<div class="empty">Queue is empty — add a video to get started.</div>';
-    return;
-  }
-  queue.forEach(function(item, i){
-    var row = document.createElement('div');
-    row.className = 'qitem' + (i === currentIndex ? ' active' : '');
-    var active = i === currentIndex && isPlaying;
-    row.innerHTML =
-      '<span class="ch">CH ' + String(i+1).padStart(2,'0') + '</span>' +
-      '<span class="qtitle">' + escapeHtml(item.title) + '</span>' +
-      (active ? '<span class="bars"><span></span><span></span><span></span></span>' : '') +
-      '<button class="rm" aria-label="Remove">✕</button>';
-    row.addEventListener('click', function(e){
-      if(e.target.classList.contains('rm')){
-        queue.splice(i,1);
-        if(currentIndex === i){ currentIndex = -1; if(playerReady) player.stopVideo(); document.getElementById('npTitle').textContent='STANDBY'; }
-        else if(currentIndex > i) currentIndex--;
-        renderQueue();
-      } else { playAt(i); }
-    });
-    list.appendChild(row);
-  });
-}
-
-function escapeHtml(s){
-  var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
-}
-
-document.getElementById('playBtn').addEventListener('click', function(){
-  if(!playerReady){
-    document.getElementById('npTitle').textContent = queue.length ? 'Player loading, try again…' : 'STANDBY';
-    if(currentIndex === -1 && queue.length) playAt(0);
-    return;
-  }
-  if(currentIndex === -1){ if(queue.length) playAt(0); return; }
-  isPlaying ? player.pauseVideo() : player.playVideo();
-});
-document.getElementById('prevBtn').addEventListener('click', function(){ playAt(currentIndex - 1); });
-document.getElementById('nextBtn').addEventListener('click', function(){ playAt(currentIndex + 1); });
-
-var FALLBACK_INSTANCES = ['https://inv.nadeko.net','https://invidious.nerdvpn.de','https://yt.chocolatemoo53.com','https://invidious.tiekoetter.com','https://inv.thepixora.com','https://yewtu.be'];
-var resultsSection = document.getElementById('resultsSection');
-var resultsList = document.getElementById('resultsList');
-
-function getInstances(){
-  return new Promise(function(resolve){
-    var cached = storeGet('deckyt-instances');
-    var ts = Number(storeGet('deckyt-instances-ts') || 0);
-    if(cached && (Date.now() - ts < 24*3600*1000)){
-      try{ resolve(JSON.parse(cached)); return; }catch(e){}
-    }
-    fetch('https://api.invidious.io/instances.json?sort_by=type,health')
-      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-      .then(function(list){
-        var urls = list
-          .filter(function(x){ var d = x[1]; return d.type === 'https' && d.api !== false && d.cors !== false; })
-          .map(function(x){ return x[1].uri || ('https://' + x[0]); });
-        if(!urls.length) throw 0;
-        storeSet('deckyt-instances', JSON.stringify(urls));
-        storeSet('deckyt-instances-ts', String(Date.now()));
-        resolve(urls);
-      })
-      .catch(function(){ resolve(FALLBACK_INSTANCES); });
-  });
-}
-
-function fmtDuration(s){
-  s = s || 0;
-  var m = Math.floor(s/60), sec = Math.floor(s%60);
-  return m + ':' + String(sec).padStart(2,'0');
-}
-function fmtViews(n){
-  if(!n) return '';
-  if(n >= 1e6) return (n/1e6).toFixed(1) + 'M views';
-  if(n >= 1e3) return (n/1e3).toFixed(1) + 'K views';
-  return n + ' views';
-}
-
-function goSearch(query){
-  var direct = extractId(query);
-  if(direct){ addToQueue(direct, null, true); document.getElementById('queryInput').value=''; hideResults(); return; }
-  if(!query.trim()) return;
-  showResultsLoading(query);
-  getInstances().then(function(list){ trySearchInstance(0, query, list); });
-}
-
-function showResultsLoading(query){
-  resultsSection.style.display = 'flex';
-  resultsList.innerHTML = '<div class="rstatus">Searching for “' + escapeHtml(query) + '”…</div>';
-}
-
-function hideResults(){
-  resultsSection.style.display = 'none';
-  resultsList.innerHTML = '';
-}
-
-function trySearchInstance(idx, query, list){
-  if(idx >= list.length){
-    resultsList.innerHTML = '<div class="rstatus">Search relays are unreachable right now — paste a direct YouTube link instead.</div>';
-    return;
-  }
-  var ctrl = new AbortController();
-  var timeout = setTimeout(function(){ ctrl.abort(); }, 6000);
-  fetch(list[idx] + '/api/v1/search?q=' + encodeURIComponent(query) + '&type=all', {signal: ctrl.signal})
-    .then(function(r){ clearTimeout(timeout); if(!r.ok) throw 0; return r.json(); })
-    .then(function(results){
-      var items = results.filter(function(x){ return (x.type === 'video' || x.type === 'shortVideo') && x.videoId; });
-      if(!items.length) throw 0;
-      renderResults(items.slice(0, 10));
-    })
-    .catch(function(){ clearTimeout(timeout); trySearchInstance(idx + 1, query, list); });
-}
-
-function renderResults(items){
-  resultsList.innerHTML = '';
-  items.forEach(function(v){
-    var thumb = (v.videoThumbnails && (v.videoThumbnails.find(function(t){return t.quality==='medium';}) || v.videoThumbnails[0]));
-    var row = document.createElement('div');
-    row.className = 'ritem';
-    row.innerHTML =
-      '<img class="rthumb" loading="lazy" src="' + (thumb ? thumb.url : '') + '" alt="">' +
-      '<div class="rmeta"><div class="rtitle">' + escapeHtml(v.title) + '</div>' +
-      '<div class="rsub">' + escapeHtml(v.author || '') + ' · ' + fmtDuration(v.lengthSeconds) +
-      (v.viewCount ? ' · ' + fmtViews(v.viewCount) : '') + '</div></div>' +
-      '<button class="radd" type="button" aria-label="Add to queue">+</button>';
-    row.addEventListener('click', function(e){
-      var playNow = !e.target.classList.contains('radd');
-      addToQueue(v.videoId, v.title, playNow);
-      if(playNow) hideResults();
-    });
-    resultsList.appendChild(row);
-  });
-}
-
-document.getElementById('searchBtn').addEventListener('click', function(){
-  goSearch(document.getElementById('queryInput').value);
-});
-document.getElementById('queryInput').addEventListener('keydown', function(e){
-  if(e.key === 'Enter') goSearch(this.value);
-});
-document.getElementById('resultsClose').addEventListener('click', hideResults);
 </script>
 </body>
 </html>
