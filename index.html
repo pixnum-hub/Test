@@ -1,361 +1,197 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Munchy — Food Nutrition Lookup</title>
-<meta name="theme-color" content="#15171B">
-<meta name="description" content="Search 98 common foods and see full Nutrition Facts, entirely offline.">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111">
+<title>NutriValue - Food Nutrition Calculator</title>
 <style>
-  :root{
-    --thick:6px; --thin:1px; --radius:3px; --focus:#2F6FED; --maxw:480px;
-  }
-  html[data-theme="light"]{
-    --bg:#FAF7F0; --panel:#FFFFFF; --ink:#1B1B1B; --sub:#63604F;
-    --line:#1B1B1B; --accent:#4C6444; --accent2:#B23A2F; --field:#FFFFFF; --border:#D8D2C2;
-  }
-  html[data-theme="dark"]{
-    --bg:#15171B; --panel:#1E2126; --ink:#ECEAE4; --sub:#A9A497;
-    --line:#ECEAE4; --accent:#8CB27A; --accent2:#E2665A; --field:#22262B; --border:#33383F;
-  }
-  html[data-theme="oled"]{
-    --bg:#000000; --panel:#000000; --ink:#FFFFFF; --sub:#9A9A9A;
-    --line:#FFFFFF; --accent:#8CB27A; --accent2:#FF7A6B; --field:#0A0A0A; --border:#2A2A2A;
-  }
-  html[data-theme="hc"]{
-    --bg:#000000; --panel:#000000; --ink:#FFFFFF; --sub:#FFFFFF;
-    --line:#FFFFFF; --accent:#B7FFA0; --accent2:#FFB199; --field:#000000; --border:#FFFFFF;
-    --thick:8px; --thin:2px;
-  }
-
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg); color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-    min-height:100vh; transition:background .2s,color .2s;
-    padding-bottom:env(safe-area-inset-bottom);
-  }
-  .app{max-width:var(--maxw); margin:0 auto; padding:16px 16px 8px; display:flex; flex-direction:column; gap:14px; position:relative;}
-
-  header{position:relative; padding-right:120px;}
-  h1{
-    font-family:"Helvetica Neue Condensed","Arial Narrow",sans-serif;
-    font-weight:800; letter-spacing:.5px; font-size:clamp(22px,7vw,28px); margin:0; line-height:1.05;
-  }
-  h1 small{display:block; font-family:inherit; font-weight:500; font-size:12px; color:var(--sub); letter-spacing:.3px; margin-top:2px;}
-
-  button{ font:inherit; cursor:pointer; }
-  #themeBtn{
-    position:absolute; top:0; right:0; white-space:nowrap;
-    background:var(--panel); color:var(--ink); border:var(--thin) solid var(--border);
-    border-radius:20px; padding:8px 12px; font-size:11px; font-weight:600; min-height:36px;
-  }
-  form#searchForm{display:flex; gap:8px;}
-  #q{
-    flex:1; min-width:0; padding:11px 12px; border-radius:var(--radius);
-    border:var(--thin) solid var(--border); background:var(--field); color:var(--ink); font-size:16px;
-  }
-  #q:focus-visible, button:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
-  #searchForm button{
-    background:var(--ink); color:var(--bg); border:none; border-radius:var(--radius);
-    padding:0 16px; font-weight:700; font-size:14px; min-height:44px;
-  }
-
-  #status{font-size:13px; color:var(--sub); min-height:16px;}
-  #status.err{color:var(--accent2); font-weight:600;}
-
-  #results{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
-  #results li{
-    display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px;
-    border:var(--thin) solid var(--border); border-radius:var(--radius); background:var(--panel); cursor:pointer;
-  }
-  #results li:hover, #results li:focus-visible{border-color:var(--accent);}
-  .r-text{min-width:0;}
-  .r-name{font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .r-brand{font-size:11px; color:var(--sub); text-transform:uppercase; letter-spacing:.4px;}
-  .r-kcal{font-size:12px; font-weight:700; color:var(--accent); white-space:nowrap; flex-shrink:0;}
-
-  /* Nutrition Facts label */
-  .label{
-    background:var(--panel); border:var(--thick) solid var(--line); border-radius:2px;
-    padding:10px 14px 14px; font-family:"Helvetica Neue Condensed","Arial Narrow",Arial,sans-serif;
-  }
-  .label h2{margin:0; font-size:30px; font-weight:900; letter-spacing:-.5px;}
-  .serving{margin:4px 0 8px; font-size:13px; font-weight:600; color:var(--sub);}
-  .serving b{color:var(--ink);}
-  .rule{background:var(--line); width:100%;}
-  .rule.thick{height:var(--thick); margin:4px 0;}
-  .rule.thin{height:var(--thin); margin:5px 0; background:var(--border);}
-  .calories{display:flex; justify-content:space-between; align-items:baseline; padding:4px 0;}
-  .calories span{font-weight:800; font-size:20px;}
-  .calories strong{font-size:32px;}
-  .dv-header{display:flex; justify-content:flex-end; font-size:11px; font-weight:700; color:var(--sub);}
-  .row{display:flex; justify-content:space-between; font-size:14px; padding:3px 0;}
-  .row.bold{font-weight:800;}
-  .row.indent{padding-left:16px; font-weight:500;}
-  .row span:last-child{font-weight:700;}
-  .footnote{font-size:10px; color:var(--sub); margin:8px 0 0; line-height:1.4;}
-  #panel[hidden]{display:none;}
-
-  footer{
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; gap:2px; padding:22px 0 18px; color:var(--sub); font-size:12px; line-height:1.5;
-  }
-  footer strong{color:var(--ink); font-weight:700;}
-
-  @media (min-width:520px){ .app{padding-top:28px;} }
+:root{
+  --bg:#f4f7f9;--card:#fff;--text:#18212b;--muted:#687582;
+  --accent:#159957;--border:#dce3e8;--input:#f8fafb;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;font-family:Arial,sans-serif;
+  background:var(--bg);color:var(--text);display:flex;
+  flex-direction:column;align-items:center;
+}
+body.dark{--bg:#121212;--card:#1d1d1d;--text:#f2f2f2;--muted:#aaa;
+--border:#333;--input:#292929}
+body.oled{--bg:#000;--card:#000;--text:#fff;--muted:#bbb;
+--border:#333;--input:#080808}
+body.hc{--bg:#000;--card:#000;--text:#fff;--muted:#fff;
+--accent:#ffff00;--border:#fff;--input:#000}
+header,main,footer{width:min(94%,700px)}
+header{text-align:center;padding:24px 0 12px}
+.logo{font-size:32px;font-weight:800}
+.logo span{color:var(--accent)}
+.tag{color:var(--muted);margin:7px 0 0}
+.controls{display:flex;gap:7px;justify-content:center;
+flex-wrap:wrap;margin:15px 0}
+button{
+  border:1px solid var(--border);background:var(--card);color:var(--text);
+  border-radius:10px;padding:9px 12px;font-weight:700;cursor:pointer
+}
+button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.search{
+  background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:16px;box-shadow:0 4px 18px #00000012
+}
+.row{display:flex;gap:8px}
+input{
+  width:100%;min-width:0;padding:13px;border-radius:10px;
+  border:1px solid var(--border);background:var(--input);
+  color:var(--text);font-size:16px;outline:0
+}
+.searchBtn{background:var(--accent);color:#fff;border:0}
+#status{text-align:center;color:var(--muted);margin:18px 0}
+.results{display:grid;gap:12px;margin:15px 0}
+.item{
+  background:var(--card);border:1px solid var(--border);border-radius:15px;
+  padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer
+}
+.item img{width:62px;height:62px;object-fit:contain;border-radius:10px;
+background:#eee}
+.item b{display:block;margin-bottom:5px}
+.item small{color:var(--muted)}
+.nutrition{
+  background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:18px;margin:15px 0
+}
+.product{text-align:center}
+.product img{width:120px;height:120px;object-fit:contain;border-radius:15px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}
+.nut{
+  border:1px solid var(--border);border-radius:12px;padding:13px;
+  text-align:center
+}
+.nut strong{display:block;font-size:19px;color:var(--accent);margin-top:5px}
+.back{margin-top:15px;width:100%}
+footer{
+  text-align:center;color:var(--muted);padding:25px 10px;margin-top:auto;
+  font-size:13px
+}
+@media(min-width:600px){.grid{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <h1>Munchy<small>98 common foods. Works fully offline.</small></h1>
-    <button id="themeBtn" type="button" aria-live="polite">Dark</button>
-  </header>
+<header>
+  <div class="logo">🥗 <span>NutriValue</span></div>
+  <div class="tag">Food Nutrition Value Finder</div>
+  <div class="controls">
+    <button onclick="setMode('light')" id="light">☀️ Light</button>
+    <button onclick="setMode('dark')" id="dark">🌙 Dark</button>
+    <button onclick="setMode('oled')" id="oled">⬛ OLED</button>
+    <button onclick="setMode('hc')" id="hc">◐ HC</button>
+  </div>
+</header>
 
-  <form id="searchForm">
-    <input id="q" type="search" placeholder="e.g. banana, chicken breast, oats" autocomplete="off">
-    <button type="submit">Search</button>
-  </form>
+<main>
+<section class="search">
+  <div class="row">
+    <input id="query" placeholder="Search food, e.g. milk, rice, apple"
+           onkeydown="if(event.key==='Enter')searchFood()">
+    <button class="searchBtn" onclick="searchFood()">Search</button>
+  </div>
+</section>
 
-  <div id="status"></div>
-  <ul id="results"></ul>
+<div id="status">Search the Open Food Facts database for nutrition values.</div>
+<div id="results" class="results"></div>
+<div id="nutrition"></div>
+</main>
 
-  <section class="label" id="panel" hidden aria-live="polite">
-    <h2>Nutrition Facts</h2>
-    <p class="serving">Amount per 100 g — <b id="prodName"></b></p>
-    <div class="rule thick"></div>
-    <div class="calories"><span>Calories</span><strong id="kcal">0</strong></div>
-    <div class="rule thick"></div>
-    <div class="dv-header"><span>% Daily Value*</span></div>
-    <div class="rule thin"></div>
-    <div class="row bold"><span>Total Fat <b id="fat">0g</b></span><span id="fatDV">0%</span></div>
-    <div class="row indent"><span>Saturated Fat <b id="satfat">0g</b></span><span id="satfatDV">0%</span></div>
-    <div class="rule thin"></div>
-    <div class="row bold"><span>Sodium <b id="sodium">0mg</b></span><span id="sodiumDV">0%</span></div>
-    <div class="rule thin"></div>
-    <div class="row bold"><span>Total Carbohydrate <b id="carb">0g</b></span><span id="carbDV">0%</span></div>
-    <div class="row indent"><span>Dietary Fiber <b id="fiber">0g</b></span><span id="fiberDV">0%</span></div>
-    <div class="row indent"><span>Total Sugars <b id="sugar">0g</b></span></div>
-    <div class="rule thin"></div>
-    <div class="row bold"><span>Protein <b id="protein">0g</b></span><span id="proteinDV">0%</span></div>
-    <div class="rule thick"></div>
-    <p class="footnote">*% Daily Value based on a 2,000 calorie diet. Approximate values, stored on-device — no internet required.</p>
-  </section>
-
-  <footer>
-    <div>© <span id="year"></span> <strong>Manik Roy</strong>. All Rights Reserved.</div>
-    <div>Nutrition data stored on-device — 100% offline</div>
-  </footer>
-</div>
+<footer>© <span id="year"></span> Manik Roy 2026. All Rights Reserved.</footer>
 
 <script>
-(function(){
-  const THEMES=["dark","light","oled","hc"];
-  const THEME_LABELS={dark:"Dark", light:"Light", oled:"OLED Black", hc:"High Contrast"};
-  let themeIdx=0;
-  const html=document.documentElement;
-  const themeBtn=document.getElementById("themeBtn");
+const API="https://world.openfoodfacts.org/cgi/search.pl";
+const results=document.getElementById("results");
+const nutrition=document.getElementById("nutrition");
+const status=document.getElementById("status");
 
-  function applyTheme(){
-    html.setAttribute("data-theme", THEMES[themeIdx]);
-    themeBtn.textContent=THEME_LABELS[THEMES[themeIdx]];
-  }
-  themeBtn.addEventListener("click",function(){
-    themeIdx=(themeIdx+1)%THEMES.length;
-    applyTheme();
-  });
-  applyTheme();
+document.getElementById("year").textContent=new Date().getFullYear();
 
-  document.getElementById("year").textContent=new Date().getFullYear();
+function setMode(mode){
+  document.body.className=mode==="light"?"":mode;
+  document.querySelectorAll(".controls button").forEach(b=>b.classList.remove("active"));
+  document.getElementById(mode).classList.add("active");
+  localStorage.setItem("nutriMode",mode);
+}
+setMode(localStorage.getItem("nutriMode")||"light");
 
-  const form=document.getElementById("searchForm");
-  const input=document.getElementById("q");
-  const statusEl=document.getElementById("status");
-  const resultsEl=document.getElementById("results");
-  const panel=document.getElementById("panel");
+function val(n,u="g"){
+  return n==null||n===""||isNaN(n)?"—":(+n).toFixed(1)+" "+u;
+}
 
-  const DV={fat:78, satfat:20, sodium:2300, carb:275, fiber:28, protein:50};
-  const pct=(val,ref)=>(val==null||isNaN(val))?"—":Math.round((val/ref)*100)+"%";
-  const g=(n)=>(n==null||isNaN(n))?"—g":(Math.round(n*10)/10)+"g";
-
-  // Offline nutrition database — per 100g. [name, category, kcal, fat, satfat, carb, sugar, fiber, protein, sodiumMg]
-  const FOODS=[
-  ["Banana","Fruit",89,0.3,0.1,23,12,2.6,1.1,1],
-  ["Apple","Fruit",52,0.2,0,14,10,2.4,0.3,1],
-  ["Orange","Fruit",47,0.1,0,12,9,2.4,0.9,0],
-  ["Strawberry","Fruit",32,0.3,0,7.7,4.9,2,0.7,1],
-  ["Blueberry","Fruit",57,0.3,0,14.5,10,2.4,0.7,1],
-  ["Grapes","Fruit",69,0.2,0.1,18,16,0.9,0.7,2],
-  ["Watermelon","Fruit",30,0.2,0,7.6,6.2,0.4,0.6,1],
-  ["Mango","Fruit",60,0.4,0.1,15,14,1.6,0.8,1],
-  ["Pineapple","Fruit",50,0.1,0,13,10,1.4,0.5,1],
-  ["Avocado","Fruit",160,15,2.1,9,0.7,7,2,7],
-  ["Lemon","Fruit",29,0.3,0,9.3,2.5,2.8,1.1,2],
-  ["Kiwi","Fruit",61,0.5,0,15,9,3,1.1,3],
-  ["Pear","Fruit",57,0.1,0,15,10,3.1,0.4,1],
-  ["Peach","Fruit",39,0.3,0,10,8.4,1.5,0.9,0],
-  ["Cherry","Fruit",63,0.2,0,16,13,2.1,1.1,0],
-  ["Raspberry","Fruit",52,0.7,0,12,4.4,6.5,1.2,1],
-  ["Papaya","Fruit",43,0.3,0.1,11,7.8,1.7,0.5,8],
-  ["Pomegranate","Fruit",83,1.2,0.1,19,14,4,1.7,3],
-  ["Plum","Fruit",46,0.3,0,11,10,1.4,0.7,0],
-  ["Dates","Fruit",277,0.4,0,75,66,7,1.8,1],
-  ["Broccoli","Vegetable",34,0.4,0.1,7,1.7,2.6,2.8,33],
-  ["Carrot","Vegetable",41,0.2,0,10,4.7,2.8,0.9,69],
-  ["Spinach","Vegetable",23,0.4,0.1,3.6,0.4,2.2,2.9,79],
-  ["Potato","Vegetable",77,0.1,0,17,0.8,2.2,2,6],
-  ["Sweet Potato","Vegetable",86,0.1,0,20,4.2,3,1.6,55],
-  ["Tomato","Vegetable",18,0.2,0,3.9,2.6,1.2,0.9,5],
-  ["Cucumber","Vegetable",15,0.1,0,3.6,1.7,0.5,0.7,2],
-  ["Onion","Vegetable",40,0.1,0,9.3,4.2,1.7,1.1,4],
-  ["Garlic","Vegetable",149,0.5,0.1,33,1,2.1,6.4,17],
-  ["Bell Pepper","Vegetable",31,0.3,0,6,4.2,2.1,1,4],
-  ["Lettuce","Vegetable",15,0.2,0,2.9,0.8,1.3,1.4,28],
-  ["Cauliflower","Vegetable",25,0.3,0.1,5,1.9,2,1.9,30],
-  ["Zucchini","Vegetable",17,0.3,0.1,3.1,2.5,1,1.2,8],
-  ["Corn","Vegetable",96,1.5,0.2,21,4.5,2.4,3.4,15],
-  ["Peas","Vegetable",81,0.4,0.1,14,5.7,5.7,5.4,5],
-  ["Mushroom","Vegetable",22,0.3,0,3.3,2,1,3.1,5],
-  ["Cabbage","Vegetable",25,0.1,0,5.8,3.2,2.5,1.3,18],
-  ["Asparagus","Vegetable",20,0.1,0,3.9,1.9,2.1,2.2,2],
-  ["Beet","Vegetable",43,0.2,0,10,7,2.8,1.6,78],
-  ["Kale","Vegetable",49,0.9,0.1,9,2.3,3.6,4.3,38],
-  ["White Rice, cooked","Grain",130,0.3,0.1,28,0.1,0.4,2.7,1],
-  ["Brown Rice, cooked","Grain",123,1,0.2,26,0.4,1.6,2.7,4],
-  ["Oats, dry","Grain",389,6.9,1.2,66,0,10.6,16.9,2],
-  ["Quinoa, cooked","Grain",120,1.9,0.2,21,0.9,2.8,4.4,7],
-  ["Whole Wheat Bread","Grain",247,3.4,0.7,41,6,7,13,400],
-  ["White Bread","Grain",265,3.2,0.7,49,5,2.7,9,490],
-  ["Pasta, cooked","Grain",131,1.1,0.2,25,0.6,1.8,5,1],
-  ["Corn Tortilla","Grain",218,2.9,0.4,44,1,4.2,5.7,15],
-  ["Bagel","Grain",250,1.5,0.2,49,5,2.1,10,430],
-  ["Cornflakes","Grain",357,0.4,0.1,84,8,3,7.5,660],
-  ["Chicken Breast, cooked","Protein",165,3.6,1,0,0,0,31,74],
-  ["Chicken Thigh, cooked","Protein",209,11,3,0,0,0,26,90],
-  ["Beef, ground, cooked","Protein",250,17,6.7,0,0,0,26,66],
-  ["Pork Chop, cooked","Protein",231,14,4.9,0,0,0,25,62],
-  ["Salmon, cooked","Protein",206,13,3.1,0,0,0,22,61],
-  ["Tuna, canned","Protein",116,0.8,0.2,0,0,0,26,247],
-  ["Shrimp, cooked","Protein",99,0.3,0.1,0.2,0,0,24,111],
-  ["Egg, whole","Protein",155,11,3.3,1.1,1.1,0,13,124],
-  ["Tofu","Protein",76,4.8,0.7,1.9,0.6,0.3,8,7],
-  ["Lentils, cooked","Protein",116,0.4,0.1,20,1.8,7.9,9,2],
-  ["Chickpeas, cooked","Protein",164,2.6,0.3,27,4.8,7.6,8.9,7],
-  ["Black Beans, cooked","Protein",132,0.5,0.1,24,0.3,8.7,8.9,1],
-  ["Kidney Beans, cooked","Protein",127,0.5,0.1,23,0.3,6.4,8.7,1],
-  ["Almonds","Protein",579,50,3.8,22,4.4,12.5,21,1],
-  ["Peanuts","Protein",567,49,6.3,16,4,8.5,26,18],
-  ["Walnuts","Protein",654,65,6.1,14,2.6,6.7,15,2],
-  ["Cashews","Protein",553,44,7.8,30,5.9,3.3,18,12],
-  ["Peanut Butter","Protein",588,50,10,20,9,6,25,459],
-  ["Whole Milk","Dairy",61,3.3,1.9,4.8,5.1,0,3.2,44],
-  ["Skim Milk","Dairy",34,0.1,0.1,5,5.1,0,3.4,44],
-  ["Cheddar Cheese","Dairy",403,33,21,1.3,0.5,0,25,621],
-  ["Mozzarella","Dairy",280,17,10,3.1,1,0,28,627],
-  ["Greek Yogurt, plain","Dairy",59,0.4,0.1,3.6,3.2,0,10,36],
-  ["Plain Yogurt","Dairy",61,3.3,2.1,4.7,4.7,0,3.5,46],
-  ["Butter","Dairy",717,81,51,0.1,0.1,0,0.9,11],
-  ["Cream Cheese","Dairy",342,34,19,4.1,3.2,0,6,321],
-  ["Cottage Cheese","Dairy",98,4.3,2.7,3.4,2.7,0,11,364],
-  ["Ice Cream","Dairy",207,11,6.8,24,21,0.7,3.5,80],
-  ["Dark Chocolate","Snack",546,31,19,61,24,7,4.9,20],
-  ["Milk Chocolate","Snack",535,30,18,59,52,3.4,7.7,79],
-  ["Potato Chips","Snack",536,35,3.1,53,0.2,4.4,7,525],
-  ["Popcorn, air-popped","Snack",387,4.5,0.6,78,0.9,14.5,13,8],
-  ["Pretzels","Snack",380,2.6,0.6,79,3,3.4,10,1200],
-  ["Honey","Other",304,0,0,82,82,0.2,0.3,4],
-  ["Sugar, white","Other",387,0,0,100,100,0,0,0],
-  ["Olive Oil","Other",884,100,14,0,0,0,0,2],
-  ["Coconut Oil","Other",862,99,83,0,0,0,0,0],
-  ["Ketchup","Other",101,0.1,0,27,22,0.3,1.3,1110],
-  ["Mayonnaise","Other",680,75,12,0.6,0.6,0,1,635],
-  ["Pizza, cheese slice","Meal",266,10,4.5,33,3.8,2.3,11,598],
-  ["Hamburger, fast food","Meal",295,14,5,26,5,2,17,414],
-  ["French Fries","Meal",312,15,2.3,41,0.3,3.8,3.4,210],
-  ["Hummus","Other",166,9.6,1.4,14,0.3,6,7.9,379],
-  ["Granola Bar","Snack",471,20,3,64,29,5,10,255],
-  ["Cola Soda","Drink",41,0,0,10.6,10.6,0,0,4],
-  ["Orange Juice","Drink",45,0.2,0,10.4,8.4,0.2,0.7,1],
-  ["Coffee, black","Drink",2,0,0,0,0,0,0.3,2],
-  ["Tea, black","Drink",1,0,0,0.3,0,0,0,3]
-  ];
-
-  function search(term){
-    const t=term.trim().toLowerCase();
-    if(!t) return [];
-    return FOODS.filter(f=>f[0].toLowerCase().includes(t)).map(f=>({
-      name:f[0], category:f[1], kcal:f[2], fat:f[3], satfat:f[4],
-      carb:f[5], sugar:f[6], fiber:f[7], protein:f[8], sodiumMg:f[9]
-    }));
-  }
-
-  form.addEventListener("submit", function(e){
-    e.preventDefault();
-    const term=input.value.trim();
-    panel.hidden=true;
-    resultsEl.innerHTML="";
-    if(!term){
-      statusEl.className="err";
-      statusEl.textContent="Type a food name first, e.g. banana or chicken breast.";
-      return;
-    }
-    const items=search(term);
-    if(items.length===0){
-      statusEl.className="err";
-      statusEl.textContent="No matches in the offline database. Try a different food.";
-      return;
-    }
-    statusEl.className="";
-    statusEl.textContent=items.length+" result"+(items.length>1?"s":"");
-    items.slice(0,20).forEach(item=>{
-      const li=document.createElement("li");
-      li.tabIndex=0;
-      li.innerHTML='<div class="r-text"><div class="r-name"></div><div class="r-brand"></div></div><span class="r-kcal"></span>';
-      li.querySelector(".r-name").textContent=item.name;
-      li.querySelector(".r-brand").textContent=item.category;
-      li.querySelector(".r-kcal").textContent=item.kcal+" kcal";
-      const open=()=>showPanel(item);
-      li.addEventListener("click",open);
-      li.addEventListener("keydown",ev=>{ if(ev.key==="Enter") open(); });
-      resultsEl.appendChild(li);
+async function searchFood(){
+  const q=document.getElementById("query").value.trim();
+  if(!q)return;
+  results.innerHTML="";nutrition.innerHTML="";
+  status.textContent="Searching nutrition database…";
+  try{
+    const url=API+"?search_terms="+encodeURIComponent(q)+
+      "&search_simple=1&action=process&json=1&page_size=12"+
+      "&fields=code,product_name,brands,image_front_small_url";
+    const r=await fetch(url);
+    const data=await r.json();
+    const products=(data.products||[]).filter(x=>x.product_name);
+    if(!products.length){status.textContent="No food found. Try another search.";return}
+    status.textContent=products.length+" foods found. Select one:";
+    products.forEach(p=>{
+      const el=document.createElement("div");
+      el.className="item";
+      el.innerHTML=`<img src="${p.image_front_small_url||''}" alt="">
+      <div><b>${escapeHTML(p.product_name)}</b>
+      <small>${escapeHTML(p.brands||"Brand unavailable")}</small></div>`;
+      el.onclick=()=>showNutrition(p.code);
+      results.appendChild(el);
     });
-  });
+  }catch(e){status.textContent="Unable to connect. Check your internet connection."}
+}
 
-  function showPanel(item){
-    document.getElementById("prodName").textContent=item.name;
-    document.getElementById("kcal").textContent=item.kcal==null?"—":item.kcal;
-    document.getElementById("fat").textContent=g(item.fat);
-    document.getElementById("fatDV").textContent=pct(item.fat,DV.fat);
-    document.getElementById("satfat").textContent=g(item.satfat);
-    document.getElementById("satfatDV").textContent=pct(item.satfat,DV.satfat);
-    document.getElementById("sodium").textContent=item.sodiumMg==null?"—":Math.round(item.sodiumMg)+"mg";
-    document.getElementById("sodiumDV").textContent=pct(item.sodiumMg,DV.sodium);
-    document.getElementById("carb").textContent=g(item.carb);
-    document.getElementById("carbDV").textContent=pct(item.carb,DV.carb);
-    document.getElementById("fiber").textContent=g(item.fiber);
-    document.getElementById("fiberDV").textContent=pct(item.fiber,DV.fiber);
-    document.getElementById("sugar").textContent=g(item.sugar);
-    document.getElementById("protein").textContent=g(item.protein);
-    document.getElementById("proteinDV").textContent=pct(item.protein,DV.protein);
+async function showNutrition(code){
+  status.textContent="Loading nutrition information…";
+  try{
+    const r=await fetch("https://world.openfoodfacts.org/api/v2/product/"+
+      encodeURIComponent(code)+".json");
+    const d=await r.json(),p=d.product,n=p.nutriments||{};
+    if(!p){status.textContent="Nutrition information unavailable.";return}
+    const image=p.image_front_url||p.image_url||"";
+    nutrition.innerHTML=`
+    <section class="nutrition">
+      <div class="product">
+        ${image?`<img src="${image}" alt="">`:""}
+        <h2>${escapeHTML(p.product_name||"Food")}</h2>
+        <p>${escapeHTML(p.brands||"")}</p>
+        <small>Nutrition values generally shown per 100 g/ml</small>
+      </div>
+      <div class="grid">
+        ${card("🔥 Calories",val(n["energy-kcal_100g"],"kcal"))}
+        ${card("💪 Protein",val(n.proteins_100g))}
+        ${card("🍞 Carbohydrates",val(n.carbohydrates_100g))}
+        ${card("🥑 Fat",val(n.fat_100g))}
+        ${card("🌾 Fiber",val(n.fiber_100g))}
+        ${card("🍬 Sugars",val(n.sugars_100g))}
+        ${card("🧂 Salt",val(n.salt_100g))}
+        ${card("💧 Saturated Fat",val(n["saturated-fat_100g"]))}
+      </div>
+      <button class="back" onclick="nutrition.innerHTML=''">
+        ✕ Close Nutrition
+      </button>
+    </section>`;
+    status.textContent="Nutrition details";
+    nutrition.scrollIntoView({behavior:"smooth"});
+  }catch(e){status.textContent="Could not load product information."}
+}
 
-    panel.hidden=false;
-    panel.scrollIntoView({behavior:"smooth", block:"start"});
-  }
-
-  // Enables offline reuse when hosted online (e.g. add-to-home-screen).
-  // Silently does nothing on file:// or unsupported browsers — the app
-  // works fully offline either way since all data is already embedded.
-  if("serviceWorker" in navigator && location.protocol.startsWith("http")){
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").catch(()=>{});
-    });
-  }
-})();
+function card(title,value){
+  return `<div class="nut">${title}<strong>${value}</strong></div>`;
+}
+function escapeHTML(s){
+  return String(s||"").replace(/[&<>"']/g,m=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[m]));
+}
 </script>
 </body>
 </html>
