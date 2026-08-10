@@ -161,14 +161,17 @@
   document.getElementById('year').textContent = now > y1 ? (y1 + '–' + now) : String(y1);
 })();
 
+function storeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function storeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
 var THEMES = ['dark','light','oled','hc'];
 var themeBtn = document.getElementById('themeBtn');
 function applyTheme(t){
   document.documentElement.setAttribute('data-theme', t);
   themeBtn.textContent = t.toUpperCase();
-  localStorage.setItem('deckyt-theme', t);
+  storeSet('deckyt-theme', t);
 }
-applyTheme(localStorage.getItem('deckyt-theme') || 'dark');
+applyTheme(storeGet('deckyt-theme') || 'dark');
 themeBtn.addEventListener('click', function(){
   var cur = document.documentElement.getAttribute('data-theme');
   var next = THEMES[(THEMES.indexOf(cur)+1) % THEMES.length];
@@ -259,7 +262,12 @@ function escapeHtml(s){
 }
 
 document.getElementById('playBtn').addEventListener('click', function(){
-  if(!playerReady || currentIndex === -1){ if(queue.length) playAt(0); return; }
+  if(!playerReady){
+    document.getElementById('npTitle').textContent = queue.length ? 'Player loading, try again…' : 'STANDBY';
+    if(currentIndex === -1 && queue.length) playAt(0);
+    return;
+  }
+  if(currentIndex === -1){ if(queue.length) playAt(0); return; }
   isPlaying ? player.pauseVideo() : player.playVideo();
 });
 document.getElementById('prevBtn').addEventListener('click', function(){ playAt(currentIndex - 1); });
@@ -271,9 +279,11 @@ var resultsList = document.getElementById('resultsList');
 
 function getInstances(){
   return new Promise(function(resolve){
-    var cached = localStorage.getItem('deckyt-instances');
-    var ts = Number(localStorage.getItem('deckyt-instances-ts') || 0);
-    if(cached && (Date.now() - ts < 24*3600*1000)){ resolve(JSON.parse(cached)); return; }
+    var cached = storeGet('deckyt-instances');
+    var ts = Number(storeGet('deckyt-instances-ts') || 0);
+    if(cached && (Date.now() - ts < 24*3600*1000)){
+      try{ resolve(JSON.parse(cached)); return; }catch(e){}
+    }
     fetch('https://api.invidious.io/instances.json?sort_by=type,health')
       .then(function(r){ if(!r.ok) throw 0; return r.json(); })
       .then(function(list){
@@ -281,8 +291,8 @@ function getInstances(){
           .filter(function(x){ var d = x[1]; return d.type === 'https' && d.api !== false && d.cors !== false; })
           .map(function(x){ return x[1].uri || ('https://' + x[0]); });
         if(!urls.length) throw 0;
-        localStorage.setItem('deckyt-instances', JSON.stringify(urls));
-        localStorage.setItem('deckyt-instances-ts', String(Date.now()));
+        storeSet('deckyt-instances', JSON.stringify(urls));
+        storeSet('deckyt-instances-ts', String(Date.now()));
         resolve(urls);
       })
       .catch(function(){ resolve(FALLBACK_INSTANCES); });
