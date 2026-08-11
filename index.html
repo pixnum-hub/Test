@@ -2,240 +2,212 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#159957">
-<title>NutriValue – Food Nutrition</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1677ff">
+<meta name="description" content="NavMap Pro free navigation map">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22NavMap%20Pro%22%2C%22short_name%22%3A%22NavMap%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%7D">
+<title>NavMap Pro</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-:root{
---bg:#f4f7f9;--card:#fff;--text:#17212b;--muted:#66737e;
---accent:#159957;--border:#d8e0e5;--input:#f8fafb
-}
-*{box-sizing:border-box}
-body{
-margin:0;min-height:100vh;background:var(--bg);color:var(--text);
-font-family:Arial,sans-serif;display:flex;flex-direction:column;
-align-items:center;text-align:center
-}
-body.dark{--bg:#121212;--card:#1d1d1d;--text:#f4f4f4;--muted:#aaa;
---border:#363636;--input:#292929}
-body.oled{--bg:#000;--card:#000;--text:#fff;--muted:#bbb;
---border:#333;--input:#080808}
-body.hc{--bg:#000;--card:#000;--text:#fff;--muted:#fff;
---accent:#ff0;--border:#fff;--input:#000}
-header,main,footer{width:min(94%,720px)}
-header{padding:25px 0 14px}
-.logo{font-size:31px;font-weight:800}
-.logo span{color:var(--accent)}
-.tag{color:var(--muted);margin-top:6px}
-.controls{display:flex;justify-content:center;gap:7px;
-flex-wrap:wrap;margin:17px 0}
-button{
-padding:10px 13px;border:1px solid var(--border);border-radius:10px;
-background:var(--card);color:var(--text);font-weight:bold;cursor:pointer
-}
-button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.search{
-background:var(--card);border:1px solid var(--border);
-border-radius:18px;padding:16px
-}
-.row{display:flex;gap:8px}
-input{
-width:100%;padding:14px;border:1px solid var(--border);
-border-radius:11px;background:var(--input);color:var(--text);
-font-size:16px;outline:none
-}
-.searchBtn{background:var(--accent);color:#fff;border:0}
-#status{color:var(--muted);margin:18px 5px}
-.results{display:grid;gap:11px;margin:15px 0}
-.item{
-display:flex;align-items:center;text-align:left;gap:13px;
-padding:13px;background:var(--card);border:1px solid var(--border);
-border-radius:15px;cursor:pointer
-}
-.item img{width:64px;height:64px;object-fit:contain;
-border-radius:10px;background:#eee}
-.item b{display:block;margin-bottom:5px}
-.item small{color:var(--muted)}
-.nutrition{
-background:var(--card);border:1px solid var(--border);
-border-radius:18px;padding:18px;margin:15px 0
-}
-.product img{width:125px;height:125px;object-fit:contain;
-border-radius:15px;background:#eee}
-.product p,.product small{color:var(--muted)}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);
-gap:10px;margin-top:17px}
-.nut{border:1px solid var(--border);border-radius:12px;padding:13px}
-.nut strong{display:block;color:var(--accent);font-size:18px;margin-top:6px}
-.close{width:100%;margin-top:15px}
-footer{margin-top:auto;padding:25px 10px;color:var(--muted);font-size:13px}
-@media(min-width:600px){.grid{grid-template-columns:repeat(4,1fr)}}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Arial}
+body{display:flex;justify-content:center;align-items:center;background:#e9edf2}
+.app{width:100%;max-width:760px;height:100%;display:flex;flex-direction:column;
+background:#fff;color:#111;overflow:hidden}
+header{text-align:center;padding:7px;font-size:19px;font-weight:bold}
+.bar,.tools,.themes,.pois{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;padding:4px}
+input{flex:1;min-width:170px;padding:10px;border:1px solid #aaa;border-radius:11px;font-size:16px}
+button{border:0;border-radius:10px;padding:9px 11px;background:#1677ff;color:white;font-weight:bold}
+#map{flex:1;min-height:270px}
+.info{text-align:center;padding:5px;font-size:12px;line-height:1.35}
+.nav{font-size:14px;font-weight:bold}
+footer{text-align:center;padding:5px;font-size:11px}
+.dark{background:#171717;color:#eee}.dark input{background:#222;color:#fff}
+.dark button{background:#444}.oled{background:#000;color:#fff}
+.oled input{background:#000;color:#fff;border-color:#777}.oled button{background:#222}
+.hc{background:#000;color:#ff0}.hc input{background:#000;color:#fff;border:2px solid #ff0}
+.hc button{background:#ff0;color:#000;border:2px solid #fff}
+@media(max-width:500px){button{font-size:11px;padding:8px 9px}#map{min-height:320px}}
 </style>
 </head>
-
 <body>
-<header>
-<div class="logo">🥗 <span>NutriValue</span></div>
-<div class="tag">Food Nutrition Value Finder</div>
+<div class="app" id="app">
+<header>🧭 NavMap Pro</header>
 
-<div class="controls">
-<button id="light" onclick="setMode('light')">☀️ Light</button>
-<button id="dark" onclick="setMode('dark')">🌙 Dark</button>
-<button id="oled" onclick="setMode('oled')">⬛ OLED</button>
-<button id="hc" onclick="setMode('hc')">◐ HC</button>
+<div class="bar">
+<input id="search" placeholder="Search destination">
+<button onclick="searchPlace()">🔎</button>
+<button onclick="gps()">📍</button>
 </div>
-</header>
 
-<main>
-<section class="search">
-<div class="row">
-<input id="query" placeholder="Search food: apple, rice, milk..."
-onkeydown="if(event.key==='Enter')searchFood()">
-<button class="searchBtn" onclick="searchFood()">Search</button>
+<div class="tools">
+<button onclick="navigate()">🚗 Go</button>
+<button onclick="centerMe()">◎</button>
+<button onclick="follow()">👣</button>
+<button onclick="share()">📤</button>
+<button onclick="full()">⛶</button>
+<button onclick="clearNav()">✕</button>
 </div>
-</section>
 
-<div id="status">Search for a food to see its nutrition.</div>
-<div id="results" class="results"></div>
-<div id="nutrition"></div>
-</main>
+<div class="pois">
+<button onclick="poi('hospital')">🏥</button>
+<button onclick="poi('fuel')">⛽</button>
+<button onclick="poi('restaurant')">🍴</button>
+<button onclick="poi('atm')">🏧</button>
+<button onclick="poi('police')">🚓</button>
+<button onclick="savePlace()">⭐ Save</button>
+</div>
 
-<footer>
-© <span id="year"></span> Manik Roy 2026. All Rights Reserved.
-</footer>
+<div class="themes">
+<button onclick="theme('')">☀</button>
+<button onclick="theme('dark')">🌙</button>
+<button onclick="theme('oled')">⬛</button>
+<button onclick="theme('hc')">⚡</button>
+<button onclick="mapLayer()">🗺</button>
+</div>
 
+<div id="map"></div>
+<div class="info nav" id="nav">Search a destination to navigate.</div>
+<div class="info" id="info">GPS waiting · Speed 0 km/h · Trip 0 km</div>
+<footer>© <span id="year"></span> Manik Roy. All Rights Reserved.</footer>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const API="https://world.openfoodfacts.org/api/v2/search";
+const map=L.map('map').setView([22.5726,88.3639],12);
+const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
+const topo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{
+maxZoom:17,attribution:'© OpenStreetMap contributors, OpenTopoMap'});
 const $=id=>document.getElementById(id);
-$("year").textContent=new Date().getFullYear();
+let me,dest,acc,route=[],steps=[],step=0,watch,followOn=false;
+let start,trip=0,last,begin=0,markers=[],mapMode=0,lastRoute=0;
+$('year').textContent=new Date().getFullYear();
 
-function setMode(mode){
-document.body.className=mode==="light"?"":mode;
-document.querySelectorAll(".controls button")
-.forEach(x=>x.classList.remove("active"));
-$(mode).classList.add("active");
-localStorage.setItem("nutriMode",mode);
+function voice(t){
+ if(speechSynthesis){speechSynthesis.cancel();
+ speechSynthesis.speak(new SpeechSynthesisUtterance(t))}
 }
-setMode(localStorage.getItem("nutriMode")||"light");
-
-function clean(x){
-return String(x||"").replace(/[&<>"']/g,c=>({
-"&":"&amp;","<":"&lt;",">":"&gt;",
-'"':"&quot;","'":"&#039;"
-}[c]));
+function gps(){
+ if(!navigator.geolocation)return $('info').textContent='GPS unavailable';
+ navigator.geolocation.getCurrentPosition(updateGPS,e=>$('info').textContent=e.message,
+ {enableHighAccuracy:true,timeout:12000});
+ if(!watch)watch=navigator.geolocation.watchPosition(updateGPS,()=>{},
+ {enableHighAccuracy:true,maximumAge:2000,timeout:10000});
 }
-
-function number(x,u){
-return x==null||x===""||isNaN(x)?"—":(+x).toFixed(1)+" "+u;
+function updateGPS(p){
+ let a=[p.coords.latitude,p.coords.longitude],s=p.coords.speed||0;
+ if(!me)me=L.marker(a).addTo(map).bindPopup('📍 You are here');
+ else me.setLatLng(a);
+ if(!acc)acc=L.circle(a,{radius:p.coords.accuracy,color:'#1677ff',
+ fillOpacity:.08}).addTo(map);else acc.setLatLng(a).setRadius(p.coords.accuracy);
+ if(!start){start=a;begin=Date.now()} if(last)trip+=dist(last,a);last=a;
+ let km=(trip/1000).toFixed(2),tm=Math.round((Date.now()-begin)/60000);
+ $('info').textContent=`GPS ${a[0].toFixed(5)},${a[1].toFixed(5)}
+ · ±${Math.round(p.coords.accuracy)}m · Speed ${(s*3.6).toFixed(1)} km/h
+ · Trip ${km} km · ${tm} min`;
+ if(followOn)map.setView(a,16);
+ if(dest&&Date.now()-lastRoute>20000)navigate(true);
+ checkStep(a);
 }
-
-async function searchFood(){
-let q=$("query").value.trim();
-if(!q)return;
-
-$("results").innerHTML="";
-$("nutrition").innerHTML="";
-$("status").textContent="Searching…";
-
-try{
-let url=API+"?search_terms="+encodeURIComponent(q)+
-"&page_size=12&page=1&fields=code,product_name,brands,"+
-"image_front_small_url";
-
-let response=await fetch(url,{
-headers:{"Accept":"application/json"}
-});
-
-if(!response.ok)throw Error("HTTP "+response.status);
-
-let data=await response.json();
-let foods=(data.products||[]).filter(x=>x.product_name);
-
-if(!foods.length){
-$("status").textContent="No food found. Try another name.";
-return;
+async function searchPlace(){
+ let q=$('search').value.trim();if(!q)return;
+ $('info').textContent='Searching...';
+ try{
+  let u='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+
+  encodeURIComponent(q),d=await fetch(u).then(r=>r.json());
+  if(!d.length)return $('info').textContent='Not found';
+  dest=[+d[0].lat,+d[0].lon];
+  localStorage.last=q;
+  if(window.dm)map.removeLayer(window.dm);
+  window.dm=L.marker(dest).addTo(map).bindPopup(d[0].display_name).openPopup();
+  map.setView(dest,15);$('nav').textContent='🎯 '+d[0].display_name;
+ }catch(e){$('info').textContent='Search failed'}
 }
-
-$("status").textContent=foods.length+" results found.";
-
-foods.forEach(p=>{
-let el=document.createElement("div");
-el.className="item";
-el.innerHTML=
-`<img src="${p.image_front_small_url||""}" alt="">
-<div><b>${clean(p.product_name)}</b>
-<small>${clean(p.brands||"Brand unavailable")}</small></div>`;
-el.onclick=()=>getFood(p.code);
-$("results").appendChild(el);
-});
-
-}catch(e){
-console.error(e);
-$("status").innerHTML=
-"⚠️ Connection failed.<br><small>Open the app from HTTPS hosting "+
-"(GitHub Pages/Netlify) and try again.</small>";
+async function navigate(auto=false){
+ if(!dest)return $('nav').textContent='Search destination first';
+ if(!me){gps();return}
+ if(auto&&Date.now()-lastRoute<20000)return;
+ lastRoute=Date.now();$('nav').textContent='Calculating route...';
+ let a=me.getLatLng();
+ try{
+  let u=`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};`+
+  `${dest[1]},${dest[0]}?overview=full&geometries=geojson&steps=true&alternatives=true`;
+  let d=await fetch(u).then(r=>r.json());
+  if(d.code!='Ok')return $('nav').textContent='No route available';
+  route.forEach(x=>map.removeLayer(x));route=[];
+  d.routes.forEach((r,i)=>route.push(L.geoJSON(r.geometry,{style:{
+   color:i?'#888':'#1677ff',weight:i?4:7,opacity:i?.55:.9}}).addTo(map)));
+  steps=d.routes[0].legs[0].steps;step=0;
+  let km=(d.routes[0].distance/1000).toFixed(2);
+  let min=Math.round(d.routes[0].duration/60);
+  $('nav').textContent=`🚗 ${km} km · ⏱ ${min} min · ${d.routes.length} route(s)`;
+  map.fitBounds(route[0].getBounds(),{padding:[20,20]});
+  announce();
+ }catch(e){$('nav').textContent='Routing unavailable'}
 }
+function announce(){
+ if(!steps[step])return;
+ let x=steps[step],n=x.name||'the road';
+ $('nav').textContent=`🧭 ${step+1}/${steps.length}: ${x.maneuver.type}
+ ${x.maneuver.modifier||''} · ${n}`;
+ if(step<2)voice(`${x.maneuver.type} ${x.maneuver.modifier||''} ${n}`);
 }
-
-async function getFood(code){
-$("status").textContent="Loading nutrition…";
-
-try{
-let response=await fetch(
-"https://world.openfoodfacts.org/api/v2/product/"+
-encodeURIComponent(code)+".json",
-{headers:{"Accept":"application/json"}}
-);
-
-if(!response.ok)throw Error("HTTP "+response.status);
-
-let data=await response.json();
-let p=data.product;
-
-if(!p){
-$("status").textContent="Nutrition data unavailable.";
-return;
+function checkStep(a){
+ if(!steps[step])return;
+ let x=steps[step].maneuver.location;
+ if(dist(a,[x[1],x[0]])<35){step++;
+ if(step<steps.length)announce();
+ else{ $('nav').textContent='🏁 Destination reached';voice('Destination reached')}}
 }
-
-let n=p.nutriments||{};
-let img=p.image_front_url||p.image_url||"";
-
-$("nutrition").innerHTML=`
-<section class="nutrition">
-<div class="product">
-${img?`<img src="${img}" alt="">`:""}
-<h2>${clean(p.product_name||"Food")}</h2>
-<p>${clean(p.brands||"")}</p>
-<small>Values are generally per 100 g / 100 ml</small>
-</div>
-
-<div class="grid">
-${card("🔥 Calories",number(n["energy-kcal_100g"],"kcal"))}
-${card("💪 Protein",number(n.proteins_100g,"g"))}
-${card("🍞 Carbs",number(n.carbohydrates_100g,"g"))}
-${card("🥑 Fat",number(n.fat_100g,"g"))}
-${card("🌾 Fiber",number(n.fiber_100g,"g"))}
-${card("🍬 Sugar",number(n.sugars_100g,"g"))}
-${card("🧂 Salt",number(n.salt_100g,"g"))}
-${card("💧 Sat. Fat",number(n["saturated-fat_100g"],"g"))}
-</div>
-
-<button class="close" onclick="$('nutrition').innerHTML=''">
-✕ Close Nutrition
-</button>
-</section>`;
-
-$("status").textContent="Nutrition information";
-$("nutrition").scrollIntoView({behavior:"smooth"});
-}catch(e){
-console.error(e);
-$("status").textContent="Unable to load nutrition data.";
+async function poi(type){
+ if(!me)return gps();
+ let a=me.getLatLng();markers.forEach(x=>map.removeLayer(x));markers=[];
+ $('nav').textContent='Finding nearby '+type+'...';
+ let q=`[out:json];(node[amenity=${type}](around:3000,${a.lat},${a.lng});
+ way[amenity=${type}](around:3000,${a.lat},${a.lng}););out center 12;`;
+ try{
+  let d=await fetch('https://overpass-api.de/api/interpreter?data='+
+  encodeURIComponent(q)).then(r=>r.json());
+  d.elements.slice(0,12).forEach(x=>{
+   let p=x.lat?[x.lat,x.lon]:[x.center.lat,x.center.lon];
+   let m=L.marker(p).addTo(map).bindPopup(
+   x.tags?.name||type);markers.push(m);
+  });
+  $('nav').textContent=`📍 ${markers.length} nearby ${type} places`;
+ }catch(e){$('nav').textContent='Nearby search unavailable'}
 }
+function savePlace(){
+ if(!dest)return $('nav').textContent='Select a destination first';
+ localStorage.saved=JSON.stringify(dest);
+ $('nav').textContent='⭐ Destination saved';
 }
-
-function card(a,b){
-return `<div class="nut">${a}<strong>${b}</strong></div>`;
+function share(){
+ if(!me)return gps();
+ let p=me.getLatLng(),u=`https://www.google.com/maps?q=${p.lat},${p.lng}`;
+ if(navigator.share)navigator.share({title:'My location',url:u});
+ else navigator.clipboard?.writeText(u),$('nav').textContent='📋 Location link copied';
 }
+function centerMe(){if(me)map.setView(me.getLatLng(),16);else gps()}
+function follow(){followOn=!followOn;$('nav').textContent=followOn?'👣 Follow ON':'👣 Follow OFF'}
+function full(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+function clearNav(){
+ route.forEach(x=>map.removeLayer(x));route=[];steps=[];dest=null;
+ if(window.dm)map.removeLayer(window.dm);$('nav').textContent='Navigation cleared';
+}
+function theme(t){$('app').className='app '+t;localStorage.theme=t}
+function mapLayer(){
+ mapMode=!mapMode;if(mapMode){map.removeLayer(osm);topo.addTo(map)}
+ else{map.removeLayer(topo);osm.addTo(map)}
+}
+function dist(a,b){
+ let R=6371000,p=Math.PI/180,x=(b[0]-a[0])*p,y=(b[1]-a[1])*p;
+ let q=Math.sin(x/2)**2+Math.cos(a[0]*p)*Math.cos(b[0]*p)*Math.sin(y/2)**2;
+ return 2*R*Math.asin(Math.sqrt(q));
+}
+$('search').addEventListener('keydown',e=>{if(e.key=='Enter')searchPlace()});
+theme(localStorage.theme||'');
+if(localStorage.last)$('search').value=localStorage.last;
+gps();
 </script>
 </body>
 </html>
