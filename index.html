@@ -7,6 +7,7 @@
 <meta name="description" content="NavMap Pro - Free Navigation Map">
 <title>NavMap Pro</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;font-family:Arial,sans-serif}
@@ -23,13 +24,12 @@ button{min-width:58px;min-height:56px;padding:13px 16px;border:0;
 border-radius:15px;background:#1677ff;color:#fff;font-size:15px;
 font-weight:800;line-height:1;cursor:pointer;touch-action:manipulation}
 button:active{transform:scale(.95)}
-#map{flex:1;min-height:260px}
+#map{flex:1;min-height:250px}
 .info{text-align:center;padding:6px 9px;font-size:14px;line-height:1.4}
 .nav{font-size:16px;font-weight:800}
 footer{text-align:center;padding:6px;font-size:12px}
 .light{background:#fff;color:#111}
 .light input{background:#fff;color:#111;border-color:#aaa}
-.light button{background:#1677ff}
 .dark{background:#171717;color:#eee}
 .dark input{background:#222;color:#fff;border-color:#666}
 .dark button{background:#444}
@@ -47,7 +47,7 @@ line-height:48px!important;font-size:24px!important}
  font-size:15px;border-radius:16px}
  input{min-height:60px;font-size:18px}
  .bar,.tools,.themes,.pois{gap:8px;padding:6px}
- #map{min-height:310px}
+ #map{min-height:300px}
  .info{font-size:14px}
  .nav{font-size:16px}
 }
@@ -71,6 +71,8 @@ line-height:48px!important;font-size:24px!important}
 <button onclick="follow()">👣 Follow</button>
 <button onclick="share()">📤 Share</button>
 <button onclick="full()">⛶ Full</button>
+<button onclick="measureMode()">📏 Measure</button>
+<button onclick="clearMeasure()">🧹 Measure Clear</button>
 <button onclick="clearNav()">✕ Clear</button>
 </div>
 
@@ -130,40 +132,52 @@ let me,dest,acc,route=[],steps=[],step=0,watch;
 let followOn=false,start,last,trip=0,begin=0,lastRoute=0;
 let markers=[],mapMode=0;
 
+let measureOn=false;
+let measureA=null;
+let measureB=null;
+let measureLine=null;
+let measureMarkers=[];
+
 $('year').textContent=new Date().getFullYear();
 
 function voice(t){
  if('speechSynthesis' in window){
   speechSynthesis.cancel();
-  speechSynthesis.speak(new SpeechSynthesisUtterance(t));
+  speechSynthesis.speak(
+   new SpeechSynthesisUtterance(t)
+  );
  }
 }
 
 function gps(){
+
  if(!navigator.geolocation){
   $('info').textContent='GPS unavailable';
   return;
  }
 
  navigator.geolocation.getCurrentPosition(
- updateGPS,
- e=>$('info').textContent='GPS: '+e.message,
- {enableHighAccuracy:true,timeout:12000,maximumAge:3000}
+  updateGPS,
+  e=>$('info').textContent='GPS: '+e.message,
+  {enableHighAccuracy:true,timeout:12000,maximumAge:3000}
  );
 
  if(!watch)
  watch=navigator.geolocation.watchPosition(
- updateGPS,()=>{},
- {enableHighAccuracy:true,maximumAge:2000,timeout:10000}
+  updateGPS,
+  ()=>{},
+  {enableHighAccuracy:true,maximumAge:2000,timeout:10000}
  );
 }
 
 function updateGPS(p){
+
  let a=[p.coords.latitude,p.coords.longitude];
  let speed=p.coords.speed||0;
 
  if(!me)
-  me=L.marker(a).addTo(map).bindPopup('📍 You are here');
+  me=L.marker(a).addTo(map)
+   .bindPopup('📍 You are here');
  else
   me.setLatLng(a);
 
@@ -187,7 +201,9 @@ function updateGPS(p){
  last=a;
 
  let km=(trip/1000).toFixed(2);
- let tm=Math.round((Date.now()-begin)/60000);
+ let tm=Math.round(
+  (Date.now()-begin)/60000
+ );
 
  $('info').textContent=
  `GPS ${a[0].toFixed(5)}, ${a[1].toFixed(5)}
@@ -195,7 +211,8 @@ function updateGPS(p){
  · Speed ${(speed*3.6).toFixed(1)} km/h
  · Trip ${km} km · ${tm} min`;
 
- if(followOn)map.setView(a,16);
+ if(followOn)
+  map.setView(a,16);
 
  if(dest&&Date.now()-lastRoute>20000)
   navigate(true);
@@ -209,7 +226,8 @@ async function searchPlace(){
 
  if(!q)return;
 
- $('info').textContent='Searching destination...';
+ $('info').textContent=
+  'Searching destination...';
 
  try{
 
@@ -222,7 +240,8 @@ async function searchPlace(){
   }).then(r=>r.json());
 
   if(!d.length){
-   $('info').textContent='Destination not found';
+   $('info').textContent=
+    'Destination not found';
    return;
   }
 
@@ -230,7 +249,8 @@ async function searchPlace(){
 
   localStorage.lastSearch=q;
 
-  if(window.dm)map.removeLayer(window.dm);
+  if(window.dm)
+   map.removeLayer(window.dm);
 
   window.dm=L.marker(dest)
    .addTo(map)
@@ -239,31 +259,38 @@ async function searchPlace(){
 
   map.setView(dest,15);
 
-  $('nav').textContent='🎯 '+d[0].display_name;
+  $('nav').textContent=
+   '🎯 '+d[0].display_name;
 
  }catch(e){
-  $('info').textContent='Search failed. Check internet.';
+
+  $('info').textContent=
+   'Search failed. Check internet.';
  }
 }
 
 async function navigate(auto=false){
 
  if(!dest){
-  $('nav').textContent='Search a destination first.';
+  $('nav').textContent=
+   'Search a destination first.';
   return;
  }
 
  if(!me){
   gps();
-  $('nav').textContent='Getting GPS location...';
+  $('nav').textContent=
+   'Getting GPS location...';
   return;
  }
 
- if(auto&&Date.now()-lastRoute<20000)return;
+ if(auto&&Date.now()-lastRoute<20000)
+  return;
 
  lastRoute=Date.now();
 
- $('nav').textContent='🛣 Calculating route...';
+ $('nav').textContent=
+  '🛣 Calculating route...';
 
  let a=me.getLatLng();
 
@@ -277,7 +304,8 @@ async function navigate(auto=false){
   let d=await fetch(u).then(r=>r.json());
 
   if(d.code!=='Ok'){
-   $('nav').textContent='No route available.';
+   $('nav').textContent=
+    'No route available.';
    return;
   }
 
@@ -300,8 +328,11 @@ async function navigate(auto=false){
   steps=d.routes[0].legs[0].steps;
   step=0;
 
-  let km=(d.routes[0].distance/1000).toFixed(2);
-  let min=Math.round(d.routes[0].duration/60);
+  let km=
+   (d.routes[0].distance/1000).toFixed(2);
+
+  let min=
+   Math.round(d.routes[0].duration/60);
 
   $('nav').textContent=
    `🚗 ${km} km · ⏱ ${min} min · `+
@@ -315,7 +346,9 @@ async function navigate(auto=false){
   announce();
 
  }catch(e){
-  $('nav').textContent='Routing unavailable.';
+
+  $('nav').textContent=
+   'Routing unavailable.';
  }
 }
 
@@ -332,10 +365,10 @@ function announce(){
  `${x.maneuver.modifier||''} · ${name}`;
 
  if(step<2)
- voice(
-  `${x.maneuver.type} `+
-  `${x.maneuver.modifier||''} ${name}`
- );
+  voice(
+   `${x.maneuver.type} `+
+   `${x.maneuver.modifier||''} ${name}`
+  );
 }
 
 function checkStep(a){
@@ -344,16 +377,22 @@ function checkStep(a){
 
  let x=steps[step].maneuver.location;
 
- if(dist(a,[x[1],x[0]])<35){
+ if(
+  dist(a,[x[1],x[0]])<35
+ ){
 
   step++;
 
   if(step<steps.length)
    announce();
   else{
+
    $('nav').textContent=
     '🏁 You have reached your destination.';
-   voice('You have reached your destination.');
+
+   voice(
+    'You have reached your destination.'
+   );
   }
  }
 }
@@ -403,6 +442,7 @@ async function poi(type){
    `📍 ${markers.length} nearby ${type} places`;
 
  }catch(e){
+
   $('nav').textContent=
    'Nearby search unavailable.';
  }
@@ -442,7 +482,9 @@ function share(){
    url:u
   });
  else{
+
   navigator.clipboard?.writeText(u);
+
   $('nav').textContent=
    '📋 Location link copied.';
  }
@@ -465,7 +507,8 @@ function follow(){
   '👣 Follow mode ON':
   '👣 Follow mode OFF';
 
- if(followOn)centerMe();
+ if(followOn)
+  centerMe();
 }
 
 function full(){
@@ -475,6 +518,125 @@ function full(){
  else
   document.documentElement.requestFullscreen();
 }
+
+/* DISTANCE MEASUREMENT */
+
+function measureMode(){
+
+ measureOn=!measureOn;
+
+ clearMeasure();
+
+ $('nav').textContent=
+  measureOn?
+  '📏 Measurement ON — tap Point A':
+  '📏 Measurement OFF';
+}
+
+map.on('click',e=>{
+
+ if(!measureOn)return;
+
+ if(!measureA){
+
+  measureA=e.latlng;
+
+  let m=L.marker(measureA)
+   .addTo(map)
+   .bindPopup('📍 Point A')
+   .openPopup();
+
+  measureMarkers.push(m);
+
+  $('nav').textContent=
+   '📍 Point A selected — tap Point B';
+
+  return;
+ }
+
+ if(!measureB){
+
+  measureB=e.latlng;
+
+  let m=L.marker(measureB)
+   .addTo(map)
+   .bindPopup('📍 Point B')
+   .openPopup();
+
+  measureMarkers.push(m);
+
+  measureLine=L.polyline(
+   [measureA,measureB],
+   {
+    color:'#ff9800',
+    weight:7,
+    dashArray:'10 8'
+   }
+  ).addTo(map);
+
+  let meters=dist(
+   [measureA.lat,measureA.lng],
+   [measureB.lat,measureB.lng]
+  );
+
+  let bearing=getBearing(
+   measureA,
+   measureB
+  );
+
+  $('nav').innerHTML=
+   `📏 Distance: <b>${formatDistance(meters)}</b>
+   <br>🧭 Bearing: <b>${bearing}°</b>`;
+
+  measureOn=false;
+ }
+});
+
+function formatDistance(m){
+
+ return m<1000?
+  `${m.toFixed(0)} m`:
+  `${(m/1000).toFixed(2)} km`;
+}
+
+function getBearing(a,b){
+
+ let p=Math.PI/180;
+
+ let y=
+  Math.sin((b.lng-a.lng)*p)*
+  Math.cos(b.lat*p);
+
+ let x=
+  Math.cos(a.lat*p)*
+  Math.sin(b.lat*p)-
+  Math.sin(a.lat*p)*
+  Math.cos(b.lat*p)*
+  Math.cos((b.lng-a.lng)*p);
+
+ return Math.round(
+  (Math.atan2(y,x)*180/Math.PI+360)%360
+ );
+}
+
+function clearMeasure(){
+
+ if(measureLine){
+  map.removeLayer(measureLine);
+  measureLine=null;
+ }
+
+ measureMarkers.forEach(
+  m=>map.removeLayer(m)
+ );
+
+ measureMarkers=[];
+ measureA=null;
+ measureB=null;
+ measureOn=false;
+}
+
+/* CLEAR NAVIGATION */
 
 function clearNav(){
 
@@ -494,24 +656,35 @@ function clearNav(){
   'Navigation cleared.';
 }
 
+/* THEMES */
+
 function theme(t){
 
- $('app').className='app '+t;
+ $('app').className=
+  'app '+t;
+
  localStorage.theme=t;
 }
+
+/* MAP LAYER */
 
 function mapLayer(){
 
  mapMode=!mapMode;
 
  if(mapMode){
+
   map.removeLayer(osm);
   topo.addTo(map);
+
  }else{
+
   map.removeLayer(topo);
   osm.addTo(map);
  }
 }
+
+/* DISTANCE CALCULATION */
 
 function dist(a,b){
 
@@ -527,22 +700,31 @@ function dist(a,b){
   Math.cos(b[0]*p)*
   Math.sin(y/2)**2;
 
- return 2*R*Math.asin(Math.sqrt(q));
+ return 2*R*Math.asin(
+  Math.sqrt(q)
+ );
 }
 
 $('search').addEventListener(
  'keydown',
  e=>{
-  if(e.key==='Enter')searchPlace();
- });
+  if(e.key==='Enter')
+   searchPlace();
+ }
+);
 
-/* Dark Mode is the default */
-theme(localStorage.theme||'dark');
+/* DARK MODE DEFAULT */
+
+theme(
+ localStorage.theme||'dark'
+);
 
 if(localStorage.lastSearch)
- $('search').value=localStorage.lastSearch;
+ $('search').value=
+  localStorage.lastSearch;
 
 gps();
 </script>
+
 </body>
 </html>
