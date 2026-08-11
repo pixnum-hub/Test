@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#111">
-<meta name="description" content="NavMap Pro - Free Navigation Map">
+<meta name="theme-color" content="#171717">
 <title>NavMap Pro</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
@@ -12,99 +11,182 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;font-family:Arial,sans-serif}
 body{display:flex;justify-content:center;align-items:center;background:#e9edf2}
-.app{width:100%;max-width:800px;height:100%;display:flex;flex-direction:column;
-background:#171717;color:#eee;overflow:hidden}
-header{text-align:center;padding:8px;font-size:22px;font-weight:800}
-.bar,.tools,.themes,.pois{display:flex;gap:8px;justify-content:center;
-flex-wrap:wrap;padding:6px 8px}
-input{flex:1;min-width:180px;min-height:56px;padding:13px 15px;
-border:2px solid #666;border-radius:15px;font-size:18px;
-background:#222;color:#fff}
-button{min-width:58px;min-height:56px;padding:13px 16px;border:0;
-border-radius:15px;background:#1677ff;color:#fff;font-size:15px;
-font-weight:800;line-height:1;cursor:pointer;touch-action:manipulation}
+
+.app{
+ width:100%;max-width:800px;height:100%;
+ display:flex;flex-direction:column;
+ background:#171717;color:#eee;overflow:hidden
+}
+
+header{
+ text-align:center;padding:3px;font-size:16px;font-weight:800
+}
+
+.bar,.tools,.themes,.pois{
+ display:flex;gap:3px;justify-content:center;
+ flex-wrap:wrap;padding:2px 3px
+}
+
+input{
+ flex:1;min-width:150px;min-height:44px;
+ padding:9px 11px;border:1px solid #666;
+ border-radius:11px;font-size:15px;
+ background:#222;color:#fff
+}
+
+button{
+ min-width:42px;min-height:42px;
+ padding:7px 8px;border:0;border-radius:9px;
+ background:#1677ff;color:#fff;font-size:11px;
+ font-weight:700;line-height:1;
+ cursor:pointer;touch-action:manipulation;
+ -webkit-tap-highlight-color:transparent
+}
+
 button:active{transform:scale(.95)}
-#map{flex:1;min-height:250px}
-.info{text-align:center;padding:6px 9px;font-size:14px;line-height:1.4}
-.nav{font-size:16px;font-weight:800}
-footer{text-align:center;padding:6px;font-size:12px}
+
+#map{flex:1;min-height:0}
+
+.info{
+ text-align:center;padding:2px 5px;
+ font-size:10px;line-height:1.35
+}
+
+.nav{font-size:11px;font-weight:800}
+footer{text-align:center;padding:2px;font-size:8px}
+
+/* THEMES */
+
 .light{background:#fff;color:#111}
 .light input{background:#fff;color:#111;border-color:#aaa}
+
 .dark{background:#171717;color:#eee}
 .dark input{background:#222;color:#fff;border-color:#666}
 .dark button{background:#444}
+
 .oled{background:#000;color:#fff}
 .oled input{background:#000;color:#fff;border-color:#777}
 .oled button{background:#222;border:1px solid #aaa}
+
 .hc{background:#000;color:#ff0}
-.hc input{background:#000;color:#fff;border:3px solid #ff0}
-.hc button{background:#ff0;color:#000;border:2px solid #fff}
-.leaflet-control-zoom a{width:48px!important;height:48px!important;
-line-height:48px!important;font-size:24px!important}
+.hc input{background:#000;color:#fff;border:2px solid #ff0}
+.hc button{
+ background:#ff0;color:#000;border:2px solid #fff
+}
+
+/* LARGE MAP ZOOM CONTROLS */
+
+.leaflet-control-zoom a{
+ width:42px!important;
+ height:42px!important;
+ line-height:42px!important;
+ font-size:20px!important
+}
+
+/* DRAGGABLE MEASUREMENT MARKERS */
+
+.measure-marker{
+ cursor:grab
+}
+
 @media(max-width:600px){
- header{font-size:20px}
- button{min-width:60px;min-height:60px;padding:14px 17px;
- font-size:15px;border-radius:16px}
- input{min-height:60px;font-size:18px}
- .bar,.tools,.themes,.pois{gap:8px;padding:6px}
- #map{min-height:300px}
- .info{font-size:14px}
- .nav{font-size:16px}
+
+ header{
+  padding:3px;
+  font-size:16px
+ }
+
+ .bar,.tools,.themes,.pois{
+  gap:3px;
+  padding:2px 3px
+ }
+
+ button{
+  min-width:42px;
+  min-height:42px;
+  padding:7px 8px;
+  font-size:11px;
+  border-radius:9px
+ }
+
+ input{
+  min-height:44px;
+  font-size:15px
+ }
+
+ .info{
+  padding:2px 5px;
+  font-size:10px
+ }
+
+ .nav{font-size:11px}
+
+ footer{
+  padding:2px;
+  font-size:8px
+ }
 }
 </style>
 </head>
 
 <body>
+
 <div class="app dark" id="app">
 
 <header>🧭 NavMap Pro</header>
 
+<!-- SEARCH -->
 <div class="bar">
-<input id="search" placeholder="Search destination...">
-<button onclick="searchPlace()">🔎 Search</button>
-<button onclick="gps()">📍 GPS</button>
+ <input id="search" placeholder="Search destination...">
+ <button onclick="searchPlace()">🔎</button>
+ <button onclick="gps()">📍</button>
 </div>
 
+<!-- NAVIGATION TOOLS -->
 <div class="tools">
-<button onclick="navigate()">🚗 GO</button>
-<button onclick="centerMe()">◎ Center</button>
-<button onclick="follow()">👣 Follow</button>
-<button onclick="share()">📤 Share</button>
-<button onclick="full()">⛶ Full</button>
-<button onclick="measureMode()">📏 Measure</button>
-<button onclick="clearMeasure()">🧹 Measure Clear</button>
-<button onclick="clearNav()">✕ Clear</button>
+ <button onclick="navigate()">🚗</button>
+ <button onclick="centerMe()">◎</button>
+ <button onclick="follow()">👣</button>
+ <button onclick="share()">📤</button>
+ <button onclick="full()">⛶</button>
+ <button onclick="measureMode()">📏</button>
+ <button onclick="clearMeasure()">🧹</button>
+ <button onclick="clearNav()">✕</button>
 </div>
 
+<!-- NEARBY PLACES -->
 <div class="pois">
-<button onclick="poi('hospital')">🏥 Hospital</button>
-<button onclick="poi('fuel')">⛽ Fuel</button>
-<button onclick="poi('restaurant')">🍴 Food</button>
-<button onclick="poi('atm')">🏧 ATM</button>
-<button onclick="poi('police')">🚓 Police</button>
-<button onclick="savePlace()">⭐ Save</button>
+ <button onclick="poi('hospital')">🏥</button>
+ <button onclick="poi('fuel')">⛽</button>
+ <button onclick="poi('restaurant')">🍴</button>
+ <button onclick="poi('atm')">🏧</button>
+ <button onclick="poi('police')">🚓</button>
+ <button onclick="savePlace()">⭐</button>
 </div>
 
+<!-- DISPLAY -->
 <div class="themes">
-<button onclick="theme('light')">☀ Light</button>
-<button onclick="theme('dark')">🌙 Dark</button>
-<button onclick="theme('oled')">⬛ OLED</button>
-<button onclick="theme('hc')">⚡ HC</button>
-<button onclick="mapLayer()">🗺 Map</button>
+ <button onclick="theme('light')">☀</button>
+ <button onclick="theme('dark')">🌙</button>
+ <button onclick="theme('oled')">⬛</button>
+ <button onclick="theme('hc')">⚡</button>
+ <button onclick="mapLayer()">🗺</button>
 </div>
 
+<!-- MAP -->
 <div id="map"></div>
 
+<!-- NAVIGATION STATUS -->
 <div class="info nav" id="nav">
-Search a destination to navigate.
+ Search a destination to navigate.
 </div>
 
 <div class="info" id="info">
-GPS waiting · Speed 0 km/h · Trip 0 km
+ GPS waiting · Speed 0 km/h · Trip 0 km
 </div>
 
 <footer>
-© <span id="year"></span> Manik Roy. All Rights Reserved.
+ © <span id="year"></span> Manik Roy. All Rights Reserved.
 </footer>
 
 </div>
@@ -112,25 +194,50 @@ GPS waiting · Speed 0 km/h · Trip 0 km
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const map=L.map('map').setView([22.5726,88.3639],12);
+
+/* MAP */
+
+const map=L.map('map').setView(
+ [22.5726,88.3639],12
+);
 
 const osm=L.tileLayer(
-'https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
-maxZoom:19,
-attribution:'© OpenStreetMap contributors'
-}).addTo(map);
+ 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19,
+  attribution:'© OpenStreetMap contributors'
+ }
+).addTo(map);
 
 const topo=L.tileLayer(
-'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{
-maxZoom:17,
-attribution:'© OpenStreetMap contributors, OpenTopoMap'
-});
+ 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{
+  maxZoom:17,
+  attribution:'© OpenStreetMap contributors, OpenTopoMap'
+ }
+);
 
 const $=id=>document.getElementById(id);
 
-let me,dest,acc,route=[],steps=[],step=0,watch;
-let followOn=false,start,last,trip=0,begin=0,lastRoute=0;
-let markers=[],mapMode=0;
+/* STATE */
+
+let me=null;
+let dest=null;
+let acc=null;
+let route=[];
+let steps=[];
+let step=0;
+let watch=null;
+
+let followOn=false;
+let start=null;
+let last=null;
+let trip=0;
+let begin=0;
+let lastRoute=0;
+
+let markers=[];
+let mapMode=0;
+
+/* MEASUREMENT STATE */
 
 let measureOn=false;
 let measureA=null;
@@ -138,69 +245,110 @@ let measureB=null;
 let measureLine=null;
 let measureMarkers=[];
 
+/* YEAR */
+
 $('year').textContent=new Date().getFullYear();
 
+/* VOICE */
+
 function voice(t){
+
  if('speechSynthesis' in window){
+
   speechSynthesis.cancel();
+
   speechSynthesis.speak(
    new SpeechSynthesisUtterance(t)
   );
  }
 }
 
+/* GPS */
+
 function gps(){
 
  if(!navigator.geolocation){
-  $('info').textContent='GPS unavailable';
+
+  $('info').textContent=
+   'GPS unavailable';
+
   return;
  }
 
  navigator.geolocation.getCurrentPosition(
   updateGPS,
-  e=>$('info').textContent='GPS: '+e.message,
-  {enableHighAccuracy:true,timeout:12000,maximumAge:3000}
+  e=>$('info').textContent=
+   'GPS: '+e.message,
+  {
+   enableHighAccuracy:true,
+   timeout:12000,
+   maximumAge:3000
+  }
  );
 
- if(!watch)
- watch=navigator.geolocation.watchPosition(
-  updateGPS,
-  ()=>{},
-  {enableHighAccuracy:true,maximumAge:2000,timeout:10000}
- );
+ if(!watch){
+
+  watch=navigator.geolocation.watchPosition(
+   updateGPS,
+   ()=>{},
+   {
+    enableHighAccuracy:true,
+    maximumAge:2000,
+    timeout:10000
+   }
+  );
+ }
 }
+
+/* GPS UPDATE */
 
 function updateGPS(p){
 
- let a=[p.coords.latitude,p.coords.longitude];
+ let a=[
+  p.coords.latitude,
+  p.coords.longitude
+ ];
+
  let speed=p.coords.speed||0;
 
- if(!me)
-  me=L.marker(a).addTo(map)
-   .bindPopup('📍 You are here');
- else
-  me.setLatLng(a);
+ if(!me){
 
- if(!acc)
+  me=L.marker(a)
+   .addTo(map)
+   .bindPopup('📍 You are here');
+
+ }else{
+
+  me.setLatLng(a);
+ }
+
+ if(!acc){
+
   acc=L.circle(a,{
    radius:p.coords.accuracy,
    color:'#1677ff',
    fillOpacity:.08
   }).addTo(map);
- else{
+
+ }else{
+
   acc.setLatLng(a);
   acc.setRadius(p.coords.accuracy);
  }
 
  if(!start){
+
   start=a;
   begin=Date.now();
  }
 
- if(last)trip+=dist(last,a);
+ if(last)
+  trip+=dist(last,a);
+
  last=a;
 
  let km=(trip/1000).toFixed(2);
+
  let tm=Math.round(
   (Date.now()-begin)/60000
  );
@@ -220,6 +368,8 @@ function updateGPS(p){
  checkStep(a);
 }
 
+/* SEARCH */
+
 async function searchPlace(){
 
  let q=$('search').value.trim();
@@ -227,25 +377,30 @@ async function searchPlace(){
  if(!q)return;
 
  $('info').textContent=
-  'Searching destination...';
+  'Searching...';
 
  try{
 
   let u=
-  'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+
-  encodeURIComponent(q);
+   'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+
+   encodeURIComponent(q);
 
   let d=await fetch(u,{
    headers:{Accept:'application/json'}
   }).then(r=>r.json());
 
   if(!d.length){
+
    $('info').textContent=
     'Destination not found';
+
    return;
   }
 
-  dest=[+d[0].lat,+d[0].lon];
+  dest=[
+   +d[0].lat,
+   +d[0].lon
+  ];
 
   localStorage.lastSearch=q;
 
@@ -265,22 +420,29 @@ async function searchPlace(){
  }catch(e){
 
   $('info').textContent=
-   'Search failed. Check internet.';
+   'Search failed';
  }
 }
+
+/* ROUTING */
 
 async function navigate(auto=false){
 
  if(!dest){
+
   $('nav').textContent=
-   'Search a destination first.';
+   'Search destination first';
+
   return;
  }
 
  if(!me){
+
   gps();
+
   $('nav').textContent=
-   'Getting GPS location...';
+   'Getting GPS...';
+
   return;
  }
 
@@ -297,42 +459,55 @@ async function navigate(auto=false){
  try{
 
   let u=
-  `https://router.project-osrm.org/route/v1/driving/`+
-  `${a.lng},${a.lat};${dest[1]},${dest[0]}`+
-  `?overview=full&geometries=geojson&steps=true&alternatives=true`;
+   `https://router.project-osrm.org/route/v1/driving/`+
+   `${a.lng},${a.lat};${dest[1]},${dest[0]}`+
+   `?overview=full&geometries=geojson&steps=true&alternatives=true`;
 
-  let d=await fetch(u).then(r=>r.json());
+  let d=await fetch(u)
+   .then(r=>r.json());
 
   if(d.code!=='Ok'){
+
    $('nav').textContent=
-    'No route available.';
+    'No route available';
+
    return;
   }
 
-  route.forEach(x=>map.removeLayer(x));
+  route.forEach(
+   x=>map.removeLayer(x)
+  );
+
   route=[];
 
   d.routes.forEach((r,i)=>{
 
-   let line=L.geoJSON(r.geometry,{
-    style:{
-     color:i?'#888':'#1677ff',
-     weight:i?5:8,
-     opacity:i?.55:.9
+   let line=L.geoJSON(
+    r.geometry,{
+     style:{
+      color:i?'#888':'#1677ff',
+      weight:i?5:8,
+      opacity:i?.55:.9
+     }
     }
-   }).addTo(map);
+   ).addTo(map);
 
    route.push(line);
   });
 
-  steps=d.routes[0].legs[0].steps;
+  steps=
+   d.routes[0].legs[0].steps;
+
   step=0;
 
   let km=
-   (d.routes[0].distance/1000).toFixed(2);
+   (d.routes[0].distance/1000)
+   .toFixed(2);
 
   let min=
-   Math.round(d.routes[0].duration/60);
+   Math.round(
+    d.routes[0].duration/60
+   );
 
   $('nav').textContent=
    `🚗 ${km} km · ⏱ ${min} min · `+
@@ -348,21 +523,26 @@ async function navigate(auto=false){
  }catch(e){
 
   $('nav').textContent=
-   'Routing unavailable.';
+   'Routing unavailable';
  }
 }
 
+/* TURN GUIDANCE */
+
 function announce(){
 
- if(!steps[step])return;
+ if(!steps[step])
+  return;
 
  let x=steps[step];
- let name=x.name||'the road';
+
+ let name=
+  x.name||'the road';
 
  $('nav').textContent=
- `🧭 ${step+1}/${steps.length}: `+
- `${x.maneuver.type} `+
- `${x.maneuver.modifier||''} · ${name}`;
+  `🧭 ${step+1}/${steps.length}: `+
+  `${x.maneuver.type} `+
+  `${x.maneuver.modifier||''} · ${name}`;
 
  if(step<2)
   voice(
@@ -371,11 +551,15 @@ function announce(){
   );
 }
 
+/* STEP CHECK */
+
 function checkStep(a){
 
- if(!steps[step])return;
+ if(!steps[step])
+  return;
 
- let x=steps[step].maneuver.location;
+ let x=
+  steps[step].maneuver.location;
 
  if(
   dist(a,[x[1],x[0]])<35
@@ -383,40 +567,50 @@ function checkStep(a){
 
   step++;
 
-  if(step<steps.length)
+  if(step<steps.length){
+
    announce();
-  else{
+
+  }else{
 
    $('nav').textContent=
-    '🏁 You have reached your destination.';
+    '🏁 Destination reached';
 
    voice(
-    'You have reached your destination.'
+    'You have reached your destination'
    );
   }
  }
 }
 
+/* NEARBY POI */
+
 async function poi(type){
 
  if(!me){
+
   gps();
   return;
  }
 
  let a=me.getLatLng();
 
- markers.forEach(x=>map.removeLayer(x));
+ markers.forEach(
+  x=>map.removeLayer(x)
+ );
+
  markers=[];
 
  $('nav').textContent=
-  '🔎 Finding nearby '+type+'...';
+  '🔎 Finding '+type+'...';
 
  let q=
- `[out:json];`+
- `(node[amenity=${type}](around:3000,${a.lat},${a.lng});`+
- `way[amenity=${type}](around:3000,${a.lat},${a.lng}););`+
- `out center 12;`;
+  `[out:json];`+
+  `(node[amenity=${type}]`+
+  `(around:3000,${a.lat},${a.lng});`+
+  `way[amenity=${type}]`+
+  `(around:3000,${a.lat},${a.lng}););`+
+  `out center 12;`;
 
  try{
 
@@ -425,34 +619,41 @@ async function poi(type){
    encodeURIComponent(q)
   ).then(r=>r.json());
 
-  d.elements.slice(0,12).forEach(x=>{
+  d.elements.slice(0,12)
+   .forEach(x=>{
 
-   let p=x.lat?
-    [x.lat,x.lon]:
-    [x.center.lat,x.center.lon];
+    let p=x.lat?
+     [x.lat,x.lon]:
+     [x.center.lat,x.center.lon];
 
-   let m=L.marker(p)
-    .addTo(map)
-    .bindPopup(x.tags?.name||type);
+    let m=L.marker(p)
+     .addTo(map)
+     .bindPopup(
+      x.tags?.name||type
+     );
 
-   markers.push(m);
-  });
+    markers.push(m);
+   });
 
   $('nav').textContent=
-   `📍 ${markers.length} nearby ${type} places`;
+   `📍 ${markers.length} nearby ${type}`;
 
  }catch(e){
 
   $('nav').textContent=
-   'Nearby search unavailable.';
+   'Nearby search unavailable';
  }
 }
+
+/* SAVE */
 
 function savePlace(){
 
  if(!dest){
+
   $('nav').textContent=
-   'Select a destination first.';
+   'Select destination first';
+
   return;
  }
 
@@ -460,12 +661,15 @@ function savePlace(){
   JSON.stringify(dest);
 
  $('nav').textContent=
-  '⭐ Destination saved.';
+  '⭐ Destination saved';
 }
+
+/* SHARE */
 
 function share(){
 
  if(!me){
+
   gps();
   return;
  }
@@ -473,22 +677,25 @@ function share(){
  let p=me.getLatLng();
 
  let u=
- `https://www.google.com/maps?q=${p.lat},${p.lng}`;
+  `https://www.google.com/maps?q=${p.lat},${p.lng}`;
 
- if(navigator.share)
+ if(navigator.share){
+
   navigator.share({
    title:'My NavMap location',
-   text:'My current location',
    url:u
   });
- else{
+
+ }else{
 
   navigator.clipboard?.writeText(u);
 
   $('nav').textContent=
-   '📋 Location link copied.';
+   '📋 Location copied';
  }
 }
+
+/* CENTER */
 
 function centerMe(){
 
@@ -498,55 +705,77 @@ function centerMe(){
   gps();
 }
 
+/* FOLLOW */
+
 function follow(){
 
  followOn=!followOn;
 
  $('nav').textContent=
   followOn?
-  '👣 Follow mode ON':
-  '👣 Follow mode OFF';
+  '👣 Follow ON':
+  '👣 Follow OFF';
 
  if(followOn)
   centerMe();
 }
 
+/* FULLSCREEN */
+
 function full(){
 
  if(document.fullscreenElement)
   document.exitFullscreen();
+
  else
-  document.documentElement.requestFullscreen();
+  document.documentElement
+   .requestFullscreen();
 }
 
-/* DISTANCE MEASUREMENT */
+/* =================================
+   DRAGGABLE A → B MEASUREMENT
+   ================================= */
 
 function measureMode(){
 
- measureOn=!measureOn;
-
  clearMeasure();
 
+ measureOn=true;
+
  $('nav').textContent=
-  measureOn?
-  '📏 Measurement ON — tap Point A':
-  '📏 Measurement OFF';
+  '📏 Tap Point A';
 }
+
+/* MAP CLICK */
 
 map.on('click',e=>{
 
- if(!measureOn)return;
+ if(!measureOn)
+  return;
+
+ /* POINT A */
 
  if(!measureA){
 
   measureA=e.latlng;
 
-  let m=L.marker(measureA)
-   .addTo(map)
-   .bindPopup('📍 Point A')
-   .openPopup();
+  let m=L.marker(
+   measureA,{
+    draggable:true
+   }
+  )
+  .addTo(map)
+  .bindPopup('📍 Point A')
+  .openPopup();
 
   measureMarkers.push(m);
+
+  m.on('drag',()=>{
+
+   measureA=m.getLatLng();
+
+   updateMeasure();
+  });
 
   $('nav').textContent=
    '📍 Point A selected — tap Point B';
@@ -554,43 +783,82 @@ map.on('click',e=>{
   return;
  }
 
+ /* POINT B */
+
  if(!measureB){
 
   measureB=e.latlng;
 
-  let m=L.marker(measureB)
-   .addTo(map)
-   .bindPopup('📍 Point B')
-   .openPopup();
+  let m=L.marker(
+   measureB,{
+    draggable:true
+   }
+  )
+  .addTo(map)
+  .bindPopup('📍 Point B')
+  .openPopup();
 
   measureMarkers.push(m);
 
+  m.on('drag',()=>{
+
+   measureB=m.getLatLng();
+
+   updateMeasure();
+  });
+
   measureLine=L.polyline(
-   [measureA,measureB],
-   {
+   [measureA,measureB],{
     color:'#ff9800',
-    weight:7,
+    weight:6,
     dashArray:'10 8'
    }
   ).addTo(map);
 
-  let meters=dist(
-   [measureA.lat,measureA.lng],
-   [measureB.lat,measureB.lng]
-  );
+  measureOn=false;
 
-  let bearing=getBearing(
+  updateMeasure();
+ }
+});
+
+/* UPDATE MEASUREMENT */
+
+function updateMeasure(){
+
+ if(!measureA||!measureB)
+  return;
+
+ if(measureLine){
+
+  measureLine.setLatLngs([
+   measureA,
+   measureB
+  ]);
+ }
+
+ let meters=dist(
+  [measureA.lat,measureA.lng],
+  [measureB.lat,measureB.lng]
+ );
+
+ let bearing=
+  getBearing(
    measureA,
    measureB
   );
 
-  $('nav').innerHTML=
-   `📏 Distance: <b>${formatDistance(meters)}</b>
-   <br>🧭 Bearing: <b>${bearing}°</b>`;
+ $('nav').innerHTML=
+  `📏 <b>${formatDistance(meters)}</b>
+   · 🧭 <b>${bearing}°</b>
+   <br>
+   A: ${measureA.lat.toFixed(5)},
+   ${measureA.lng.toFixed(5)}
+   <br>
+   B: ${measureB.lat.toFixed(5)},
+   ${measureB.lng.toFixed(5)}`;
+}
 
-  measureOn=false;
- }
-});
+/* FORMAT DISTANCE */
 
 function formatDistance(m){
 
@@ -599,12 +867,16 @@ function formatDistance(m){
   `${(m/1000).toFixed(2)} km`;
 }
 
+/* BEARING */
+
 function getBearing(a,b){
 
  let p=Math.PI/180;
 
  let y=
-  Math.sin((b.lng-a.lng)*p)*
+  Math.sin(
+   (b.lng-a.lng)*p
+  )*
   Math.cos(b.lat*p);
 
  let x=
@@ -612,16 +884,21 @@ function getBearing(a,b){
   Math.sin(b.lat*p)-
   Math.sin(a.lat*p)*
   Math.cos(b.lat*p)*
-  Math.cos((b.lng-a.lng)*p);
+  Math.cos(
+   (b.lng-a.lng)*p
+  );
 
  return Math.round(
   (Math.atan2(y,x)*180/Math.PI+360)%360
  );
 }
 
+/* CLEAR MEASUREMENT */
+
 function clearMeasure(){
 
  if(measureLine){
+
   map.removeLayer(measureLine);
   measureLine=null;
  }
@@ -631,6 +908,7 @@ function clearMeasure(){
  );
 
  measureMarkers=[];
+
  measureA=null;
  measureB=null;
  measureOn=false;
@@ -640,10 +918,16 @@ function clearMeasure(){
 
 function clearNav(){
 
- route.forEach(x=>map.removeLayer(x));
+ route.forEach(
+  x=>map.removeLayer(x)
+ );
+
  route=[];
 
- markers.forEach(x=>map.removeLayer(x));
+ markers.forEach(
+  x=>map.removeLayer(x)
+ );
+
  markers=[];
 
  steps=[];
@@ -653,7 +937,7 @@ function clearNav(){
   map.removeLayer(window.dm);
 
  $('nav').textContent=
-  'Navigation cleared.';
+  'Navigation cleared';
 }
 
 /* THEMES */
@@ -684,15 +968,19 @@ function mapLayer(){
  }
 }
 
-/* DISTANCE CALCULATION */
+/* HAVERSINE DISTANCE */
 
 function dist(a,b){
 
  let R=6371000;
+
  let p=Math.PI/180;
 
- let x=(b[0]-a[0])*p;
- let y=(b[1]-a[1])*p;
+ let x=
+  (b[0]-a[0])*p;
+
+ let y=
+  (b[1]-a[1])*p;
 
  let q=
   Math.sin(x/2)**2+
@@ -700,10 +988,11 @@ function dist(a,b){
   Math.cos(b[0]*p)*
   Math.sin(y/2)**2;
 
- return 2*R*Math.asin(
-  Math.sqrt(q)
- );
+ return 2*R*
+  Math.asin(Math.sqrt(q));
 }
+
+/* ENTER SEARCH */
 
 $('search').addEventListener(
  'keydown',
@@ -723,8 +1012,10 @@ if(localStorage.lastSearch)
  $('search').value=
   localStorage.lastSearch;
 
-gps();
-</script>
+/* START GPS */
 
+gps();
+
+</script>
 </body>
 </html>
