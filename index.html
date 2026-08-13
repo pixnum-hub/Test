@@ -24,7 +24,7 @@ header{border-bottom:1px solid var(--line);padding:14px 0;}
 .brand h1 span{color:var(--green);}
 .hdrbtns{display:flex;gap:8px;align-items:center;}
 .themebar{display:flex;gap:6px;background:var(--bg-alt);padding:4px;border-radius:999px;border:1px solid var(--line);}
-.themebar button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text);opacity:.55;}
+.themebar button{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text);opacity:.55;touch-action:manipulation;}
 .themebar button[aria-pressed="true"]{opacity:1;border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset;}
 .unitbtn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:6px 10px;font-size:.78rem;font-weight:600;cursor:pointer;}
 .tag{margin-top:6px;color:var(--muted);font-size:.82rem;}
@@ -37,6 +37,7 @@ main{flex:1;}
 .search{display:flex;gap:8px;margin:6px 0 8px;}
 .search input{flex:1;padding:12px 14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:1rem;}
 .search input:focus{outline:2px solid var(--green);outline-offset:1px;}
+button{touch-action:manipulation;}
 .btn{padding:12px 16px;border-radius:var(--radius);border:1px solid var(--green);background:var(--green);color:var(--green-ink);font-weight:600;cursor:pointer;white-space:nowrap;font-size:.92rem;}
 .locbtn{width:100%;margin-bottom:10px;background:transparent;color:var(--muted);border:1px dashed var(--line);border-radius:var(--radius);padding:10px;cursor:pointer;font-size:.85rem;}
 .locbtn:hover{color:var(--green);border-color:var(--green);}
@@ -407,7 +408,8 @@ const I18N = {
   irriLow:'Drought-tolerant — irrigate mainly at sowing, flowering and pod-filling stages.',
   waterReqLabel:(n,w)=>`${n} — ${w} water requirement`, perUnit:'per',
   popSpacingNote:(row,plant,name)=>`Based on recommended spacing ${row}cm × ${plant}cm for ${name}.`,
-  manureRateNote:(rate,w)=>`(~${rate} t/acre for ${w}-water crops)`, yourLocation:'Your location'
+  manureRateNote:(rate,w)=>`(~${rate} t/acre for ${w}-water crops)`, yourLocation:'Your location',
+  geoTimeout:"Couldn't get your location — this preview may be blocking location access. Try opening the page directly in your phone's browser."
  },
  bn: {
   tagline:'কৃষকদের জন্য আবহাওয়া ও ক্ষেত পরামর্শ', locBtn:'📍 আমার বর্তমান অবস্থান ব্যবহার করুন', cityPh:'গ্রাম, শহর বা এলাকা খুঁজুন…', search:'খুঁজুন',
@@ -478,7 +480,8 @@ const I18N = {
   irriLow:'খরা-সহনশীল — মূলত বপন, ফুল ফোটা ও ফল ধরার সময় সেচ দিন।',
   waterReqLabel:(n,w)=>`${n} — ${w} জলের চাহিদা`, perUnit:'প্রতি',
   popSpacingNote:(row,plant,name)=>`${name}-এর জন্য প্রস্তাবিত দূরত্ব ${row}সেমি × ${plant}সেমি অনুযায়ী।`,
-  manureRateNote:(rate,w)=>`(${w} জলের চাহিদার ফসলের জন্য প্রায় ${rate} টন/একর)`, yourLocation:'আপনার অবস্থান'
+  manureRateNote:(rate,w)=>`(${w} জলের চাহিদার ফসলের জন্য প্রায় ${rate} টন/একর)`, yourLocation:'আপনার অবস্থান',
+  geoTimeout:'আপনার অবস্থান পাওয়া যায়নি — এই প্রিভিউ অবস্থান অ্যাক্সেস আটকাতে পারে। সরাসরি আপনার ফোনের ব্রাউজারে পেজটি খুলে দেখুন।'
  },
  hi: {
   tagline:'किसानों के लिए मौसम व खेत सलाह', locBtn:'📍 मेरा वर्तमान स्थान उपयोग करें', cityPh:'गाँव, शहर या क्षेत्र खोजें…', search:'खोजें',
@@ -549,10 +552,28 @@ const I18N = {
   irriLow:'सूखा-सहनशील — मुख्यतः बुवाई, फूल आने व फली भरने के समय सिंचाई करें।',
   waterReqLabel:(n,w)=>`${n} — ${w} जल आवश्यकता`, perUnit:'प्रति',
   popSpacingNote:(row,plant,name)=>`${name} हेतु अनुशंसित दूरी ${row}सेमी × ${plant}सेमी के आधार पर।`,
-  manureRateNote:(rate,w)=>`(${w} जल आवश्यकता वाली फसलों हेतु लगभग ${rate} टन/एकड़)`, yourLocation:'आपका स्थान'
+  manureRateNote:(rate,w)=>`(${w} जल आवश्यकता वाली फसलों हेतु लगभग ${rate} टन/एकड़)`, yourLocation:'आपका स्थान',
+  geoTimeout:'आपका स्थान नहीं मिल सका — यह प्रीव्यू लोकेशन एक्सेस रोक सकता है। कृपया पेज सीधे अपने फ़ोन के ब्राउज़र में खोलें।'
  }
 };
 function t(key){ const v = (I18N[LANG] && I18N[LANG][key] !== undefined) ? I18N[LANG][key] : I18N.en[key]; return v; }
+
+/* ---------- defensive geolocation wrapper ---------- */
+/* Handles: API missing, permission denied, silent hangs (blocked by sandboxed preview
+   permissions policy), and browsers that throw synchronously instead of calling the error callback. */
+function safeGeolocate(onSuccess, onFail){
+  if(!navigator.geolocation){ onFail('unsupported'); return; }
+  let settled = false;
+  const timer = setTimeout(()=>{ if(!settled){ settled = true; onFail('timeout'); } }, 10000);
+  try{
+    navigator.geolocation.getCurrentPosition(
+      pos => { if(settled) return; settled = true; clearTimeout(timer); onSuccess(pos); },
+      err => { if(settled) return; settled = true; clearTimeout(timer); onFail('denied'); }
+    );
+  }catch(e){
+    if(!settled){ settled = true; clearTimeout(timer); onFail('timeout'); }
+  }
+}
 function waterLabel(w){ return w==='High' ? t('waterHigh') : w==='Medium' ? t('waterMedium') : t('waterLow'); }
 
 const CROP_NAMES = {
@@ -918,11 +939,10 @@ function renderMarks(){
     : t('markListDefault');
 }
 document.getElementById('markBtn').addEventListener('click', ()=>{
-  if(!navigator.geolocation){ document.getElementById('markList').textContent = t('locNotSupported'); return; }
   document.getElementById('markList').textContent = t('gettingLoc');
-  navigator.geolocation.getCurrentPosition(
+  safeGeolocate(
     pos => { fieldPoints.push({lat:pos.coords.latitude, lng:pos.coords.longitude}); renderMarks(); },
-    () => { document.getElementById('markList').textContent = t('locDenied'); }
+    reason => { document.getElementById('markList').textContent = reason==='unsupported' ? t('locNotSupported') : reason==='timeout' ? t('geoTimeout') : t('locDenied'); }
   );
 });
 document.getElementById('undoBtn').addEventListener('click', ()=>{ fieldPoints.pop(); renderMarks(); });
@@ -950,9 +970,8 @@ function haversineKm(lat1,lon1,lat2,lon2){
 }
 document.getElementById('marketBtn').addEventListener('click', ()=>{
   const out = document.getElementById('marketOut');
-  if(!navigator.geolocation){ out.innerHTML = `<div class="card"><div class="sym">${t('locNotSupported')}</div></div>`; return; }
   out.innerHTML = `<div class="card"><div class="sym">${t('gettingLoc')}</div></div>`;
-  navigator.geolocation.getCurrentPosition(async pos=>{
+  safeGeolocate(async pos=>{
     const {latitude:lat, longitude:lon} = pos.coords;
     out.innerHTML = `<div class="card"><div class="sym">${t('marketSearching')}</div></div>`;
     try{
@@ -970,7 +989,7 @@ document.getElementById('marketBtn').addEventListener('click', ()=>{
     }catch(err){
       out.innerHTML = `<div class="card"><div class="sym">${t('marketFailed')}</div></div>`;
     }
-  }, ()=>{ out.innerHTML = `<div class="card"><div class="sym">${t('locDenied')}</div></div>`; });
+  }, reason=>{ out.innerHTML = `<div class="card"><div class="sym">${reason==='unsupported' ? t('locNotSupported') : reason==='timeout' ? t('geoTimeout') : t('locDenied')}</div></div>`; });
 });
 
 /* ---------- shared calculator helpers ---------- */
@@ -1128,20 +1147,4 @@ function render(place, cur, daily, ts){
   document.getElementById('eGust').textContent = unit==='metric' ? Math.round(gust)+' km/h' : k2mph(gust)+' mph';
   document.getElementById('eCloud').textContent = (cur.cloud_cover ?? '--') + '%';
   document.getElementById('ePress').textContent = Math.round(cur.surface_pressure ?? 0) + ' hPa';
-  document.getElementById('eUv').textContent = (daily.uv_index_max?.[0] ?? '--');
-  document.getElementById('eDir').textContent = daily.wind_direction_10m_dominant ? degToCompass(daily.wind_direction_10m_dominant[0]) : '--';
-  document.getElementById('eSunrise').textContent = fmtTime(daily.sunrise?.[0]);
-  document.getElementById('eSunset').textContent = fmtTime(daily.sunset?.[0]);
-  document.getElementById('eRainSum').textContent = (daily.precipitation_sum?.[0] ?? 0) + ' mm';
-  document.getElementById('eEt0').textContent = (daily.et0_fao_evapotranspiration?.[0]?.toFixed(1) ?? '--') + ' mm';
-
-  const crop = currentCrop();
-  const today = {precipitation_probability_max: daily.precipitation_probability_max[0], temperature_2m_max: daily.temperature_2m_max[0],
-    temperature_2m_min: daily.temperature_2m_min[0], wind_speed_10m_max: daily.wind_speed_10m_max[0]};
-  document.getElementById('tips').innerHTML = buildTips(cur, today, crop).map(tp=>
-    `<div class="tip${tp.warn?' warn':''}"><span class="ic">${tp.ic}</span><span>${tp.t}</span></div>`).join('');
-
-  const names = t('days');
-  document.getElementById('forecast').innerHTML = daily.time.map((t2,i)=>{
-    const [ic] = wInfo(daily.weather_code[i]);
-    const dow = name
+  document.getElementById('eUv').textContent = (daily.uv_index_max?.
