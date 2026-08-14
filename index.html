@@ -410,12 +410,35 @@ function loadById(vidId){
  updateOverlay();
 }
 
-/* ---------- search (keyless — uses public Invidious mirrors, tries each in turn) ---------- */
-const INVIDIOUS_INSTANCES=[
- "https://invidious.nerdvpn.de","https://yt.artemislena.eu",
- "https://invidious.jing.rocks","https://iv.melmac.space",
- "https://invidious.reallyaweso.me"
+/* ---------- search (keyless — uses public Invidious mirrors, tries each in turn) ----------
+   Public Invidious instances have high churn (YouTube pushes back on them regularly), so a
+   hardcoded list goes stale within months. Instead we pull the live, community-maintained
+   directory at search time and cache it for the session, falling back to a small hardcoded
+   list only if that directory itself is unreachable. */
+const FALLBACK_INSTANCES=[
+ "https://inv.nadeko.net","https://invidious.nerdvpn.de",
+ "https://yt.chocolatemoo53.com","https://invidious.tiekoetter.com",
+ "https://inv.thepixora.com"
 ];
+let cachedInstances=null;
+async function getSearchInstances(){
+ if(cachedInstances)return cachedInstances;
+ try{
+  let ctrl=new AbortController();
+  let t=setTimeout(()=>ctrl.abort(),4000);
+  let res=await fetch("https://api.invidious.io/instances.json?sort_by=type",{signal:ctrl.signal});
+  clearTimeout(t);
+  if(!res.ok)throw new Error("directory unavailable");
+  let list=await res.json();
+  let urls=(Array.isArray(list)?list:[])
+   .filter(([,info])=>info && info.api===true && info.type==="https" && info.uri)
+   .map(([,info])=>info.uri.replace(/\/+$/,""));
+  cachedInstances=urls.length?urls:FALLBACK_INSTANCES;
+ }catch(e){
+  cachedInstances=FALLBACK_INSTANCES;
+ }
+ return cachedInstances;
+}
 let searchToken=0;
 async function searchYT(){
  let q=$("searchQ").value.trim();
@@ -424,7 +447,9 @@ async function searchYT(){
  let box=$("searchResults");
  box.classList.add("show");
  box.innerHTML='<div class="hint">Searching…</div>';
- for(let base of INVIDIOUS_INSTANCES){
+ let instances=await getSearchInstances();
+ if(myToken!==searchToken)return;
+ for(let base of instances){
   try{
    let ctrl=new AbortController();
    let t=setTimeout(()=>ctrl.abort(),4500);
