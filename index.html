@@ -75,19 +75,6 @@ color:var(--muted);margin:0 0 10px;text-align:left}
 color:var(--muted);text-align:left}
 .badge b{color:var(--txt)}
 
-.results{margin-top:8px;max-height:300px;overflow-y:auto;display:none;
-flex-direction:column;gap:6px;text-align:left}
-.results.show{display:flex}
-.result{display:flex;gap:8px;padding:6px;border-radius:14px;background:var(--panel);
-cursor:pointer;align-items:center}
-.result:active{transform:scale(.98)}
-.result img{width:84px;height:48px;object-fit:cover;border-radius:9px;flex:none;background:#000}
-.result .meta{overflow:hidden;flex:1}
-.result .t{font-size:.76rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.result .c{font-size:.68rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.result .d{font-family:'Space Mono',monospace;font-size:.66rem;color:var(--muted);flex:none;padding-left:6px}
-.results .hint{padding:8px;font-size:.72rem;color:var(--muted)}
-
 .player{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;
 border-radius:20px;background:#000;margin-top:10px}
 iframe{width:100%;height:100%;border:0}
@@ -201,12 +188,6 @@ transform:translateY(8px);transition:opacity .2s,transform .2s}
 <button id="loadBtn">Load</button>
 </div>
 <div class="badge">Loaded: <b id="loadedId">none</b></div>
-
-<div class="inputrow" style="margin-top:8px">
-<input id="searchQ" placeholder="Search YouTube — songs or videos" autocomplete="off">
-<button id="searchBtn">🔎</button>
-</div>
-<div class="results" id="searchResults"></div>
 
 <div class="player">
 <iframe id="yt" allow="autoplay;encrypted-media;picture-in-picture"
@@ -338,10 +319,6 @@ function wireControls(){
  $("tabWatch").addEventListener("click",()=>switchTab("watch"));
  $("tabRecord").addEventListener("click",()=>switchTab("record"));
  $("loadBtn").addEventListener("click",loadVideo);
- $("searchBtn").addEventListener("click",searchYT);
- $("searchQ").addEventListener("keydown",e=>{
-  if(e.key==="Enter"){e.preventDefault();searchYT()}
- });
  $("playBtn").addEventListener("click",()=>cmd("playVideo"));
  $("pauseBtn").addEventListener("click",()=>cmd("pauseVideo"));
  $("stopBtn").addEventListener("click",()=>cmd("stopVideo"));
@@ -410,93 +387,6 @@ function loadById(vidId){
  updateOverlay();
 }
 
-/* ---------- search (keyless — uses public Invidious mirrors, tries each in turn) ----------
-   Public Invidious instances have high churn (YouTube pushes back on them regularly), so a
-   hardcoded list goes stale within months. Instead we pull the live, community-maintained
-   directory at search time and cache it for the session, falling back to a small hardcoded
-   list only if that directory itself is unreachable. */
-const FALLBACK_INSTANCES=[
- "https://inv.nadeko.net","https://invidious.nerdvpn.de",
- "https://yt.chocolatemoo53.com","https://invidious.tiekoetter.com",
- "https://inv.thepixora.com"
-];
-let cachedInstances=null;
-async function getSearchInstances(){
- if(cachedInstances)return cachedInstances;
- try{
-  let ctrl=new AbortController();
-  let t=setTimeout(()=>ctrl.abort(),4000);
-  let res=await fetch("https://api.invidious.io/instances.json?sort_by=type",{signal:ctrl.signal});
-  clearTimeout(t);
-  if(!res.ok)throw new Error("directory unavailable");
-  let list=await res.json();
-  let urls=(Array.isArray(list)?list:[])
-   .filter(([,info])=>info && info.api===true && info.type==="https" && info.uri)
-   .map(([,info])=>info.uri.replace(/\/+$/,""));
-  cachedInstances=urls.length?urls:FALLBACK_INSTANCES;
- }catch(e){
-  cachedInstances=FALLBACK_INSTANCES;
- }
- return cachedInstances;
-}
-let searchToken=0;
-async function searchYT(){
- let q=$("searchQ").value.trim();
- if(!q)return toast("Enter something to search for.","warn");
- let myToken=++searchToken;
- let box=$("searchResults");
- box.classList.add("show");
- box.innerHTML='<div class="hint">Searching…</div>';
- let instances=await getSearchInstances();
- if(myToken!==searchToken)return;
- for(let base of instances){
-  try{
-   let ctrl=new AbortController();
-   let t=setTimeout(()=>ctrl.abort(),4500);
-   let res=await fetch(base+"/api/v1/search?q="+encodeURIComponent(q)+"&type=video",{signal:ctrl.signal});
-   clearTimeout(t);
-   if(myToken!==searchToken)return;
-   if(!res.ok)continue;
-   let data=await res.json();
-   if(myToken!==searchToken)return;
-   let vids=(Array.isArray(data)?data:[]).filter(d=>d.type==="video"&&d.videoId);
-   if(!vids.length){box.innerHTML='<div class="hint">No results found. Try different words.</div>';return}
-   renderResults(vids.slice(0,15));
-   return;
-  }catch(e){continue}
- }
- if(myToken===searchToken)
-  box.innerHTML='<div class="hint">Search is temporarily unavailable — paste a YouTube link or ID above instead.</div>';
-}
-function renderResults(vids){
- let box=$("searchResults");
- box.innerHTML="";
- vids.forEach(v=>{
-  let thumbs=v.videoThumbnails||[];
-  let thumb=thumbs.find(t=>t.quality==="medium")||thumbs[0]||{};
-  let item=document.createElement("div");
-  item.className="result";item.tabIndex=0;item.setAttribute("role","button");
-  item.setAttribute("aria-label","Play "+(v.title||"video"));
-  let img=document.createElement("img");
-  img.loading="lazy";img.alt="";
-  if(thumb.url)img.src=thumb.url;
-  let meta=document.createElement("div");meta.className="meta";
-  let t=document.createElement("div");t.className="t";t.textContent=v.title||"Untitled";
-  let c=document.createElement("div");c.className="c";c.textContent=v.author||"";
-  meta.append(t,c);
-  let d=document.createElement("div");d.className="d";d.textContent=fmtShort(v.lengthSeconds||0);
-  item.append(img,meta,d);
-  let pick=()=>{
-   loadById(v.videoId);
-   toast("Playing: "+(v.title||v.videoId),"ok");
-   box.classList.remove("show");
-   document.querySelector(".player").scrollIntoView({behavior:"smooth",block:"center"});
-  };
-  item.addEventListener("click",pick);
-  item.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick()}});
-  box.appendChild(item);
- });
-}
 function reload(){
  if(!currentVideoId)return toast("Load a video first.","warn");
  $("yt").src="https://www.youtube.com/embed/"+currentVideoId+
