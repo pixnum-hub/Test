@@ -1,923 +1,477 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>NETSCAN — Network Analyzer</title>
+<title>Postiq — Medium Analytics</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --radius:14px; --font-d:'Space Grotesk',sans-serif; --font-m:'Inter',sans-serif; }
-  html[data-theme="dark"]{ --bg:#0a0e14; --bg-elev:#121822; --text:#e7eef5; --muted:#7c8b9c; --accent:#43ffb4; --accent2:#5ec8ff; --warn:#ffb84d; --bad:#ff6a6a; --border:rgba(255,255,255,.08); --glow:rgba(67,255,180,.35); }
-  html[data-theme="light"]{ --bg:#eef1f4; --bg-elev:#ffffff; --text:#101418; --muted:#5b6672; --accent:#0e9f6e; --accent2:#0b72c4; --warn:#b45f06; --bad:#c62828; --border:rgba(16,20,24,.1); --glow:rgba(14,159,110,.25); }
-  html[data-theme="oled"]{ --bg:#000; --bg-elev:#060606; --text:#eaf2f0; --muted:#6e7a78; --accent:#39ff9e; --accent2:#4fc3ff; --warn:#ffb84d; --bad:#ff6a6a; --border:rgba(255,255,255,.07); --glow:rgba(57,255,158,.3); }
-  html[data-theme="hc"]{ --bg:#000; --bg-elev:#000; --text:#fff; --muted:#dedede; --accent:#ffd400; --accent2:#00e5ff; --warn:#ff6a00; --bad:#ff3b3b; --border:#fff; --glow:rgba(255,212,0,.4); }
-  *{box-sizing:border-box;}
-  body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font-d);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;transition:background .3s,color .3s;}
-  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:10;flex-wrap:wrap;}
-  .brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.06em;font-size:1.05rem;}
-  .brand-mark{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--glow);}
-  .toggles{display:flex;gap:6px;flex-wrap:wrap;}
-  .pill-group{display:flex;gap:4px;background:var(--bg-elev);border:1px solid var(--border);border-radius:999px;padding:3px;flex-wrap:wrap;}
-  .pill-btn{border:none;background:transparent;color:var(--muted);font-family:var(--font-m);font-size:.68rem;letter-spacing:.04em;padding:6px 10px;border-radius:999px;cursor:pointer;transition:.2s;}
-  .pill-btn.active{background:var(--accent);color:#04140d;font-weight:700;}
-  html[data-theme="hc"] .pill-btn.active{color:#000;}
-  main{flex:1;width:100%;max-width:980px;margin:0 auto;padding:26px 18px 10px;}
-  .hero{text-align:center;padding:16px 6px 8px;}
-  .status-row{display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font-m);font-size:.78rem;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;}
-  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
-  .dot.on{background:var(--accent);box-shadow:0 0 8px var(--glow);animation:pulse 1.8s ease-in-out infinite;}
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
-  .ip-display{font-family:var(--font-m);font-weight:700;font-size:clamp(1.6rem,7vw,2.9rem);margin:10px 0 4px;letter-spacing:.02em;word-break:break-all;}
-  .isp-line{color:var(--muted);font-size:.95rem;margin:0 0 18px;}
-  canvas.wave{width:100%;height:90px;display:block;border-radius:var(--radius);background:var(--bg-elev);border:1px solid var(--border);}
-  .btn{font-family:var(--font-m);font-weight:700;font-size:.82rem;letter-spacing:.03em;background:var(--accent);color:#04140d;border:none;padding:12px 22px;border-radius:999px;cursor:pointer;box-shadow:0 6px 22px var(--glow);transition:transform .15s;}
-  html[data-theme="hc"] .btn{color:#000;box-shadow:none;border:2px solid #fff;}
-  .btn:active{transform:scale(.97);}
-  .btn:disabled{opacity:.55;cursor:progress;}
-  .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--border);box-shadow:none;}
-  .section-title{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:28px 2px 10px;font-family:var(--font-m);display:flex;justify-content:space-between;align-items:center;gap:10px;}
-  .grid{display:grid;grid-template-columns:1fr;gap:10px;}
-  @media(min-width:560px){.grid{grid-template-columns:1fr 1fr;}}
-  @media(min-width:820px){.grid{grid-template-columns:repeat(4,1fr);}}
-  .card{background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:6px;}
-  html[data-theme="hc"] .card{border-width:2px;}
-  .card-label{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:var(--font-m);}
-  .card-value{font-size:1rem;font-weight:600;font-family:var(--font-m);word-break:break-word;}
-  .card-value.accent{color:var(--accent);} .card-value.warn{color:var(--warn);} .card-value.bad{color:var(--bad);}
-  .card.span2{grid-column:span 2;}
-  .map-wrap{position:relative;width:100%;height:170px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);background:var(--bg-elev);}
-  .map-wrap img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(.85);}
-  .map-marker{position:absolute;top:50%;left:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 6px var(--glow);}
-  .map-attr{font-size:.62rem;color:var(--muted);text-align:right;margin-top:4px;font-family:var(--font-m);}
-  .controls-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 12px;}
-  .controls-row.center{justify-content:center;}
-  .text-input{flex:1;min-width:150px;background:var(--bg-elev);border:1px solid var(--border);color:var(--text);font-family:var(--font-m);font-size:.82rem;padding:11px 14px;border-radius:999px;outline:none;}
-  .text-input:focus{border-color:var(--accent);}
-  canvas.speedgraph{width:100%;height:80px;display:block;border-radius:var(--radius);background:var(--bg-elev);border:1px solid var(--border);margin:4px 0 12px;}
-  .hist-table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:.76rem;}
-  .hist-table th,.hist-table td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);}
-  .hist-table td:first-child,.hist-table th:first-child{color:var(--text);}
-  .empty-note{color:var(--muted);font-size:.8rem;font-family:var(--font-m);padding:6px 2px 12px;}
-  .site-footer{margin-top:36px;padding:26px 18px 30px;border-top:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;}
-  .site-footer p{margin:0;font-size:.8rem;color:var(--muted);font-family:var(--font-m);}
-  .site-footer .brand-mini{color:var(--text);font-weight:600;}
-  #qrWrap img{border-radius:12px;border:1px solid var(--border);margin-top:4px;}
-  .gauge{position:relative;width:120px;height:120px;border-radius:50%;flex:none;}
-  .gauge::before{content:'';position:absolute;inset:12px;border-radius:50%;background:var(--bg-elev);}
-  .gauge-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--font-m);}
-  .gauge-score{font-size:1.6rem;font-weight:700;}
-  .gauge-tier{font-size:.62rem;color:var(--muted);text-transform:uppercase;}
-  .signal-bars{display:flex;align-items:flex-end;gap:4px;height:40px;}
-  .signal-bars span{width:12px;background:var(--border);border-radius:2px;}
-  .signal-bars span:nth-child(1){height:25%;} .signal-bars span:nth-child(2){height:50%;}
-  .signal-bars span:nth-child(3){height:75%;} .signal-bars span:nth-child(4){height:100%;}
-  .signal-bars span.on{background:var(--accent);}
-  .quality-row{display:flex;gap:24px;flex-wrap:wrap;align-items:center;justify-content:center;margin:12px 0;}
-  .heatmap{display:flex;gap:2px;flex-wrap:wrap;margin-top:8px;}
-  .heatmap span{width:9px;height:20px;border-radius:2px;display:inline-block;}
-  canvas.monitor{width:100%;height:80px;border-radius:var(--radius);background:var(--bg-elev);border:1px solid var(--border);}
-  .compare-bar-row{display:flex;align-items:center;gap:10px;margin:7px 0;font-family:var(--font-m);font-size:.76rem;}
-  .compare-bar-track{flex:1;height:10px;background:var(--bg-elev);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
-  .compare-bar-fill{height:100%;background:var(--accent);}
-  .topology{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:14px 0;overflow-x:auto;padding:6px 0;}
-  .topo-node{flex:0 0 auto;text-align:center;font-family:var(--font-m);font-size:.66rem;color:var(--muted);}
-  .topo-node .icon{width:44px;height:44px;border-radius:50%;background:var(--bg-elev);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin:0 auto 4px;}
-  .topo-line{flex:1;height:2px;min-width:20px;background:repeating-linear-gradient(90deg,var(--accent) 0 6px,transparent 6px 12px);background-size:24px 100%;animation:flow 1.5s linear infinite;}
-  @keyframes flow{to{background-position:-24px 0;}}
-  .domain-result{font-size:.76rem;font-family:var(--font-m);white-space:pre-wrap;word-break:break-word;color:var(--muted);max-height:140px;overflow:auto;}
-  @media(prefers-reduced-motion:reduce){.dot.on{animation:none;} .topo-line{animation:none;}}
-  @media print{ .topbar,.controls-row,.btn,#qrWrap{display:none!important;} canvas{display:none!important;} body{background:#fff;color:#000;} .card{border:1px solid #ccc;} }
+:root[data-theme="light"]{--bg:#FAF7F2;--surface:#FFFFFF;--ink:#1A1815;--sub:#726A5C;--accent:#A8790E;--border:#E4DDCC;--shadow:0 2px 10px rgba(26,24,21,.06);--bw:1px;--err:#B3261E;}
+:root[data-theme="dark"]{--bg:#15130F;--surface:#1E1B15;--ink:#EEE8DA;--sub:#A99E88;--accent:#D8AE52;--border:#332E22;--shadow:0 2px 14px rgba(0,0,0,.35);--bw:1px;--err:#E5766B;}
+:root[data-theme="oled"]{--bg:#000000;--surface:#000000;--ink:#EAEAEA;--sub:#8F8F8F;--accent:#CBA135;--border:#232323;--shadow:none;--bw:1px;--err:#E5766B;}
+:root[data-theme="hc"]{--bg:#000000;--surface:#000000;--ink:#FFFFFF;--sub:#FFFFFF;--accent:#FFD400;--border:#FFFFFF;--shadow:none;--bw:2px;--err:#FF6B6B;}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;min-height:100dvh;display:flex;flex-direction:column;transition:background .2s,color .2s;}
+h1,h2,.serif{font-family:'Source Serif 4',Georgia,serif;}
+main{flex:1;width:100%;max-width:780px;margin:0 auto;padding:1.25rem 1rem 2rem;}
+header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;max-width:780px;margin:0 auto;padding:1rem 1rem 0;width:100%;}
+.brand h1{font-size:1.15rem;font-weight:600;margin:0;letter-spacing:.01em;}
+.brand small{color:var(--sub);font-size:.7rem;display:block;letter-spacing:.08em;text-transform:uppercase;}
+#themeBtn{background:var(--surface);border:var(--bw) solid var(--border);color:var(--ink);border-radius:999px;padding:.5rem .9rem;font-size:.75rem;font-weight:600;cursor:pointer;box-shadow:var(--shadow);white-space:nowrap;}
+#themeBtn:focus-visible,input:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.hero{text-align:center;margin:1.5rem 0 1.5rem;}
+.hero h2{font-size:clamp(1.35rem,5vw,1.85rem);font-weight:600;margin:0 0 .4rem;}
+.hero p{color:var(--sub);font-size:.88rem;margin:0;}
+.searchCard{background:var(--surface);border:var(--bw) solid var(--border);border-radius:14px;padding:1rem;box-shadow:var(--shadow);display:flex;gap:.5rem;flex-wrap:wrap;}
+.searchCard input{flex:1 1 180px;min-width:0;background:transparent;border:none;color:var(--ink);font-size:1rem;padding:.5rem .25rem;font-family:inherit;}
+.searchCard input::placeholder{color:var(--sub);}
+.searchCard button{background:var(--accent);color:#1A1815;border:none;border-radius:9px;padding:.65rem 1.1rem;font-weight:700;font-size:.9rem;cursor:pointer;flex-shrink:0;}
+.hidden{display:none !important;}
+.rowControls{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-top:.65rem;}
+.seg{display:flex;border:var(--bw) solid var(--border);border-radius:9px;overflow:hidden;}
+.seg button{background:var(--surface);color:var(--sub);border:none;padding:.4rem .8rem;font-size:.74rem;font-weight:600;cursor:pointer;}
+.seg button.active{background:var(--accent);color:#1A1815;}
+.compareLink{background:none;border:none;color:var(--accent);font-weight:600;font-size:.78rem;cursor:pointer;padding:.3rem 0;}
+#compareRow{margin-top:.6rem;}
+.fieldError{color:var(--err);font-size:.78rem;margin:.4rem .1rem 0;display:none;}
+.hint{color:var(--sub);font-size:.75rem;margin:.6rem .1rem 0;}
+.histChips{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.65rem;}
+.histChip{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:.25rem .65rem;font-size:.72rem;cursor:pointer;color:var(--sub);}
+#status{text-align:center;padding:2rem 0;color:var(--sub);font-size:.9rem;display:none;}
+#status.show{display:block;}
+#errorBox{display:none;background:var(--surface);border:var(--bw) solid var(--err);border-radius:12px;padding:1rem;margin-top:1rem;font-size:.9rem;}
+#errorBox.show{display:block;}
+#results{display:none;}
+#results.show{display:block;}
+.profiles{display:flex;flex-direction:column;gap:1.75rem;margin-top:1.5rem;}
+@media(min-width:760px){.profiles.two{flex-direction:row;align-items:flex-start;}.profiles.two .profile{flex:1;min-width:0;}}
+.profileLabel{font-family:'Source Serif 4',serif;font-weight:700;color:var(--accent);font-size:1.05rem;margin-bottom:.6rem;}
+.statGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;}
+.stat{background:var(--surface);border:var(--bw) solid var(--border);border-radius:12px;padding:.85rem .9rem;box-shadow:var(--shadow);}
+.stat .num{font-family:'Source Serif 4',serif;font-size:1.4rem;font-weight:700;color:var(--accent);line-height:1;}
+.stat .lbl{font-size:.68rem;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;margin-top:.3rem;}
+.highlights{display:flex;flex-direction:column;gap:.5rem;background:var(--surface);border:var(--bw) solid var(--border);border-radius:12px;padding:.85rem 1rem;box-shadow:var(--shadow);margin-top:.75rem;}
+.hrow{display:flex;justify-content:space-between;gap:.5rem;font-size:.8rem;}
+.hrow .hlbl{color:var(--sub);flex-shrink:0;}
+.hrow .hval{text-align:right;font-weight:600;}
+.block{margin:1.25rem 0;}
+.block h3{font-size:.73rem;text-transform:uppercase;letter-spacing:.09em;color:var(--sub);margin:0 0 .65rem;font-weight:600;}
+.distBar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:var(--border);}
+.distLegend{display:flex;justify-content:space-between;font-size:.7rem;color:var(--sub);margin-top:.4rem;}
+.histRow{display:flex;align-items:center;gap:.5rem;font-size:.72rem;color:var(--sub);margin:.3rem 0;}
+.histRow .lbl{width:2.6rem;flex-shrink:0;}
+.histRow .bar{flex:1;background:var(--border);border-radius:4px;height:8px;}
+.histRow .bar i{display:block;height:100%;background:var(--accent);border-radius:4px;}
+.histRow .n{width:1.4rem;text-align:right;color:var(--ink);font-weight:600;}
+.dowRow{display:flex;gap:.35rem;align-items:flex-end;height:56px;}
+.dowRow .bar{flex:1;background:var(--border);border-radius:3px 3px 0 0;display:flex;align-items:flex-end;height:100%;}
+.dowRow .bar i{display:block;width:100%;background:var(--accent);border-radius:3px 3px 0 0;}
+.dowLabels{display:flex;gap:.35rem;font-size:.6rem;color:var(--sub);margin-top:.3rem;}
+.dowLabels span{flex:1;text-align:center;}
+.ledger{background:var(--surface);border:var(--bw) solid var(--border);border-radius:12px;padding:.9rem 1.1rem;box-shadow:var(--shadow);}
+.tag-row{display:flex;align-items:baseline;gap:.35rem;padding:.35rem 0;font-size:.88rem;cursor:pointer;}
+.tag-row .leader{flex:1;border-bottom:1px dotted var(--sub);margin-bottom:5px;opacity:.6;}
+.tag-row .count{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums;}
+.cloud{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.7rem;}
+.cchip{border:1px solid var(--border);border-radius:999px;padding:.2rem .6rem;color:var(--ink);cursor:pointer;background:var(--surface);}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;}
+.chip{border:1px solid var(--border);border-radius:999px;padding:.15rem .55rem;font-size:.7rem;color:var(--sub);}
+.postControls{display:flex;gap:.5rem;margin-bottom:.7rem;flex-wrap:wrap;}
+.postControls input{flex:1 1 140px;background:var(--surface);border:var(--bw) solid var(--border);border-radius:8px;padding:.5rem .6rem;color:var(--ink);font-size:.85rem;}
+.postControls select{background:var(--surface);border:var(--bw) solid var(--border);border-radius:8px;padding:.5rem .5rem;color:var(--ink);font-size:.8rem;}
+.filterBadge{font-weight:600;color:var(--accent);cursor:pointer;font-size:.72rem;margin-left:.4rem;}
+.postList{display:flex;flex-direction:column;gap:.75rem;}
+.post{background:var(--surface);border:var(--bw) solid var(--border);border-radius:12px;padding:1rem;box-shadow:var(--shadow);text-decoration:none;color:inherit;display:block;}
+.post .ptitle{font-family:'Source Serif 4',serif;font-weight:600;font-size:1rem;line-height:1.3;margin:0 0 .4rem;}
+.post .pmeta{color:var(--sub);font-size:.76rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;}
+.post .pmeta .dot{opacity:.5;}
+.post .chips{margin-top:.55rem;}
+footer{border-top:var(--bw) solid var(--border);padding:1.25rem 1rem 1.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:.25rem;}
+footer p{margin:0;font-size:.78rem;color:var(--sub);}
+footer .legal{font-weight:600;color:var(--ink);}
+@media(min-width:600px){.statGrid{grid-template-columns:repeat(3,1fr);}}
 </style>
 </head>
 <body>
-
-<header class="topbar">
-  <div class="brand"><span class="brand-mark"></span>NETSCAN</div>
-  <div class="toggles">
-    <div class="pill-group" id="themeGroup" role="group" aria-label="Theme">
-      <button class="pill-btn active" data-theme-btn="auto">Auto</button>
-      <button class="pill-btn" data-theme-btn="dark">Dark</button>
-      <button class="pill-btn" data-theme-btn="light">Light</button>
-      <button class="pill-btn" data-theme-btn="oled">OLED</button>
-      <button class="pill-btn" data-theme-btn="hc">HC</button>
-    </div>
-    <div class="pill-group" id="langGroup" role="group" aria-label="Language">
-      <button class="pill-btn active" data-lang="en">EN</button>
-      <button class="pill-btn" data-lang="es">ES</button>
-      <button class="pill-btn" data-lang="bn">BN</button>
-    </div>
+<header>
+  <div class="brand">
+    <h1>Postiq</h1><small>Medium post analytics</small>
   </div>
+  <button id="themeBtn" type="button" aria-label="Toggle theme">☀ Light</button>
 </header>
 
 <main>
-  <section class="hero">
-    <div class="status-row"><span class="dot" id="statusDot"></span><span id="statusText">Checking connection…</span></div>
-    <h1 class="ip-display" id="ipDisplay">—.—.—.—</h1>
-    <p class="isp-line" id="ispLine">Resolving network…</p>
-    <canvas class="wave" id="wave" height="90"></canvas>
-    <div class="controls-row center" style="margin-top:14px;">
-      <button class="btn" id="pingBtn" data-i18n="btnPing">Run Latency Test</button>
-      <button class="btn ghost" id="alertsBtn" data-i18n="btnAlerts">Enable Connection Alerts</button>
+  <div class="hero">
+    <h2>Read the numbers behind your words</h2>
+    <p>Enter a public Medium handle to see publishing stats, pulled live from its RSS feed.</p>
+  </div>
+
+  <form class="searchCard" id="searchForm">
+    <input id="handleInput" type="text" placeholder="@yourhandle or profile URL" autocomplete="off" required>
+    <button type="submit">Analyze</button>
+  </form>
+  <div class="rowControls">
+    <div class="seg" id="modeSeg">
+      <button type="button" data-mode="user" class="active">Writer</button>
+      <button type="button" data-mode="pub">Publication</button>
     </div>
-  </section>
-
-  <p class="section-title" data-i18n="netTitle">Network Identity</p>
-  <section class="grid" id="netGrid"></section>
-
-  <p class="section-title" data-i18n="locTitle">Location</p>
-  <div class="map-wrap"><img id="mapImg" alt="Approximate location map"><div class="map-marker"></div></div>
-  <p class="map-attr">Map data © OpenStreetMap contributors</p>
-
-  <p class="section-title" data-i18n="connTitle">Browser Connection</p>
-  <section class="grid" id="connGrid"></section>
-
-  <p class="section-title" data-i18n="pingTitle">Latency Test Results</p>
-  <section class="grid" id="pingGrid"></section>
-
-  <p class="section-title" data-i18n="speedTitle">Speed &amp; Diagnostics</p>
-  <div class="controls-row">
-    <div class="pill-group" id="sizeGroup">
-      <button class="pill-btn active" data-size="5000000">Small</button>
-      <button class="pill-btn" data-size="15000000">Medium</button>
-      <button class="pill-btn" data-size="30000000">Large</button>
-    </div>
-    <button class="btn ghost" id="speedBtn" data-i18n="btnSpeed">Run Full Diagnostics</button>
+    <button type="button" class="compareLink" id="compareToggle">+ Compare another writer</button>
   </div>
-  <canvas class="speedgraph" id="speedGraph" height="80"></canvas>
-  <section class="grid" id="speedGrid"></section>
-
-  <p class="section-title"><span data-i18n="histTitle">Test History</span> <span id="histClear" data-i18n="histClear" style="cursor:pointer;text-decoration:underline;">clear</span></p>
-  <div id="histWrap"><p class="empty-note">No diagnostics run yet this session.</p></div>
-
-  <p class="section-title" data-i18n="sysTitle">System &amp; Connectivity</p>
-  <section class="grid" id="sysGrid"></section>
-
-  <p class="section-title" data-i18n="secTitle">Privacy &amp; Security Checks</p>
-  <div class="controls-row">
-    <button class="btn ghost" id="webrtcBtn" data-i18n="btnWebrtc">Run WebRTC Leak Test</button>
-    <button class="btn ghost" id="dnsCheckBtn" data-i18n="btnDns">Check DNS Resolver</button>
+  <div class="searchCard hidden" id="compareRow">
+    <input id="handleInput2" type="text" placeholder="Second @handle to compare" autocomplete="off">
   </div>
-  <section class="grid" id="secGrid"></section>
-  <div class="controls-row" style="margin-top:14px;">
-    <input class="text-input" id="portHost" data-i18n-ph="placeholderHost" placeholder="localhost">
-    <button class="btn ghost" id="portBtn" data-i18n="btnPort">Check Common Ports</button>
+  <p class="fieldError" id="fieldError"></p>
+  <p class="hint">No login or API key needed — try <strong>@amanhimself</strong> or <strong>@Medium</strong>.</p>
+  <div class="histChips" id="histChips"></div>
+
+  <div id="status"></div>
+  <div id="errorBox"></div>
+
+  <div id="results">
+    <div class="profiles" id="profiles"></div>
   </div>
-  <p class="empty-note" data-i18n="portNote">Only check hosts and networks you own or have permission to test.</p>
-  <div id="portResults"></div>
-
-  <p class="section-title" data-i18n="urlTitle">Website Checker</p>
-  <div class="controls-row">
-    <input class="text-input" id="urlInput" data-i18n-ph="placeholderUrl" placeholder="https://example.com">
-    <button class="btn ghost" id="urlBtn" data-i18n="btnUrl">Check Website</button>
-  </div>
-  <section class="grid" id="urlGrid"></section>
-
-  <p class="section-title" data-i18n="refTitle">Network Reference</p>
-  <section class="grid" id="refGrid"></section>
-
-  <p class="section-title">Connection Quality</p>
-  <div class="quality-row">
-    <div class="gauge" id="qualityGauge" style="background:conic-gradient(var(--accent) 0deg, var(--bg-elev) 0);">
-      <div class="gauge-label"><span class="gauge-score" id="gaugeScore">—</span><span class="gauge-tier" id="gaugeTier">Run a test</span></div>
-    </div>
-    <div>
-      <p class="card-label" style="margin-bottom:8px;">Signal Quality (est. from downlink)</p>
-      <div class="signal-bars" id="signalBars"><span></span><span></span><span></span><span></span></div>
-    </div>
-  </div>
-
-  <p class="section-title">Multi-Host Ping</p>
-  <div class="controls-row"><button class="btn ghost" id="multiPingBtn">Ping Multiple Hosts</button></div>
-  <div id="multiPingResults"></div>
-
-  <p class="section-title">Continuous Monitor &amp; Heatmap</p>
-  <div class="controls-row"><button class="btn ghost" id="monitorBtn">Start Monitoring</button></div>
-  <canvas class="monitor" id="monitorChart" height="80"></canvas>
-  <div class="heatmap" id="heatmap"></div>
-
-  <p class="section-title">Subnet &amp; IP Tools</p>
-  <div class="controls-row">
-    <input class="text-input" id="cidrInput" placeholder="192.168.1.10/24">
-    <button class="btn ghost" id="cidrBtn">Calculate Subnet</button>
-  </div>
-  <section class="grid" id="cidrGrid"></section>
-  <div class="controls-row">
-    <input class="text-input" id="classifyInput" placeholder="8.8.8.8 or ::1">
-    <button class="btn ghost" id="classifyBtn">Classify IP</button>
-  </div>
-  <section class="grid" id="classifyGrid"></section>
-
-  <p class="section-title">Domain Inspector</p>
-  <div class="controls-row">
-    <input class="text-input" id="domainInput" placeholder="example.com">
-    <button class="btn ghost" id="domainBtn">Inspect Domain</button>
-  </div>
-  <p class="empty-note">WHOIS, headers, CSP, robots.txt and sitemap.xml checks depend on the target site allowing browser-based access (CORS). Many sites block this by design — a direct link is offered when they do.</p>
-  <section class="grid" id="domainGrid"></section>
-
-  <p class="section-title">Speed Comparison</p>
-  <div id="compareWrap"><p class="empty-note">Run Full Diagnostics to see a comparison.</p></div>
-
-  <p class="section-title">Network Topology <span style="text-transform:none;font-weight:400;">(illustrative)</span></p>
-  <div class="topology" id="topology"></div>
-
-  <p class="section-title" data-i18n="exportTitle">Export &amp; Share</p>
-  <div class="controls-row">
-    <button class="btn ghost" id="pdfBtn" data-i18n="btnPdf">Export as PDF</button>
-    <button class="btn ghost" id="csvBtn" data-i18n="btnCsv">Export CSV</button>
-    <button class="btn ghost" id="copyBtn" data-i18n="btnCopy">Copy Summary</button>
-    <button class="btn ghost" id="qrBtn" data-i18n="btnQr">Share via QR</button>
-  </div>
-  <div id="qrWrap"></div>
 </main>
 
-<footer class="site-footer">
-  <p class="brand-mini">NETSCAN</p>
-  <p>© Manik Roy <span id="year"></span>. All Rights Reserved.</p>
+<footer>
+  <p class="legal">© Manik Roy <span id="year"></span>. All Rights Reserved.</p>
+  <p>Data via public RSS feeds · No signup required</p>
 </footer>
 
 <script>
+const THEMES = [
+  {id:'light', label:'☀ Light'},
+  {id:'dark', label:'☾ Dark'},
+  {id:'oled', label:'● OLED'},
+  {id:'hc', label:'◐ HC'}
+];
+const root = document.documentElement;
+const savedTheme = localStorage.getItem('postiq-theme');
+let themeIdx = savedTheme ? THEMES.findIndex(t => t.id === savedTheme) : THEMES.findIndex(t => t.id === 'dark');
+if (themeIdx < 0) themeIdx = 0;
+applyTheme();
+document.getElementById('themeBtn').addEventListener('click', () => {
+  themeIdx = (themeIdx + 1) % THEMES.length;
+  localStorage.setItem('postiq-theme', THEMES[themeIdx].id);
+  applyTheme();
+});
+function applyTheme(){
+  root.setAttribute('data-theme', THEMES[themeIdx].id);
+  document.getElementById('themeBtn').textContent = THEMES[themeIdx].label;
+}
 document.getElementById('year').textContent = new Date().getFullYear();
-const $ = id => document.getElementById(id);
-const html = document.documentElement;
 
-/* ---------- i18n ---------- */
-const I18N = {
-  en:{netTitle:'Network Identity',locTitle:'Location',connTitle:'Browser Connection',pingTitle:'Latency Test Results',speedTitle:'Speed & Diagnostics',histTitle:'Test History',histClear:'clear',sysTitle:'System & Connectivity',secTitle:'Privacy & Security Checks',portNote:"Only check hosts and networks you own or have permission to test.",urlTitle:'Website Checker',refTitle:'Network Reference',exportTitle:'Export & Share',btnPing:'Run Latency Test',btnSpeed:'Run Full Diagnostics',btnWebrtc:'Run WebRTC Leak Test',btnDns:'Check DNS Resolver',btnPort:'Check Common Ports',btnUrl:'Check Website',btnPdf:'Export as PDF',btnCsv:'Export CSV',btnCopy:'Copy Summary',btnQr:'Share via QR',btnAlerts:'Enable Connection Alerts',placeholderHost:'localhost',placeholderUrl:'https://example.com'},
-  es:{netTitle:'Identidad de Red',locTitle:'Ubicación',connTitle:'Conexión del Navegador',pingTitle:'Resultados de Latencia',speedTitle:'Velocidad y Diagnóstico',histTitle:'Historial de Pruebas',histClear:'borrar',sysTitle:'Sistema y Conectividad',secTitle:'Privacidad y Seguridad',portNote:'Solo verifica hosts y redes que posees o tienes permiso para probar.',urlTitle:'Verificador de Sitios Web',refTitle:'Referencia de Red',exportTitle:'Exportar y Compartir',btnPing:'Ejecutar Prueba de Latencia',btnSpeed:'Ejecutar Diagnóstico Completo',btnWebrtc:'Probar Fuga WebRTC',btnDns:'Verificar Resolutor DNS',btnPort:'Verificar Puertos Comunes',btnUrl:'Verificar Sitio Web',btnPdf:'Exportar como PDF',btnCsv:'Exportar CSV',btnCopy:'Copiar Resumen',btnQr:'Compartir vía QR',btnAlerts:'Activar Alertas de Conexión',placeholderHost:'localhost',placeholderUrl:'https://ejemplo.com'},
-  bn:{netTitle:'নেটওয়ার্ক পরিচয়',locTitle:'অবস্থান',connTitle:'ব্রাউজার সংযোগ',pingTitle:'লেটেন্সি ফলাফল',speedTitle:'গতি ও ডায়াগনস্টিকস',histTitle:'পরীক্ষার ইতিহাস',histClear:'মুছুন',sysTitle:'সিস্টেম ও সংযোগ',secTitle:'গোপনীয়তা ও নিরাপত্তা',portNote:'শুধু নিজের হোস্ট/নেটওয়ার্ক পরীক্ষা করুন।',urlTitle:'ওয়েবসাইট চেকার',refTitle:'নেটওয়ার্ক তথ্য',exportTitle:'এক্সপোর্ট ও শেয়ার',btnPing:'লেটেন্সি টেস্ট চালান',btnSpeed:'সম্পূর্ণ ডায়াগনস্টিকস চালান',btnWebrtc:'WebRTC লিক টেস্ট চালান',btnDns:'DNS রিজলভার চেক করুন',btnPort:'কমন পোর্ট চেক করুন',btnUrl:'ওয়েবসাইট চেক করুন',btnPdf:'PDF এক্সপোর্ট করুন',btnCsv:'CSV এক্সপোর্ট করুন',btnCopy:'সারাংশ কপি করুন',btnQr:'QR দিয়ে শেয়ার করুন',btnAlerts:'সংযোগ সতর্কতা চালু করুন',placeholderHost:'localhost',placeholderUrl:'https://example.com'}
-};
-let currentLang = 'en';
-function t(key){ return I18N[currentLang][key] || I18N.en[key]; }
-function applyLang(lang){
-  currentLang = lang;
-  document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
-  document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.dataset.i18nPh));
-}
-document.querySelectorAll('#langGroup .pill-btn').forEach(b=>{
+const form = document.getElementById('searchForm');
+const statusEl = document.getElementById('status');
+const errorBox = document.getElementById('errorBox');
+const results = document.getElementById('results');
+
+let mode = 'user';
+let compareOn = false;
+let primary = null;
+const filterState = {tag:null, query:'', sort:'newest'};
+
+document.querySelectorAll('#modeSeg button').forEach(b=>{
   b.addEventListener('click', ()=>{
-    document.querySelectorAll('#langGroup .pill-btn').forEach(x=>x.classList.toggle('active', x===b));
-    applyLang(b.dataset.lang);
+    document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); mode = b.dataset.mode;
   });
 });
-
-/* ---------- Card builder ---------- */
-function buildCards(containerId, defs){
-  $(containerId).innerHTML = defs.map(d =>
-    `<div class="card${d.span?' span2':''}"><span class="card-label">${d.label}</span><span class="card-value" id="${d.id}">—</span></div>`
-  ).join('');
-}
-buildCards('netGrid', [
-  {id:'statIp',label:'IPv4 Address'},{id:'statIp6',label:'IPv6 Address'},
-  {id:'statIsp',label:'ISP / Organization'},{id:'statAsn',label:'ASN'},
-  {id:'statLoc',label:'Location',span:true},{id:'statTz',label:'Timezone'},
-  {id:'statCurrency',label:'Currency'},{id:'statCalling',label:'Calling Code'},
-  {id:'statRdns',label:'Reverse DNS Host',span:true},{id:'statVpn',label:'VPN / Hosting Risk'}
-]);
-buildCards('connGrid', [
-  {id:'statConn',label:'Connection Type'},{id:'statDown',label:'Downlink'},
-  {id:'statRtt',label:'Browser RTT'},{id:'statSaver',label:'Data Saver'}
-]);
-buildCards('pingGrid', [
-  {id:'pingMin',label:'Minimum'},{id:'pingAvg',label:'Average'},
-  {id:'pingMax',label:'Maximum'},{id:'pingJit',label:'Jitter'}
-]);
-buildCards('speedGrid', [
-  {id:'statDl',label:'Download Speed'},{id:'statUl',label:'Upload Speed'},
-  {id:'statLoss',label:'Packet Loss'},{id:'statBloat',label:'Buffer Bloat'},
-  {id:'statDns',label:'DNS Resolve Time'},{id:'statServer',label:'Test Server'}
-]);
-buildCards('sysGrid', [
-  {id:'statBattery',label:'Battery Level'},{id:'statBrowser',label:'Browser'},
-  {id:'statOS',label:'Operating System'},{id:'statIpv4Test',label:'IPv4 Connectivity'},
-  {id:'statIpv6Test',label:'IPv6 Connectivity'}
-]);
-buildCards('secGrid', [
-  {id:'statWebrtc',label:'WebRTC Visible IP(s)',span:true},
-  {id:'statDnsResolver',label:'DNS Resolver Used'}
-]);
-buildCards('urlGrid', [
-  {id:'statUrlStatus',label:'Status'},{id:'statUrlProto',label:'Protocol'},{id:'statUrlTime',label:'Response Time'}
-]);
-buildCards('refGrid', [
-  {id:'refMtu',label:'Typical MTU Sizes'},{id:'refTraceroute',label:'Traceroute Availability',span:true}
-]);
-$('refMtu').textContent = 'Ethernet 1500B · PPPoE 1492B · Mobile 4G/5G ~1428–1500B';
-$('refTraceroute').textContent = "Browsers can't send raw ICMP, so real hop-by-hop traceroute isn't possible client-side. Use a dedicated CLI tool for full path visibility.";
-['pingMin','pingAvg','pingMax','pingJit','statDl','statUl','statLoss','statBloat','statDns','statIp','statVpn']
-  .forEach(id => $(id).classList.add('accent'));
-
-/* ---------- Theme: Auto (system) + manual override ---------- */
-let autoMode = true;
-const mql = window.matchMedia('(prefers-color-scheme: dark)');
-function applyAutoTheme(){ html.setAttribute('data-theme', mql.matches ? 'dark' : 'light'); }
-mql.addEventListener('change', ()=>{ if(autoMode) applyAutoTheme(); });
-document.querySelectorAll('#themeGroup .pill-btn').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    document.querySelectorAll('#themeGroup .pill-btn').forEach(x=>x.classList.toggle('active', x===b));
-    if(b.dataset.themeBtn === 'auto'){ autoMode = true; applyAutoTheme(); }
-    else { autoMode = false; html.setAttribute('data-theme', b.dataset.themeBtn); }
-  });
-});
-applyAutoTheme();
-
-/* ---------- Test size selector ---------- */
-let testBytes = 5000000;
-document.querySelectorAll('#sizeGroup .pill-btn').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    testBytes = parseInt(b.dataset.size, 10);
-    document.querySelectorAll('#sizeGroup .pill-btn').forEach(x=>x.classList.toggle('active', x===b));
-  });
+document.getElementById('compareToggle').addEventListener('click', ()=>{
+  compareOn = !compareOn;
+  document.getElementById('compareRow').classList.toggle('hidden', !compareOn);
+  document.getElementById('compareToggle').textContent = compareOn ? '− Remove comparison' : '+ Compare another writer';
 });
 
-/* ---------- Ambient waveform ---------- */
-const canvas = $('wave'), ctx = canvas.getContext('2d');
-let dpr = Math.max(1, window.devicePixelRatio||1), amp=14, freq=0.025, wspeed=0.06, t2=0;
-function fit(el){ const r=el.getBoundingClientRect(); el.width=r.width*dpr; el.height=r.height*dpr; }
-fit(canvas); window.addEventListener('resize', ()=>{fit(canvas); fit(sg);});
-function accentColor(){ return getComputedStyle(html).getPropertyValue('--accent').trim()||'#43ffb4'; }
-function drawWave(){
-  const w=canvas.width,h=canvas.height,mid=h/2;
-  ctx.clearRect(0,0,w,h); ctx.beginPath();
-  const c=accentColor();
-  for(let x=0;x<=w;x+=4*dpr){
-    const y=mid+Math.sin(x*freq+t2)*amp*dpr+Math.sin(x*freq*2.3-t2*1.6)*amp*0.3*dpr;
-    x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  }
-  ctx.strokeStyle=c; ctx.lineWidth=2*dpr; ctx.shadowColor=c; ctx.shadowBlur=10*dpr; ctx.stroke();
-  t2+=wspeed; requestAnimationFrame(drawWave);
-}
-requestAnimationFrame(drawWave);
-
-/* ---------- Speed graph ---------- */
-const sg = $('speedGraph'), sgCtx = sg.getContext('2d'); fit(sg);
-let sgSamples = [];
-function resetGraph(){ sgSamples=[]; sgCtx.clearRect(0,0,sg.width,sg.height); }
-function pushSample(val){
-  sgSamples.push(val); if(sgSamples.length>60) sgSamples.shift();
-  const w=sg.width,h=sg.height,c=accentColor(),max=Math.max(1,...sgSamples);
-  sgCtx.clearRect(0,0,w,h);
-  const bw=w/60;
-  sgSamples.forEach((v,i)=>{
-    const bh=(v/max)*(h*0.85);
-    sgCtx.fillStyle=c; sgCtx.globalAlpha=.35+(i/sgSamples.length)*.65;
-    sgCtx.fillRect(i*bw, h-bh, bw*0.7, bh);
-  });
-  sgCtx.globalAlpha=1;
-}
-
-/* ---------- Online status + connection drop alerts ---------- */
-const dot=$('statusDot'), statusText=$('statusText');
-let alertsOn = false;
-function refreshOnline(){
-  const on = navigator.onLine;
-  dot.classList.toggle('on', on);
-  statusText.textContent = on ? 'Connected' : 'Offline';
-  if(alertsOn && 'Notification' in window && Notification.permission==='granted'){
-    new Notification('NETSCAN', {body: on ? 'Connection restored.' : 'Connection lost.'});
-  }
-}
-window.addEventListener('online', refreshOnline);
-window.addEventListener('offline', refreshOnline);
-refreshOnline();
-$('alertsBtn').addEventListener('click', async ()=>{
-  if(!('Notification' in window)){ $('alertsBtn').textContent='Not supported'; return; }
-  const perm = await Notification.requestPermission();
-  alertsOn = perm === 'granted';
-  $('alertsBtn').textContent = alertsOn ? 'Alerts Enabled ✓' : 'Permission Denied';
-});
-
-/* ---------- Native browser connection info ---------- */
-function loadConnectionInfo(){
-  const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  $('statConn').textContent = c && c.effectiveType ? c.effectiveType.toUpperCase() : 'Unknown';
-  $('statDown').textContent = c && c.downlink ? c.downlink+' Mbps' : 'N/A';
-  $('statRtt').textContent = c && c.rtt ? c.rtt+' ms' : 'N/A';
-  $('statSaver').textContent = c ? (c.saveData?'Enabled':'Disabled') : 'N/A';
-}
-loadConnectionInfo();
-
-/* ---------- Battery + Browser/OS detection ---------- */
-async function loadBattery(){
-  if(navigator.getBattery){
-    try{
-      const b = await navigator.getBattery();
-      const upd = ()=> $('statBattery').textContent = `${Math.round(b.level*100)}%${b.charging?' (Charging)':''}`;
-      upd(); b.addEventListener('levelchange',upd); b.addEventListener('chargingchange',upd);
-    }catch(e){ $('statBattery').textContent='Unavailable'; }
-  } else { $('statBattery').textContent='Not supported by browser'; }
-}
-function detectUA(){
-  const ua = navigator.userAgent;
-  let browser = 'Unknown';
-  if(/Edg\//.test(ua)) browser='Edge';
-  else if(/Chrome\//.test(ua)) browser='Chrome';
-  else if(/Firefox\//.test(ua)) browser='Firefox';
-  else if(/Safari\//.test(ua)) browser='Safari';
-  let os = 'Unknown';
-  if(/Windows/.test(ua)) os='Windows';
-  else if(/Mac OS X/.test(ua)) os='macOS';
-  else if(/Android/.test(ua)) os='Android';
-  else if(/iPhone|iPad|iOS/.test(ua)) os='iOS';
-  else if(/Linux/.test(ua)) os='Linux';
-  $('statBrowser').textContent = browser; $('statOS').textContent = os;
-}
-loadBattery(); detectUA();
-
-/* ---------- IPv4 vs IPv6 connectivity test ---------- */
-async function dualStackTest(){
-  try{ await fetch('https://api4.ipify.org?format=json', {cache:'no-store'}); $('statIpv4Test').textContent='Reachable'; $('statIpv4Test').classList.add('accent'); }
-  catch(e){ $('statIpv4Test').textContent='Unreachable'; $('statIpv4Test').classList.add('bad'); }
-  try{
-    const r = await fetch('https://api6.ipify.org?format=json', {cache:'no-store'});
-    const d = await r.json();
-    if(d.ip && d.ip.includes(':')){ $('statIpv6Test').textContent='Reachable'; $('statIpv6Test').classList.add('accent'); }
-    else throw new Error('no v6');
-  }catch(e){ $('statIpv6Test').textContent='Unreachable / not available'; $('statIpv6Test').classList.add('warn'); }
-}
-dualStackTest();
-
-/* ---------- IP / ISP / Location (ipwho.is — free, keyless) ---------- */
-async function loadIpInfo(){
-  try{
-    const res = await fetch('https://ipwho.is/?output=json', {cache:'no-store'});
-    const d = await res.json();
-    if(d && d.success !== false){
-      $('ipDisplay').textContent = d.ip || '—';
-      $('statIp').textContent = d.ip || '—';
-      const isp = (d.connection && d.connection.isp) || d.connection?.org || 'Unknown';
-      $('ispLine').textContent = isp; $('statIsp').textContent = isp;
-      $('statAsn').textContent = d.connection?.asn ? 'AS'+d.connection.asn : 'Unknown';
-      const flagEmoji = d.flag?.emoji || '';
-      $('statLoc').textContent = `${flagEmoji} ${[d.city,d.region,d.country].filter(Boolean).join(', ')}`.trim();
-      $('statTz').textContent = d.timezone?.id || 'Unknown';
-      $('statCurrency').textContent = d.currency ? `${d.currency.name} (${d.currency.code})` : 'Unknown';
-      $('statCalling').textContent = d.calling_code ? '+'+d.calling_code : 'Unknown';
-      loadMap(d.latitude, d.longitude);
-      detectVpn(isp);
-      loadReverseDns(d.ip);
-    } else { $('ispLine').textContent = 'Unable to resolve network info'; }
-  }catch(e){ $('ispLine').textContent = 'Network info unavailable'; }
-  loadIpv6();
-}
-async function loadIpv6(){
-  try{
-    const res = await fetch('https://api64.ipify.org?format=json', {cache:'no-store'});
-    const d = await res.json();
-    $('statIp6').textContent = (d.ip && d.ip.includes(':')) ? d.ip : 'Not available on this network';
-  }catch(e){ $('statIp6').textContent = 'Not available'; }
-}
-function detectVpn(isp){
-  const flags = ['hosting','data center','datacenter','cloud','vpn','colo','server'];
-  const hit = flags.some(f => (isp||'').toLowerCase().includes(f));
-  const el = $('statVpn');
-  el.textContent = hit ? 'Possible (heuristic)' : 'Not detected';
-  el.classList.toggle('warn', hit); el.classList.toggle('accent', !hit);
-}
-async function loadReverseDns(ip){
-  if(!ip || ip.includes(':')){ $('statRdns').textContent = 'N/A for IPv6'; return; }
-  try{
-    const rev = ip.split('.').reverse().join('.') + '.in-addr.arpa';
-    const res = await fetch(`https://dns.google/resolve?name=${rev}&type=PTR`);
-    const d = await res.json();
-    $('statRdns').textContent = d.Answer?.[0]?.data?.replace(/\.$/,'') || 'No PTR record';
-  }catch(e){ $('statRdns').textContent = 'Lookup failed'; }
-}
-function loadMap(lat, lon){
-  if(lat==null || lon==null) return;
-  const z = 11, n = 2**z;
-  const x = Math.floor((lon+180)/360*n);
-  const latRad = lat*Math.PI/180;
-  const y = Math.floor((1 - Math.log(Math.tan(latRad)+1/Math.cos(latRad))/Math.PI)/2*n);
-  $('mapImg').src = `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
-}
-loadIpInfo();
-
-/* ---------- DNS resolution timing + resolver check ---------- */
-async function dnsTiming(){
-  const t0 = performance.now();
-  try{ await fetch(`https://dns.google/resolve?name=example.com&type=A&_=${Date.now()}`); }catch(e){}
-  return performance.now()-t0;
-}
-async function dnsResolverCheck(){
-  $('dnsCheckBtn').disabled = true;
-  try{ await fetch('https://dns.google/resolve?name=cloudflare.com&type=A'); $('statDnsResolver').textContent = 'Google Public DNS (DoH) — page-level lookups only; your OS resolver can differ'; }
-  catch(e){ $('statDnsResolver').textContent = 'Check failed'; }
-  $('dnsCheckBtn').disabled = false;
-}
-$('dnsCheckBtn').addEventListener('click', dnsResolverCheck);
-
-/* ---------- WebRTC local/public IP exposure test ---------- */
-function webrtcTest(){
-  return new Promise(resolve=>{
-    const ips = new Set();
-    const pc = new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
-    pc.createDataChannel('');
-    pc.onicecandidate = e=>{
-      if(!e.candidate){ pc.close(); resolve([...ips]); return; }
-      const m = e.candidate.candidate.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
-      if(m) ips.add(m[1]);
-    };
-    pc.createOffer().then(o=>pc.setLocalDescription(o)).catch(()=>resolve([...ips]));
-    setTimeout(()=>{ try{pc.close();}catch(e){} resolve([...ips]); }, 3000);
-  });
-}
-$('webrtcBtn').addEventListener('click', async ()=>{
-  $('webrtcBtn').disabled = true; $('webrtcBtn').textContent = 'Testing…';
-  const ips = await webrtcTest();
-  $('statWebrtc').textContent = ips.length ? ips.join(', ') : 'None detected (or blocked by browser)';
-  $('webrtcBtn').disabled = false; $('webrtcBtn').textContent = t('btnWebrtc');
-});
-
-/* ---------- Local/common port checker (own networks only) ---------- */
-const commonPorts = [80,443,22,21,3306,8080,3000,5432];
-function checkPort(host, port, timeout=1200){
-  return new Promise(resolve=>{
-    const img = new Image();
-    const t0 = performance.now();
-    let done = false;
-    const timer = setTimeout(()=>{ if(!done){done=true; resolve({port, state:'Closed / Filtered'});} }, timeout);
-    const finish = ()=>{ if(!done){done=true; clearTimeout(timer); const dt=performance.now()-t0; resolve({port, state: dt<400 ? 'Likely Open' : 'Closed / Filtered'});} };
-    img.onload = finish; img.onerror = finish;
-    img.src = `http://${host}:${port}/favicon.ico?_=${Date.now()}`;
-  });
-}
-$('portBtn').addEventListener('click', async ()=>{
-  const host = $('portHost').value.trim() || 'localhost';
-  $('portBtn').disabled = true;
-  $('portResults').innerHTML = '<p class="empty-note">Scanning…</p>';
-  const results = await Promise.all(commonPorts.map(p=>checkPort(host,p)));
-  $('portResults').innerHTML = '<table class="hist-table"><thead><tr><th>Port</th><th>Status</th></tr></thead><tbody>' +
-    results.map(r=>`<tr><td>${r.port}</td><td>${r.state}</td></tr>`).join('') + '</tbody></table>';
-  $('portBtn').disabled = false;
-});
-
-/* ---------- Website reachability / uptime checker ---------- */
-$('urlBtn').addEventListener('click', async ()=>{
-  let url = $('urlInput').value.trim();
-  if(!url) return;
-  if(!/^https?:\/\//i.test(url)) url = 'https://'+url;
-  $('urlBtn').disabled = true;
-  $('statUrlStatus').textContent = 'Checking…';
-  const t0 = performance.now();
-  try{
-    await fetch(url, {mode:'no-cors', cache:'no-store'});
-    const dt = performance.now()-t0;
-    $('statUrlStatus').textContent = 'Reachable'; $('statUrlStatus').className='card-value accent';
-    $('statUrlProto').textContent = url.startsWith('https') ? 'HTTPS (secure)' : 'HTTP (not secure)';
-    $('statUrlTime').textContent = dt.toFixed(0)+' ms';
-  }catch(e){
-    $('statUrlStatus').textContent = 'Unreachable'; $('statUrlStatus').className='card-value bad';
-    $('statUrlProto').textContent = url.startsWith('https') ? 'HTTPS' : 'HTTP';
-    $('statUrlTime').textContent = '—';
-  }
-  $('urlBtn').disabled = false;
-});
-
-/* ---------- Basic latency test ---------- */
-const pingBtn = $('pingBtn');
-function grade(ms){ return ms<60?'Excellent':ms<150?'Good':ms<300?'Fair':'Poor'; }
-async function measurePings(n){
-  const times=[]; let fails=0;
-  for(let i=0;i<n;i++){
-    const t0=performance.now();
-    try{ await fetch(`https://ipwho.is/?output=json&_=${Date.now()}`, {cache:'no-store'}); times.push(performance.now()-t0); }
-    catch(e){ fails++; }
-  }
-  return {times, fails};
-}
-async function runPingTest(){
-  pingBtn.disabled=true; pingBtn.textContent='Testing…';
-  const {times} = await measurePings(6);
-  times.shift();
-  const min=Math.min(...times), max=Math.max(...times), avg=times.reduce((a,b)=>a+b,0)/times.length, jitter=max-min;
-  $('pingMin').textContent=min.toFixed(0)+' ms'; $('pingAvg').textContent=avg.toFixed(0)+' ms';
-  $('pingMax').textContent=max.toFixed(0)+' ms'; $('pingJit').textContent=jitter.toFixed(0)+' ms';
-  amp=Math.min(28,8+avg/10); wspeed=avg<60?0.11:avg<150?0.07:0.04;
-  statusText.textContent=`Connected · ${grade(avg)}`;
-  pingBtn.disabled=false; pingBtn.textContent=t('btnPing');
-  return avg;
-}
-pingBtn.addEventListener('click', runPingTest);
-
-/* ---------- Download / upload speed (Cloudflare speed endpoints) ---------- */
-function mbps(bytes, ms){ return (bytes*8)/(ms/1000)/1e6; }
-async function downloadTest(bytes){
-  const t0=performance.now(); let received=0, lastT=t0;
-  const res = await fetch(`https://speed.cloudflare.com/__down?bytes=${bytes}&cb=${Date.now()}`, {cache:'no-store'});
-  const reader = res.body.getReader();
-  while(true){
-    const {done,value} = await reader.read();
-    if(done) break;
-    received += value.length;
-    const now=performance.now();
-    if(now-lastT>150){ pushSample(mbps(received, now-t0)); lastT=now; }
-  }
-  return mbps(received, performance.now()-t0);
-}
-function uploadTest(bytes){
-  return new Promise((resolve,reject)=>{
-    const data = new Uint8Array(bytes);
-    const xhr = new XMLHttpRequest();
-    const t0 = performance.now();
-    xhr.open('POST','https://speed.cloudflare.com/__up');
-    xhr.upload.onprogress = e => pushSample(mbps(e.loaded, performance.now()-t0));
-    xhr.onload = () => resolve(mbps(bytes, performance.now()-t0));
-    xhr.onerror = () => reject(new Error('upload failed'));
-    xhr.send(data);
-  });
-}
-
-/* ---------- History (in-memory, session only) ---------- */
-let history = [];
-function renderHistory(){
-  if(!history.length){ $('histWrap').innerHTML = '<p class="empty-note">No diagnostics run yet this session.</p>'; return; }
-  const rows = history.slice(-6).reverse().map(h =>
-    `<tr><td>${h.time}</td><td>${h.dl} Mbps</td><td>${h.ul} Mbps</td><td>${h.ping} ms</td><td>${h.bloat}</td></tr>`
-  ).join('');
-  $('histWrap').innerHTML = `<table class="hist-table"><thead><tr><th>Time</th><th>Down</th><th>Up</th><th>Ping</th><th>Bloat</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-$('histClear').addEventListener('click', ()=>{ history=[]; renderHistory(); });
-
-/* ---------- Full diagnostics orchestration ---------- */
-const speedBtn = $('speedBtn');
-function bloatGrade(delta){ return delta<30?'A (Excellent)':delta<60?'B (Good)':delta<200?'C (Fair)':'D (Poor)'; }
-async function runFullDiagnostics(){
-  speedBtn.disabled=true; speedBtn.textContent='Running…'; resetGraph();
-  $('statServer').textContent = 'Cloudflare (nearest anycast edge)';
-  const idle = await measurePings(6);
-  const idleTimes = idle.times.slice(1);
-  const idleAvg = idleTimes.reduce((a,b)=>a+b,0)/(idleTimes.length||1);
-  let dl = 0;
-  try{ dl = await downloadTest(testBytes); }catch(e){ dl = 0; }
-  $('statDl').textContent = dl ? dl.toFixed(1)+' Mbps' : 'Failed';
-  const loadSample = await measurePings(4);
-  const loadTimes = loadSample.times.slice(1);
-  const loadAvg = loadTimes.reduce((a,b)=>a+b,0)/(loadTimes.length||1);
-  const bloatDelta = Math.max(0, loadAvg - idleAvg);
-  $('statBloat').textContent = bloatGrade(bloatDelta) + ` (+${bloatDelta.toFixed(0)}ms)`;
-  let ul = 0;
-  try{ ul = await uploadTest(Math.min(testBytes, 15000000)); }catch(e){ ul = 0; }
-  $('statUl').textContent = ul ? ul.toFixed(1)+' Mbps' : 'Failed';
-  const totalAttempts = idle.times.length + idle.fails + loadSample.times.length + loadSample.fails;
-  const totalFails = idle.fails + loadSample.fails;
-  $('statLoss').textContent = ((totalFails/totalAttempts)*100).toFixed(1)+'%';
-  const dnsMs = await dnsTiming();
-  $('statDns').textContent = dnsMs.toFixed(0)+' ms';
-  history.push({ time: new Date().toLocaleTimeString(), dl: dl.toFixed(1), ul: ul.toFixed(1), ping: idleAvg.toFixed(0), bloat: bloatGrade(bloatDelta).split(' ')[0] });
+function getHistory(){ try{ return JSON.parse(localStorage.getItem('postiq-history')||'[]'); }catch(e){ return []; } }
+function addHistory(h){
+  let hist = getHistory().filter(x=>x!==h);
+  hist.unshift(h);
+  localStorage.setItem('postiq-history', JSON.stringify(hist.slice(0,5)));
   renderHistory();
-  speedBtn.disabled=false; speedBtn.textContent=t('btnSpeed');
 }
-speedBtn.addEventListener('click', runFullDiagnostics);
-
-/* ---------- Export & Share ---------- */
-function summaryText(){
-  let lines=[`NETSCAN Report — ${new Date().toLocaleString()}`];
-  document.querySelectorAll('.card').forEach(c=>{
-    const l=c.querySelector('.card-label')?.textContent, v=c.querySelector('.card-value')?.textContent;
-    if(l && v) lines.push(`${l}: ${v}`);
-  });
-  return lines.join('\n');
-}
-$('pdfBtn').addEventListener('click', ()=> window.print());
-$('csvBtn').addEventListener('click', ()=>{
-  const rows = [['Metric','Value']];
-  document.querySelectorAll('.card').forEach(c=>{
-    const l=c.querySelector('.card-label')?.textContent, v=c.querySelector('.card-value')?.textContent;
-    if(l && v) rows.push([l,v]);
-  });
-  const csv = rows.map(r=>r.map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv],{type:'text/csv'});
-  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='netscan-report.csv'; a.click();
-});
-$('copyBtn').addEventListener('click', ()=>{
-  navigator.clipboard.writeText(summaryText()).then(()=>{
-    const orig = $('copyBtn').textContent; $('copyBtn').textContent='Copied!';
-    setTimeout(()=> $('copyBtn').textContent = t('btnCopy'), 1500);
-  });
-});
-$('qrBtn').addEventListener('click', ()=>{
-  const text = encodeURIComponent(summaryText().slice(0,700));
-  $('qrWrap').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${text}" alt="QR code of results summary">`;
-});
-
-/* ---------- Connection Quality gauge + Wi-Fi signal estimate ---------- */
-let lastAvg=null, lastJitter=0, lastLoss=0;
-function updateSignalBars(){
-  const c = navigator.connection;
-  const dl = c && c.downlink ? c.downlink : null;
-  let bars = dl==null ? 0 : dl>=10?4:dl>=4?3:dl>=1.5?2:1;
-  document.querySelectorAll('#signalBars span').forEach((s,i)=> s.classList.toggle('on', i<bars));
-}
-function recomputeScore(){
-  if(lastAvg==null) return;
-  const latencyScore = Math.max(0,Math.min(100,100-lastAvg/3));
-  const jitterScore = Math.max(0,Math.min(100,100-lastJitter*2));
-  const lossScore = Math.max(0,Math.min(100,100-lastLoss*5));
-  const score = Math.round(latencyScore*0.5+jitterScore*0.25+lossScore*0.25);
-  const tier = score>=80?'Excellent':score>=60?'Good':score>=35?'Fair':'Poor';
-  const color = score>=80?accentColor():score>=60?getComputedStyle(html).getPropertyValue('--accent2').trim():score>=35?getComputedStyle(html).getPropertyValue('--warn').trim():getComputedStyle(html).getPropertyValue('--bad').trim();
-  $('qualityGauge').style.background = `conic-gradient(${color} ${score*3.6}deg, var(--bg-elev) 0)`;
-  $('gaugeScore').textContent = score;
-  $('gaugeTier').textContent = tier;
-}
-updateSignalBars();
-
-/* ---------- Multi-host ping ---------- */
-const pingHosts = ['https://www.google.com','https://www.cloudflare.com','https://www.microsoft.com','https://www.amazon.com','https://github.com'];
-$('multiPingBtn').addEventListener('click', async ()=>{
-  $('multiPingBtn').disabled = true;
-  $('multiPingResults').innerHTML = '<p class="empty-note">Pinging…</p>';
-  const results = await Promise.all(pingHosts.map(async url=>{
-    const t0 = performance.now();
-    try{ await fetch(url,{mode:'no-cors',cache:'no-store'}); return {host:new URL(url).hostname, ms:(performance.now()-t0).toFixed(0), ok:true}; }
-    catch(e){ return {host:new URL(url).hostname, ms:'—', ok:false}; }
+function renderHistory(){
+  const hist = getHistory();
+  document.getElementById('histChips').innerHTML = hist.map(h=>`<span class="histChip">${escapeHtml(h)}</span>`).join('');
+  document.querySelectorAll('.histChip').forEach(c=>c.addEventListener('click', ()=>{
+    document.getElementById('handleInput').value = c.textContent;
+    form.requestSubmit();
   }));
-  $('multiPingResults').innerHTML = '<table class="hist-table"><thead><tr><th>Host</th><th>Latency</th><th>Status</th></tr></thead><tbody>' +
-    results.map(r=>`<tr><td>${r.host}</td><td>${r.ms==='—'?'—':r.ms+' ms'}</td><td>${r.ok?'Reachable':'Failed'}</td></tr>`).join('') + '</tbody></table>';
-  $('multiPingBtn').disabled = false;
+}
+renderHistory();
+
+function validateInput(s){
+  if (!s || !s.trim()) return 'Enter a handle or URL.';
+  if (/\s/.test(s.trim())) return 'Handles or URLs cannot contain spaces.';
+  return '';
+}
+
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const raw = document.getElementById('handleInput').value.trim();
+  const err = validateInput(raw);
+  const fe = document.getElementById('fieldError');
+  fe.textContent = err; fe.style.display = err ? 'block' : 'none';
+  if (err) return;
+  const raw2 = compareOn ? document.getElementById('handleInput2').value.trim() : '';
+  runAnalysis(raw, raw2);
 });
 
-/* ---------- Continuous ping monitor + latency heatmap ---------- */
-const mc = $('monitorChart'), mcCtx = mc.getContext('2d'); fit(mc);
-window.addEventListener('resize', ()=>fit(mc));
-let monitorInterval = null, monitorSamples = [];
-function drawMonitor(){
-  const w=mc.width,h=mc.height,c=accentColor(),recent=monitorSamples.slice(-60),max=Math.max(1,...recent);
-  mcCtx.clearRect(0,0,w,h);
-  const bw=w/60;
-  recent.forEach((v,i)=>{ const bh=(v/max)*(h*0.85); mcCtx.fillStyle=c; mcCtx.globalAlpha=.35+(i/recent.length)*.65; mcCtx.fillRect(i*bw,h-bh,bw*0.7,bh); });
-  mcCtx.globalAlpha=1;
+function feedUrlFor(raw, m){
+  let s = raw.trim().replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/+$/,'').split('?')[0];
+  if (/^medium\.com\//i.test(s)) s = s.slice('medium.com/'.length);
+  s = s.split('/')[0];
+  if (s.includes('.') && !/medium\.com/i.test(raw)) return `https://${s}/feed`;
+  if (s.startsWith('@')) return `https://medium.com/feed/${s}`;
+  if (m === 'pub') return `https://medium.com/feed/${s}`;
+  return `https://medium.com/feed/@${s}`;
 }
-function addHeatBlock(latency){
-  const el = document.createElement('span');
-  el.style.background = latency<60?accentColor():latency<150?getComputedStyle(html).getPropertyValue('--warn').trim():getComputedStyle(html).getPropertyValue('--bad').trim();
-  el.title = latency.toFixed(0)+' ms';
-  const wrap = $('heatmap');
-  wrap.appendChild(el);
-  if(wrap.children.length>150) wrap.removeChild(wrap.firstChild);
+
+async function fetchFeed(raw, m){
+  const feedUrl = feedUrlFor(raw, m);
+  const api = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl);
+  const res = await fetch(api);
+  const data = await res.json();
+  if (data.status !== 'ok' || !data.items || !data.items.length) throw new Error('no public posts found for "' + raw + '"');
+  return data;
 }
-async function monitorTick(){
-  const t0 = performance.now();
+
+function setStatus(msg){
+  statusEl.textContent = msg;
+  statusEl.classList.toggle('show', !!msg);
+  if (msg){ errorBox.classList.remove('show'); results.classList.remove('show'); }
+}
+function setError(msg){
+  errorBox.textContent = msg;
+  errorBox.classList.toggle('show', !!msg);
+  if (msg) results.classList.remove('show');
+}
+
+async function runAnalysis(raw, raw2){
+  setStatus('Fetching feed…'); setError('');
   try{
-    await fetch(`https://ipwho.is/?output=json&_=${Date.now()}`, {cache:'no-store'});
-    const dt = performance.now()-t0;
-    monitorSamples.push(dt); if(monitorSamples.length>150) monitorSamples.shift();
-    drawMonitor(); addHeatBlock(dt);
-    const avg = monitorSamples.reduce((a,b)=>a+b,0)/monitorSamples.length;
-    const jitter = Math.max(...monitorSamples)-Math.min(...monitorSamples);
-    lastAvg=avg; lastJitter=jitter; lastLoss=0; recomputeScore();
-  }catch(e){}
-}
-$('monitorBtn').addEventListener('click', ()=>{
-  if(monitorInterval){
-    clearInterval(monitorInterval); monitorInterval=null; $('monitorBtn').textContent='Start Monitoring';
-  } else {
-    monitorSamples=[]; $('heatmap').innerHTML=''; mcCtx.clearRect(0,0,mc.width,mc.height);
-    monitorTick(); monitorInterval=setInterval(monitorTick,2000); $('monitorBtn').textContent='Stop Monitoring';
+    const data1 = await fetchFeed(raw, mode);
+    let data2 = null;
+    if (raw2){ data2 = await fetchFeed(raw2, mode); }
+    buildProfiles(raw, data1, raw2, data2);
+    addHistory(raw.startsWith('@') ? raw : '@' + raw.split('/')[0]);
+    updateUrl(raw, raw2);
+    setStatus('');
+  }catch(err){
+    setStatus('');
+    setError('Could not load stats — check the handle and try again (' + err.message + ').');
   }
-});
-
-/* ---------- Subnet / CIDR calculator ---------- */
-function ipToInt(ip){ return ip.split('.').reduce((acc,o)=>(acc<<8)+parseInt(o,10),0)>>>0; }
-function intToIp(n){ return [24,16,8,0].map(s=>(n>>>s)&255).join('.'); }
-$('cidrBtn').addEventListener('click', ()=>{
-  const m = $('cidrInput').value.trim().match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\/(\d{1,2})$/);
-  if(!m){ buildCards('cidrGrid',[{id:'cErr',label:'Result'}]); $('cErr').textContent='Enter a valid CIDR, e.g. 192.168.1.10/24'; return; }
-  const prefix = parseInt(m[2],10), ipInt = ipToInt(m[1]);
-  const maskInt = prefix===0?0:(0xFFFFFFFF<<(32-prefix))>>>0;
-  const network = (ipInt & maskInt)>>>0, broadcast = (network | (~maskInt>>>0))>>>0;
-  const total = Math.pow(2,32-prefix);
-  buildCards('cidrGrid',[
-    {id:'cNet',label:'Network Address'},{id:'cMask',label:'Subnet Mask'},
-    {id:'cBcast',label:'Broadcast Address'},{id:'cRange',label:'Usable Host Range',span:true},
-    {id:'cTotal',label:'Total Addresses'}
-  ]);
-  $('cNet').textContent=intToIp(network); $('cMask').textContent=intToIp(maskInt);
-  $('cBcast').textContent=intToIp(broadcast);
-  $('cRange').textContent = total>2 ? `${intToIp(network+1)} – ${intToIp(broadcast-1)}` : intToIp(network);
-  $('cTotal').textContent = total.toLocaleString();
-});
-
-/* ---------- IP address validator & classifier ---------- */
-function classifyIp(ip){
-  if(/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)){
-    const p = ip.split('.').map(Number);
-    if(p.some(n=>n>255)) return {valid:false};
-    const [a,b] = p; let type='Public';
-    if(a===10 || (a===172&&b>=16&&b<=31) || (a===192&&b===168)) type='Private (RFC1918)';
-    else if(a===127) type='Loopback';
-    else if(a===169&&b===254) type='Link-Local';
-    else if(a>=224&&a<=239) type='Multicast';
-    else if(a===0) type='Reserved';
-    return {valid:true, version:'IPv4', type};
-  }
-  if(ip.includes(':')){
-    const l = ip.toLowerCase(); let type='Public';
-    if(l==='::1') type='Loopback';
-    else if(l.startsWith('fe80')) type='Link-Local';
-    else if(l.startsWith('ff')) type='Multicast';
-    else if(l.startsWith('fc')||l.startsWith('fd')) type='Private (ULA)';
-    return {valid:true, version:'IPv6', type};
-  }
-  return {valid:false};
-}
-$('classifyBtn').addEventListener('click', ()=>{
-  const r = classifyIp($('classifyInput').value.trim());
-  buildCards('classifyGrid',[{id:'ivValid',label:'Valid'},{id:'ivVersion',label:'IP Version'},{id:'ivType',label:'Classification'}]);
-  $('ivValid').textContent = r.valid?'Yes':'No';
-  $('ivVersion').textContent = r.valid?r.version:'—';
-  $('ivType').textContent = r.valid?r.type:'Invalid format';
-});
-
-/* ---------- Domain Inspector: RDAP/WHOIS, headers, CSP, robots.txt, sitemap.xml ---------- */
-$('domainBtn').addEventListener('click', async ()=>{
-  const domain = $('domainInput').value.trim().replace(/^https?:\/\//,'').replace(/\/.*$/,'');
-  if(!domain) return;
-  $('domainBtn').disabled = true;
-  buildCards('domainGrid', [
-    {id:'domRegistrar',label:'Registrar (RDAP)'},{id:'domCreated',label:'Created'},{id:'domExpires',label:'Expires'},
-    {id:'domHeaders',label:'Response Headers',span:true},{id:'domRobots',label:'robots.txt',span:true},{id:'domSitemap',label:'sitemap.xml',span:true}
-  ]);
-  try{
-    const r = await fetch(`https://rdap.org/domain/${domain}`);
-    const d = await r.json();
-    const registrar = d.entities?.find(e=>e.roles?.includes('registrar'))?.vcardArray?.[1]?.find(x=>x[0]==='fn')?.[3] || 'Unknown';
-    $('domRegistrar').textContent = registrar;
-    $('domCreated').textContent = d.events?.find(e=>e.eventAction==='registration')?.eventDate?.slice(0,10) || 'Unknown';
-    $('domExpires').textContent = d.events?.find(e=>e.eventAction==='expiration')?.eventDate?.slice(0,10) || 'Unknown';
-  }catch(e){
-    $('domRegistrar').textContent='Unavailable'; $('domCreated').textContent='—'; $('domExpires').textContent='—';
-  }
-  try{
-    const r = await fetch(`https://${domain}`, {mode:'cors', cache:'no-store'});
-    const ct = r.headers.get('content-type')||'not exposed', csp = r.headers.get('content-security-policy')||'not exposed';
-    $('domHeaders').textContent = `Content-Type: ${ct} · CSP: ${csp} (browsers only expose headers a site opts into via CORS)`;
-  }catch(e){ $('domHeaders').textContent = 'Blocked by CORS — this site does not allow cross-origin header access from browser JS.'; }
-  for(const [id,path] of [['domRobots','/robots.txt'],['domSitemap','/sitemap.xml']]){
-    try{
-      const r = await fetch(`https://${domain}${path}`, {mode:'cors', cache:'no-store'});
-      const text = await r.text();
-      $(id).textContent = text.slice(0,150) + (text.length>150?'…':'');
-    }catch(e){
-      $(id).innerHTML = `Blocked by CORS — <a href="https://${domain}${path}" target="_blank" rel="noopener" style="color:var(--accent)">open directly</a>`;
-    }
-  }
-  $('domainBtn').disabled = false;
-});
-
-/* ---------- Network topology (illustrative diagram) ---------- */
-function buildTopology(ispName){
-  const nodes = [['📱','Device'],['📶','Router'],['🏢',(ispName||'ISP').slice(0,14)],['🌐','Internet']];
-  $('topology').innerHTML = nodes.map((n,i)=>
-    `<div class="topo-node"><div class="icon">${n[0]}</div>${n[1]}</div>${i<nodes.length-1?'<div class="topo-line"></div>':''}`
-  ).join('');
-}
-buildTopology('ISP');
-
-/* ---------- Speed comparison vs. previous run + broadband tiers ---------- */
-const speedTiers = [{name:'Basic Broadband',mbps:25},{name:'Standard Broadband',mbps:100},{name:'Fast Fiber',mbps:500},{name:'Gigabit',mbps:940}];
-function renderComparison(dl, prevDl){
-  const maxRef = Math.max(dl, prevDl||0, 940);
-  let tier = 'Below Basic'; speedTiers.forEach(x=>{ if(dl>=x.mbps*0.6) tier = x.name; });
-  const prevRow = prevDl!=null ? `<div class="compare-bar-row"><span style="width:70px;">Previous</span><div class="compare-bar-track"><div class="compare-bar-fill" style="width:${(prevDl/maxRef*100).toFixed(1)}%;opacity:.5;"></div></div><span>${prevDl.toFixed(1)} Mbps</span></div>` : '';
-  $('compareWrap').innerHTML = `
-    <div class="compare-bar-row"><span style="width:70px;">This run</span><div class="compare-bar-track"><div class="compare-bar-fill" style="width:${(dl/maxRef*100).toFixed(1)}%;"></div></div><span>${dl.toFixed(1)} Mbps</span></div>
-    ${prevRow}
-    <p class="empty-note">Comparable to <strong style="color:var(--text);">${tier}</strong>${prevDl!=null?` · ${Math.abs(((dl-prevDl)/prevDl)*100).toFixed(0)}% ${dl>=prevDl?'faster':'slower'} than your last test`:''}</p>`;
 }
 
-/* ---------- Hook gauge/comparison into existing ping & diagnostics flows ---------- */
-const origRunPingTest = runPingTest;
-runPingTest = async function(){
-  const avg = await origRunPingTest();
-  const jit = parseFloat($('pingJit').textContent) || 0;
-  lastAvg = avg; lastJitter = jit; lastLoss = 0; recomputeScore();
-  return avg;
-};
-pingBtn.removeEventListener('click', origRunPingTest);
-pingBtn.addEventListener('click', runPingTest);
+function updateUrl(raw1, raw2){
+  const params = new URLSearchParams();
+  params.set('u', raw1);
+  if (raw2) params.set('u2', raw2);
+  if (mode === 'pub') params.set('mode', 'pub');
+  history.replaceState(null, '', '?' + params.toString());
+}
 
-const origRunFullDiagnostics = runFullDiagnostics;
-runFullDiagnostics = async function(){
-  const prevDl = history.length ? parseFloat(history[history.length-1].dl) : null;
-  await origRunFullDiagnostics();
-  const dl = parseFloat($('statDl').textContent) || 0;
-  const loss = parseFloat($('statLoss').textContent) || 0;
-  lastLoss = loss; recomputeScore();
-  renderComparison(dl, prevDl);
-};
-speedBtn.removeEventListener('click', origRunFullDiagnostics);
-speedBtn.addEventListener('click', runFullDiagnostics);
+function profileTemplate(idx){
+  return `<div class="profile">
+    <div class="profileLabel" id="profileLabel${idx}"></div>
+    <div class="statGrid" id="statGrid${idx}"></div>
+    <div class="highlights" id="hl${idx}"></div>
+    <div class="block"><h3>Reading time mix</h3><div class="distBar" id="dist${idx}"></div><div class="distLegend" id="distLeg${idx}"></div></div>
+    <div class="block"><h3>Posts per month</h3><div id="hist${idx}"></div></div>
+    <div class="block"><h3>Day of week</h3><div class="dowRow" id="dow${idx}"></div><div class="dowLabels" id="dowLbl${idx}"></div></div>
+    <div class="block"><h3>Top tags</h3><div class="ledger" id="tagLedger${idx}"></div><div class="cloud" id="tagCloud${idx}"></div></div>
+    ${idx===0 ? `
+    <div class="block"><h3>Headline keywords</h3><div class="chips" id="kwChips"></div></div>
+    <div class="block">
+      <h3>Posts<span id="filterTag"></span></h3>
+      <div class="postControls">
+        <input id="postSearch" placeholder="Search titles…">
+        <select id="postSort"><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="longest">Longest</option></select>
+      </div>
+      <div class="postList" id="postList"></div>
+    </div>` : ''}
+  </div>`;
+}
 
-/* Update topology + signal bars once ISP/connection data resolves */
-const topoObserver = new MutationObserver(()=>{
-  const isp = $('statIsp')?.textContent;
-  if(isp && isp!=='—'){ buildTopology(isp); updateSignalBars(); topoObserver.disconnect(); }
-});
-topoObserver.observe($('statIsp'), {childList:true});
+function buildProfiles(raw1, data1, raw2, data2){
+  const container = document.getElementById('profiles');
+  container.classList.toggle('two', !!data2);
+  container.innerHTML = profileTemplate(0) + (data2 ? profileTemplate(1) : '');
+  filterState.tag = null; filterState.query = ''; filterState.sort = 'newest';
+  renderProfile(0, raw1, data1.items);
+  if (data2) renderProfile(1, raw2, data2.items);
+  results.classList.add('show');
+  document.getElementById('postSearch').addEventListener('input', e=>{ filterState.query = e.target.value; updatePostList(); });
+  document.getElementById('postSort').addEventListener('change', e=>{ filterState.sort = e.target.value; updatePostList(); });
+}
+
+function computeProfile(items){
+  const words = items.map(it => wordCount(it.content || it.description));
+  const totalWords = words.reduce((a,b)=>a+b,0);
+  const avgWords = Math.round(totalWords/items.length);
+  const avgRead = Math.max(1, Math.round(avgWords/200));
+  const readTimes = words.map(w => Math.max(1, Math.round(w/200)));
+  const dates = items.map(it => new Date(it.pubDate));
+
+  const tagCount = {};
+  items.forEach(it => (it.categories||[]).forEach(c => tagCount[c] = (tagCount[c]||0)+1));
+  const topTags = Object.entries(tagCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  const sortedDates = [...dates].sort((a,b)=>a-b);
+  const spanDays = Math.max(1, (sortedDates[sortedDates.length-1] - sortedDates[0]) / 86400000);
+  const perMonth = (items.length / (spanDays/30.44)).toFixed(1);
+
+  let longest = {w:-1}, shortest = {w:Infinity};
+  items.forEach((it,i)=>{
+    if (words[i] > longest.w) longest = {t:it.title, w:words[i]};
+    if (words[i] < shortest.w) shortest = {t:it.title, w:words[i]};
+  });
+  const recentIdx = dates.reduce((bi,d,i,arr)=> d > arr[bi] ? i : bi, 0);
+  const mostRecent = {t: items[recentIdx].title, d: dates[recentIdx]};
+
+  const weekNums = [...new Set(dates.map(d=>{
+    const onejan = new Date(d.getFullYear(),0,1);
+    return d.getFullYear()*100 + Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7);
+  }))].sort((a,b)=>b-a);
+  let streak = 1;
+  for (let i=1;i<weekNums.length;i++){ if (weekNums[i] === weekNums[i-1]-1) streak++; else break; }
+
+  const avgTitleLen = Math.round(items.reduce((a,it)=>a+it.title.length,0)/items.length);
+
+  const dist = {short:0, medium:0, long:0};
+  readTimes.forEach(rt => { if (rt<4) dist.short++; else if (rt<=8) dist.medium++; else dist.long++; });
+
+  const monthMap = {};
+  dates.forEach(d => { const k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); monthMap[k]=(monthMap[k]||0)+1; });
+  const months = Object.entries(monthMap).sort((a,b)=> a[0]<b[0]?-1:1).slice(-6);
+
+  const dow = [0,0,0,0,0,0,0];
+  dates.forEach(d => dow[d.getDay()]++);
+
+  const linkCounts = items.map(it => {
+    const div = document.createElement('div'); div.innerHTML = it.content || it.description || '';
+    return div.querySelectorAll('a').length;
+  });
+
+  return {words, readTimes, totalWords, avgRead, topTags, perMonth, longest, shortest, mostRecent, streak, avgTitleLen, dist, months, dow, linkCounts};
+}
+
+function keywordFreq(items){
+  const stop = new Set(['the','a','an','and','or','of','to','in','on','for','is','are','with','my','how','why','this','that','your','you','it','at','by','from','as','be','was','were','but','not','we','our','us','if','so','do','did','just','can','will','new','what']);
+  const freq = {};
+  items.forEach(it => it.title.toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).forEach(w=>{
+    if (w.length>2 && !stop.has(w)) freq[w]=(freq[w]||0)+1;
+  }));
+  return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,6);
+}
+
+function renderProfile(idx, label, items){
+  const p = computeProfile(items);
+  document.getElementById('profileLabel'+idx).textContent = label;
+
+  const stats = [
+    [items.length,'Posts in feed'],
+    [p.avgRead+' min','Avg read time'],
+    [p.totalWords.toLocaleString(),'Total words'],
+    [p.perMonth,'Posts / month'],
+    [p.streak,'Week streak'],
+    [p.avgTitleLen,'Avg title chars']
+  ];
+  document.getElementById('statGrid'+idx).innerHTML = stats.map(([n,l])=>`<div class="stat"><div class="num">${n}</div><div class="lbl">${l}</div></div>`).join('');
+
+  document.getElementById('hl'+idx).innerHTML = `
+    <div class="hrow"><span class="hlbl">Longest</span><span class="hval">${escapeHtml(trunc(p.longest.t,32))} · ${p.longest.w}w</span></div>
+    <div class="hrow"><span class="hlbl">Shortest</span><span class="hval">${escapeHtml(trunc(p.shortest.t,32))} · ${p.shortest.w}w</span></div>
+    <div class="hrow"><span class="hlbl">Latest</span><span class="hval">${escapeHtml(trunc(p.mostRecent.t,32))} · ${relTime(p.mostRecent.d)}</span></div>`;
+
+  const total = items.length;
+  document.getElementById('dist'+idx).innerHTML = `<span style="width:${p.dist.short/total*100}%;background:#7BAE7F"></span><span style="width:${p.dist.medium/total*100}%;background:var(--accent)"></span><span style="width:${p.dist.long/total*100}%;background:var(--err)"></span>`;
+  document.getElementById('distLeg'+idx).innerHTML = `<span>Short ${p.dist.short}</span><span>Medium ${p.dist.medium}</span><span>Long ${p.dist.long}</span>`;
+
+  const maxMonth = Math.max(...p.months.map(m=>m[1]),1);
+  document.getElementById('hist'+idx).innerHTML = p.months.map(([k,c])=>{
+    const [y,m] = k.split('-');
+    const lbl = new Date(y,m-1,1).toLocaleDateString(undefined,{month:'short'});
+    return `<div class="histRow"><span class="lbl">${lbl}</span><span class="bar"><i style="width:${c/maxMonth*100}%"></i></span><span class="n">${c}</span></div>`;
+  }).join('');
+
+  const maxDow = Math.max(...p.dow,1);
+  document.getElementById('dow'+idx).innerHTML = p.dow.map(c=>`<div class="bar"><i style="height:${c/maxDow*100}%"></i></div>`).join('');
+  document.getElementById('dowLbl'+idx).innerHTML = ['S','M','T','W','T','F','S'].map(n=>`<span>${n}</span>`).join('');
+
+  document.getElementById('tagLedger'+idx).innerHTML = p.topTags.length ? p.topTags.map(([t,c])=>`<div class="tag-row" data-tag="${escapeHtml(t)}"><span>${escapeHtml(t)}</span><span class="leader"></span><span class="count">${c}</span></div>`).join('') : '<p style="color:var(--sub);font-size:.85rem;margin:0;">No tags found.</p>';
+  const maxTag = p.topTags[0] ? p.topTags[0][1] : 1;
+  document.getElementById('tagCloud'+idx).innerHTML = p.topTags.map(([t,c])=>`<span class="cchip" data-tag="${escapeHtml(t)}" style="font-size:${(0.72+(c/maxTag)*0.5).toFixed(2)}rem">${escapeHtml(t)}</span>`).join('');
+
+  if (idx === 0){
+    primary = {items, computed:p};
+    document.getElementById('kwChips').innerHTML = keywordFreq(items).map(([w,c])=>`<span class="chip">${escapeHtml(w)} (${c})</span>`).join('');
+    document.querySelectorAll('#tagLedger0 .tag-row, #tagCloud0 .cchip').forEach(el=>{
+      el.addEventListener('click', ()=>{ filterState.tag = filterState.tag === el.dataset.tag ? null : el.dataset.tag; updatePostList(); });
+    });
+    updatePostList();
+  }
+}
+
+function updatePostList(){
+  if (!primary) return;
+  let list = primary.items.map((it,i)=>({it, w:primary.computed.words[i], rt:primary.computed.readTimes[i], links:primary.computed.linkCounts[i]}));
+  if (filterState.tag) list = list.filter(x => (x.it.categories||[]).includes(filterState.tag));
+  if (filterState.query) list = list.filter(x => x.it.title.toLowerCase().includes(filterState.query.toLowerCase()));
+  if (filterState.sort === 'newest') list.sort((a,b)=> new Date(b.it.pubDate) - new Date(a.it.pubDate));
+  else if (filterState.sort === 'oldest') list.sort((a,b)=> new Date(a.it.pubDate) - new Date(b.it.pubDate));
+  else if (filterState.sort === 'longest') list.sort((a,b)=> b.w - a.w);
+
+  const ft = document.getElementById('filterTag');
+  ft.innerHTML = filterState.tag ? `<span class="filterBadge">× ${escapeHtml(filterState.tag)}</span>` : '';
+  const badge = ft.querySelector('.filterBadge');
+  if (badge) badge.addEventListener('click', ()=>{ filterState.tag = null; updatePostList(); });
+
+  document.getElementById('postList').innerHTML = list.length ? list.slice(0,15).map(({it,rt,links})=>{
+    const d = new Date(it.pubDate).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+    const chips = (it.categories||[]).slice(0,4).map(c=>`<span class="chip">${escapeHtml(c)}</span>`).join('');
+    return `<a class="post" href="${it.link}" target="_blank" rel="noopener">
+      <div class="ptitle">${escapeHtml(it.title)}</div>
+      <div class="pmeta"><span>${d}</span><span class="dot">·</span><span>${rt} min read</span><span class="dot">·</span><span>🔗 ${links}</span></div>
+      <div class="chips">${chips}</div>
+    </a>`;
+  }).join('') : '<p style="color:var(--sub);font-size:.85rem;">No posts match.</p>';
+}
+
+function wordCount(html){
+  const div = document.createElement('div');
+  div.innerHTML = html || '';
+  return (div.textContent || '').trim().split(/\s+/).filter(Boolean).length;
+}
+function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+function trunc(s,n){ return s.length>n ? s.slice(0,n-1)+'…' : s; }
+function relTime(d){
+  const days = Math.floor((Date.now()-d)/86400000);
+  if (days<1) return 'today';
+  if (days<30) return days+'d ago';
+  if (days<365) return Math.floor(days/30)+'mo ago';
+  return Math.floor(days/365)+'y ago';
+}
+
+(function initFromUrl(){
+  const params = new URLSearchParams(location.search);
+  const u = params.get('u');
+  const u2 = params.get('u2');
+  const m = params.get('mode');
+  if (m === 'pub'){
+    mode = 'pub';
+    document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('active', b.dataset.mode === 'pub'));
+  }
+  if (u) document.getElementById('handleInput').value = u;
+  if (u2){
+    compareOn = true;
+    document.getElementById('compareRow').classList.remove('hidden');
+    document.getElementById('compareToggle').textContent = '− Remove comparison';
+    document.getElementById('handleInput2').value = u2;
+  }
+  if (u) runAnalysis(u, u2 || '');
+})();
 </script>
 </body>
 </html>
