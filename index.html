@@ -3,30 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111">
 <title>Navigation Map</title>
-<link rel="stylesheet"
- href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-:root{--bg:#f4f5f7;--card:#fff;--txt:#111;--blue:#1677ff;--red:#e53935}
+:root{--bg:#f4f5f7;--card:#fff;--txt:#111;--blue:#1677ff}
 .dark{--bg:#151515;--card:#222;--txt:#fff}
 .oled{--bg:#000;--card:#111;--txt:#fff}
 *{box-sizing:border-box}
 body{margin:0;height:100vh;display:flex;flex-direction:column;
 font-family:system-ui,Arial;background:var(--bg);color:var(--txt)}
-header,.tools,footer,#info,#results,#steps,#alerts{
-background:var(--card)}
+header,.tools,footer,#info,#results,#steps,#alerts{background:var(--card)}
 header{padding:8px;display:flex;gap:5px}
-input{flex:1;padding:11px;border:0;border-radius:11px;background:#eee}
-button{border:0;border-radius:11px;padding:10px;cursor:pointer;font-weight:700}
-#map{flex:1;min-height:240px}
-.tools{display:flex;gap:5px;padding:7px;overflow-x:auto}
+input{flex:1;padding:11px;border:0;border-radius:11px;background:#eee;outline:0}
+button{border:0;border-radius:11px;padding:9px;cursor:pointer;font-weight:700}
+#map{flex:1;min-height:230px}
+.tools{display:flex;gap:5px;padding:6px;overflow-x:auto}
 .tools button{white-space:nowrap}
-#info,#alerts{padding:8px;font-size:13px}
-#results,#steps{max-height:130px;overflow:auto}
-.item{padding:9px;border-bottom:1px solid #aaa;cursor:pointer;font-size:13px}
+#info,#alerts{padding:7px;font-size:13px}
+#results,#steps{max-height:125px;overflow:auto}
+.item{padding:8px;border-bottom:1px solid #aaa;cursor:pointer;font-size:13px}
 .item:hover{background:#ddd}
-.alert{padding:7px;border-radius:8px;margin:3px 0;background:#fee}
-footer{text-align:center;padding:9px;font-size:11px}
+.alert{padding:7px;background:#fee;margin:2px;border-radius:7px}
+footer{text-align:center;padding:8px;font-size:11px}
 .dark input{background:#333;color:#fff}
 .dark .item:hover{background:#333}
 .oled input{background:#111;color:#fff}
@@ -67,16 +66,16 @@ footer{text-align:center;padding:9px;font-size:11px}
 
 <div class="tools">
 <button onclick="showSpeed()">🛣️ Speed</button>
-<button onclick="toggleWarnings()">🔔 Warnings</button>
+<button onclick="toggleWarnings()">🔔 Warning</button>
 <button onclick="showDangerZones()">⚠️ Danger</button>
 <button onclick="showFavorites()">⭐ Favorites</button>
 <button onclick="showRecent()">🕘 Recent</button>
 <button onclick="toggleTheme()">🌙</button>
-<button onclick="toggleOLED()">🖤</button>
+<button onclick="toggleOLED()">🖤 OLED</button>
 <button onclick="clearMap()">✕</button>
 </div>
 
-<div id="info">Select a destination or use GPS.</div>
+<div id="info">Starting GPS...</div>
 <div id="alerts"></div>
 <div id="results"></div>
 <div id="steps"></div>
@@ -92,48 +91,140 @@ $("year").textContent=new Date().getFullYear();
 
 const map=L.map("map").setView([22.5726,88.3639],13);
 
-L.tileLayer(
-"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-{maxZoom:19,attribution:"© OpenStreetMap contributors"}
-).addTo(map);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
+maxZoom:19,attribution:"© OpenStreetMap contributors"
+}).addTo(map);
 
 let user=null,destination=null,marker=null,userMarker=null;
-let routes=[],poiMarkers=[],warningOn=true;
-let mode="driving",speedLimit=null;
-let favorites=JSON.parse(localStorage.getItem("navFavorites")||"[]");
-let recent=JSON.parse(localStorage.getItem("navRecent")||"[]");
-let incidents=JSON.parse(localStorage.getItem("navIncidents")||"[]");
+let accuracyCircle=null,gpsWatch=null,firstFix=true;
+let routes=[],poiMarkers=[],mode="driving";
+let speedLimit=null,warningOn=true;
+
+let favorites=JSON.parse(
+localStorage.getItem("navFavorites")||"[]");
+let recent=JSON.parse(
+localStorage.getItem("navRecent")||"[]");
+let incidents=JSON.parse(
+localStorage.getItem("navIncidents")||"[]");
 
 function msg(x){$("info").textContent=x}
 
-function setMode(x){
-mode=x;
-msg(x.toUpperCase()+" navigation selected.");
-if(destination&&user)route();
+function safe(s){
+return String(s).replace(/\\/g,"\\\\")
+.replace(/'/g,"\\'").replace(/</g,"&lt;")
+.replace(/>/g,"&gt;");
 }
 
-function locateMe(){
-if(!navigator.geolocation)return msg("GPS unavailable.");
+/* GPS */
 
-msg("Finding your location...");
+function startGPS(){
 
-navigator.geolocation.getCurrentPosition(p=>{
-user=[p.coords.latitude,p.coords.longitude];
+if(!("geolocation" in navigator)){
+msg("❌ Browser does not support GPS.");
+return;
+}
 
-if(userMarker)map.removeLayer(userMarker);
+if(location.protocol!=="https:" &&
+location.hostname!=="localhost"){
+msg("⚠️ GPS requires HTTPS or localhost.");
+return;
+}
 
-userMarker=L.circleMarker(user,{radius:9})
+msg("📍 Requesting your location...");
+
+navigator.geolocation.getCurrentPosition(
+gpsSuccess,gpsError,{
+enableHighAccuracy:true,
+timeout:30000,
+maximumAge:0
+});
+
+if(gpsWatch!==null)
+navigator.geolocation.clearWatch(gpsWatch);
+
+gpsWatch=navigator.geolocation.watchPosition(
+gpsSuccess,gpsError,{
+enableHighAccuracy:true,
+timeout:30000,
+maximumAge:5000
+});
+}
+
+function gpsSuccess(p){
+
+let lat=p.coords.latitude;
+let lon=p.coords.longitude;
+let accuracy=p.coords.accuracy||0;
+let old=user;
+
+user=[lat,lon];
+
+if(!userMarker){
+userMarker=L.circleMarker(user,{radius:9,weight:3})
 .addTo(map).bindPopup("📍 You are here");
+}else userMarker.setLatLng(user);
 
-map.setView(user,16);
-msg("Current location found.");
-
-loadRoadData();
-},()=>msg("Location permission denied."),
-{enableHighAccuracy:true,timeout:10000});
+if(!accuracyCircle){
+accuracyCircle=L.circle(user,{
+radius:accuracy,weight:1,fillOpacity:.08
+}).addTo(map);
+}else{
+accuracyCircle.setLatLng(user);
+accuracyCircle.setRadius(accuracy);
 }
+
+if(firstFix){
+map.setView(user,16);
+firstFix=false;
+}
+
+msg(`📍 GPS active · Accuracy ±${Math.round(accuracy)} m`);
+
+checkSpeed();
+
+if(destination&&old){
+let moved=Math.abs(lat-old[0])+Math.abs(lon-old[1]);
+if(moved>.0003)route();
+}
+}
+
+function gpsError(e){
+if(e.code===1)
+msg("❌ Location permission denied.");
+else if(e.code===2)
+msg("⚠️ Location unavailable. Turn on GPS.");
+else if(e.code===3)
+msg("⏱️ GPS timeout. Retrying...");
+else msg("⚠️ Unable to detect location.");
+}
+
+async function checkLocationPermission(){
+
+if(!navigator.permissions){
+startGPS();
+return;
+}
+
+try{
+let p=await navigator.permissions.query({
+name:"geolocation"
+});
+
+if(p.state!=="denied")startGPS();
+else msg("❌ Location permission is blocked.");
+
+p.onchange=()=>{
+if(p.state==="granted")startGPS();
+};
+}catch(e){startGPS();}
+}
+
+function locateMe(){startGPS()}
+
+/* Search */
 
 async function searchPlace(){
+
 let q=$("search").value.trim();
 if(!q)return;
 
@@ -152,22 +243,23 @@ ${x.lat},${x.lon},'${safe(x.display_name)}')">
 </div>`).join("");
 
 msg(data.length+" result(s) found.");
-}catch(e){msg("Search failed.")}
+}catch(e){msg("Search failed.");}
 }
 
-function safe(s){
-return String(s).replace(/\\/g,"\\\\")
-.replace(/'/g,"\\'")
-.replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
+$("search").onkeydown=e=>{
+if(e.key==="Enter")searchPlace();
+};
+
+/* Destination */
 
 function selectPlace(lat,lon,name){
+
 destination=[+lat,+lon];
 
 if(marker)map.removeLayer(marker);
 
-marker=L.marker(destination)
-.addTo(map).bindPopup(name).openPopup();
+marker=L.marker(destination).addTo(map)
+.bindPopup(name).openPopup();
 
 map.setView(destination,16);
 saveRecent(name,destination);
@@ -179,6 +271,7 @@ $("results").innerHTML=`
 </div>`;
 
 msg("Destination selected.");
+
 if(user)route();
 }
 
@@ -186,11 +279,21 @@ map.on("click",e=>{
 selectPlace(e.latlng.lat,e.latlng.lng,"Map destination");
 });
 
-async function route(){
-if(!user)return locateMe();
+/* Routing */
 
-if(!destination)
-return msg("Select a destination first.");
+function setMode(x){
+mode=x;
+msg(x.toUpperCase()+" navigation selected.");
+if(destination&&user)route();
+}
+
+async function route(){
+
+if(!user){startGPS();return}
+if(!destination){
+msg("Select a destination first.");
+return;
+}
 
 msg("Calculating route...");
 
@@ -205,14 +308,15 @@ let url=host+
 "?overview=full&geometries=geojson&steps=true&alternatives=true";
 
 try{
-let data=await fetch(url).then(r=>r.json());
 
+let data=await fetch(url).then(r=>r.json());
 if(data.code!=="Ok")throw Error();
 
 routes.forEach(x=>map.removeLayer(x));
 routes=[];
 
 data.routes.forEach((r,i)=>{
+
 let line=L.geoJSON(r.geometry,{
 style:{weight:i?4:7,opacity:i?0.4:1}
 }).addTo(map);
@@ -220,6 +324,7 @@ style:{weight:i?4:7,opacity:i?0.4:1}
 routes.push(line);
 
 if(!i){
+
 map.fitBounds(line.getBounds(),{padding:[25,25]});
 
 let km=(r.distance/1000).toFixed(1);
@@ -234,10 +339,12 @@ showSteps(r);
 });
 
 loadRoadData();
-}catch(e){msg("Route unavailable.")}
+
+}catch(e){msg("Route unavailable.");}
 }
 
 function showSteps(r){
+
 let h="<b>🧭 Turn-by-turn</b>";
 
 r.legs.forEach(l=>l.steps.forEach((s,i)=>{
@@ -249,13 +356,11 @@ ${s.name||"Unnamed road"} · ${Math.round(s.distance)} m</div>`;
 $("steps").innerHTML=h;
 }
 
-/* 16–23 Nearby POIs */
+/* Nearby 16–23 */
 
 async function nearby(type){
-if(!user){
-locateMe();
-return;
-}
+
+if(!user){startGPS();return}
 
 poiMarkers.forEach(x=>map.removeLayer(x));
 poiMarkers=[];
@@ -279,6 +384,7 @@ way${tags[type]}(around:5000,${user[0]},${user[1]});
 msg("Finding nearby "+type+"...");
 
 try{
+
 let d=await fetch(
 "https://overpass-api.de/api/interpreter",
 {method:"POST",body:q}
@@ -287,6 +393,7 @@ let d=await fetch(
 $("results").innerHTML="";
 
 d.elements.slice(0,30).forEach(x=>{
+
 let lat=x.lat??x.center.lat;
 let lon=x.lon??x.center.lon;
 let name=x.tags?.name||type;
@@ -305,17 +412,20 @@ $("results").innerHTML+=`
 });
 
 msg(`${Math.min(d.elements.length,30)} nearby ${type}(s).`);
-}catch(e){msg("Nearby search unavailable.")}
+
+}catch(e){msg("Nearby search unavailable.");}
 }
 
 function focusPOI(lat,lon){map.setView([lat,lon],17)}
 
-/* 24 Favorites */
+/* Favorites 24 */
 
 function saveFavorite(){
+
 if(!destination)return;
 
-let name=$("results").querySelector("b")?.textContent||"Saved place";
+let name=$("results").querySelector("b")?.textContent||
+"Saved place";
 
 favorites.unshift({
 name:name.replace("📍 ",""),
@@ -324,11 +434,15 @@ lon:destination[1]
 });
 
 favorites=favorites.slice(0,30);
-localStorage.setItem("navFavorites",JSON.stringify(favorites));
+
+localStorage.setItem(
+"navFavorites",JSON.stringify(favorites));
+
 msg("⭐ Saved to favorites.");
 }
 
 function showFavorites(){
+
 $("results").innerHTML=favorites.length?
 favorites.map(x=>`
 <div class="item" onclick="selectPlace(
@@ -337,16 +451,25 @@ ${x.lat},${x.lon},'${safe(x.name)}')">
 </div>`).join(""):"No favorites.";
 }
 
-/* 25 Recent */
+/* Recent 25 */
 
 function saveRecent(name,pos){
-recent=recent.filter(x=>x.lat!==pos[0]||x.lon!==pos[1]);
-recent.unshift({name,lat:pos[0],lon:pos[1]});
+
+recent=recent.filter(x=>
+x.lat!==pos[0]||x.lon!==pos[1]);
+
+recent.unshift({
+name,lat:pos[0],lon:pos[1]
+});
+
 recent=recent.slice(0,20);
-localStorage.setItem("navRecent",JSON.stringify(recent));
+
+localStorage.setItem(
+"navRecent",JSON.stringify(recent));
 }
 
 function showRecent(){
+
 $("results").innerHTML=recent.length?
 recent.map(x=>`
 <div class="item" onclick="selectPlace(
@@ -355,29 +478,30 @@ ${x.lat},${x.lon},'${safe(x.name)}')">
 </div>`).join(""):"No recent destinations.";
 }
 
-/* 26 Traffic-aware routing framework */
+/* 26 Traffic */
 
 function showTraffic(){
-if(!user)return locateMe();
 
-$("alerts").innerHTML=
-`<div class="alert">
-🚦 <b>Traffic status</b><br>
-Live traffic is not available from the
-free OSM routing service. Route calculation
-is active using current road-network data.
+if(!user){startGPS();return}
+
+$("alerts").innerHTML=`
+<div class="alert">
+🚦 <b>Traffic-aware routing</b><br>
+Live traffic requires a dedicated traffic
+data provider. Current routing uses the
+available road-network data.
 </div>`;
 
-msg("Traffic-aware routing framework active.");
 route();
 }
 
-/* 27 Road closures from OSM */
+/* 27 Road closures */
 
 async function findClosures(){
-if(!user)return locateMe();
 
-msg("Checking mapped road restrictions...");
+if(!user){startGPS();return}
+
+msg("Checking mapped restrictions...");
 
 let q=`[out:json][timeout:15];(
 way["access"="no"](around:5000,${user[0]},${user[1]});
@@ -386,12 +510,14 @@ way["motor_vehicle"="no"](around:5000,${user[0]},${user[1]});
 );out center tags;`;
 
 try{
+
 let d=await fetch(
 "https://overpass-api.de/api/interpreter",
 {method:"POST",body:q}
 ).then(r=>r.json());
 
 $("results").innerHTML=d.elements.slice(0,20).map(x=>{
+
 let lat=x.center?.lat,lon=x.center?.lon;
 let n=x.tags?.name||"Restricted road";
 
@@ -404,51 +530,41 @@ poiMarkers.push(m);
 return `<div class="item">🚧 ${safe(n)}</div>`;
 }).join("");
 
-msg(`${d.elements.length} mapped restriction(s) found.`);
-}catch(e){msg("Closure data unavailable.")}
+msg(`${d.elements.length} restriction(s) found.`);
+}catch(e){msg("Closure data unavailable.");}
 }
 
-/* 28 User incident reporting */
+/* 28 Incident reporting */
 
 function reportIncident(){
-if(!user)return locateMe();
+
+if(!user){startGPS();return}
 
 let type=prompt(
-"Incident type:\n1 Accident\n2 Road blocked\n3 Hazard\n4 Other");
+"Incident:\n1 Accident\n2 Road blocked\n3 Hazard\n4 Other");
 
 if(!type)return;
 
 let item={
-type,
-lat:user[0],
-lon:user[1],
+type,lat:user[0],lon:user[1],
 time:new Date().toISOString()
 };
 
 incidents.push(item);
-localStorage.setItem("navIncidents",JSON.stringify(incidents));
 
-let m=L.marker(user).addTo(map)
+localStorage.setItem(
+"navIncidents",JSON.stringify(incidents));
+
+L.marker(user).addTo(map)
 .bindPopup("⚠️ User-reported incident");
-
-poiMarkers.push(m);
 
 msg("⚠️ Incident saved locally.");
 }
 
 /* 29 Speed limit */
 
-async function showSpeed(){
-if(!user)return locateMe();
-
-await loadRoadData();
-
-msg(speedLimit?
-`🛣️ Speed limit: ${speedLimit} km/h`
-:"Speed limit not mapped here.");
-}
-
 async function loadRoadData(){
+
 if(!user)return;
 
 let q=`[out:json][timeout:10];
@@ -456,6 +572,7 @@ way["maxspeed"](around:80,${user[0]},${user[1]});
 out tags center 1;`;
 
 try{
+
 let d=await fetch(
 "https://overpass-api.de/api/interpreter",
 {method:"POST",body:q}
@@ -465,30 +582,44 @@ let s=d.elements[0]?.tags?.maxspeed;
 
 if(s){
 speedLimit=parseInt(s)||null;
-$("info").textContent=
-`🛣️ Local mapped speed limit: ${s}`;
 }
 }catch(e){}
+}
+
+async function showSpeed(){
+
+if(!user){startGPS();return}
+
+await loadRoadData();
+
+msg(speedLimit?
+`🛣️ Speed limit: ${speedLimit} km/h`:
+"Speed limit not mapped here.");
 }
 
 /* 30 Speed warning */
 
 function toggleWarnings(){
+
 warningOn=!warningOn;
+
 msg(warningOn?
 "🔔 Speed warnings ON":
 "🔕 Speed warnings OFF");
 }
 
 function checkSpeed(){
-if(!warningOn||!speedLimit||!navigator.geolocation)return;
+
+if(!warningOn||!speedLimit)return;
 
 navigator.geolocation.getCurrentPosition(p=>{
+
 let kmh=(p.coords.speed||0)*3.6;
 
 if(kmh>speedLimit){
-$("alerts").innerHTML=
-`<div class="alert">
+
+$("alerts").innerHTML=`
+<div class="alert">
 🔔 <b>Speed warning!</b><br>
 Approx. ${kmh.toFixed(0)} km/h ·
 Limit ${speedLimit} km/h
@@ -500,21 +631,22 @@ Limit ${speedLimit} km/h
 /* 31 Danger zones */
 
 function showDangerZones(){
-if(!user)return locateMe();
 
-$("alerts").innerHTML=
-`<div class="alert">
-⚠️ Danger-zone alerts are based on
-mapped restrictions and user-reported
-incidents available in this prototype.
+if(!user){startGPS();return}
+
+$("alerts").innerHTML=`
+<div class="alert">
+⚠️ Danger alerts use mapped restrictions
+and user-reported incidents.
 </div>`;
 
 incidents.forEach(x=>{
+
 if(Math.abs(x.lat-user[0])<.01&&
 Math.abs(x.lon-user[1])<.01){
+
 L.circle([x.lat,x.lon],{
-radius:100,
-color:"red"
+radius:100,color:"red"
 }).addTo(map)
 .bindPopup("⚠️ Reported "+x.type);
 }
@@ -523,27 +655,34 @@ color:"red"
 msg("Danger-zone scan complete.");
 }
 
-/* 32 Emergency location sharing */
+/* 32 Emergency sharing */
 
 async function emergency(){
-if(!user)return locateMe();
+
+if(!user){startGPS();return}
 
 let text=
 `🆘 EMERGENCY LOCATION\n`+
 `https://www.google.com/maps?q=${user[0]},${user[1]}`;
 
 if(navigator.share){
+
 try{
 await navigator.share({
 title:"Emergency Location",
-text
+text:text
 });
-msg("Emergency location sharing opened.");
+msg("Emergency sharing opened.");
 }catch(e){}
+
 }else{
-await navigator.clipboard?.writeText(text);
+
+try{
+await navigator.clipboard.writeText(text);
+msg("🆘 Emergency location copied.");
+}catch(e){
 alert(text);
-msg("Emergency location copied.");
+}
 }
 }
 
@@ -553,39 +692,62 @@ function autoReroute(){
 if(destination&&user)route();
 }
 
+/* Continuous GPS */
+
 if(navigator.geolocation){
+
 navigator.geolocation.watchPosition(p=>{
+
 let old=user;
 
-user=[p.coords.latitude,p.coords.longitude];
+user=[
+p.coords.latitude,
+p.coords.longitude
+];
 
-if(!userMarker)
-userMarker=L.circleMarker(user,{radius:9}).addTo(map);
-else
+if(!userMarker){
+userMarker=L.circleMarker(user,{radius:9})
+.addTo(map);
+}else{
 userMarker.setLatLng(user);
+}
 
 checkSpeed();
 
 if(destination&&old){
+
 let moved=
 Math.abs(user[0]-old[0])+
 Math.abs(user[1]-old[1]);
 
-if(moved>.0005)autoReroute();
-}
-},{enableHighAccuracy:true});
+if(moved>.0003)
+autoReroute();
 }
 
+},{
+enableHighAccuracy:true,
+maximumAge:5000,
+timeout:30000
+},()=>{});
+}
+
+/* Clear */
+
 function clearMap(){
+
 routes.forEach(x=>map.removeLayer(x));
 poiMarkers.forEach(x=>map.removeLayer(x));
-routes=[];poiMarkers=[];destination=null;
+
+routes=[];
+poiMarkers=[];
+destination=null;
 
 if(marker)map.removeLayer(marker);
 
 $("results").innerHTML="";
 $("steps").innerHTML="";
 $("alerts").innerHTML="";
+
 msg("Map cleared.");
 }
 
@@ -596,6 +758,13 @@ document.body.classList.toggle("dark");
 function toggleOLED(){
 document.body.classList.toggle("oled");
 }
+
+/* Automatic GPS startup */
+
+window.addEventListener("load",()=>{
+setTimeout(checkLocationPermission,500);
+});
 </script>
+
 </body>
 </html>
