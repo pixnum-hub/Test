@@ -1,2360 +1,320 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width,initial-scale=1,viewport-fit=cover,
-maximum-scale=1,user-scalable=no">
-
-<meta name="theme-color" content="#111">
-<title>Navigation Map</title>
-
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulsecheck — Website Downtime Checker</title>
 <style>
-:root{
---bg:#f5f5f5;
---card:#fff;
---text:#111;
---muted:#666;
---border:#ddd;
---accent:#087f5b;
---danger:#d93025;
-}
-
-.dark{
---bg:#171717;
---card:#252525;
---text:#fff;
---muted:#bbb;
---border:#444;
-}
-
-.oled{
---bg:#000;
---card:#080808;
---text:#fff;
---muted:#aaa;
---border:#222;
-}
-
-*{
-box-sizing:border-box;
--webkit-tap-highlight-color:transparent;
-}
-
-html,body{
-margin:0;
-width:100%;
-height:100%;
-overflow:hidden;
-font-family:system-ui,-apple-system,BlinkMacSystemFont,
-"Segoe UI",Arial,sans-serif;
-background:var(--bg);
-color:var(--text);
-}
-
-button,input{
-font:inherit;
-}
-
-button{
-min-width:44px;
-min-height:44px;
-border:0;
-border-radius:14px;
-background:var(--card);
-color:var(--text);
-font-weight:700;
-box-shadow:0 2px 8px #0002;
-touch-action:manipulation;
-}
-
-button:active{
-transform:scale(.95);
-}
-
-input{
-height:48px;
-border:0;
-outline:0;
-border-radius:16px;
-padding:0 15px;
-background:var(--card);
-color:var(--text);
-width:100%;
-box-shadow:0 2px 12px #0003;
-}
-
-/* MAP */
-
-#map{
-position:fixed;
-inset:0;
-z-index:1;
-}
-
-/* TOP SEARCH */
-
-.top{
-position:fixed;
-z-index:500;
-top:env(safe-area-inset-top,8px);
-left:8px;
-right:8px;
-padding-top:8px;
-display:flex;
-gap:7px;
-}
-
-.search{
-position:relative;
-flex:1;
-}
-
-.search button{
-position:absolute;
-right:3px;
-top:2px;
-width:44px;
-height:44px;
-box-shadow:none;
-background:transparent;
-}
-
-/* FLOATING GPS */
-
-.gps{
-position:fixed;
-z-index:600;
-right:12px;
-top:74px;
-}
-
-.gps button{
-width:50px;
-height:50px;
-font-size:20px;
-}
-
-/* STATUS */
-
-.status{
-position:fixed;
-z-index:600;
-top:130px;
-left:10px;
-right:70px;
-pointer-events:none;
-}
-
-#info{
-display:inline-block;
-padding:8px 12px;
-border-radius:14px;
-background:var(--card);
-box-shadow:0 2px 10px #0003;
-font-size:12px;
-max-width:100%;
-}
-
-/* BOTTOM AREA */
-
-.bottom{
-position:fixed;
-z-index:700;
-left:0;
-right:0;
-bottom:0;
-padding:
-6px
-8px
-calc(8px + env(safe-area-inset-bottom));
-pointer-events:none;
-}
-
-.bottom>*{
-pointer-events:auto;
-}
-
-/* HORIZONTAL TOOLBAR */
-
-.toolbar{
-display:flex;
-gap:8px;
-overflow-x:auto;
-padding:3px 1px 8px;
-scrollbar-width:none;
-}
-
-.toolbar::-webkit-scrollbar{
-display:none;
-}
-
-.toolbar button{
-flex:0 0 auto;
-padding:0 13px;
-white-space:nowrap;
-}
-
-/* MAIN NAV BAR */
-
-.navbar{
-display:flex;
-gap:8px;
-overflow-x:auto;
-padding:3px 1px 8px;
-scrollbar-width:none;
-}
-
-.navbar::-webkit-scrollbar{
-display:none;
-}
-
-.navbar button{
-flex:1 0 auto;
-padding:0 14px;
-white-space:nowrap;
-}
-
-/* BOTTOM SHEET */
-
-.sheet{
-display:none;
-position:fixed;
-z-index:900;
-left:0;
-right:0;
-bottom:0;
-max-height:72vh;
-background:var(--card);
-border-radius:24px 24px 0 0;
-box-shadow:0 -5px 25px #0004;
-padding:
-10px
-10px
-calc(12px + env(safe-area-inset-bottom));
-overflow:auto;
-}
-
-.sheet.open{
-display:block;
-}
-
-.handle{
-width:42px;
-height:5px;
-border-radius:10px;
-background:#999;
-margin:0 auto 10px;
-}
-
-/* RESULTS */
-
-#results,#steps{
-max-height:35vh;
-overflow:auto;
-}
-
-.item{
-padding:12px 7px;
-border-bottom:1px solid var(--border);
-font-size:14px;
-}
-
-.item button{
-min-height:36px;
-margin-left:5px;
-}
-
-/* ALERT */
-
-#alerts{
-font-size:13px;
-}
-
-.alert{
-padding:12px;
-margin-bottom:6px;
-border-radius:14px;
-background:#fff0f0;
-color:#800;
-}
-
-/* MAP MENU */
-
-#maps{
-display:none;
-position:fixed;
-z-index:1000;
-left:8px;
-right:8px;
-top:
-calc(64px + env(safe-area-inset-top));
-background:var(--card);
-border-radius:20px;
-padding:12px;
-box-shadow:0 5px 25px #0005;
-max-height:70vh;
-overflow:auto;
-}
-
-#maps.open{
-display:block;
-}
-
-#maps button{
-margin:3px;
-}
-
-/* FOOTER */
-
-footer{
-text-align:center;
-font-size:10px;
-padding:8px;
-color:var(--muted);
-}
-
-/* MEASUREMENT */
-
-.measure-info{
-font-size:14px;
-font-weight:700;
-}
-
-/* TABLET/DESKTOP */
-
-@media(min-width:700px){
-
-.top{
-max-width:650px;
-margin:auto;
-}
-
-.gps{
-right:25px;
-top:90px;
-}
-
-.status{
-left:25px;
-right:auto;
-top:145px;
-}
-
-.bottom{
-left:50%;
-transform:translateX(-50%);
-width:min(700px,100%);
-}
-
-}
-
-@media(min-width:1100px){
-
-.bottom{
-width:750px;
-}
-
-#maps{
-left:auto;
-right:25px;
-width:430px;
-}
-
-}
-
-/* LANDSCAPE PHONE */
-
-@media(max-height:500px){
-
-.top{
-top:4px;
-}
-
-.status{
-top:62px;
-}
-
-.bottom{
-padding-bottom:4px;
-}
-
-.toolbar{
-padding-bottom:3px;
-}
-
-.navbar{
-padding-bottom:3px;
-}
-
-button{
-min-height:40px;
-}
-
-input{
-height:44px;
-}
-
-}
+  :root{
+    --font-mono:'JetBrains Mono','SF Mono',Consolas,monospace;
+    --font-sans:'Inter',-apple-system,Segoe UI,sans-serif;
+    --radius:10px;
+  }
+  html[data-theme="dark"]{
+    --bg:#0b0e11; --panel:#12161b; --panel2:#181d24; --border:#232a33;
+    --text:#e6edf3; --sub:#8b98a5; --up:#00d97e; --down:#ff5c5c; --pend:#ffb020;
+    --accent:#00d97e; --focus:#4fd1ff;
+  }
+  html[data-theme="light"]{
+    --bg:#f3f5f7; --panel:#ffffff; --panel2:#eef1f4; --border:#dbe1e6;
+    --text:#161b20; --sub:#5b6670; --up:#0a9d5c; --down:#d33b3b; --pend:#b6790a;
+    --accent:#0a9d5c; --focus:#0072e0;
+  }
+  html[data-theme="oled"]{
+    --bg:#000000; --panel:#000000; --panel2:#0a0a0a; --border:#1c1c1c;
+    --text:#eaeaea; --sub:#7a7a7a; --up:#00e08a; --down:#ff5252; --pend:#ffb020;
+    --accent:#00e08a; --focus:#4fd1ff;
+  }
+  html[data-theme="hc"]{
+    --bg:#000000; --panel:#000000; --panel2:#000000; --border:#ffffff;
+    --text:#ffffff; --sub:#ffffff; --up:#00ff6a; --down:#ff2a2a; --pend:#ffd400;
+    --accent:#ffff00; --focus:#ffff00;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--font-sans);
+    min-height:100vh; display:flex; flex-direction:column;
+    transition:background .2s,color .2s;
+  }
+  a{color:var(--accent)}
+  header{
+    padding:18px 16px 10px; display:flex; align-items:center;
+    justify-content:space-between; gap:10px; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-family:var(--font-mono)}
+  .dot-logo{width:12px;height:12px;border-radius:50%;background:var(--up);
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--up) 25%, transparent);
+    animation:beat 1.8s ease-in-out infinite;}
+  @keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+  .brand h1{font-size:1.05rem; letter-spacing:.03em}
+  .brand span{color:var(--sub); font-size:.75rem}
+  .theme-toggle{display:flex; gap:4px; background:var(--panel2); border:1px solid var(--border);
+    border-radius:999px; padding:3px;}
+  .theme-toggle button{
+    border:none; background:transparent; color:var(--sub); width:34px; height:30px;
+    border-radius:999px; cursor:pointer; font-size:.9rem; font-family:var(--font-mono);
+  }
+  .theme-toggle button[aria-pressed="true"]{background:var(--accent); color:#04140c; font-weight:700}
+  html[data-theme="hc"] .theme-toggle button[aria-pressed="true"]{color:#000}
+  main{flex:1; width:100%; max-width:720px; margin:0 auto; padding:6px 16px 24px;}
+  form.add{
+    display:flex; gap:8px; background:var(--panel); border:1px solid var(--border);
+    border-radius:var(--radius); padding:10px; margin-bottom:18px; flex-wrap:wrap;
+  }
+  form.add input{
+    flex:1 1 160px; background:var(--panel2); border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:10px 12px; font-family:var(--font-mono); font-size:.9rem; min-width:0;
+  }
+  form.add input:focus, .theme-toggle button:focus-visible, .sitebtn:focus-visible{
+    outline:2px solid var(--focus); outline-offset:2px;
+  }
+  form.add button{
+    background:var(--accent); color:#04140c; border:none; border-radius:8px;
+    padding:0 18px; font-weight:700; cursor:pointer; font-family:var(--font-mono);
+  }
+  html[data-theme="hc"] form.add button{color:#000}
+  .empty{color:var(--sub); text-align:center; padding:40px 10px; font-family:var(--font-mono); font-size:.85rem}
+  .filters{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; align-items:center}
+  .filters button{
+    background:var(--panel); border:1px solid var(--border); color:var(--sub);
+    border-radius:999px; padding:6px 13px; font-size:.75rem; font-family:var(--font-mono); cursor:pointer;
+  }
+  .filters button[aria-pressed="true"]{background:var(--accent); color:#04140c; border-color:var(--accent); font-weight:700}
+  html[data-theme="hc"] .filters button[aria-pressed="true"]{color:#000}
+  .filters .count{margin-left:auto; color:var(--sub); font-size:.72rem; font-family:var(--font-mono)}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px; margin-bottom:12px;
+  }
+  .card-top{display:flex; align-items:center; gap:10px}
+  .status-dot{width:11px;height:11px;border-radius:50%; flex:none; background:var(--sub)}
+  .status-dot.up{background:var(--up); box-shadow:0 0 8px color-mix(in srgb, var(--up) 60%, transparent)}
+  .status-dot.down{background:var(--down); box-shadow:0 0 8px color-mix(in srgb, var(--down) 60%, transparent)}
+  .status-dot.pend{background:var(--pend); animation:beat 1s ease-in-out infinite}
+  .card-info{flex:1; min-width:0}
+  .card-info .name{font-weight:600; font-size:.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:6px}
+  .tag{font-size:.6rem; font-family:var(--font-mono); color:var(--sub); border:1px solid var(--border);
+    border-radius:4px; padding:1px 5px; flex:none; letter-spacing:.03em}
+  .card-info .url{color:var(--sub); font-size:.75rem; font-family:var(--font-mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .card-meta{text-align:right; font-family:var(--font-mono); font-size:.75rem; color:var(--sub)}
+  .card-meta .code.up{color:var(--up)}
+  .card-meta .code.down{color:var(--down)}
+  .sitebtn{background:none; border:1px solid var(--border); color:var(--sub); border-radius:6px;
+    width:28px;height:28px; cursor:pointer; font-size:.85rem;}
+  .pulse{display:flex; gap:2px; margin-top:12px; height:26px; align-items:flex-end}
+  .pulse i{flex:1; background:var(--panel2); border-radius:2px; height:100%; display:block}
+  .pulse i.up{background:var(--up)}
+  .pulse i.down{background:var(--down)}
+  .pulse i.pend{background:var(--pend); animation:beat 1s ease-in-out infinite}
+  footer{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; text-align:center; padding:20px 16px 26px; border-top:1px solid var(--border);
+    color:var(--sub); font-family:var(--font-mono); font-size:.75rem;
+  }
+  @media (min-width:600px){
+    .card-top{gap:14px}
+    main{padding-top:10px}
+  }
 </style>
 </head>
-
 <body>
 
-<div id="map"></div>
-
-<!-- SEARCH -->
-
-<div class="top">
-
-<div class="search">
-
-<input
-id="search"
-autocomplete="off"
-placeholder="Search destination…">
-
-<button onclick="searchPlace()">
-🔍
-</button>
-
-</div>
-
-<button onclick="mapMenu()">
-🗺️
-</button>
-
-</div>
-
-<!-- GPS -->
-
-<div class="gps">
-
-<button onclick="locateMe()">
-📍
-</button>
-
-</div>
-
-<!-- STATUS -->
-
-<div class="status">
-
-<div id="info">
-Starting GPS…
-</div>
-
-</div>
-
-<!-- MAP STYLES -->
-
-<div id="maps">
-
-<b>🗺️ Map Variations</b>
-
-<br><br>
-
-<button onclick="setMap('osm')">
-🗺️ Standard
-</button>
-
-<button onclick="setMap('dark')">
-🌙 Dark
-</button>
-
-<button onclick="setMap('sat')">
-🛰️ Satellite
-</button>
-
-<button onclick="setMap('terrain')">
-🏔️ Terrain
-</button>
-
-<button onclick="setMap('transport')">
-🚦 Transport
-</button>
-
-<button onclick="setMap('cycle')">
-🚲 Cycling
-</button>
-
-<button onclick="setMap('walk')">
-🚶 Walking
-</button>
-
-<button onclick="setMap('human')">
-🌍 Humanitarian
-</button>
-
-<button onclick="setMap('esri')">
-🏙️ Esri Street
-</button>
-
-<button onclick="setMap('imagery')">
-🌐 Esri Imagery
-</button>
-
-<button onclick="setMap('minimal')">
-◻️ Minimal
-</button>
-
-<button onclick="setMap('oled')">
-🌑 OLED
-</button>
-
-</div>
-
-<!-- BOTTOM CONTROLS -->
-
-<div class="bottom">
-
-<div class="toolbar">
-
-<button onclick="nearby('restaurant')">
-🍴 Food
-</button>
-
-<button onclick="nearby('hospital')">
-🏥 Hospital
-</button>
-
-<button onclick="nearby('fuel')">
-⛽ Fuel
-</button>
-
-<button onclick="nearby('atm')">
-🏧 ATM
-</button>
-
-<button onclick="nearby('bank')">
-🏦 Bank
-</button>
-
-<button onclick="nearby('hotel')">
-🏨 Hotel
-</button>
-
-<button onclick="nearby('parking')">
-🅿️ Parking
-</button>
-
-<button onclick="nearby('pharmacy')">
-💊 Pharmacy
-</button>
-
-</div>
-
-<div class="navbar">
-
-<button onclick="setMode('driving')">
-🚗 Drive
-</button>
-
-<button onclick="setMode('walking')">
-🚶 Walk
-</button>
-
-<button onclick="setMode('cycling')">
-🚴 Cycle
-</button>
-
-<button onclick="route()">
-🧭 Route
-</button>
-
-<button onclick="toggleMeasure()">
-📏 Measure
-</button>
-
-<button onclick="openSheet()">
-☰ More
-</button>
-
-</div>
-
-</div>
-
-<!-- MORE SHEET -->
-
-<div id="sheet" class="sheet">
-
-<div class="handle"></div>
-
-<button
-style="float:right"
-onclick="closeSheet()">
-✕
-</button>
-
-<h3>Navigation Tools</h3>
-
-<div class="toolbar">
-
-<button onclick="showTraffic()">
-🚦 Traffic
-</button>
-
-<button onclick="findClosures()">
-🚧 Closures
-</button>
-
-<button onclick="reportIncident()">
-⚠️ Report
-</button>
-
-<button onclick="emergency()">
-🆘 SOS
-</button>
-
-<button onclick="showSpeed()">
-🛣️ Speed
-</button>
-
-<button onclick="toggleWarnings()">
-🔔 Warning
-</button>
-
-<button onclick="showDangerZones()">
-⚠️ Danger
-</button>
-
-</div>
-
-<div class="toolbar">
-
-<button onclick="showFavorites()">
-⭐ Favorites
-</button>
-
-<button onclick="showRecent()">
-🕘 Recent
-</button>
-
-<button onclick="clearMeasurement()">
-🗑️ Clear Measure
-</button>
-
-<button onclick="toggleTheme()">
-🌙 Dark
-</button>
-
-<button onclick="toggleOLED()">
-🖤 OLED
-</button>
-
-<button onclick="clearMap()">
-✕ Clear Map
-</button>
-
-</div>
-
-<div id="alerts"></div>
-
-<div id="results"></div>
-
-<div id="steps"></div>
+<header>
+  <div class="brand">
+    <span class="dot-logo"></span>
+    <div><h1>PULSECHECK</h1><span>live status console</span></div>
+  </div>
+  <div class="theme-toggle" role="group" aria-label="Theme">
+    <button data-theme="dark" aria-pressed="true" title="Dark">D</button>
+    <button data-theme="light" aria-pressed="false" title="Light">L</button>
+    <button data-theme="oled" aria-pressed="false" title="OLED True Black">O</button>
+    <button data-theme="hc" aria-pressed="false" title="High Contrast">HC</button>
+  </div>
+</header>
+
+<main>
+  <form class="add" id="addForm">
+    <input id="urlInput" type="text" placeholder="example.com or https://example.com" required autocomplete="off">
+    <button type="submit">Add Site</button>
+  </form>
+  <div class="filters" id="filters">
+    <button data-f="all" aria-pressed="true">All</button>
+    <button data-f="world" aria-pressed="false">World</button>
+    <button data-f="in" aria-pressed="false">India</button>
+    <span class="count" id="count"></span>
+  </div>
+  <div id="list"></div>
+</main>
 
 <footer>
-© <span id="year"></span>
-Manik Roy 2026. All Rights Reserved.
+  <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
 </footer>
 
-</div>
-
-<script
-src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-</script>
-
 <script>
+document.getElementById('year').textContent = new Date().getFullYear();
 
-/* BASIC */
-
-const $=id=>
-document.getElementById(id);
-
-$("year").textContent=
-new Date().getFullYear();
-
-/* MAP */
-
-const map=
-L.map("map",{
-zoomControl:false,
-attributionControl:true
-}).setView(
-[22.5726,88.3639],
-13
-);
-
-L.control.zoom({
-position:"bottomright"
-}).addTo(map);
-
-/* MAP LAYERS */
-
-const layers={
-
-osm:L.tileLayer(
-"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-{
-maxZoom:19,
-attribution:"© OpenStreetMap contributors"
-}),
-
-dark:L.tileLayer(
-"https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-{
-maxZoom:20,
-subdomains:"abcd",
-attribution:"© OpenStreetMap © CARTO"
-}),
-
-sat:L.tileLayer(
-"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-{
-maxZoom:19,
-attribution:"© Esri"
-}),
-
-terrain:L.tileLayer(
-"https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
-{
-maxZoom:17,
-subdomains:"abc",
-attribution:"© OpenStreetMap © OpenTopoMap"
-}),
-
-transport:L.tileLayer(
-"https://tile.memomaps.de/tilegen/{z}/{x}/{y}.png",
-{
-maxZoom:18,
-attribution:"© OpenStreetMap"
-}),
-
-cycle:L.tileLayer(
-"https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
-{
-maxZoom:20,
-subdomains:"a",
-attribution:"© OpenStreetMap © CyclOSM"
-}),
-
-walk:L.tileLayer(
-"https://tile.openstreetmap.de/{z}/{x}/{y}.png",
-{
-maxZoom:19,
-attribution:"© OpenStreetMap"
-}),
-
-human:L.tileLayer(
-"https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-{
-maxZoom:19,
-attribution:"© OpenStreetMap contributors © HOT"
-}),
-
-esri:L.tileLayer(
-"https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-{
-maxZoom:19,
-attribution:"© Esri"
-}),
-
-imagery:L.tileLayer(
-"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-{
-maxZoom:19,
-attribution:"© Esri"
-}),
-
-minimal:L.tileLayer(
-"https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
-{
-maxZoom:20,
-subdomains:"abcd",
-attribution:"© OpenStreetMap © CARTO"
-}),
-
-oled:L.tileLayer(
-"https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png",
-{
-maxZoom:20,
-subdomains:"abcd",
-attribution:"© OpenStreetMap © CARTO"
-})
-
-};
-
-layers.osm.addTo(map);
-
-let activeLayer=
-layers.osm;
-
-/* MAP MENU */
-
-function mapMenu(){
-
-$("maps").classList.toggle("open");
-
+// ---------- Theme ----------
+const themeBtns = document.querySelectorAll('.theme-toggle button');
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  themeBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.theme === t)));
 }
+themeBtns.forEach(b => b.addEventListener('click', () => setTheme(b.dataset.theme)));
 
-function setMap(name){
+// ---------- Seed data: 50 world's most popular + 25 India's most popular sites ----------
+const WORLD = ['google.com','youtube.com','facebook.com','instagram.com','whatsapp.com','wikipedia.org',
+  'x.com','amazon.com','yahoo.com','tiktok.com','netflix.com','reddit.com','linkedin.com','bing.com',
+  'baidu.com','yandex.ru','live.com','microsoft.com','apple.com','pinterest.com','temu.com','canva.com',
+  'cnn.com','bbc.com','nytimes.com','ebay.com','twitch.tv','spotify.com','zoom.us','openai.com',
+  'discord.com','telegram.org','quora.com','github.com','stackoverflow.com','dropbox.com','adobe.com',
+  'salesforce.com','paypal.com','walmart.com','aliexpress.com','samsung.com','weather.com','indeed.com',
+  'booking.com','imdb.com','espn.com','roblox.com','duckduckgo.com','wordpress.com'];
+const INDIA = ['flipkart.com','hotstar.com','irctc.co.in','ndtv.com','timesofindia.indiatimes.com',
+  'hindustantimes.com','indiatimes.com','zomato.com','swiggy.com','paytm.com','myntra.com','bookmyshow.com',
+  'naukri.com','rediff.com','moneycontrol.com','jiocinema.com','sbi.co.in','icicibank.com','hdfcbank.com',
+  'olx.in','shaadi.com','quikr.com','makemytrip.com','cleartrip.com','indianrail.gov.in'];
 
-if(activeLayer)
-map.removeLayer(activeLayer);
+// ---------- State ----------
+const sites = [];         // {id, name, url, tag, status:'pend'|'up'|'down', code, time, history:[]}
+const HISTORY_LEN = 24;
+const REFRESH_MS = 60000;
+let uid = 0;
+let filter = 'all';
 
-activeLayer=
-layers[name];
+const listEl = document.getElementById('list');
+const form = document.getElementById('addForm');
+const input = document.getElementById('urlInput');
+const countEl = document.getElementById('count');
 
-activeLayer.addTo(map);
-
-$("maps").classList.remove("open");
-
-document.body.classList.remove(
-"dark","oled"
-);
-
-if(
-name==="dark"||
-name==="oled"
-)
-document.body.classList.add("dark");
-
-if(name==="oled")
-document.body.classList.add("oled");
-
-msg(
-"Map: "+name.toUpperCase()
-);
-
+function makeSite(domain, tag){
+  return { id: uid++, url: 'https://' + domain, name: domain, tag,
+    status:'pend', code:null, time:null, history:[] };
 }
-
-/* SHEET */
-
-function openSheet(){
-
-$("sheet").classList.add("open");
-
-}
-
-function closeSheet(){
-
-$("sheet").classList.remove("open");
-
-}
-
-/* STATE */
-
-let user=null;
-let destination=null;
-let marker=null;
-let userMarker=null;
-let accuracyCircle=null;
-
-let gpsWatch=null;
-let firstFix=true;
-
-let routes=[];
-let poiMarkers=[];
-
-let mode="driving";
-let speedLimit=null;
-let warningOn=true;
-
-let favorites=
-JSON.parse(
-localStorage.getItem(
-"navFavorites"
-)||"[]"
-);
-
-let recent=
-JSON.parse(
-localStorage.getItem(
-"navRecent"
-)||"[]"
-);
-
-let incidents=
-JSON.parse(
-localStorage.getItem(
-"navIncidents"
-)||"[]"
-);
-
-/* MEASUREMENT */
-
-let measuring=false;
-let measurePoints=[];
-let measureMarkers=[];
-let measureLines=[];
-let totalDistance=0;
-
-function msg(text){
-
-$("info").textContent=text;
-
-}
-
-/* GPS */
-
-function startGPS(){
-
-if(!navigator.geolocation){
-
-msg(
-"❌ GPS unavailable."
-);
-
-return;
-}
-
-if(
-location.protocol!=="https:" &&
-location.hostname!=="localhost"
-){
-
-msg(
-"⚠️ GPS requires HTTPS."
-);
-
-return;
-}
-
-msg(
-"📍 Requesting location…"
-);
-
-navigator.geolocation.getCurrentPosition(
-gpsSuccess,
-gpsError,
-{
-enableHighAccuracy:true,
-timeout:30000,
-maximumAge:0
-}
-);
-
-if(gpsWatch!==null)
-navigator.geolocation.clearWatch(
-gpsWatch
-);
-
-gpsWatch=
-navigator.geolocation.watchPosition(
-gpsSuccess,
-gpsError,
-{
-enableHighAccuracy:true,
-timeout:30000,
-maximumAge:5000
-}
-);
-
-}
-
-function gpsSuccess(p){
-
-let lat=
-p.coords.latitude;
-
-let lon=
-p.coords.longitude;
-
-let accuracy=
-p.coords.accuracy||0;
-
-let old=user;
-
-user=[lat,lon];
-
-if(!userMarker){
-
-userMarker=
-L.circleMarker(
-user,
-{
-radius:9,
-weight:3
-}
-)
-.addTo(map)
-.bindPopup(
-"📍 You are here"
-);
-
-}else{
-
-userMarker
-.setLatLng(user);
-
-}
-
-if(!accuracyCircle){
-
-accuracyCircle=
-L.circle(
-user,
-{
-radius:accuracy,
-weight:1,
-fillOpacity:.08
-}
-)
-.addTo(map);
-
-}else{
-
-accuracyCircle
-.setLatLng(user);
-
-accuracyCircle
-.setRadius(accuracy);
-
-}
-
-if(firstFix){
-
-map.setView(
-user,
-16
-);
-
-firstFix=false;
-
-}
-
-msg(
-`📍 GPS ±${Math.round(
-accuracy
-)} m`
-);
-
-checkSpeed();
-
-if(
-destination &&
-old
-){
-
-let moved=
-Math.abs(
-lat-old[0]
-)+
-Math.abs(
-lon-old[1]
-);
-
-if(moved>.0003)
-route();
-
-}
-
-}
-
-function gpsError(e){
-
-if(e.code===1)
-msg(
-"❌ Location permission denied."
-);
-
-else if(e.code===2)
-msg(
-"⚠️ Location unavailable."
-);
-
-else if(e.code===3)
-msg(
-"⏱️ GPS timeout."
-);
-
-else
-msg(
-"⚠️ GPS error."
-);
-
-}
-
-async function checkLocationPermission(){
-
-if(!navigator.permissions){
-
-startGPS();
-
-return;
-}
-
-try{
-
-let p=
-await navigator.permissions.query({
-name:"geolocation"
+WORLD.forEach(d => sites.push(makeSite(d, 'world')));
+INDIA.forEach(d => sites.push(makeSite(d, 'in')));
+
+document.getElementById('filters').addEventListener('click', e => {
+  const b = e.target.closest('button[data-f]');
+  if(!b) return;
+  filter = b.dataset.f;
+  document.querySelectorAll('#filters button').forEach(x => x.setAttribute('aria-pressed', String(x===b)));
+  render();
 });
 
-if(p.state!=="denied")
-startGPS();
-
-else
-msg(
-"❌ Enable location permission."
-);
-
-p.onchange=()=>{
-
-if(p.state==="granted")
-startGPS();
-
-};
-
-}catch(e){
-
-startGPS();
-
+function normalizeUrl(raw){
+  let u = raw.trim();
+  if(!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  try { return new URL(u).toString(); } catch(e){ return null; }
 }
 
+function render(){
+  const visible = sites.filter(s => filter === 'all' || s.tag === filter);
+  countEl.textContent = visible.length + ' / ' + sites.length + ' sites';
+  if(visible.length === 0){
+    listEl.innerHTML = '<div class="empty">No sites monitored yet. Add one above to start pinging.</div>';
+    return;
+  }
+  listEl.innerHTML = visible.map(s => `
+    <div class="card">
+      <div class="card-top">
+        <span class="status-dot ${s.status}"></span>
+        <div class="card-info">
+          <div class="name">${s.name}${s.tag==='world'?'<span class="tag">WORLD</span>':s.tag==='in'?'<span class="tag">IN</span>':''}</div>
+          <div class="url">${s.url}</div>
+        </div>
+        <div class="card-meta">
+          <div class="code ${s.status}">${s.code ? 'HTTP ' + s.code : (s.status==='pend' ? 'checking…' : 'no response')}</div>
+          <div>${s.time != null ? s.time + ' ms' : '—'}</div>
+        </div>
+        <button class="sitebtn" title="Recheck now" onclick="recheck(${s.id})">↻</button>
+        <button class="sitebtn" title="Remove" onclick="removeSite(${s.id})">×</button>
+      </div>
+      <div class="pulse">${renderPulse(s.history)}</div>
+    </div>
+  `).join('');
 }
 
-function locateMe(){
-
-startGPS();
-
-if(user)
-map.setView(
-user,
-17
-);
-
+function renderPulse(history){
+  const bars = history.slice(-HISTORY_LEN);
+  const pad = HISTORY_LEN - bars.length;
+  let out = '';
+  for(let i=0;i<pad;i++) out += '<i></i>';
+  out += bars.map(h => `<i class="${h}"></i>`).join('');
+  return out;
 }
 
-/* SEARCH */
-
-async function searchPlace(){
-
-let q=
-$("search").value.trim();
-
-if(!q)return;
-
-msg("Searching…");
-
-try{
-
-let url=
-"https://nominatim.openstreetmap.org/search"+
-"?format=jsonv2&limit=8&q="+
-encodeURIComponent(q);
-
-let data=
-await fetch(url)
-.then(r=>r.json());
-
-$("results").innerHTML=
-data.map(x=>`
-
-<div class="item"
-onclick="selectPlace(
-${x.lat},
-${x.lon},
-'${safe(x.display_name)}'
-)">
-
-📍 ${safe(x.display_name)}
-
-</div>
-
-`).join("");
-
-openSheet();
-
-msg(
-data.length+
-" result(s)"
-);
-
-}catch(e){
-
-msg(
-"Search unavailable."
-);
-
+// ---------- Checking (free, no key, no signup CORS proxies) ----------
+async function pingUrl(url){
+  const t0 = performance.now();
+  try{
+    const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url), { cache:'no-store' });
+    const time = Math.round(performance.now() - t0);
+    if(!r.ok) throw new Error('proxy error');
+    const data = await r.json();
+    const code = data && data.status ? data.status.http_code : null;
+    return { up: !!code && code < 400, code, time };
+  }catch(e1){
+    try{
+      const t1 = performance.now();
+      const r2 = await fetch('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url), { cache:'no-store' });
+      const time2 = Math.round(performance.now() - t1);
+      return { up: r2.ok, code: r2.status || null, time: time2 };
+    }catch(e2){
+      return { up:false, code:null, time:null };
+    }
+  }
 }
 
+async function checkSite(site){
+  site.status = 'pend';
+  render();
+  const result = await pingUrl(site.url);
+  site.status = result.up ? 'up' : 'down';
+  site.code = result.code;
+  site.time = result.time;
+  site.history.push(site.status);
+  if(site.history.length > HISTORY_LEN) site.history.shift();
+  render();
 }
 
-$("search").onkeydown=e=>{
-
-if(e.key==="Enter")
-searchPlace();
-
-};
-
-/* DESTINATION */
-
-function selectPlace(
-lat,
-lon,
-name
-){
-
-destination=[
-+lat,
-+lon
-];
-
-if(marker)
-map.removeLayer(marker);
-
-marker=
-L.marker(
-destination
-)
-.addTo(map)
-.bindPopup(name)
-.openPopup();
-
-map.setView(
-destination,
-16
-);
-
-saveRecent(
-name,
-destination
-);
-
-$("results").innerHTML=`
-
-<div class="item">
-
-<b>📍 ${safe(name)}</b>
-
-<button onclick="saveFavorite()">
-⭐
-</button>
-
-</div>
-`;
-
-openSheet();
-
-msg(
-"Destination selected."
-);
-
-if(user)
-route();
-
+function recheck(id){
+  const s = sites.find(x => x.id === id);
+  if(s) checkSite(s);
 }
 
-/* MAP CLICK */
-
-map.on(
-"click",
-e=>{
-
-if(measuring)
-return;
-
-selectPlace(
-e.latlng.lat,
-e.latlng.lng,
-"Map destination"
-);
-
-}
-);
-
-/* ROUTING */
-
-function setMode(x){
-
-mode=x;
-
-msg(
-x.toUpperCase()+
-" navigation"
-);
-
-if(
-destination &&
-user
-)
-route();
-
+function removeSite(id){
+  const i = sites.findIndex(x => x.id === id);
+  if(i > -1){ sites.splice(i,1); render(); }
 }
 
-async function route(){
-
-if(!user){
-
-startGPS();
-
-return;
-}
-
-if(!destination){
-
-msg(
-"Select destination."
-);
-
-return;
-}
-
-msg(
-"Calculating route…"
-);
-
-let host=
-
-mode==="walking"?
-
-"https://routing.openstreetmap.de/routed-foot/route/v1/driving/":
-
-mode==="cycling"?
-
-"https://routing.openstreetmap.de/routed-bike/route/v1/driving/":
-
-"https://router.project-osrm.org/route/v1/driving/";
-
-let url=
-host+
-`${user[1]},${user[0]};${destination[1]},${destination[0]}`+
-"?overview=full&geometries=geojson&steps=true&alternatives=true";
-
-try{
-
-let data=
-await fetch(url)
-.then(r=>r.json());
-
-if(data.code!=="Ok")
-throw Error();
-
-routes.forEach(
-r=>map.removeLayer(r)
-);
-
-routes=[];
-
-data.routes.forEach(
-(r,i)=>{
-
-let line=
-L.geoJSON(
-r.geometry,
-{
-style:{
-weight:i?4:7,
-opacity:i?.4:1
-}
-}
-).addTo(map);
-
-routes.push(line);
-
-if(!i){
-
-map.fitBounds(
-line.getBounds(),
-{
-padding:[30,100]
-}
-);
-
-let km=
-(r.distance/1000)
-.toFixed(1);
-
-let min=
-Math.round(
-r.duration/60
-);
-
-$("info").innerHTML=
-`🧭 ${mode} · ${km} km · ${min} min`;
-
-showSteps(r);
-
-}
-
-}
-);
-
-}catch(e){
-
-msg(
-"Route unavailable."
-);
-
-}
-
-}
-
-function showSteps(r){
-
-let h=
-"<b>🧭 Directions</b>";
-
-r.legs.forEach(
-l=>l.steps.forEach(
-(s,i)=>{
-
-h+=`
-
-<div class="item">
-
-${i+1}.
-${s.maneuver.type}
-${s.maneuver.modifier||""}
-<br>
-${s.name||"Unnamed road"}
-· ${Math.round(
-s.distance
-)} m
-
-</div>
-
-`;
-
-}
-)
-);
-
-$("steps").innerHTML=h;
-
-openSheet();
-
-}
-
-/* NEARBY */
-
-async function nearby(type){
-
-if(!user){
-
-startGPS();
-
-return;
-}
-
-poiMarkers.forEach(
-x=>map.removeLayer(x)
-);
-
-poiMarkers=[];
-
-let tags={
-
-restaurant:
-'["amenity"="restaurant"]',
-
-hospital:
-'["amenity"="hospital"]',
-
-fuel:
-'["amenity"="fuel"]',
-
-atm:
-'["amenity"="atm"]',
-
-bank:
-'["amenity"="bank"]',
-
-hotel:
-'["tourism"="hotel"]',
-
-parking:
-'["amenity"="parking"]',
-
-pharmacy:
-'["amenity"="pharmacy"]'
-
-};
-
-let q=
-`[out:json][timeout:15];(
-node${tags[type]}
-(around:5000,${user[0]},${user[1]});
-way${tags[type]}
-(around:5000,${user[0]},${user[1]});
-);out center tags;`;
-
-msg(
-"Finding "+type+"…"
-);
-
-try{
-
-let d=
-await fetch(
-"https://overpass-api.de/api/interpreter",
-{
-method:"POST",
-body:q
-}
-)
-.then(r=>r.json());
-
-$("results").innerHTML="";
-
-d.elements
-.slice(0,30)
-.forEach(x=>{
-
-let lat=
-x.lat??x.center.lat;
-
-let lon=
-x.lon??x.center.lon;
-
-let name=
-x.tags?.name||type;
-
-let m=
-L.marker(
-[lat,lon]
-)
-.addTo(map)
-.bindPopup(
-`<b>${safe(name)}</b><br>
-${type}<br>
-<button onclick="selectPlace(
-${lat},${lon},
-'${safe(name)}'
-)">
-Navigate
-</button>`
-);
-
-poiMarkers.push(m);
-
-$("results").innerHTML+=`
-
-<div class="item"
-onclick="focusPOI(
-${lat},${lon}
-)">
-
-📍 ${safe(name)}
-
-</div>
-
-`;
-
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const url = normalizeUrl(input.value);
+  if(!url) return alert('Please enter a valid domain or URL.');
+  const site = makeSite(url.replace(/^https?:\/\//,'').replace(/\/$/,''), 'custom');
+  site.url = url;
+  sites.unshift(site);
+  input.value = '';
+  render();
+  checkSite(site);
 });
 
-openSheet();
-
-msg(
-`${Math.min(
-30,d.elements.length
-)} found`
-);
-
-}catch(e){
-
-msg(
-"Nearby search unavailable."
-);
-
+// Run checks through a small concurrency pool so 75+ sites don't fire at once
+async function checkAll(){
+  const POOL = 6;
+  let i = 0;
+  async function worker(){
+    while(i < sites.length){
+      const site = sites[i++];
+      await checkSite(site);
+    }
+  }
+  await Promise.all(Array.from({length: POOL}, worker));
 }
 
-}
-
-function focusPOI(
-lat,
-lon
-){
-
-map.setView(
-[lat,lon],
-17
-);
-
-}
-
-/* FAVORITES */
-
-function saveFavorite(){
-
-if(!destination)
-return;
-
-favorites.unshift({
-
-name:"Saved destination",
-
-lat:destination[0],
-lon:destination[1]
-
-});
-
-favorites=
-favorites.slice(0,30);
-
-localStorage.setItem(
-"navFavorites",
-JSON.stringify(
-favorites
-)
-);
-
-msg(
-"⭐ Saved."
-);
-
-}
-
-function showFavorites(){
-
-$("results").innerHTML=
-favorites.length?
-
-favorites.map(x=>`
-
-<div class="item"
-onclick="selectPlace(
-${x.lat},
-${x.lon},
-'${safe(x.name)}'
-)">
-
-⭐ ${safe(x.name)}
-
-</div>
-
-`).join(""):
-
-"No favorites.";
-
-openSheet();
-
-}
-
-/* RECENT */
-
-function saveRecent(
-name,
-pos
-){
-
-recent=
-recent.filter(
-x=>
-x.lat!==pos[0]||
-x.lon!==pos[1]
-);
-
-recent.unshift({
-
-name,
-lat:pos[0],
-lon:pos[1]
-
-});
-
-recent=
-recent.slice(0,20);
-
-localStorage.setItem(
-"navRecent",
-JSON.stringify(
-recent
-)
-);
-
-}
-
-function showRecent(){
-
-$("results").innerHTML=
-recent.length?
-
-recent.map(x=>`
-
-<div class="item"
-onclick="selectPlace(
-${x.lat},
-${x.lon},
-'${safe(x.name)}'
-)">
-
-🕘 ${safe(x.name)}
-
-</div>
-
-`).join(""):
-
-"No recent destinations.";
-
-openSheet();
-
-}
-
-/* TRAFFIC */
-
-function showTraffic(){
-
-if(!user){
-
-startGPS();
-
-return;
-}
-
-$("alerts").innerHTML=`
-
-<div class="alert">
-
-🚦 Traffic-aware routing
-
-<br>
-
-Live traffic data depends on
-the routing provider.
-
-</div>
-
-`;
-
-openSheet();
-
-route();
-
-}
-
-/* CLOSURES */
-
-async function findClosures(){
-
-if(!user){
-
-startGPS();
-
-return;
-}
-
-msg(
-"Checking restrictions…"
-);
-
-let q=
-`[out:json][timeout:15];(
-way["access"="no"]
-(around:5000,${user[0]},${user[1]});
-way["vehicle"="no"]
-(around:5000,${user[0]},${user[1]});
-way["motor_vehicle"="no"]
-(around:5000,${user[0]},${user[1]});
-);out center tags;`;
-
-try{
-
-let d=
-await fetch(
-"https://overpass-api.de/api/interpreter",
-{
-method:"POST",
-body:q
-}
-)
-.then(r=>r.json());
-
-$("results").innerHTML=
-d.elements
-.slice(0,20)
-.map(x=>{
-
-let name=
-x.tags?.name||
-"Restricted road";
-
-return`
-
-<div class="item">
-🚧 ${safe(name)}
-</div>
-
-`;
-
-}).join("");
-
-openSheet();
-
-msg(
-`${d.elements.length}
-restriction(s)`
-);
-
-}catch(e){
-
-msg(
-"Closure data unavailable."
-);
-
-}
-
-}
-
-/* INCIDENT */
-
-function reportIncident(){
-
-if(!user){
-
-startGPS();
-
-return;
-}
-
-let type=
-prompt(
-"1 Accident\n"+
-"2 Road blocked\n"+
-"3 Hazard\n"+
-"4 Other"
-);
-
-if(!type)return;
-
-incidents.push({
-
-type,
-lat:user[0],
-lon:user[1],
-time:new Date()
-.toISOString()
-
-});
-
-localStorage.setItem(
-"navIncidents",
-JSON.stringify(
-incidents
-)
-);
-
-L.marker(user)
-.addTo(map)
-.bindPopup(
-"⚠️ Reported incident"
-);
-
-msg(
-"⚠️ Incident saved."
-);
-
-}
-
-/* SPEED */
-
-async function loadRoadData(){
-
-if(!user)return;
-
-let q=
-`[out:json][timeout:10];
-way["maxspeed"]
-(around:80,
-${user[0]},
-${user[1]});
-out tags center 1;`;
-
-try{
-
-let d=
-await fetch(
-"https://overpass-api.de/api/interpreter",
-{
-method:"POST",
-body:q
-}
-)
-.then(r=>r.json());
-
-let s=
-d.elements[0]
-?.tags?.maxspeed;
-
-if(s)
-speedLimit=
-parseInt(s)||null;
-
-}catch(e){}
-
-}
-
-async function showSpeed(){
-
-if(!user){
-
-startGPS();
-
-return;
-}
-
-await loadRoadData();
-
-msg(
-speedLimit?
-`🛣️ Limit ${speedLimit} km/h`:
-"Speed limit unavailable"
-);
-
-}
-
-function toggleWarnings(){
-
-warningOn=!warningOn;
-
-msg(
-warningOn?
-"🔔 Warnings ON":
-"🔕 Warnings OFF"
-);
-
-}
-
-function checkSpeed(){
-
-if(
-!warningOn||
-!speedLimit||
-!navigator.geolocation
-)
-return;
-
-navigator.geolocation
-.getCurrentPosition(
-p=>{
-
-let kmh=
-(p.coords.speed||0)*3.6;
-
-if(kmh>speedLimit){
-
-$("alerts").innerHTML=`
-
-<div class="alert">
-
-🔔 Speed warning:
-${kmh.toFixed(0)}
-km/h · Limit
-${speedLimit}
-km/h
-
-</div>
-
-`;
-
-openSheet();
-
-}
-
-}
-);
-
-}
-
-/* DANGER */
-
-function showDangerZones(){
-
-if(!user){
-
-startGPS();
-
-return;
-}
-
-$("alerts").innerHTML=`
-
-<div class="alert">
-
-⚠️ Danger zones use mapped
-restrictions and local reports.
-
-</div>
-
-`;
-
-incidents.forEach(x=>{
-
-L.circle(
-[x.lat,x.lon],
-{
-radius:100,
-color:"red"
-}
-)
-.addTo(map)
-.bindPopup(
-"⚠️ "+x.type
-);
-
-});
-
-openSheet();
-
-}
-
-/* SOS */
-
-async function emergency(){
-
-if(!user){
-
-startGPS();
-
-return;
-}
-
-let text=
-`🆘 Emergency Location\n`+
-`https://www.google.com/maps?q=`+
-`${user[0]},${user[1]}`;
-
-if(navigator.share){
-
-try{
-
-await navigator.share({
-title:"Emergency Location",
-text
-});
-
-}catch(e){}
-
-}else{
-
-try{
-
-await navigator.clipboard
-.writeText(text);
-
-msg(
-"🆘 Location copied."
-);
-
-}catch(e){
-
-alert(text);
-
-}
-
-}
-
-}
-
-/* MEASUREMENT */
-
-function toggleMeasure(){
-
-measuring=!measuring;
-
-if(measuring){
-
-msg(
-"📏 Tap points on the map"
-);
-
-map.getContainer()
-.style.cursor="crosshair";
-
-}else{
-
-msg(
-"📏 Measurement OFF"
-);
-
-map.getContainer()
-.style.cursor="";
-
-}
-
-}
-
-function addMeasurePoint(
-lat,
-lon
-){
-
-let point=[
-lat,
-lon
-];
-
-measurePoints.push(point);
-
-let n=
-measurePoints.length;
-
-let m=
-L.marker(
-point,
-{
-draggable:true
-}
-)
-.addTo(map);
-
-m.bindTooltip(
-"Point "+n,
-{
-permanent:true,
-direction:"top"
-}
-);
-
-m.on(
-"dragend",
-rebuildMeasurement
-);
-
-measureMarkers.push(m);
-
-rebuildMeasurement();
-
-}
-
-map.on(
-"click",
-e=>{
-
-if(!measuring)
-return;
-
-addMeasurePoint(
-e.latlng.lat,
-e.latlng.lng
-);
-
-}
-);
-
-function rebuildMeasurement(){
-
-totalDistance=0;
-
-measureLines.forEach(
-x=>map.removeLayer(x)
-);
-
-measureLines=[];
-
-measureMarkers.forEach(
-(m,i)=>{
-
-measurePoints[i]=[
-m.getLatLng().lat,
-m.getLatLng().lng
-];
-
-}
-);
-
-for(
-let i=1;
-i<measurePoints.length;
-i++
-){
-
-let a=
-measurePoints[i-1];
-
-let b=
-measurePoints[i];
-
-let line=
-L.polyline(
-[a,b],
-{
-weight:4
-}
-)
-.addTo(map);
-
-measureLines.push(line);
-
-totalDistance+=
-map.distance(
-L.latLng(a),
-L.latLng(b)
-);
-
-}
-
-let value=
-totalDistance>=1000?
-
-(totalDistance/1000)
-.toFixed(2)+" km":
-
-Math.round(
-totalDistance
-)+" m";
-
-$("info").innerHTML=
-`📏 ${value} · ${
-measurePoints.length
-} points`;
-
-}
-
-function clearMeasurement(){
-
-measureMarkers.forEach(
-x=>map.removeLayer(x)
-);
-
-measureLines.forEach(
-x=>map.removeLayer(x)
-);
-
-measureMarkers=[];
-measureLines=[];
-measurePoints=[];
-totalDistance=0;
-measuring=false;
-
-map.getContainer()
-.style.cursor="";
-
-msg(
-"📏 Measurement cleared."
-);
-
-}
-
-/* CLEAR */
-
-function clearMap(){
-
-routes.forEach(
-x=>map.removeLayer(x)
-);
-
-poiMarkers.forEach(
-x=>map.removeLayer(x)
-);
-
-routes=[];
-poiMarkers=[];
-destination=null;
-
-if(marker)
-map.removeLayer(marker);
-
-$("results").innerHTML="";
-$("steps").innerHTML="";
-$("alerts").innerHTML="";
-
-closeSheet();
-
-msg(
-"Map cleared."
-);
-
-}
-
-/* THEMES */
-
-function toggleTheme(){
-
-document.body
-.classList.toggle("dark");
-
-}
-
-function toggleOLED(){
-
-document.body
-.classList.toggle("oled");
-
-}
-
-/* GPS WATCH */
-
-if(navigator.geolocation){
-
-navigator.geolocation.watchPosition(
-p=>{
-
-let old=user;
-
-user=[
-p.coords.latitude,
-p.coords.longitude
-];
-
-if(!userMarker){
-
-userMarker=
-L.circleMarker(
-user,
-{
-radius:9
-}
-)
-.addTo(map);
-
-}else{
-
-userMarker
-.setLatLng(user);
-
-}
-
-checkSpeed();
-
-if(
-destination&&old
-){
-
-let moved=
-Math.abs(
-user[0]-old[0]
-)+
-Math.abs(
-user[1]-old[1]
-);
-
-if(moved>.0003)
-route();
-
-}
-
-},
-()=>{},
-{
-enableHighAccuracy:true,
-maximumAge:5000,
-timeout:30000
-}
-);
-
-}
-
-/* START GPS */
-
-window.addEventListener(
-"load",
-()=>{
-
-setTimeout(
-checkLocationPermission,
-500
-);
-
-}
-);
-
+render();
+checkAll();
+setInterval(checkAll, REFRESH_MS);
 </script>
-
 </body>
 </html>
