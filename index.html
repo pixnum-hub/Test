@@ -2,701 +2,2288 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport"
+content="width=device-width,initial-scale=1,viewport-fit=cover,
+maximum-scale=1,user-scalable=no">
+
 <meta name="theme-color" content="#111">
 <title>Navigation Map</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <style>
-:root{--bg:#f4f5f7;--card:#fff;--txt:#111;--blue:#1677ff}
-.dark{--bg:#151515;--card:#222;--txt:#fff}
-.oled{--bg:#000;--card:#111;--txt:#fff}
-*{box-sizing:border-box}
-body{margin:0;height:100vh;display:flex;flex-direction:column;
-font-family:system-ui,Arial;background:var(--bg);color:var(--txt)}
-header,.tools,footer,#info,#results,#steps,#alerts{background:var(--card)}
-header{padding:8px;display:flex;gap:5px}
-input{flex:1;padding:11px;border:0;border-radius:11px;background:#eee;outline:0}
-button{border:0;border-radius:11px;padding:9px;cursor:pointer;font-weight:700}
-#map{flex:1;min-height:230px}
-.tools{display:flex;gap:5px;padding:6px;overflow-x:auto}
-.tools button{white-space:nowrap}
-#info,#alerts{padding:7px;font-size:13px}
-#results,#steps{max-height:125px;overflow:auto}
-.item{padding:8px;border-bottom:1px solid #aaa;cursor:pointer;font-size:13px}
-.item:hover{background:#ddd}
-.alert{padding:7px;background:#fee;margin:2px;border-radius:7px}
-footer{text-align:center;padding:8px;font-size:11px}
-.dark input{background:#333;color:#fff}
-.dark .item:hover{background:#333}
-.oled input{background:#111;color:#fff}
+:root{
+--bg:#f5f5f5;
+--card:#fff;
+--text:#111;
+--muted:#666;
+--border:#ddd;
+--accent:#087f5b;
+--danger:#d93025;
+}
+
+.dark{
+--bg:#171717;
+--card:#252525;
+--text:#fff;
+--muted:#bbb;
+--border:#444;
+}
+
+.oled{
+--bg:#000;
+--card:#080808;
+--text:#fff;
+--muted:#aaa;
+--border:#222;
+}
+
+*{
+box-sizing:border-box;
+-webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+margin:0;
+width:100%;
+height:100%;
+overflow:hidden;
+font-family:system-ui,-apple-system,BlinkMacSystemFont,
+"Segoe UI",Arial,sans-serif;
+background:var(--bg);
+color:var(--text);
+}
+
+button,input{
+font:inherit;
+}
+
+button{
+min-width:44px;
+min-height:44px;
+border:0;
+border-radius:14px;
+background:var(--card);
+color:var(--text);
+font-weight:700;
+box-shadow:0 2px 8px #0002;
+touch-action:manipulation;
+}
+
+button:active{
+transform:scale(.95);
+}
+
+input{
+height:48px;
+border:0;
+outline:0;
+border-radius:16px;
+padding:0 15px;
+background:var(--card);
+color:var(--text);
+width:100%;
+box-shadow:0 2px 12px #0003;
+}
+
+/* MAP */
+
+#map{
+position:fixed;
+inset:0;
+z-index:1;
+}
+
+/* TOP SEARCH */
+
+.top{
+position:fixed;
+z-index:500;
+top:env(safe-area-inset-top,8px);
+left:8px;
+right:8px;
+padding-top:8px;
+display:flex;
+gap:7px;
+}
+
+.search{
+position:relative;
+flex:1;
+}
+
+.search button{
+position:absolute;
+right:3px;
+top:2px;
+width:44px;
+height:44px;
+box-shadow:none;
+background:transparent;
+}
+
+/* FLOATING GPS */
+
+.gps{
+position:fixed;
+z-index:600;
+right:12px;
+top:74px;
+}
+
+.gps button{
+width:50px;
+height:50px;
+font-size:20px;
+}
+
+/* STATUS */
+
+.status{
+position:fixed;
+z-index:600;
+top:130px;
+left:10px;
+right:70px;
+pointer-events:none;
+}
+
+#info{
+display:inline-block;
+padding:8px 12px;
+border-radius:14px;
+background:var(--card);
+box-shadow:0 2px 10px #0003;
+font-size:12px;
+max-width:100%;
+}
+
+/* BOTTOM AREA */
+
+.bottom{
+position:fixed;
+z-index:700;
+left:0;
+right:0;
+bottom:0;
+padding:
+6px
+8px
+calc(8px + env(safe-area-inset-bottom));
+pointer-events:none;
+}
+
+.bottom>*{
+pointer-events:auto;
+}
+
+/* HORIZONTAL TOOLBAR */
+
+.toolbar{
+display:flex;
+gap:8px;
+overflow-x:auto;
+padding:3px 1px 8px;
+scrollbar-width:none;
+}
+
+.toolbar::-webkit-scrollbar{
+display:none;
+}
+
+.toolbar button{
+flex:0 0 auto;
+padding:0 13px;
+white-space:nowrap;
+}
+
+/* MAIN NAV BAR */
+
+.navbar{
+display:flex;
+gap:8px;
+overflow-x:auto;
+padding:3px 1px 8px;
+scrollbar-width:none;
+}
+
+.navbar::-webkit-scrollbar{
+display:none;
+}
+
+.navbar button{
+flex:1 0 auto;
+padding:0 14px;
+white-space:nowrap;
+}
+
+/* BOTTOM SHEET */
+
+.sheet{
+display:none;
+position:fixed;
+z-index:900;
+left:0;
+right:0;
+bottom:0;
+max-height:72vh;
+background:var(--card);
+border-radius:24px 24px 0 0;
+box-shadow:0 -5px 25px #0004;
+padding:
+10px
+10px
+calc(12px + env(safe-area-inset-bottom));
+overflow:auto;
+}
+
+.sheet.open{
+display:block;
+}
+
+.handle{
+width:42px;
+height:5px;
+border-radius:10px;
+background:#999;
+margin:0 auto 10px;
+}
+
+/* RESULTS */
+
+#results,#steps{
+max-height:35vh;
+overflow:auto;
+}
+
+.item{
+padding:12px 7px;
+border-bottom:1px solid var(--border);
+font-size:14px;
+}
+
+.item button{
+min-height:36px;
+margin-left:5px;
+}
+
+/* ALERT */
+
+#alerts{
+font-size:13px;
+}
+
+.alert{
+padding:12px;
+margin-bottom:6px;
+border-radius:14px;
+background:#fff0f0;
+color:#800;
+}
+
+/* MAP MENU */
+
+#maps{
+display:none;
+position:fixed;
+z-index:1000;
+left:8px;
+right:8px;
+top:
+calc(64px + env(safe-area-inset-top));
+background:var(--card);
+border-radius:20px;
+padding:12px;
+box-shadow:0 5px 25px #0005;
+max-height:70vh;
+overflow:auto;
+}
+
+#maps.open{
+display:block;
+}
+
+#maps button{
+margin:3px;
+}
+
+/* FOOTER */
+
+footer{
+text-align:center;
+font-size:10px;
+padding:8px;
+color:var(--muted);
+}
+
+/* MEASUREMENT */
+
+.measure-info{
+font-size:14px;
+font-weight:700;
+}
+
+/* TABLET/DESKTOP */
+
+@media(min-width:700px){
+
+.top{
+max-width:650px;
+margin:auto;
+}
+
+.gps{
+right:25px;
+top:90px;
+}
+
+.status{
+left:25px;
+right:auto;
+top:145px;
+}
+
+.bottom{
+left:50%;
+transform:translateX(-50%);
+width:min(700px,100%);
+}
+
+}
+
+@media(min-width:1100px){
+
+.bottom{
+width:750px;
+}
+
+#maps{
+left:auto;
+right:25px;
+width:430px;
+}
+
+}
+
+/* LANDSCAPE PHONE */
+
+@media(max-height:500px){
+
+.top{
+top:4px;
+}
+
+.status{
+top:62px;
+}
+
+.bottom{
+padding-bottom:4px;
+}
+
+.toolbar{
+padding-bottom:3px;
+}
+
+.navbar{
+padding-bottom:3px;
+}
+
+button{
+min-height:40px;
+}
+
+input{
+height:44px;
+}
+
+}
 </style>
 </head>
 
 <body>
 
-<header>
-<input id="search" placeholder="Search destination">
-<button onclick="searchPlace()">🔍</button>
-<button onclick="locateMe()">📍</button>
-</header>
-
 <div id="map"></div>
 
-<div class="tools">
-<button onclick="nearby('restaurant')">🍴 Food</button>
-<button onclick="nearby('hospital')">🏥 Hospital</button>
-<button onclick="nearby('fuel')">⛽ Fuel</button>
-<button onclick="nearby('atm')">🏧 ATM</button>
-<button onclick="nearby('bank')">🏦 Bank</button>
-<button onclick="nearby('hotel')">🏨 Hotel</button>
-<button onclick="nearby('parking')">🅿️ Parking</button>
-<button onclick="nearby('pharmacy')">💊 Pharmacy</button>
+<!-- SEARCH -->
+
+<div class="top">
+
+<div class="search">
+
+<input
+id="search"
+autocomplete="off"
+placeholder="Search destination…">
+
+<button onclick="searchPlace()">
+🔍
+</button>
+
 </div>
 
-<div class="tools">
-<button onclick="setMode('driving')">🚗 Drive</button>
-<button onclick="setMode('walking')">🚶 Walk</button>
-<button onclick="setMode('cycling')">🚴 Cycle</button>
-<button onclick="route()">🧭 Route</button>
-<button onclick="showTraffic()">🚦 Traffic</button>
-<button onclick="findClosures()">🚧 Closures</button>
-<button onclick="reportIncident()">⚠️ Report</button>
-<button onclick="emergency()">🆘 SOS</button>
+<button onclick="mapMenu()">
+🗺️
+</button>
+
 </div>
 
-<div class="tools">
-<button onclick="showSpeed()">🛣️ Speed</button>
-<button onclick="toggleWarnings()">🔔 Warning</button>
-<button onclick="showDangerZones()">⚠️ Danger</button>
-<button onclick="showFavorites()">⭐ Favorites</button>
-<button onclick="showRecent()">🕘 Recent</button>
-<button onclick="toggleTheme()">🌙</button>
-<button onclick="toggleOLED()">🖤 OLED</button>
-<button onclick="clearMap()">✕</button>
+<!-- GPS -->
+
+<div class="gps">
+
+<button onclick="locateMe()">
+📍
+</button>
+
 </div>
 
-<div id="info">Starting GPS...</div>
+<!-- STATUS -->
+
+<div class="status">
+
+<div id="info">
+Starting GPS…
+</div>
+
+</div>
+
+<!-- MAP STYLES -->
+
+<div id="maps">
+
+<b>🗺️ Map Variations</b>
+
+<br><br>
+
+<button onclick="setMap('osm')">
+🗺️ Standard
+</button>
+
+<button onclick="setMap('dark')">
+🌙 Dark
+</button>
+
+<button onclick="setMap('sat')">
+🛰️ Satellite
+</button>
+
+<button onclick="setMap('terrain')">
+🏔️ Terrain
+</button>
+
+<button onclick="setMap('transport')">
+🚦 Transport
+</button>
+
+<button onclick="setMap('cycle')">
+🚲 Cycling
+</button>
+
+<button onclick="setMap('walk')">
+🚶 Walking
+</button>
+
+<button onclick="setMap('human')">
+🌍 Humanitarian
+</button>
+
+<button onclick="setMap('esri')">
+🏙️ Esri Street
+</button>
+
+<button onclick="setMap('imagery')">
+🌐 Esri Imagery
+</button>
+
+<button onclick="setMap('minimal')">
+◻️ Minimal
+</button>
+
+<button onclick="setMap('oled')">
+🌑 OLED
+</button>
+
+</div>
+
+<!-- BOTTOM CONTROLS -->
+
+<div class="bottom">
+
+<div class="toolbar">
+
+<button onclick="nearby('restaurant')">
+🍴 Food
+</button>
+
+<button onclick="nearby('hospital')">
+🏥 Hospital
+</button>
+
+<button onclick="nearby('fuel')">
+⛽ Fuel
+</button>
+
+<button onclick="nearby('atm')">
+🏧 ATM
+</button>
+
+<button onclick="nearby('bank')">
+🏦 Bank
+</button>
+
+<button onclick="nearby('hotel')">
+🏨 Hotel
+</button>
+
+<button onclick="nearby('parking')">
+🅿️ Parking
+</button>
+
+<button onclick="nearby('pharmacy')">
+💊 Pharmacy
+</button>
+
+</div>
+
+<div class="navbar">
+
+<button onclick="setMode('driving')">
+🚗 Drive
+</button>
+
+<button onclick="setMode('walking')">
+🚶 Walk
+</button>
+
+<button onclick="setMode('cycling')">
+🚴 Cycle
+</button>
+
+<button onclick="route()">
+🧭 Route
+</button>
+
+<button onclick="toggleMeasure()">
+📏 Measure
+</button>
+
+<button onclick="openSheet()">
+☰ More
+</button>
+
+</div>
+
+</div>
+
+<!-- MORE SHEET -->
+
+<div id="sheet" class="sheet">
+
+<div class="handle"></div>
+
+<button
+style="float:right"
+onclick="closeSheet()">
+✕
+</button>
+
+<h3>Navigation Tools</h3>
+
+<div class="toolbar">
+
+<button onclick="showTraffic()">
+🚦 Traffic
+</button>
+
+<button onclick="findClosures()">
+🚧 Closures
+</button>
+
+<button onclick="reportIncident()">
+⚠️ Report
+</button>
+
+<button onclick="emergency()">
+🆘 SOS
+</button>
+
+<button onclick="showSpeed()">
+🛣️ Speed
+</button>
+
+<button onclick="toggleWarnings()">
+🔔 Warning
+</button>
+
+<button onclick="showDangerZones()">
+⚠️ Danger
+</button>
+
+</div>
+
+<div class="toolbar">
+
+<button onclick="showFavorites()">
+⭐ Favorites
+</button>
+
+<button onclick="showRecent()">
+🕘 Recent
+</button>
+
+<button onclick="clearMeasurement()">
+🗑️ Clear Measure
+</button>
+
+<button onclick="toggleTheme()">
+🌙 Dark
+</button>
+
+<button onclick="toggleOLED()">
+🖤 OLED
+</button>
+
+<button onclick="clearMap()">
+✕ Clear Map
+</button>
+
+</div>
+
 <div id="alerts"></div>
+
 <div id="results"></div>
+
 <div id="steps"></div>
 
 <footer>
-© <span id="year"></span> Manik Roy 2026. All Rights Reserved.
+© <span id="year"></span>
+Manik Roy 2026. All Rights Reserved.
 </footer>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</div>
+
+<script
+src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
+
 <script>
-const $=x=>document.getElementById(x);
-$("year").textContent=new Date().getFullYear();
 
-const map=L.map("map").setView([22.5726,88.3639],13);
+/* BASIC */
 
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
-maxZoom:19,attribution:"© OpenStreetMap contributors"
+const $=id=>
+document.getElementById(id);
+
+$("year").textContent=
+new Date().getFullYear();
+
+/* MAP */
+
+const map=
+L.map("map",{
+zoomControl:false,
+attributionControl:true
+}).setView(
+[22.5726,88.3639],
+13
+);
+
+L.control.zoom({
+position:"bottomright"
 }).addTo(map);
 
-let user=null,destination=null,marker=null,userMarker=null;
-let accuracyCircle=null,gpsWatch=null,firstFix=true;
-let routes=[],poiMarkers=[],mode="driving";
-let speedLimit=null,warningOn=true;
+/* MAP LAYERS */
 
-let favorites=JSON.parse(
-localStorage.getItem("navFavorites")||"[]");
-let recent=JSON.parse(
-localStorage.getItem("navRecent")||"[]");
-let incidents=JSON.parse(
-localStorage.getItem("navIncidents")||"[]");
+const layers={
 
-function msg(x){$("info").textContent=x}
+osm:L.tileLayer(
+"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+{
+maxZoom:19,
+attribution:"© OpenStreetMap contributors"
+}),
 
-function safe(s){
-return String(s).replace(/\\/g,"\\\\")
-.replace(/'/g,"\\'").replace(/</g,"&lt;")
-.replace(/>/g,"&gt;");
+dark:L.tileLayer(
+"https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+{
+maxZoom:20,
+subdomains:"abcd",
+attribution:"© OpenStreetMap © CARTO"
+}),
+
+sat:L.tileLayer(
+"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+{
+maxZoom:19,
+attribution:"© Esri"
+}),
+
+terrain:L.tileLayer(
+"https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+{
+maxZoom:17,
+subdomains:"abc",
+attribution:"© OpenStreetMap © OpenTopoMap"
+}),
+
+transport:L.tileLayer(
+"https://tile.memomaps.de/tilegen/{z}/{x}/{y}.png",
+{
+maxZoom:18,
+attribution:"© OpenStreetMap"
+}),
+
+cycle:L.tileLayer(
+"https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
+{
+maxZoom:20,
+subdomains:"a",
+attribution:"© OpenStreetMap © CyclOSM"
+}),
+
+walk:L.tileLayer(
+"https://tile.openstreetmap.de/{z}/{x}/{y}.png",
+{
+maxZoom:19,
+attribution:"© OpenStreetMap"
+}),
+
+human:L.tileLayer(
+"https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+{
+maxZoom:19,
+attribution:"© OpenStreetMap contributors © HOT"
+}),
+
+esri:L.tileLayer(
+"https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+{
+maxZoom:19,
+attribution:"© Esri"
+}),
+
+imagery:L.tileLayer(
+"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+{
+maxZoom:19,
+attribution:"© Esri"
+}),
+
+minimal:L.tileLayer(
+"https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+{
+maxZoom:20,
+subdomains:"abcd",
+attribution:"© OpenStreetMap © CARTO"
+}),
+
+oled:L.tileLayer(
+"https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png",
+{
+maxZoom:20,
+subdomains:"abcd",
+attribution:"© OpenStreetMap © CARTO"
+})
+
+};
+
+layers.osm.addTo(map);
+
+let activeLayer=
+layers.osm;
+
+/* MAP MENU */
+
+function mapMenu(){
+
+$("maps").classList.toggle("open");
+
+}
+
+function setMap(name){
+
+if(activeLayer)
+map.removeLayer(activeLayer);
+
+activeLayer=
+layers[name];
+
+activeLayer.addTo(map);
+
+$("maps").classList.remove("open");
+
+document.body.classList.remove(
+"dark","oled"
+);
+
+if(
+name==="dark"||
+name==="oled"
+)
+document.body.classList.add("dark");
+
+if(name==="oled")
+document.body.classList.add("oled");
+
+msg(
+"Map: "+name.toUpperCase()
+);
+
+}
+
+/* SHEET */
+
+function openSheet(){
+
+$("sheet").classList.add("open");
+
+}
+
+function closeSheet(){
+
+$("sheet").classList.remove("open");
+
+}
+
+/* STATE */
+
+let user=null;
+let destination=null;
+let marker=null;
+let userMarker=null;
+let accuracyCircle=null;
+
+let gpsWatch=null;
+let firstFix=true;
+
+let routes=[];
+let poiMarkers=[];
+
+let mode="driving";
+let speedLimit=null;
+let warningOn=true;
+
+let favorites=
+JSON.parse(
+localStorage.getItem(
+"navFavorites"
+)||"[]"
+);
+
+let recent=
+JSON.parse(
+localStorage.getItem(
+"navRecent"
+)||"[]"
+);
+
+let incidents=
+JSON.parse(
+localStorage.getItem(
+"navIncidents"
+)||"[]"
+);
+
+/* MEASUREMENT */
+
+let measuring=false;
+let measurePoints=[];
+let measureMarkers=[];
+let measureLines=[];
+let totalDistance=0;
+
+function msg(text){
+
+$("info").textContent=text;
+
 }
 
 /* GPS */
 
 function startGPS(){
 
-if(!("geolocation" in navigator)){
-msg("❌ Browser does not support GPS.");
+if(!navigator.geolocation){
+
+msg(
+"❌ GPS unavailable."
+);
+
 return;
 }
 
-if(location.protocol!=="https:" &&
-location.hostname!=="localhost"){
-msg("⚠️ GPS requires HTTPS or localhost.");
+if(
+location.protocol!=="https:" &&
+location.hostname!=="localhost"
+){
+
+msg(
+"⚠️ GPS requires HTTPS."
+);
+
 return;
 }
 
-msg("📍 Requesting your location...");
+msg(
+"📍 Requesting location…"
+);
 
 navigator.geolocation.getCurrentPosition(
-gpsSuccess,gpsError,{
+gpsSuccess,
+gpsError,
+{
 enableHighAccuracy:true,
 timeout:30000,
 maximumAge:0
-});
+}
+);
 
 if(gpsWatch!==null)
-navigator.geolocation.clearWatch(gpsWatch);
+navigator.geolocation.clearWatch(
+gpsWatch
+);
 
-gpsWatch=navigator.geolocation.watchPosition(
-gpsSuccess,gpsError,{
+gpsWatch=
+navigator.geolocation.watchPosition(
+gpsSuccess,
+gpsError,
+{
 enableHighAccuracy:true,
 timeout:30000,
 maximumAge:5000
-});
+}
+);
+
 }
 
 function gpsSuccess(p){
 
-let lat=p.coords.latitude;
-let lon=p.coords.longitude;
-let accuracy=p.coords.accuracy||0;
+let lat=
+p.coords.latitude;
+
+let lon=
+p.coords.longitude;
+
+let accuracy=
+p.coords.accuracy||0;
+
 let old=user;
 
 user=[lat,lon];
 
 if(!userMarker){
-userMarker=L.circleMarker(user,{radius:9,weight:3})
-.addTo(map).bindPopup("📍 You are here");
-}else userMarker.setLatLng(user);
+
+userMarker=
+L.circleMarker(
+user,
+{
+radius:9,
+weight:3
+}
+)
+.addTo(map)
+.bindPopup(
+"📍 You are here"
+);
+
+}else{
+
+userMarker
+.setLatLng(user);
+
+}
 
 if(!accuracyCircle){
-accuracyCircle=L.circle(user,{
-radius:accuracy,weight:1,fillOpacity:.08
-}).addTo(map);
+
+accuracyCircle=
+L.circle(
+user,
+{
+radius:accuracy,
+weight:1,
+fillOpacity:.08
+}
+)
+.addTo(map);
+
 }else{
-accuracyCircle.setLatLng(user);
-accuracyCircle.setRadius(accuracy);
+
+accuracyCircle
+.setLatLng(user);
+
+accuracyCircle
+.setRadius(accuracy);
+
 }
 
 if(firstFix){
-map.setView(user,16);
+
+map.setView(
+user,
+16
+);
+
 firstFix=false;
+
 }
 
-msg(`📍 GPS active · Accuracy ±${Math.round(accuracy)} m`);
+msg(
+`📍 GPS ±${Math.round(
+accuracy
+)} m`
+);
 
 checkSpeed();
 
-if(destination&&old){
-let moved=Math.abs(lat-old[0])+Math.abs(lon-old[1]);
-if(moved>.0003)route();
+if(
+destination &&
+old
+){
+
+let moved=
+Math.abs(
+lat-old[0]
+)+
+Math.abs(
+lon-old[1]
+);
+
+if(moved>.0003)
+route();
+
 }
+
 }
 
 function gpsError(e){
+
 if(e.code===1)
-msg("❌ Location permission denied.");
+msg(
+"❌ Location permission denied."
+);
+
 else if(e.code===2)
-msg("⚠️ Location unavailable. Turn on GPS.");
+msg(
+"⚠️ Location unavailable."
+);
+
 else if(e.code===3)
-msg("⏱️ GPS timeout. Retrying...");
-else msg("⚠️ Unable to detect location.");
+msg(
+"⏱️ GPS timeout."
+);
+
+else
+msg(
+"⚠️ GPS error."
+);
+
 }
 
 async function checkLocationPermission(){
 
 if(!navigator.permissions){
+
 startGPS();
+
 return;
 }
 
 try{
-let p=await navigator.permissions.query({
+
+let p=
+await navigator.permissions.query({
 name:"geolocation"
 });
 
-if(p.state!=="denied")startGPS();
-else msg("❌ Location permission is blocked.");
+if(p.state!=="denied")
+startGPS();
+
+else
+msg(
+"❌ Enable location permission."
+);
 
 p.onchange=()=>{
-if(p.state==="granted")startGPS();
+
+if(p.state==="granted")
+startGPS();
+
 };
-}catch(e){startGPS();}
+
+}catch(e){
+
+startGPS();
+
 }
 
-function locateMe(){startGPS()}
+}
 
-/* Search */
+function locateMe(){
+
+startGPS();
+
+if(user)
+map.setView(
+user,
+17
+);
+
+}
+
+/* SEARCH */
 
 async function searchPlace(){
 
-let q=$("search").value.trim();
+let q=
+$("search").value.trim();
+
 if(!q)return;
 
-msg("Searching...");
+msg("Searching…");
 
 try{
-let u="https://nominatim.openstreetmap.org/search"+
-"?format=jsonv2&limit=6&q="+encodeURIComponent(q);
 
-let data=await fetch(u).then(r=>r.json());
+let url=
+"https://nominatim.openstreetmap.org/search"+
+"?format=jsonv2&limit=8&q="+
+encodeURIComponent(q);
 
-$("results").innerHTML=data.map(x=>`
-<div class="item" onclick="selectPlace(
-${x.lat},${x.lon},'${safe(x.display_name)}')">
+let data=
+await fetch(url)
+.then(r=>r.json());
+
+$("results").innerHTML=
+data.map(x=>`
+
+<div class="item"
+onclick="selectPlace(
+${x.lat},
+${x.lon},
+'${safe(x.display_name)}'
+)">
+
 📍 ${safe(x.display_name)}
-</div>`).join("");
 
-msg(data.length+" result(s) found.");
-}catch(e){msg("Search failed.");}
+</div>
+
+`).join("");
+
+openSheet();
+
+msg(
+data.length+
+" result(s)"
+);
+
+}catch(e){
+
+msg(
+"Search unavailable."
+);
+
+}
+
 }
 
 $("search").onkeydown=e=>{
-if(e.key==="Enter")searchPlace();
+
+if(e.key==="Enter")
+searchPlace();
+
 };
 
-/* Destination */
+/* DESTINATION */
 
-function selectPlace(lat,lon,name){
+function selectPlace(
+lat,
+lon,
+name
+){
 
-destination=[+lat,+lon];
+destination=[
++lat,
++lon
+];
 
-if(marker)map.removeLayer(marker);
+if(marker)
+map.removeLayer(marker);
 
-marker=L.marker(destination).addTo(map)
-.bindPopup(name).openPopup();
+marker=
+L.marker(
+destination
+)
+.addTo(map)
+.bindPopup(name)
+.openPopup();
 
-map.setView(destination,16);
-saveRecent(name,destination);
+map.setView(
+destination,
+16
+);
+
+saveRecent(
+name,
+destination
+);
 
 $("results").innerHTML=`
+
 <div class="item">
-<b>📍 ${name}</b>
-<button onclick="saveFavorite()">⭐ Save</button>
-</div>`;
 
-msg("Destination selected.");
+<b>📍 ${safe(name)}</b>
 
-if(user)route();
+<button onclick="saveFavorite()">
+⭐
+</button>
+
+</div>
+`;
+
+openSheet();
+
+msg(
+"Destination selected."
+);
+
+if(user)
+route();
+
 }
 
-map.on("click",e=>{
-selectPlace(e.latlng.lat,e.latlng.lng,"Map destination");
-});
+/* MAP CLICK */
 
-/* Routing */
+map.on(
+"click",
+e=>{
+
+if(measuring)
+return;
+
+selectPlace(
+e.latlng.lat,
+e.latlng.lng,
+"Map destination"
+);
+
+}
+);
+
+/* ROUTING */
 
 function setMode(x){
+
 mode=x;
-msg(x.toUpperCase()+" navigation selected.");
-if(destination&&user)route();
+
+msg(
+x.toUpperCase()+
+" navigation"
+);
+
+if(
+destination &&
+user
+)
+route();
+
 }
 
 async function route(){
 
-if(!user){startGPS();return}
-if(!destination){
-msg("Select a destination first.");
+if(!user){
+
+startGPS();
+
 return;
 }
 
-msg("Calculating route...");
+if(!destination){
 
-let host=mode==="walking"
-?"https://routing.openstreetmap.de/routed-foot/route/v1/driving/"
-:mode==="cycling"
-?"https://routing.openstreetmap.de/routed-bike/route/v1/driving/"
-:"https://router.project-osrm.org/route/v1/driving/";
+msg(
+"Select destination."
+);
 
-let url=host+
+return;
+}
+
+msg(
+"Calculating route…"
+);
+
+let host=
+
+mode==="walking"?
+
+"https://routing.openstreetmap.de/routed-foot/route/v1/driving/":
+
+mode==="cycling"?
+
+"https://routing.openstreetmap.de/routed-bike/route/v1/driving/":
+
+"https://router.project-osrm.org/route/v1/driving/";
+
+let url=
+host+
 `${user[1]},${user[0]};${destination[1]},${destination[0]}`+
 "?overview=full&geometries=geojson&steps=true&alternatives=true";
 
 try{
 
-let data=await fetch(url).then(r=>r.json());
-if(data.code!=="Ok")throw Error();
+let data=
+await fetch(url)
+.then(r=>r.json());
 
-routes.forEach(x=>map.removeLayer(x));
+if(data.code!=="Ok")
+throw Error();
+
+routes.forEach(
+r=>map.removeLayer(r)
+);
+
 routes=[];
 
-data.routes.forEach((r,i)=>{
+data.routes.forEach(
+(r,i)=>{
 
-let line=L.geoJSON(r.geometry,{
-style:{weight:i?4:7,opacity:i?0.4:1}
-}).addTo(map);
+let line=
+L.geoJSON(
+r.geometry,
+{
+style:{
+weight:i?4:7,
+opacity:i?.4:1
+}
+}
+).addTo(map);
 
 routes.push(line);
 
 if(!i){
 
-map.fitBounds(line.getBounds(),{padding:[25,25]});
+map.fitBounds(
+line.getBounds(),
+{
+padding:[30,100]
+}
+);
 
-let km=(r.distance/1000).toFixed(1);
-let min=Math.round(r.duration/60);
+let km=
+(r.distance/1000)
+.toFixed(1);
+
+let min=
+Math.round(
+r.duration/60
+);
 
 $("info").innerHTML=
-`<b>${mode.toUpperCase()}</b> · ${km} km · `+
-`${min} min · ${data.routes.length} route(s)`;
+`🧭 ${mode} · ${km} km · ${min} min`;
 
 showSteps(r);
+
 }
-});
 
-loadRoadData();
+}
+);
 
-}catch(e){msg("Route unavailable.");}
+}catch(e){
+
+msg(
+"Route unavailable."
+);
+
+}
+
 }
 
 function showSteps(r){
 
-let h="<b>🧭 Turn-by-turn</b>";
+let h=
+"<b>🧭 Directions</b>";
 
-r.legs.forEach(l=>l.steps.forEach((s,i)=>{
-h+=`<div class="item">${i+1}. ${
-s.maneuver.type} ${s.maneuver.modifier||""}
-${s.name||"Unnamed road"} · ${Math.round(s.distance)} m</div>`;
-}));
+r.legs.forEach(
+l=>l.steps.forEach(
+(s,i)=>{
+
+h+=`
+
+<div class="item">
+
+${i+1}.
+${s.maneuver.type}
+${s.maneuver.modifier||""}
+<br>
+${s.name||"Unnamed road"}
+· ${Math.round(
+s.distance
+)} m
+
+</div>
+
+`;
+
+}
+)
+);
 
 $("steps").innerHTML=h;
+
+openSheet();
+
 }
 
-/* Nearby 16–23 */
+/* NEARBY */
 
 async function nearby(type){
 
-if(!user){startGPS();return}
+if(!user){
 
-poiMarkers.forEach(x=>map.removeLayer(x));
+startGPS();
+
+return;
+}
+
+poiMarkers.forEach(
+x=>map.removeLayer(x)
+);
+
 poiMarkers=[];
 
 let tags={
-restaurant:'["amenity"="restaurant"]',
-hospital:'["amenity"="hospital"]',
-fuel:'["amenity"="fuel"]',
-atm:'["amenity"="atm"]',
-bank:'["amenity"="bank"]',
-hotel:'["tourism"="hotel"]',
-parking:'["amenity"="parking"]',
-pharmacy:'["amenity"="pharmacy"]'
+
+restaurant:
+'["amenity"="restaurant"]',
+
+hospital:
+'["amenity"="hospital"]',
+
+fuel:
+'["amenity"="fuel"]',
+
+atm:
+'["amenity"="atm"]',
+
+bank:
+'["amenity"="bank"]',
+
+hotel:
+'["tourism"="hotel"]',
+
+parking:
+'["amenity"="parking"]',
+
+pharmacy:
+'["amenity"="pharmacy"]'
+
 };
 
-let q=`[out:json][timeout:15];(
-node${tags[type]}(around:5000,${user[0]},${user[1]});
-way${tags[type]}(around:5000,${user[0]},${user[1]});
+let q=
+`[out:json][timeout:15];(
+node${tags[type]}
+(around:5000,${user[0]},${user[1]});
+way${tags[type]}
+(around:5000,${user[0]},${user[1]});
 );out center tags;`;
 
-msg("Finding nearby "+type+"...");
+msg(
+"Finding "+type+"…"
+);
 
 try{
 
-let d=await fetch(
+let d=
+await fetch(
 "https://overpass-api.de/api/interpreter",
-{method:"POST",body:q}
-).then(r=>r.json());
+{
+method:"POST",
+body:q
+}
+)
+.then(r=>r.json());
 
 $("results").innerHTML="";
 
-d.elements.slice(0,30).forEach(x=>{
+d.elements
+.slice(0,30)
+.forEach(x=>{
 
-let lat=x.lat??x.center.lat;
-let lon=x.lon??x.center.lon;
-let name=x.tags?.name||type;
+let lat=
+x.lat??x.center.lat;
 
-let m=L.marker([lat,lon]).addTo(map)
-.bindPopup(`<b>${safe(name)}</b><br>${type}
-<br><button onclick="selectPlace(
-${lat},${lon},'${safe(name)}')">Navigate</button>`);
+let lon=
+x.lon??x.center.lon;
+
+let name=
+x.tags?.name||type;
+
+let m=
+L.marker(
+[lat,lon]
+)
+.addTo(map)
+.bindPopup(
+`<b>${safe(name)}</b><br>
+${type}<br>
+<button onclick="selectPlace(
+${lat},${lon},
+'${safe(name)}'
+)">
+Navigate
+</button>`
+);
 
 poiMarkers.push(m);
 
 $("results").innerHTML+=`
-<div class="item" onclick="focusPOI(${lat},${lon})">
+
+<div class="item"
+onclick="focusPOI(
+${lat},${lon}
+)">
+
 📍 ${safe(name)}
-</div>`;
+
+</div>
+
+`;
+
 });
 
-msg(`${Math.min(d.elements.length,30)} nearby ${type}(s).`);
+openSheet();
 
-}catch(e){msg("Nearby search unavailable.");}
+msg(
+`${Math.min(
+30,d.elements.length
+)} found`
+);
+
+}catch(e){
+
+msg(
+"Nearby search unavailable."
+);
+
 }
 
-function focusPOI(lat,lon){map.setView([lat,lon],17)}
+}
 
-/* Favorites 24 */
+function focusPOI(
+lat,
+lon
+){
+
+map.setView(
+[lat,lon],
+17
+);
+
+}
+
+/* FAVORITES */
 
 function saveFavorite(){
 
-if(!destination)return;
-
-let name=$("results").querySelector("b")?.textContent||
-"Saved place";
+if(!destination)
+return;
 
 favorites.unshift({
-name:name.replace("📍 ",""),
+
+name:"Saved destination",
+
 lat:destination[0],
 lon:destination[1]
+
 });
 
-favorites=favorites.slice(0,30);
+favorites=
+favorites.slice(0,30);
 
 localStorage.setItem(
-"navFavorites",JSON.stringify(favorites));
+"navFavorites",
+JSON.stringify(
+favorites
+)
+);
 
-msg("⭐ Saved to favorites.");
+msg(
+"⭐ Saved."
+);
+
 }
 
 function showFavorites(){
 
-$("results").innerHTML=favorites.length?
+$("results").innerHTML=
+favorites.length?
+
 favorites.map(x=>`
-<div class="item" onclick="selectPlace(
-${x.lat},${x.lon},'${safe(x.name)}')">
+
+<div class="item"
+onclick="selectPlace(
+${x.lat},
+${x.lon},
+'${safe(x.name)}'
+)">
+
 ⭐ ${safe(x.name)}
-</div>`).join(""):"No favorites.";
+
+</div>
+
+`).join(""):
+
+"No favorites.";
+
+openSheet();
+
 }
 
-/* Recent 25 */
+/* RECENT */
 
-function saveRecent(name,pos){
+function saveRecent(
+name,
+pos
+){
 
-recent=recent.filter(x=>
-x.lat!==pos[0]||x.lon!==pos[1]);
+recent=
+recent.filter(
+x=>
+x.lat!==pos[0]||
+x.lon!==pos[1]
+);
 
 recent.unshift({
-name,lat:pos[0],lon:pos[1]
+
+name,
+lat:pos[0],
+lon:pos[1]
+
 });
 
-recent=recent.slice(0,20);
+recent=
+recent.slice(0,20);
 
 localStorage.setItem(
-"navRecent",JSON.stringify(recent));
+"navRecent",
+JSON.stringify(
+recent
+)
+);
+
 }
 
 function showRecent(){
 
-$("results").innerHTML=recent.length?
+$("results").innerHTML=
+recent.length?
+
 recent.map(x=>`
-<div class="item" onclick="selectPlace(
-${x.lat},${x.lon},'${safe(x.name)}')">
+
+<div class="item"
+onclick="selectPlace(
+${x.lat},
+${x.lon},
+'${safe(x.name)}'
+)">
+
 🕘 ${safe(x.name)}
-</div>`).join(""):"No recent destinations.";
+
+</div>
+
+`).join(""):
+
+"No recent destinations.";
+
+openSheet();
+
 }
 
-/* 26 Traffic */
+/* TRAFFIC */
 
 function showTraffic(){
 
-if(!user){startGPS();return}
+if(!user){
 
-$("alerts").innerHTML=`
-<div class="alert">
-🚦 <b>Traffic-aware routing</b><br>
-Live traffic requires a dedicated traffic
-data provider. Current routing uses the
-available road-network data.
-</div>`;
+startGPS();
 
-route();
+return;
 }
 
-/* 27 Road closures */
+$("alerts").innerHTML=`
+
+<div class="alert">
+
+🚦 Traffic-aware routing
+
+<br>
+
+Live traffic data depends on
+the routing provider.
+
+</div>
+
+`;
+
+openSheet();
+
+route();
+
+}
+
+/* CLOSURES */
 
 async function findClosures(){
 
-if(!user){startGPS();return}
+if(!user){
 
-msg("Checking mapped restrictions...");
+startGPS();
 
-let q=`[out:json][timeout:15];(
-way["access"="no"](around:5000,${user[0]},${user[1]});
-way["vehicle"="no"](around:5000,${user[0]},${user[1]});
-way["motor_vehicle"="no"](around:5000,${user[0]},${user[1]});
+return;
+}
+
+msg(
+"Checking restrictions…"
+);
+
+let q=
+`[out:json][timeout:15];(
+way["access"="no"]
+(around:5000,${user[0]},${user[1]});
+way["vehicle"="no"]
+(around:5000,${user[0]},${user[1]});
+way["motor_vehicle"="no"]
+(around:5000,${user[0]},${user[1]});
 );out center tags;`;
 
 try{
 
-let d=await fetch(
+let d=
+await fetch(
 "https://overpass-api.de/api/interpreter",
-{method:"POST",body:q}
-).then(r=>r.json());
-
-$("results").innerHTML=d.elements.slice(0,20).map(x=>{
-
-let lat=x.center?.lat,lon=x.center?.lon;
-let n=x.tags?.name||"Restricted road";
-
-if(lat&&lon){
-let m=L.marker([lat,lon]).addTo(map)
-.bindPopup("🚧 "+safe(n));
-poiMarkers.push(m);
+{
+method:"POST",
+body:q
 }
+)
+.then(r=>r.json());
 
-return `<div class="item">🚧 ${safe(n)}</div>`;
+$("results").innerHTML=
+d.elements
+.slice(0,20)
+.map(x=>{
+
+let name=
+x.tags?.name||
+"Restricted road";
+
+return`
+
+<div class="item">
+🚧 ${safe(name)}
+</div>
+
+`;
+
 }).join("");
 
-msg(`${d.elements.length} restriction(s) found.`);
-}catch(e){msg("Closure data unavailable.");}
+openSheet();
+
+msg(
+`${d.elements.length}
+restriction(s)`
+);
+
+}catch(e){
+
+msg(
+"Closure data unavailable."
+);
+
 }
 
-/* 28 Incident reporting */
+}
+
+/* INCIDENT */
 
 function reportIncident(){
 
-if(!user){startGPS();return}
+if(!user){
 
-let type=prompt(
-"Incident:\n1 Accident\n2 Road blocked\n3 Hazard\n4 Other");
+startGPS();
+
+return;
+}
+
+let type=
+prompt(
+"1 Accident\n"+
+"2 Road blocked\n"+
+"3 Hazard\n"+
+"4 Other"
+);
 
 if(!type)return;
 
-let item={
-type,lat:user[0],lon:user[1],
-time:new Date().toISOString()
-};
+incidents.push({
 
-incidents.push(item);
+type,
+lat:user[0],
+lon:user[1],
+time:new Date()
+.toISOString()
+
+});
 
 localStorage.setItem(
-"navIncidents",JSON.stringify(incidents));
+"navIncidents",
+JSON.stringify(
+incidents
+)
+);
 
-L.marker(user).addTo(map)
-.bindPopup("⚠️ User-reported incident");
+L.marker(user)
+.addTo(map)
+.bindPopup(
+"⚠️ Reported incident"
+);
 
-msg("⚠️ Incident saved locally.");
+msg(
+"⚠️ Incident saved."
+);
+
 }
 
-/* 29 Speed limit */
+/* SPEED */
 
 async function loadRoadData(){
 
 if(!user)return;
 
-let q=`[out:json][timeout:10];
-way["maxspeed"](around:80,${user[0]},${user[1]});
+let q=
+`[out:json][timeout:10];
+way["maxspeed"]
+(around:80,
+${user[0]},
+${user[1]});
 out tags center 1;`;
 
 try{
 
-let d=await fetch(
+let d=
+await fetch(
 "https://overpass-api.de/api/interpreter",
-{method:"POST",body:q}
-).then(r=>r.json());
-
-let s=d.elements[0]?.tags?.maxspeed;
-
-if(s){
-speedLimit=parseInt(s)||null;
+{
+method:"POST",
+body:q
 }
+)
+.then(r=>r.json());
+
+let s=
+d.elements[0]
+?.tags?.maxspeed;
+
+if(s)
+speedLimit=
+parseInt(s)||null;
+
 }catch(e){}
+
 }
 
 async function showSpeed(){
 
-if(!user){startGPS();return}
+if(!user){
+
+startGPS();
+
+return;
+}
 
 await loadRoadData();
 
-msg(speedLimit?
-`🛣️ Speed limit: ${speedLimit} km/h`:
-"Speed limit not mapped here.");
-}
+msg(
+speedLimit?
+`🛣️ Limit ${speedLimit} km/h`:
+"Speed limit unavailable"
+);
 
-/* 30 Speed warning */
+}
 
 function toggleWarnings(){
 
 warningOn=!warningOn;
 
-msg(warningOn?
-"🔔 Speed warnings ON":
-"🔕 Speed warnings OFF");
+msg(
+warningOn?
+"🔔 Warnings ON":
+"🔕 Warnings OFF"
+);
+
 }
 
 function checkSpeed(){
 
-if(!warningOn||!speedLimit)return;
+if(
+!warningOn||
+!speedLimit||
+!navigator.geolocation
+)
+return;
 
-navigator.geolocation.getCurrentPosition(p=>{
+navigator.geolocation
+.getCurrentPosition(
+p=>{
 
-let kmh=(p.coords.speed||0)*3.6;
+let kmh=
+(p.coords.speed||0)*3.6;
 
 if(kmh>speedLimit){
 
 $("alerts").innerHTML=`
+
 <div class="alert">
-🔔 <b>Speed warning!</b><br>
-Approx. ${kmh.toFixed(0)} km/h ·
-Limit ${speedLimit} km/h
-</div>`;
-}
-});
+
+🔔 Speed warning:
+${kmh.toFixed(0)}
+km/h · Limit
+${speedLimit}
+km/h
+
+</div>
+
+`;
+
+openSheet();
+
 }
 
-/* 31 Danger zones */
+}
+);
+
+}
+
+/* DANGER */
 
 function showDangerZones(){
 
-if(!user){startGPS();return}
+if(!user){
+
+startGPS();
+
+return;
+}
 
 $("alerts").innerHTML=`
+
 <div class="alert">
-⚠️ Danger alerts use mapped restrictions
-and user-reported incidents.
-</div>`;
+
+⚠️ Danger zones use mapped
+restrictions and local reports.
+
+</div>
+
+`;
 
 incidents.forEach(x=>{
 
-if(Math.abs(x.lat-user[0])<.01&&
-Math.abs(x.lon-user[1])<.01){
-
-L.circle([x.lat,x.lon],{
-radius:100,color:"red"
-}).addTo(map)
-.bindPopup("⚠️ Reported "+x.type);
+L.circle(
+[x.lat,x.lon],
+{
+radius:100,
+color:"red"
 }
+)
+.addTo(map)
+.bindPopup(
+"⚠️ "+x.type
+);
+
 });
 
-msg("Danger-zone scan complete.");
+openSheet();
+
 }
 
-/* 32 Emergency sharing */
+/* SOS */
 
 async function emergency(){
 
-if(!user){startGPS();return}
+if(!user){
+
+startGPS();
+
+return;
+}
 
 let text=
-`🆘 EMERGENCY LOCATION\n`+
-`https://www.google.com/maps?q=${user[0]},${user[1]}`;
+`🆘 Emergency Location\n`+
+`https://www.google.com/maps?q=`+
+`${user[0]},${user[1]}`;
 
 if(navigator.share){
 
 try{
+
 await navigator.share({
 title:"Emergency Location",
-text:text
+text
 });
-msg("Emergency sharing opened.");
+
 }catch(e){}
 
 }else{
 
 try{
-await navigator.clipboard.writeText(text);
-msg("🆘 Emergency location copied.");
+
+await navigator.clipboard
+.writeText(text);
+
+msg(
+"🆘 Location copied."
+);
+
 }catch(e){
+
 alert(text);
-}
-}
+
 }
 
-/* 33 Automatic rerouting */
-
-function autoReroute(){
-if(destination&&user)route();
 }
 
-/* Continuous GPS */
+}
+
+/* MEASUREMENT */
+
+function toggleMeasure(){
+
+measuring=!measuring;
+
+if(measuring){
+
+msg(
+"📏 Tap points on the map"
+);
+
+map.getContainer()
+.style.cursor="crosshair";
+
+}else{
+
+msg(
+"📏 Measurement OFF"
+);
+
+map.getContainer()
+.style.cursor="";
+
+}
+
+}
+
+function addMeasurePoint(
+lat,
+lon
+){
+
+let point=[
+lat,
+lon
+];
+
+measurePoints.push(point);
+
+let n=
+measurePoints.length;
+
+let m=
+L.marker(
+point,
+{
+draggable:true
+}
+)
+.addTo(map);
+
+m.bindTooltip(
+"Point "+n,
+{
+permanent:true,
+direction:"top"
+}
+);
+
+m.on(
+"dragend",
+rebuildMeasurement
+);
+
+measureMarkers.push(m);
+
+rebuildMeasurement();
+
+}
+
+map.on(
+"click",
+e=>{
+
+if(!measuring)
+return;
+
+addMeasurePoint(
+e.latlng.lat,
+e.latlng.lng
+);
+
+}
+);
+
+function rebuildMeasurement(){
+
+totalDistance=0;
+
+measureLines.forEach(
+x=>map.removeLayer(x)
+);
+
+measureLines=[];
+
+measureMarkers.forEach(
+(m,i)=>{
+
+measurePoints[i]=[
+m.getLatLng().lat,
+m.getLatLng().lng
+];
+
+}
+);
+
+for(
+let i=1;
+i<measurePoints.length;
+i++
+){
+
+let a=
+measurePoints[i-1];
+
+let b=
+measurePoints[i];
+
+let line=
+L.polyline(
+[a,b],
+{
+weight:4
+}
+)
+.addTo(map);
+
+measureLines.push(line);
+
+totalDistance+=
+map.distance(
+L.latLng(a),
+L.latLng(b)
+);
+
+}
+
+let value=
+totalDistance>=1000?
+
+(totalDistance/1000)
+.toFixed(2)+" km":
+
+Math.round(
+totalDistance
+)+" m";
+
+$("info").innerHTML=
+`📏 ${value} · ${
+measurePoints.length
+} points`;
+
+}
+
+function clearMeasurement(){
+
+measureMarkers.forEach(
+x=>map.removeLayer(x)
+);
+
+measureLines.forEach(
+x=>map.removeLayer(x)
+);
+
+measureMarkers=[];
+measureLines=[];
+measurePoints=[];
+totalDistance=0;
+measuring=false;
+
+map.getContainer()
+.style.cursor="";
+
+msg(
+"📏 Measurement cleared."
+);
+
+}
+
+/* CLEAR */
+
+function clearMap(){
+
+routes.forEach(
+x=>map.removeLayer(x)
+);
+
+poiMarkers.forEach(
+x=>map.removeLayer(x)
+);
+
+routes=[];
+poiMarkers=[];
+destination=null;
+
+if(marker)
+map.removeLayer(marker);
+
+$("results").innerHTML="";
+$("steps").innerHTML="";
+$("alerts").innerHTML="";
+
+closeSheet();
+
+msg(
+"Map cleared."
+);
+
+}
+
+/* THEMES */
+
+function toggleTheme(){
+
+document.body
+.classList.toggle("dark");
+
+}
+
+function toggleOLED(){
+
+document.body
+.classList.toggle("oled");
+
+}
+
+/* GPS WATCH */
 
 if(navigator.geolocation){
 
-navigator.geolocation.watchPosition(p=>{
+navigator.geolocation.watchPosition(
+p=>{
 
 let old=user;
 
@@ -706,64 +2293,67 @@ p.coords.longitude
 ];
 
 if(!userMarker){
-userMarker=L.circleMarker(user,{radius:9})
+
+userMarker=
+L.circleMarker(
+user,
+{
+radius:9
+}
+)
 .addTo(map);
+
 }else{
-userMarker.setLatLng(user);
+
+userMarker
+.setLatLng(user);
+
 }
 
 checkSpeed();
 
-if(destination&&old){
+if(
+destination&&old
+){
 
 let moved=
-Math.abs(user[0]-old[0])+
-Math.abs(user[1]-old[1]);
+Math.abs(
+user[0]-old[0]
+)+
+Math.abs(
+user[1]-old[1]
+);
 
 if(moved>.0003)
-autoReroute();
+route();
+
 }
 
-},{
+},
+()=>{},
+{
 enableHighAccuracy:true,
 maximumAge:5000,
 timeout:30000
-},()=>{});
+}
+);
+
 }
 
-/* Clear */
+/* START GPS */
 
-function clearMap(){
+window.addEventListener(
+"load",
+()=>{
 
-routes.forEach(x=>map.removeLayer(x));
-poiMarkers.forEach(x=>map.removeLayer(x));
+setTimeout(
+checkLocationPermission,
+500
+);
 
-routes=[];
-poiMarkers=[];
-destination=null;
-
-if(marker)map.removeLayer(marker);
-
-$("results").innerHTML="";
-$("steps").innerHTML="";
-$("alerts").innerHTML="";
-
-msg("Map cleared.");
 }
+);
 
-function toggleTheme(){
-document.body.classList.toggle("dark");
-}
-
-function toggleOLED(){
-document.body.classList.toggle("oled");
-}
-
-/* Automatic GPS startup */
-
-window.addEventListener("load",()=>{
-setTimeout(checkLocationPermission,500);
-});
 </script>
 
 </body>
