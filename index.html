@@ -1,320 +1,1120 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pulsecheck — Website Downtime Checker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Permissions-Policy" content="geolocation=(self)">
+<title>Farmio — Farm Weather & Advisory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --font-mono:'JetBrains Mono','SF Mono',Consolas,monospace;
-    --font-sans:'Inter',-apple-system,Segoe UI,sans-serif;
-    --radius:10px;
-  }
-  html[data-theme="dark"]{
-    --bg:#0b0e11; --panel:#12161b; --panel2:#181d24; --border:#232a33;
-    --text:#e6edf3; --sub:#8b98a5; --up:#00d97e; --down:#ff5c5c; --pend:#ffb020;
-    --accent:#00d97e; --focus:#4fd1ff;
-  }
-  html[data-theme="light"]{
-    --bg:#f3f5f7; --panel:#ffffff; --panel2:#eef1f4; --border:#dbe1e6;
-    --text:#161b20; --sub:#5b6670; --up:#0a9d5c; --down:#d33b3b; --pend:#b6790a;
-    --accent:#0a9d5c; --focus:#0072e0;
-  }
-  html[data-theme="oled"]{
-    --bg:#000000; --panel:#000000; --panel2:#0a0a0a; --border:#1c1c1c;
-    --text:#eaeaea; --sub:#7a7a7a; --up:#00e08a; --down:#ff5252; --pend:#ffb020;
-    --accent:#00e08a; --focus:#4fd1ff;
-  }
-  html[data-theme="hc"]{
-    --bg:#000000; --panel:#000000; --panel2:#000000; --border:#ffffff;
-    --text:#ffffff; --sub:#ffffff; --up:#00ff6a; --down:#ff2a2a; --pend:#ffd400;
-    --accent:#ffff00; --focus:#ffff00;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    background:var(--bg); color:var(--text); font-family:var(--font-sans);
-    min-height:100vh; display:flex; flex-direction:column;
-    transition:background .2s,color .2s;
-  }
-  a{color:var(--accent)}
-  header{
-    padding:18px 16px 10px; display:flex; align-items:center;
-    justify-content:space-between; gap:10px; flex-wrap:wrap;
-  }
-  .brand{display:flex; align-items:center; gap:10px; font-family:var(--font-mono)}
-  .dot-logo{width:12px;height:12px;border-radius:50%;background:var(--up);
-    box-shadow:0 0 0 4px color-mix(in srgb, var(--up) 25%, transparent);
-    animation:beat 1.8s ease-in-out infinite;}
-  @keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
-  .brand h1{font-size:1.05rem; letter-spacing:.03em}
-  .brand span{color:var(--sub); font-size:.75rem}
-  .theme-toggle{display:flex; gap:4px; background:var(--panel2); border:1px solid var(--border);
-    border-radius:999px; padding:3px;}
-  .theme-toggle button{
-    border:none; background:transparent; color:var(--sub); width:34px; height:30px;
-    border-radius:999px; cursor:pointer; font-size:.9rem; font-family:var(--font-mono);
-  }
-  .theme-toggle button[aria-pressed="true"]{background:var(--accent); color:#04140c; font-weight:700}
-  html[data-theme="hc"] .theme-toggle button[aria-pressed="true"]{color:#000}
-  main{flex:1; width:100%; max-width:720px; margin:0 auto; padding:6px 16px 24px;}
-  form.add{
-    display:flex; gap:8px; background:var(--panel); border:1px solid var(--border);
-    border-radius:var(--radius); padding:10px; margin-bottom:18px; flex-wrap:wrap;
-  }
-  form.add input{
-    flex:1 1 160px; background:var(--panel2); border:1px solid var(--border); color:var(--text);
-    border-radius:8px; padding:10px 12px; font-family:var(--font-mono); font-size:.9rem; min-width:0;
-  }
-  form.add input:focus, .theme-toggle button:focus-visible, .sitebtn:focus-visible{
-    outline:2px solid var(--focus); outline-offset:2px;
-  }
-  form.add button{
-    background:var(--accent); color:#04140c; border:none; border-radius:8px;
-    padding:0 18px; font-weight:700; cursor:pointer; font-family:var(--font-mono);
-  }
-  html[data-theme="hc"] form.add button{color:#000}
-  .empty{color:var(--sub); text-align:center; padding:40px 10px; font-family:var(--font-mono); font-size:.85rem}
-  .filters{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; align-items:center}
-  .filters button{
-    background:var(--panel); border:1px solid var(--border); color:var(--sub);
-    border-radius:999px; padding:6px 13px; font-size:.75rem; font-family:var(--font-mono); cursor:pointer;
-  }
-  .filters button[aria-pressed="true"]{background:var(--accent); color:#04140c; border-color:var(--accent); font-weight:700}
-  html[data-theme="hc"] .filters button[aria-pressed="true"]{color:#000}
-  .filters .count{margin-left:auto; color:var(--sub); font-size:.72rem; font-family:var(--font-mono)}
-  .card{
-    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
-    padding:14px; margin-bottom:12px;
-  }
-  .card-top{display:flex; align-items:center; gap:10px}
-  .status-dot{width:11px;height:11px;border-radius:50%; flex:none; background:var(--sub)}
-  .status-dot.up{background:var(--up); box-shadow:0 0 8px color-mix(in srgb, var(--up) 60%, transparent)}
-  .status-dot.down{background:var(--down); box-shadow:0 0 8px color-mix(in srgb, var(--down) 60%, transparent)}
-  .status-dot.pend{background:var(--pend); animation:beat 1s ease-in-out infinite}
-  .card-info{flex:1; min-width:0}
-  .card-info .name{font-weight:600; font-size:.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:6px}
-  .tag{font-size:.6rem; font-family:var(--font-mono); color:var(--sub); border:1px solid var(--border);
-    border-radius:4px; padding:1px 5px; flex:none; letter-spacing:.03em}
-  .card-info .url{color:var(--sub); font-size:.75rem; font-family:var(--font-mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .card-meta{text-align:right; font-family:var(--font-mono); font-size:.75rem; color:var(--sub)}
-  .card-meta .code.up{color:var(--up)}
-  .card-meta .code.down{color:var(--down)}
-  .sitebtn{background:none; border:1px solid var(--border); color:var(--sub); border-radius:6px;
-    width:28px;height:28px; cursor:pointer; font-size:.85rem;}
-  .pulse{display:flex; gap:2px; margin-top:12px; height:26px; align-items:flex-end}
-  .pulse i{flex:1; background:var(--panel2); border-radius:2px; height:100%; display:block}
-  .pulse i.up{background:var(--up)}
-  .pulse i.down{background:var(--down)}
-  .pulse i.pend{background:var(--pend); animation:beat 1s ease-in-out infinite}
-  footer{
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:2px; text-align:center; padding:20px 16px 26px; border-top:1px solid var(--border);
-    color:var(--sub); font-family:var(--font-mono); font-size:.75rem;
-  }
-  @media (min-width:600px){
-    .card-top{gap:14px}
-    main{padding-top:10px}
-  }
+/* ===================== DESIGN TOKENS ===================== */
+:root{--radius:14px;--ff-display:'Fraunces',serif;--ff-body:'Inter',sans-serif;}
+html[data-theme="light"]{--bg:#F6F1E4;--bg-alt:#EDE5D2;--surface:#FFFDF8;--text:#2A2318;--muted:#6B6152;--line:#DCD2BA;--green:#3F6B3B;--green-ink:#F4F8F0;--gold:#B9862B;--bad:#B5442E;}
+html[data-theme="dark"]{--bg:#1B1F17;--bg-alt:#232920;--surface:#252B20;--text:#EDE8D8;--muted:#A6A290;--line:#3A4232;--green:#7FB06B;--green-ink:#12190F;--gold:#E0B25C;--bad:#E38268;}
+html[data-theme="oled"]{--bg:#000;--bg-alt:#0A0A0A;--surface:#0D0D0D;--text:#F0F0EA;--muted:#8C8C86;--line:#242424;--green:#66C24C;--green-ink:#000;--gold:#E8B84B;--bad:#FF7A5C;}
+html[data-theme="hc"]{--bg:#000;--bg-alt:#000;--surface:#000;--text:#FFF;--muted:#FFF;--line:#FFF;--green:#00FF6A;--green-ink:#000;--gold:#FFD400;--bad:#FF3B3B;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--ff-body);transition:background .25s,color .25s;min-height:100vh;display:flex;flex-direction:column;padding-bottom:66px;}
+h1,h2,h3{font-family:var(--ff-display);margin:0;}
+button,input,select{font-family:inherit;}
+button{touch-action:manipulation;}
+a{color:var(--green);}
+.wrap{max-width:640px;margin:0 auto;padding:0 18px;width:100%;}
+
+/* ===================== HEADER ===================== */
+header{border-bottom:1px solid var(--line);padding:14px 0;}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.brand h1{font-size:1.3rem;font-weight:700;letter-spacing:-.01em;}
+.brand h1 span{color:var(--green);}
+.hdrbtns{display:flex;gap:8px;align-items:center;}
+.themebar{display:flex;gap:6px;background:var(--bg-alt);padding:4px;border-radius:999px;border:1px solid var(--line);}
+.themebar button{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text);opacity:.55;}
+.themebar button[aria-pressed="true"]{opacity:1;border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset;}
+.unitbtn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:6px 10px;font-size:.78rem;font-weight:600;cursor:pointer;}
+.tag{margin-top:6px;color:var(--muted);font-size:.82rem;}
+
+/* ===================== CROP SELECTOR / OFFLINE BANNER ===================== */
+.cropbar{display:flex;gap:8px;align-items:center;margin:14px 0;}
+.cropbar select{flex:1;padding:11px 12px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:.92rem;}
+.offline{background:var(--gold);color:#1A1400;font-size:.8rem;text-align:center;padding:6px;border-radius:10px;margin-bottom:10px;}
+
+/* ===================== TAB PANELS ===================== */
+main{flex:1;}
+.wrap>.panel{display:none;}
+.wrap>.panel.active{display:block;}
+
+/* ===================== SHARED CONTROLS ===================== */
+.search{display:flex;gap:8px;margin:6px 0 8px;}
+.search input{flex:1;padding:12px 14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:1rem;}
+.search input:focus{outline:2px solid var(--green);outline-offset:1px;}
+.btn{padding:12px 16px;border-radius:var(--radius);border:1px solid var(--green);background:var(--green);color:var(--green-ink);font-weight:600;cursor:pointer;white-space:nowrap;font-size:.92rem;}
+.locbtn{width:100%;margin-bottom:10px;background:transparent;color:var(--muted);border:1px dashed var(--line);border-radius:var(--radius);padding:10px;cursor:pointer;font-size:.85rem;}
+.locbtn:hover{color:var(--green);border-color:var(--green);}
+.status{text-align:center;color:var(--muted);padding:24px 0;font-size:.9rem;}
+.hidden{display:none !important;}
+
+/* ===================== WEATHER CARDS ===================== */
+.now{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;margin:14px 0;display:flex;align-items:center;gap:16px;}
+.now .icon{font-size:3rem;line-height:1;}
+.now .temp{font-family:var(--ff-display);font-size:2.6rem;font-weight:600;}
+.now .place{font-weight:600;font-size:.95rem;}
+.now .desc{color:var(--muted);font-size:.88rem;}
+.updated{color:var(--muted);font-size:.72rem;margin-top:2px;}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 16px;}
+.metric{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;}
+.metric b{display:block;font-size:1.05rem;}
+.metric span{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.detailgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 16px;}
+.detailgrid div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;}
+.detailgrid b{display:block;font-size:.95rem;}
+.detailgrid span{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;}
+h2.section{font-size:.95rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 0 10px;font-family:var(--ff-body);font-weight:700;}
+.forecast{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;}
+.day{flex:0 0 84px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 8px;text-align:center;}
+.day .d{font-size:.78rem;color:var(--muted);}
+.day .i{font-size:1.6rem;margin:6px 0;}
+.day .hi{font-weight:700;}
+.day .lo{color:var(--muted);font-size:.85rem;}
+
+/* ===================== CARDS / TIPS ===================== */
+.tips,.cards{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.tip,.card{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:10px;padding:12px 14px;font-size:.9rem;}
+.tip{display:flex;gap:10px;}
+.tip.warn{border-left-color:var(--bad);}
+.tip .ic{font-size:1.2rem;}
+.card b{display:block;font-family:var(--ff-display);font-size:1.02rem;margin-bottom:4px;}
+.card .sym{color:var(--muted);margin:2px 0;}
+.pill{display:inline-block;background:var(--bg-alt);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.72rem;margin-right:6px;margin-bottom:6px;}
+
+/* ===================== FORMS / CALCULATOR OUTPUT ===================== */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
+.field label{font-size:.78rem;color:var(--muted);display:block;margin-bottom:4px;}
+.field input,.field select{width:100%;padding:11px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text);}
+.npkout{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+.npkout div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 8px;text-align:center;}
+.npkout b{font-family:var(--ff-display);font-size:1.4rem;display:block;}
+.resultline{margin-top:8px;font-size:.9rem;}
+.resultline b{color:var(--green);font-family:var(--ff-display);font-size:1.05rem;}
+
+/* ===================== TABLES / MISC ===================== */
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:.85rem;}
+th,td{padding:9px;text-align:left;border-bottom:1px solid var(--line);}
+th{color:var(--muted);font-weight:600;font-size:.72rem;text-transform:uppercase;}
+tr:last-child td{border-bottom:none;}
+.note{color:var(--muted);font-size:.78rem;margin-top:8px;}
+.scheme b{font-family:var(--ff-body);}
+
+/* ===================== TAB BAR / FOOTER ===================== */
+.tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:10;}
+.tabbar button{background:none;border:none;color:var(--muted);font-size:.62rem;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 3px;}
+.tabbar button .ic{font-size:1.05rem;}
+.tabbar button.active{color:var(--green);}
+footer{border-top:1px solid var(--line);margin-top:20px;padding:22px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;color:var(--muted);font-size:.8rem;}
+footer strong{color:var(--text);}
+@media(max-width:380px){.now{flex-direction:column;text-align:center;}.brand h1{font-size:1.12rem;}}
+
+/* ===================== MONETIZATION: TRIAL BANNER / PAYWALL ===================== */
+.trialbar{background:var(--gold);color:#1A1400;font-size:.78rem;text-align:center;padding:8px 12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+.trialbar b{font-weight:700;}
+.paywall{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 16px 60px;}
+.paywall-card{max-width:420px;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;position:relative;}
+.paywall-card h2{font-size:1.3rem;margin-bottom:6px;}
+.paywall-close{position:absolute;top:14px;right:14px;background:none;border:none;font-size:1.3rem;color:var(--muted);cursor:pointer;line-height:1;}
+.paywall-price{font-family:var(--ff-display);font-size:2rem;font-weight:700;color:var(--green);margin:10px 0;}
+.paywall-price span{font-size:1rem;color:var(--muted);font-weight:400;}
+.copybox{display:flex;align-items:center;gap:8px;background:var(--bg-alt);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;}
+.copybox code{flex:1;font-size:.92rem;word-break:break-all;}
+.copybox button{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;padding:6px 10px;font-size:.78rem;cursor:pointer;white-space:nowrap;}
+.license-input{width:100%;padding:12px 14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:1rem;margin:10px 0 8px;letter-spacing:.03em;}
+.paywall-status{font-size:.82rem;min-height:1.2em;margin-bottom:6px;}
+.paywall-status.err{color:var(--bad);}
+.paywall-status.ok{color:var(--green);}
+.admin-panel{margin-top:18px;padding-top:18px;border-top:1px dashed var(--line);}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="brand">
-    <span class="dot-logo"></span>
-    <div><h1>PULSECHECK</h1><span>live status console</span></div>
-  </div>
-  <div class="theme-toggle" role="group" aria-label="Theme">
-    <button data-theme="dark" aria-pressed="true" title="Dark">D</button>
-    <button data-theme="light" aria-pressed="false" title="Light">L</button>
-    <button data-theme="oled" aria-pressed="false" title="OLED True Black">O</button>
-    <button data-theme="hc" aria-pressed="false" title="High Contrast">HC</button>
-  </div>
-</header>
+<div class="trialbar hidden" id="trialBanner"><span>🎁</span><span data-i18n="trialBannerText">Free trial:</span> <b id="trialDaysLeft">14</b> <span data-i18n="daysLeft">days left</span> — <u data-i18n="subscribeNow">Subscribe now</u></div>
 
-<main>
-  <form class="add" id="addForm">
-    <input id="urlInput" type="text" placeholder="example.com or https://example.com" required autocomplete="off">
-    <button type="submit">Add Site</button>
-  </form>
-  <div class="filters" id="filters">
-    <button data-f="all" aria-pressed="true">All</button>
-    <button data-f="world" aria-pressed="false">World</button>
-    <button data-f="in" aria-pressed="false">India</button>
-    <span class="count" id="count"></span>
+<div class="paywall hidden" id="paywallModal">
+  <div class="paywall-card">
+    <button class="paywall-close" id="paywallClose" aria-label="Close">×</button>
+    <h2 id="paywallTitle" data-i18n="paywallTitleTrial">Unlock Farmio</h2>
+    <div class="tag" data-i18n="paywallSubtitle">Full access to weather, crop tools, calculators & more</div>
+    <div class="paywall-price">₹299<span data-i18n="perMonth"> / month</span></div>
+    <div class="copybox"><code id="upiIdText">9433082017@ybl</code><button id="copyUpiBtn" data-i18n="copy">Copy</button></div>
+    <button class="btn" id="payUpiBtn" style="width:100%;" data-i18n="payViaUpi">Pay ₹299 via UPI app</button>
+    <p class="note" data-i18n="paywallInstructions">After paying, you'll be sent an unlock password — enter it below to activate Farmio for 30 days.</p>
+    <input type="text" class="license-input" id="licenseInput" data-i18n-ph="licensePlaceholder" placeholder="Enter unlock password" autocomplete="off">
+    <button class="btn" id="unlockBtn" style="width:100%;" data-i18n="unlockBtn">Unlock</button>
+    <div class="paywall-status" id="paywallStatus"></div>
+    <div class="admin-panel">
+      <p class="note" data-i18n="deviceIdNote">Your device ID (mention this when confirming payment):</p>
+      <div class="copybox"><code id="deviceIdText">—</code><button id="copyDeviceBtn" data-i18n="copy">Copy</button></div>
+    </div>
   </div>
-  <div id="list"></div>
-</main>
+</div>
+
+<header><div class="wrap">
+  <div class="brand">
+    <h1>Farm<span>io</span></h1>
+    <div class="hdrbtns">
+      <button class="unitbtn" id="langBtn">EN</button>
+      <button class="unitbtn" id="unitBtn">°C · km/h</button>
+      <div class="themebar" id="themebar" role="group" aria-label="Theme">
+        <button data-theme="light" aria-pressed="true" title="Light">☀</button>
+        <button data-theme="dark" aria-pressed="false" title="Dark">☾</button>
+        <button data-theme="oled" aria-pressed="false" title="OLED true black">●</button>
+        <button data-theme="hc" aria-pressed="false" title="High contrast">◐</button>
+      </div>
+    </div>
+  </div>
+  <div class="tag" data-i18n="tagline">Weather & field advisory for growers</div>
+</div></header>
+
+<main><div class="wrap">
+  <div class="cropbar"><select id="cropSelect"></select></div>
+  <div id="offlineBanner" class="offline hidden" data-i18n="offlineMsg">You're offline — showing last saved weather.</div>
+
+  <!-- ============ WEATHER TAB ============ -->
+  <section class="panel active" id="tab-weather">
+    <button class="locbtn" id="locBtn" data-i18n="locBtn">📍 Use my current location</button>
+    <div class="search">
+      <input id="cityInput" type="text" placeholder="Search village, town or city…" data-i18n-ph="cityPh" autocomplete="off">
+      <button class="btn" id="searchBtn" data-i18n="search">Search</button>
+    </div>
+    <div id="status" class="status" data-i18n="statusDefault">Search a place or use your location to see today's advisory.</div>
+    <div id="result" class="hidden">
+      <div class="now">
+        <div class="icon" id="nowIcon">☀️</div>
+        <div style="flex:1;">
+          <div class="place" id="nowPlace">—</div>
+          <div class="temp"><span id="nowTemp">--</span><span id="nowUnit">°C</span></div>
+          <div class="desc" id="nowDesc">—</div>
+          <div class="updated" id="updated"></div>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><b id="mHumidity">--%</b><span data-i18n="humidity">Humidity</span></div>
+        <div class="metric"><b id="mWind">--</b><span data-i18n="wind">Wind</span></div>
+        <div class="metric"><b id="mRain">--%</b><span data-i18n="rainChance">Rain chance</span></div>
+      </div>
+
+      <h2 class="section" data-i18n="hExtended">📊 Extended conditions</h2>
+      <div class="detailgrid">
+        <div><b id="eFeels">--</b><span data-i18n="feelsLike">Feels like</span></div>
+        <div><b id="eGust">--</b><span data-i18n="windGusts">Wind gusts</span></div>
+        <div><b id="eCloud">--</b><span data-i18n="cloudCover">Cloud cover</span></div>
+        <div><b id="ePress">--</b><span data-i18n="pressure">Pressure</span></div>
+        <div><b id="eUv">--</b><span data-i18n="uvIndex">UV index</span></div>
+        <div><b id="eDir">--</b><span data-i18n="windDir">Wind direction</span></div>
+        <div><b id="eSunrise">--</b><span data-i18n="sunrise">Sunrise</span></div>
+        <div><b id="eSunset">--</b><span data-i18n="sunset">Sunset</span></div>
+        <div><b id="eRainSum">--</b><span data-i18n="rainToday">Rain today</span></div>
+        <div><b id="eEt0">--</b><span data-i18n="evapo">Evapotranspiration</span></div>
+      </div>
+
+      <h2 class="section" data-i18n="hAdvisory">🌾 Field advisory</h2>
+      <div class="tips" id="tips"></div>
+      <h2 class="section" data-i18n="hOutlook">5-Day outlook</h2>
+      <div class="forecast" id="forecast"></div>
+      <h2 class="section" data-i18n="hBestDay">📅 Best day this week</h2>
+      <div class="cards" id="bestDays"></div>
+    </div>
+  </section>
+
+  <!-- ============ CROP CARE TAB ============ -->
+  <section class="panel" id="tab-crop">
+    <h2 class="section" data-i18n="hCropProfile">🌱 Crop profile</h2>
+    <div class="cards" id="cropProfile"></div>
+    <h2 class="section" data-i18n="hSowHarvest">📅 Sowing & harvest window</h2>
+    <div class="cards" id="cropCalendar"></div>
+    <h2 class="section" data-i18n="hPests">🐛 Common pests & diseases</h2>
+    <div class="cards" id="pestList"></div>
+    <p class="note" data-i18n="notePests">Symptom-based reference list — for confirmed diagnosis, consult your local agriculture extension office.</p>
+    <h2 class="section" data-i18n="hNutrient">🔬 Nutrient deficiency guide</h2>
+    <div class="cards" id="nutrientList"></div>
+    <p class="note" data-i18n="noteNutrient">General visual reference — symptoms can overlap with disease or water stress. A soil test gives a reliable answer.</p>
+  </section>
+
+  <!-- ============ CALCULATOR TAB ============ -->
+  <section class="panel" id="tab-calc">
+    <h2 class="section" data-i18n="hFieldSize">📐 Field size (used by tools below)</h2>
+    <div class="grid2">
+      <div class="field"><label data-i18n="landArea">Land area</label><input id="areaInput" type="number" min="0" step="0.1" value="1"></div>
+      <div class="field"><label data-i18n="unitLbl">Unit</label><select id="areaUnit"><option value="acre" data-i18n="acre">Acre</option><option value="hectare" data-i18n="hectare">Hectare</option></select></div>
+    </div>
+
+    <h2 class="section" data-i18n="hFertilizer">🧮 Fertilizer calculator</h2>
+    <div class="card">
+      <button class="btn" id="calcBtn" style="width:100%;" data-i18n="btnCalcNpk">Calculate NPK dose</button>
+      <div class="npkout" id="npkOut">
+        <div><b id="outN">--</b><span data-i18n="kgN">kg N</span></div>
+        <div><b id="outP">--</b><span data-i18n="kgP">kg P</span></div>
+        <div><b id="outK">--</b><span data-i18n="kgK">kg K</span></div>
+      </div>
+      <p class="note" data-i18n="noteFertilizer">Indicative standard dosage per selected crop — adjust per soil test results.</p>
+    </div>
+
+    <h2 class="section" data-i18n="hIrrigationGuide">💧 Irrigation guide</h2>
+    <div class="cards" id="irriGuide"></div>
+
+    <h2 class="section" data-i18n="hSeedRate">🌰 Seed / planting material rate</h2>
+    <div class="card"><button class="btn" id="seedBtn" style="width:100%;" data-i18n="btnCalcSeed">Calculate quantity needed</button>
+      <div class="resultline" id="seedOut"><span data-i18n="seedNeeded">Seed/planting material needed:</span> <b>--</b></div></div>
+
+    <h2 class="section" data-i18n="hPlantPop">🌿 Plant population</h2>
+    <div class="card"><button class="btn" id="popBtn" style="width:100%;" data-i18n="btnEstPlants">Estimate plant count</button>
+      <div class="resultline" id="popOut"><span data-i18n="estPlants">Estimated plants:</span> <b>--</b></div>
+      <p class="note" id="popSpacing"></p></div>
+
+    <h2 class="section" data-i18n="hIrrWater">💦 Irrigation water requirement</h2>
+    <div class="card"><button class="btn" id="waterBtn" style="width:100%;" data-i18n="btnEstWater">Estimate water needed</button>
+      <div class="resultline" id="waterOut"><span data-i18n="waterPer">Water per irrigation:</span> <b>--</b></div>
+      <p class="note" id="waterSrc"></p></div>
+
+    <h2 class="section" data-i18n="hEconomics">📈 Farm economics (yield · revenue · cost · profit)</h2>
+    <div class="card"><button class="btn" id="econBtn" style="width:100%;" data-i18n="btnEstEcon">Estimate economics</button>
+      <div class="npkout" id="econOut">
+        <div><b id="outYield">--</b><span id="yieldLbl" data-i18n="yieldQtl">Yield (qtl)</span></div>
+        <div><b id="outRevenue">--</b><span data-i18n="revenue">Revenue</span></div>
+        <div><b id="outCost">--</b><span data-i18n="cost">Cost</span></div>
+      </div>
+      <div class="resultline" id="profitOut"><span data-i18n="estProfit">Estimated profit:</span> <b>--</b></div>
+      <p class="note" id="econNote" data-i18n="econNoteDefault">Load weather for your location first for a trend-adjusted yield estimate.</p>
+      <p class="note" data-i18n="noteEconomics">Based on reference yield/cost figures — actuals vary with inputs, market and season.</p></div>
+
+    <h2 class="section" data-i18n="hManure">🐄 Organic manure (FYM/compost)</h2>
+    <div class="card"><button class="btn" id="manureBtn" style="width:100%;" data-i18n="btnEstManure">Estimate manure needed</button>
+      <div class="resultline" id="manureOut"><span data-i18n="manureNeeded">FYM/compost needed:</span> <b>--</b></div></div>
+
+    <h2 class="section" data-i18n="hPesticide">🧴 Pesticide spray dilution</h2>
+    <div class="card">
+      <div class="grid2">
+        <div class="field"><label data-i18n="tankSize">Sprayer tank size (L)</label><input id="tankInput" type="number" min="0" step="0.5" value="15"></div>
+        <div class="field"><label data-i18n="doseLbl">Dose (ml per litre)</label><input id="doseInput" type="number" min="0" step="0.1" value="2"></div>
+      </div>
+      <button class="btn" id="pestBtn" style="width:100%;" data-i18n="calculate">Calculate</button>
+      <div class="resultline" id="pestOut1"><span data-i18n="productPerTank">Product per tank:</span> <b>--</b></div>
+      <div class="resultline" id="pestOut2"><span data-i18n="tankFills">Tank-fills for your field:</span> <b>--</b></div>
+      <div class="resultline" id="pestOut3"><span data-i18n="totalProduct">Total product for field:</span> <b>--</b></div>
+      <p class="note" data-i18n="notePesticide">Assumes ~200 L spray solution per acre — always follow the product label rate.</p>
+    </div>
+
+    <h2 class="section" data-i18n="hAreaConv">📏 Area unit converter</h2>
+    <div class="card">
+      <div class="grid2">
+        <div class="field"><label data-i18n="value">Value</label><input id="convInput" type="number" min="0" step="0.1" value="1"></div>
+        <div class="field"><label data-i18n="from">From</label><select id="convUnit"><option value="acre" data-i18n="acre">Acre</option><option value="hectare" data-i18n="hectare">Hectare</option><option value="bigha" data-i18n="bigha">Bigha (approx.)</option><option value="sqft" data-i18n="sqft">Sq. feet</option><option value="sqm" data-i18n="sqm">Sq. metres</option></select></div>
+      </div>
+      <button class="btn" id="convBtn" style="width:100%;" data-i18n="convert">Convert</button>
+      <div id="convOut" class="detailgrid" style="margin-top:10px;"></div>
+      <p class="note" data-i18n="noteBigha">Bigha varies by region (UP standard used here) — confirm local measure before relying on it.</p>
+    </div>
+  </section>
+
+  <!-- ============ PRICES TAB ============ -->
+  <section class="panel" id="tab-prices">
+    <h2 class="section" data-i18n="hPrices">💰 Reference market prices</h2>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+      <button class="unitbtn" id="currBtn">₹ INR</button>
+    </div>
+    <table id="priceTable"><thead><tr><th data-i18n="thCrop">Crop</th><th data-i18n="thPrice">Price</th><th data-i18n="thUnit">Unit</th></tr></thead><tbody></tbody></table>
+    <p class="note" data-i18n="notePrices">Indicative values for reference only — not live market data. Check your local mandi/market for current rates.</p>
+  </section>
+
+  <!-- ============ SCHEMES TAB ============ -->
+  <section class="panel" id="tab-schemes">
+    <h2 class="section" data-i18n="hSchemes">🏛 Government schemes</h2>
+    <div class="cards" id="schemeList"></div>
+    <p class="note" data-i18n="noteSchemes">Summaries only — verify eligibility and details on the official portal before applying.</p>
+  </section>
+
+  <!-- ============ FIELD TOOLS TAB ============ -->
+  <section class="panel" id="tab-tools">
+    <h2 class="section" data-i18n="hRotation">🔄 Crop rotation planner</h2>
+    <p class="note" id="rotCurrent" data-i18n="rotCurrentDefault">Select a crop above to see rotation suggestions.</p>
+    <div class="cards" id="rotOut"></div>
+
+    <h2 class="section" data-i18n="hSoil">🧑‍🔬 Soil type self-assessment</h2>
+    <p class="note" data-i18n="soilPrompt">Take a moist handful of soil and squeeze it into a ball. What happens?</p>
+    <div class="grid2" style="margin-bottom:8px;">
+      <button class="btn" data-soil="sandy" style="width:100%;" data-i18n="soilSandy">Falls apart immediately</button>
+      <button class="btn" data-soil="loam" style="width:100%;" data-i18n="soilLoam">Holds shape but crumbles</button>
+      <button class="btn" data-soil="clay" style="width:100%;" data-i18n="soilClay">Stays a firm, sticky ball</button>
+      <button class="btn" data-soil="silty" style="width:100%;" data-i18n="soilSilty">Feels smooth, soapy</button>
+    </div>
+    <div id="soilOut"></div>
+
+    <h2 class="section" data-i18n="hGps">📐 GPS field boundary mapping</h2>
+    <p class="note" data-i18n="gpsPrompt">Stand at each corner of your field in turn and tap "Mark this corner." After marking at least 3 points, calculate the area.</p>
+    <div class="card">
+      <div class="grid2">
+        <button class="btn" id="markBtn" style="flex:1;" data-i18n="btnMark">📍 Mark this corner</button>
+        <button class="btn" id="undoBtn" style="background:transparent;color:var(--bad);border-color:var(--bad);" data-i18n="btnUndo">Undo</button>
+      </div>
+      <p class="note" id="markList" data-i18n="markListDefault">No points marked yet.</p>
+      <button class="btn" id="areaBtn" style="width:100%;margin-top:10px;" data-i18n="btnCalcArea">Calculate field area</button>
+      <div class="resultline" id="areaOut"><span data-i18n="fieldArea">Field area:</span> <b>--</b></div>
+      <button class="unitbtn" id="clearMarksBtn" style="margin-top:8px;" data-i18n="btnClearPoints">Clear all points</button>
+    </div>
+
+    <h2 class="section" data-i18n="hMarket">🏪 Nearby market finder</h2>
+    <p class="note" data-i18n="marketPrompt">Uses your location and free OpenStreetMap data to find nearby marketplaces. Coverage depends on how well your area is mapped.</p>
+    <button class="btn" id="marketBtn" style="width:100%;" data-i18n="btnFindMarkets">Find markets near me</button>
+    <div class="cards" id="marketOut" style="margin-top:10px;"></div>
+  </section>
+
+</div></main>
+
+<nav class="tabbar" id="tabbar">
+  <button data-tab="weather" class="active"><span class="ic">🌦</span><span data-i18n="tabWeather">Weather</span></button>
+  <button data-tab="crop"><span class="ic">🌱</span><span data-i18n="tabCrop">Crop Care</span></button>
+  <button data-tab="calc"><span class="ic">🧮</span><span data-i18n="tabCalc">Calculator</span></button>
+  <button data-tab="prices"><span class="ic">💰</span><span data-i18n="tabPrices">Prices</span></button>
+  <button data-tab="schemes"><span class="ic">🏛</span><span data-i18n="tabSchemes">Schemes</span></button>
+  <button data-tab="tools"><span class="ic">🧰</span><span data-i18n="tabTools">Field Tools</span></button>
+</nav>
 
 <footer>
-  <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
+  <div>© <span id="year"></span> <strong>Manik Roy</strong>. <span data-i18n="allRights">All Rights Reserved.</span></div>
 </footer>
 
 <script>
-document.getElementById('year').textContent = new Date().getFullYear();
+'use strict';
+/* =====================================================================
+   FARMIO — single-file farmer advisory app
+   Sections: state, i18n, crop data, reference data, utilities,
+   theme, language, tabs, crop tab, weather, calculators, field tools.
+   No API keys anywhere: Open-Meteo (weather+geocoding) and OpenStreetMap
+   Overpass (market search) are both free and keyless.
+===================================================================== */
 
-// ---------- Theme ----------
-const themeBtns = document.querySelectorAll('.theme-toggle button');
-function setTheme(t){
-  document.documentElement.setAttribute('data-theme', t);
-  themeBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.theme === t)));
+/* ===================== STATE ===================== */
+let LANG = 'en';
+let UNIT = 'metric';
+let CURRENCY = 'INR';
+let lastWeather = null;      // {place, cur, daily, time}
+let fieldPoints = [];        // GPS boundary points for field mapping
+
+/* ===================== I18N DICTIONARY ===================== */
+const I18N = {
+ en: {
+  tagline:'Weather & field advisory for growers', locBtn:'📍 Use my current location', cityPh:'Search village, town or city…', search:'Search',
+  statusDefault:"Search a place or use your location to see today's advisory.", offlineMsg:"You're offline — showing last saved weather.",
+  humidity:'Humidity', wind:'Wind', rainChance:'Rain chance', hExtended:'📊 Extended conditions', feelsLike:'Feels like', windGusts:'Wind gusts',
+  cloudCover:'Cloud cover', pressure:'Pressure', uvIndex:'UV index', windDir:'Wind direction', sunrise:'Sunrise', sunset:'Sunset', rainToday:'Rain today',
+  evapo:'Evapotranspiration', hAdvisory:'🌾 Field advisory', hOutlook:'5-Day outlook', hBestDay:'📅 Best day this week',
+  hCropProfile:'🌱 Crop profile', hSowHarvest:'📅 Sowing & harvest window', hPests:'🐛 Common pests & diseases',
+  notePests:'Symptom-based reference list — for confirmed diagnosis, consult your local agriculture extension office.',
+  hNutrient:'🔬 Nutrient deficiency guide', noteNutrient:'General visual reference — symptoms can overlap with disease or water stress. A soil test gives a reliable answer.',
+  hFieldSize:'📐 Field size (used by tools below)', landArea:'Land area', unitLbl:'Unit', acre:'Acre', hectare:'Hectare',
+  hFertilizer:'🧮 Fertilizer calculator', btnCalcNpk:'Calculate NPK dose', kgN:'kg N', kgP:'kg P', kgK:'kg K',
+  noteFertilizer:'Indicative standard dosage per selected crop — adjust per soil test results.',
+  hIrrigationGuide:'💧 Irrigation guide', hSeedRate:'🌰 Seed / planting material rate', btnCalcSeed:'Calculate quantity needed', seedNeeded:'Seed/planting material needed:',
+  hPlantPop:'🌿 Plant population', btnEstPlants:'Estimate plant count', estPlants:'Estimated plants:',
+  hIrrWater:'💦 Irrigation water requirement', btnEstWater:'Estimate water needed', waterPer:'Water per irrigation:',
+  hEconomics:'📈 Farm economics (yield · revenue · cost · profit)', btnEstEcon:'Estimate economics', yieldQtl:'Yield (qtl)', revenue:'Revenue', cost:'Cost',
+  estProfit:'Estimated profit:', econNoteDefault:'Load weather for your location first for a trend-adjusted yield estimate.',
+  noteEconomics:'Based on reference yield/cost figures — actuals vary with inputs, market and season.',
+  hManure:'🐄 Organic manure (FYM/compost)', btnEstManure:'Estimate manure needed', manureNeeded:'FYM/compost needed:',
+  hPesticide:'🧴 Pesticide spray dilution', tankSize:'Sprayer tank size (L)', doseLbl:'Dose (ml per litre)', calculate:'Calculate',
+  productPerTank:'Product per tank:', tankFills:'Tank-fills for your field:', totalProduct:'Total product for field:',
+  notePesticide:'Assumes ~200 L spray solution per acre — always follow the product label rate.',
+  hAreaConv:'📏 Area unit converter', value:'Value', from:'From', bigha:'Bigha (approx.)', sqft:'Sq. feet', sqm:'Sq. metres', convert:'Convert',
+  noteBigha:'Bigha varies by region (UP standard used here) — confirm local measure before relying on it.',
+  hPrices:'💰 Reference market prices', thCrop:'Crop', thPrice:'Price', thUnit:'Unit',
+  notePrices:'Indicative values for reference only — not live market data. Check your local mandi/market for current rates.',
+  hSchemes:'🏛 Government schemes', noteSchemes:'Summaries only — verify eligibility and details on the official portal before applying.', officialSite:'Official site ↗',
+  hRotation:'🔄 Crop rotation planner', rotCurrentDefault:'Select a crop above to see rotation suggestions.',
+  hSoil:'🧑‍🔬 Soil type self-assessment', soilPrompt:'Take a moist handful of soil and squeeze it into a ball. What happens?',
+  soilClay:'Stays a firm, sticky ball', soilLoam:'Holds shape but crumbles', soilSandy:'Falls apart immediately', soilSilty:'Feels smooth, soapy',
+  hGps:'📐 GPS field boundary mapping', gpsPrompt:'Stand at each corner of your field in turn and tap "Mark this corner." After marking at least 3 points, calculate the area.',
+  btnMark:'📍 Mark this corner', btnUndo:'Undo', markListDefault:'No points marked yet.', btnCalcArea:'Calculate field area', fieldArea:'Field area:', btnClearPoints:'Clear all points',
+  hMarket:'🏪 Nearby market finder', marketPrompt:'Uses your location and free OpenStreetMap data to find nearby marketplaces. Coverage depends on how well your area is mapped.',
+  btnFindMarkets:'Find markets near me', tabWeather:'Weather', tabCrop:'Crop Care', tabCalc:'Calculator', tabPrices:'Prices', tabSchemes:'Schemes', tabTools:'Field Tools',
+  allRights:'All Rights Reserved.',
+  locating:'Locating…', fetching:'Fetching weather…', searching:'Searching…', noPlaceFound:'No place found — try a different spelling.',
+  searchFailed:'Search failed. Please try again.', locNotSupported:'Location not supported on this device.', locDenied:'Location access denied.',
+  weatherLoadFailed:'Could not load weather. Please try again.', updatedAt:'Updated', today:'Today',
+  days:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+  waterNoLive:'No live weather loaded yet — using a default estimate of 5 mm/day. Load weather for an accurate figure.',
+  waterFromLive:et=>`Based on today's evapotranspiration (${et} mm) from the Weather tab.`,
+  goodFor:'Good for:', tipLbl:'Tip:', symptomLbl:'Symptom:', remedyLbl:'Remedy:', waterNeedLbl:'Water need:',
+  frostSensitive:'Frost sensitive', frostTolerant:'Frost tolerant', sowingLbl:'Sowing', harvestLbl:'Harvest',
+  pointsMarked:n=>`${n} point(s) marked.`, gettingLoc:'Getting your location…', markAtLeast3:'Field area: -- (mark at least 3 corners first)',
+  marketSearching:'Searching OpenStreetMap for nearby markets…', marketNoResults:'No mapped markets found within 20km — OpenStreetMap coverage may be limited in this area.',
+  marketFailed:'Could not reach OpenStreetMap search right now — please try again.', kmAway:d=>`${d} km away`, unnamedMarket:'Unnamed market',
+  waterHigh:'High', waterMedium:'Medium', waterLow:'Low',
+  perennialNote:n=>`${n} is a perennial/tree crop — rotation doesn't apply in the usual sense. Consider intercropping with a legume for soil health between rows.`,
+  rotLegume:n=>`fixes nitrogen in the soil, good after a heavy feeder like ${n}.`, rotOther:n=>`different nutrient demand than ${n}, helps break pest/disease cycles.`,
+  currentSelection:'Current selection:',
+  tipFrostCrop:n=>`Frost risk tonight — ${n} is frost-sensitive; cover seedlings and delay early irrigation.`,
+  tipFrostGeneric:'Frost risk tonight — protect young transplants.',
+  tipHeat:'Heat stress likely — irrigate early morning or evening, shade nurseries and livestock.',
+  tipRain:'Rain likely — hold off on spraying and fertilizing; check field drainage.',
+  tipDry:(n,w)=>`Dry and warm — ${n} (${w} water need) may need irrigation soon.`,
+  tipWind:'Strong winds expected — stake young plants and avoid spraying.',
+  tipHumidity:'High humidity — watch for fungal disease, ensure airflow between rows.',
+  tipDefault:'Conditions look favourable — good day for routine fieldwork.',
+  bestSprayLabel:'🧴 Best day to spray', bestHarvestLabel:'🌾 Best day to harvest',
+  bestSprayText:(d,r,w)=>`${d} — ${r}% rain chance, ${w} km/h wind. Low rain and wind reduce drift and wash-off.`,
+  bestHarvestText:(d,r)=>`${d} — ${r}% rain chance. Drier conditions help with grain drying and storage quality.`,
+  econDown:(t,r,w)=>`Adjusted down 15% — this week looks hot and dry (avg ${t}°C, ${r}% rain chance) for a ${w}-water crop.`,
+  econUp:(t,r,n)=>`Adjusted up 8% — this week's forecast (avg ${t}°C, ${r}% rain chance) looks favourable for ${n}.`,
+  econNeutral:(t,r)=>`Based on this week's forecast (avg ${t}°C, ${r}% rain chance) — no strong adjustment applied.`,
+  irriHigh:'Keep soil consistently moist; irrigate every 3–5 days in dry weather, more in flowering stage.',
+  irriMedium:'Irrigate every 7–10 days depending on rainfall; avoid waterlogging.',
+  irriLow:'Drought-tolerant — irrigate mainly at sowing, flowering and pod-filling stages.',
+  waterReqLabel:(n,w)=>`${n} — ${w} water requirement`, perUnit:'per',
+  popSpacingNote:(row,plant,name)=>`Based on recommended spacing ${row}cm × ${plant}cm for ${name}.`,
+  manureRateNote:(rate,w)=>`(~${rate} t/acre for ${w}-water crops)`, yourLocation:'Your location',
+  geoTimeout:"Couldn't get your location — this preview may be blocking location access. Try opening the page directly in your phone's browser.",
+  trialBannerText:'Free trial:', daysLeft:'days left', subscribeNow:'Subscribe now',
+  paywallTitleTrial:'Unlock Farmio', paywallTitleExpired:'Your free trial has ended',
+  paywallSubtitle:'Full access to weather, crop tools, calculators & more',
+  perMonth:' / month', payViaUpi:'Pay ₹299 via UPI app', copy:'Copy', copied:'Copied!',
+  paywallInstructions:"Tap to pay with any UPI app (GPay, PhonePe, Paytm…), or note the UPI ID above to pay manually. After paying, you'll be sent an unlock password — enter it below to activate Farmio for 30 days.",
+  licensePlaceholder:'Enter unlock password', unlockBtn:'Unlock', wrongPassword:'Incorrect password — please check and try again.',
+  unlockSuccess:d=>`Unlocked! Valid until ${d}.`, deviceIdNote:'Your device ID (mention this when confirming payment):'
+ },
+ bn: {
+  tagline:'কৃষকদের জন্য আবহাওয়া ও ক্ষেত পরামর্শ', locBtn:'📍 আমার বর্তমান অবস্থান ব্যবহার করুন', cityPh:'গ্রাম, শহর বা এলাকা খুঁজুন…', search:'খুঁজুন',
+  statusDefault:'আজকের পরামর্শ দেখতে একটি স্থান খুঁজুন বা আপনার অবস্থান ব্যবহার করুন।', offlineMsg:'আপনি অফলাইনে আছেন — শেষ সংরক্ষিত আবহাওয়া দেখানো হচ্ছে।',
+  humidity:'আর্দ্রতা', wind:'বাতাস', rainChance:'বৃষ্টির সম্ভাবনা', hExtended:'📊 বিস্তারিত অবস্থা', feelsLike:'অনুভূত তাপমাত্রা', windGusts:'বাতাসের ঝাপটা',
+  cloudCover:'মেঘের আচ্ছাদন', pressure:'বায়ুচাপ', uvIndex:'ইউভি সূচক', windDir:'বাতাসের দিক', sunrise:'সূর্যোদয়', sunset:'সূর্যাস্ত', rainToday:'আজকের বৃষ্টি',
+  evapo:'বাষ্পীভবন', hAdvisory:'🌾 ক্ষেত পরামর্শ', hOutlook:'৫-দিনের পূর্বাভাস', hBestDay:'📅 এই সপ্তাহের সেরা দিন',
+  hCropProfile:'🌱 ফসলের বিবরণ', hSowHarvest:'📅 বপন ও ফসল কাটার সময়', hPests:'🐛 সাধারণ পোকা ও রোগ',
+  notePests:'উপসর্গ-ভিত্তিক তথ্য — নিশ্চিত রোগ নির্ণয়ের জন্য স্থানীয় কৃষি সম্প্রসারণ অফিসে যোগাযোগ করুন।',
+  hNutrient:'🔬 পুষ্টি ঘাটতি নির্দেশিকা', noteNutrient:'সাধারণ নির্দেশিকা — উপসর্গ রোগ বা জলের সমস্যার সাথেও মিলতে পারে। মাটি পরীক্ষা নির্ভরযোগ্য উত্তর দেয়।',
+  hFieldSize:'📐 জমির আয়তন (নিচের সরঞ্জামের জন্য)', landArea:'জমির আয়তন', unitLbl:'একক', acre:'একর', hectare:'হেক্টর',
+  hFertilizer:'🧮 সার ক্যালকুলেটর', btnCalcNpk:'NPK মাত্রা হিসাব করুন', kgN:'কেজি N', kgP:'কেজি P', kgK:'কেজি K',
+  noteFertilizer:'নির্বাচিত ফসলের জন্য প্রমিত মাত্রা — মাটি পরীক্ষার ফলাফল অনুযায়ী সামঞ্জস্য করুন।',
+  hIrrigationGuide:'💧 সেচ নির্দেশিকা', hSeedRate:'🌰 বীজ / রোপণ সামগ্রীর হার', btnCalcSeed:'প্রয়োজনীয় পরিমাণ হিসাব করুন', seedNeeded:'বীজ/রোপণ সামগ্রী প্রয়োজন:',
+  hPlantPop:'🌿 গাছের সংখ্যা', btnEstPlants:'গাছের সংখ্যা অনুমান করুন', estPlants:'আনুমানিক গাছের সংখ্যা:',
+  hIrrWater:'💦 সেচের জলের প্রয়োজনীয়তা', btnEstWater:'জলের চাহিদা অনুমান করুন', waterPer:'প্রতি সেচে জল:',
+  hEconomics:'📈 কৃষি অর্থনীতি (ফলন · আয় · খরচ · লাভ)', btnEstEcon:'অর্থনীতি হিসাব করুন', yieldQtl:'ফলন (কুইন্টাল)', revenue:'আয়', cost:'খরচ',
+  estProfit:'আনুমানিক লাভ:', econNoteDefault:'পূর্বাভাস-সমন্বিত ফলন পেতে আগে আপনার এলাকার আবহাওয়া লোড করুন।',
+  noteEconomics:'রেফারেন্স ফলন/খরচের উপর ভিত্তি করে — প্রকৃত মান উপকরণ, বাজার ও মরসুম অনুযায়ী পরিবর্তিত হয়।',
+  hManure:'🐄 জৈব সার (গোবর সার/কম্পোস্ট)', btnEstManure:'সারের পরিমাণ অনুমান করুন', manureNeeded:'জৈব সার প্রয়োজন:',
+  hPesticide:'🧴 কীটনাশক মিশ্রণ', tankSize:'স্প্রেয়ার ট্যাংকের আকার (লিটার)', doseLbl:'মাত্রা (মিলি প্রতি লিটার)', calculate:'হিসাব করুন',
+  productPerTank:'প্রতি ট্যাংকে পণ্য:', tankFills:'জমির জন্য ট্যাংক-পূর্ণ:', totalProduct:'জমির জন্য মোট পণ্য:',
+  notePesticide:'প্রতি একরে প্রায় ২০০ লিটার স্প্রে দ্রবণ ধরে হিসাব — সবসময় পণ্যের লেবেলের মাত্রা অনুসরণ করুন।',
+  hAreaConv:'📏 জমি একক রূপান্তরকারী', value:'মান', from:'থেকে', bigha:'বিঘা (আনুমানিক)', sqft:'বর্গফুট', sqm:'বর্গমিটার', convert:'রূপান্তর করুন',
+  noteBigha:'বিঘার পরিমাপ অঞ্চলভেদে ভিন্ন হয় (এখানে ইউপি মান ব্যবহৃত) — নির্ভর করার আগে স্থানীয় পরিমাপ যাচাই করুন।',
+  hPrices:'💰 রেফারেন্স বাজার দর', thCrop:'ফসল', thPrice:'দাম', thUnit:'একক',
+  notePrices:'শুধুমাত্র রেফারেন্সের জন্য আনুমানিক মূল্য — লাইভ বাজার তথ্য নয়। বর্তমান দরের জন্য স্থানীয় মান্ডি/বাজার দেখুন।',
+  hSchemes:'🏛 সরকারি প্রকল্প', noteSchemes:'শুধুমাত্র সারসংক্ষেপ — আবেদনের আগে অফিসিয়াল পোর্টালে যোগ্যতা ও বিবরণ যাচাই করুন।', officialSite:'অফিসিয়াল সাইট ↗',
+  hRotation:'🔄 ফসল আবর্তন পরিকল্পনাকারী', rotCurrentDefault:'আবর্তনের পরামর্শ দেখতে উপরে একটি ফসল নির্বাচন করুন।',
+  hSoil:'🧑‍🔬 মাটির ধরন স্ব-মূল্যায়ন', soilPrompt:'ভেজা মাটির একমুঠো নিয়ে বল বানিয়ে টিপুন। কী হয়?',
+  soilClay:'শক্ত, আঠালো বল থাকে', soilLoam:'আকার ধরে রাখে কিন্তু ভেঙে যায়', soilSandy:'সাথে সাথে ভেঙে যায়', soilSilty:'মসৃণ, সাবানের মতো অনুভূত হয়',
+  hGps:'📐 GPS জমির সীমানা ম্যাপিং', gpsPrompt:'আপনার জমির প্রতিটি কোণে দাঁড়িয়ে "এই কোণ চিহ্নিত করুন" চাপুন। কমপক্ষে ৩টি পয়েন্ট চিহ্নিত করার পর আয়তন হিসাব করুন।',
+  btnMark:'📍 এই কোণ চিহ্নিত করুন', btnUndo:'পূর্বাবস্থা', markListDefault:'এখনো কোনো পয়েন্ট চিহ্নিত হয়নি।', btnCalcArea:'জমির আয়তন হিসাব করুন', fieldArea:'জমির আয়তন:', btnClearPoints:'সব পয়েন্ট মুছুন',
+  hMarket:'🏪 নিকটবর্তী বাজার খোঁজক', marketPrompt:'আপনার অবস্থান ও বিনামূল্যের OpenStreetMap তথ্য ব্যবহার করে কাছের বাজার খুঁজে বের করে। আপনার এলাকা কতটা ম্যাপ করা তার উপর কভারেজ নির্ভর করে।',
+  btnFindMarkets:'কাছের বাজার খুঁজুন', tabWeather:'আবহাওয়া', tabCrop:'ফসল যত্ন', tabCalc:'ক্যালকুলেটর', tabPrices:'দাম', tabSchemes:'প্রকল্প', tabTools:'ক্ষেত সরঞ্জাম',
+  allRights:'সর্বস্বত্ব সংরক্ষিত।',
+  locating:'অবস্থান নির্ণয় হচ্ছে…', fetching:'আবহাওয়া আনা হচ্ছে…', searching:'খোঁজা হচ্ছে…', noPlaceFound:'কোনো স্থান পাওয়া যায়নি — অন্য বানান চেষ্টা করুন।',
+  searchFailed:'অনুসন্ধান ব্যর্থ হয়েছে। আবার চেষ্টা করুন।', locNotSupported:'এই ডিভাইসে অবস্থান সমর্থিত নয়।', locDenied:'অবস্থান অ্যাক্সেস প্রত্যাখ্যাত হয়েছে।',
+  weatherLoadFailed:'আবহাওয়া লোড করা যায়নি। আবার চেষ্টা করুন।', updatedAt:'হালনাগাদ', today:'আজ',
+  days:['রবি','সোম','মঙ্গল','বুধ','বৃহ','শুক্র','শনি'],
+  waterNoLive:'এখনো কোনো লাইভ আবহাওয়া লোড হয়নি — প্রতিদিন ৫ মিমি ডিফল্ট অনুমান ব্যবহার করা হচ্ছে। সঠিক মানের জন্য আবহাওয়া লোড করুন।',
+  waterFromLive:et=>`আবহাওয়া ট্যাব থেকে আজকের বাষ্পীভবনের (${et} মিমি) উপর ভিত্তি করে।`,
+  goodFor:'উপযুক্ত:', tipLbl:'পরামর্শ:', symptomLbl:'উপসর্গ:', remedyLbl:'প্রতিকার:', waterNeedLbl:'জলের চাহিদা:',
+  frostSensitive:'হিমপাতে সংবেদনশীল', frostTolerant:'হিমপাত সহনশীল', sowingLbl:'বপন', harvestLbl:'ফসল কাটা',
+  pointsMarked:n=>`${n}টি পয়েন্ট চিহ্নিত হয়েছে।`, gettingLoc:'আপনার অবস্থান নেওয়া হচ্ছে…', markAtLeast3:'জমির আয়তন: -- (কমপক্ষে ৩টি কোণ চিহ্নিত করুন)',
+  marketSearching:'কাছের বাজারের জন্য OpenStreetMap-এ খোঁজা হচ্ছে…', marketNoResults:'২০ কিমির মধ্যে কোনো ম্যাপ করা বাজার পাওয়া যায়নি — এই এলাকায় OpenStreetMap কভারেজ সীমিত হতে পারে।',
+  marketFailed:'এখন OpenStreetMap অনুসন্ধানে পৌঁছানো যায়নি — আবার চেষ্টা করুন।', kmAway:d=>`${d} কিমি দূরে`, unnamedMarket:'অজানা বাজার',
+  waterHigh:'বেশি', waterMedium:'মাঝারি', waterLow:'কম',
+  perennialNote:n=>`${n} একটি বহুবর্ষজীবী/গাছ ফসল — সাধারণ অর্থে আবর্তন প্রযোজ্য নয়। সারির মাঝে ডাল জাতীয় ফসল রোপণের কথা বিবেচনা করুন।`,
+  rotLegume:n=>`মাটিতে নাইট্রোজেন স্থির করে, ${n}-এর মতো ভারী পুষ্টি-গ্রাহক ফসলের পর ভালো।`, rotOther:n=>`${n}-এর চেয়ে ভিন্ন পুষ্টির চাহিদা, পোকা/রোগের চক্র ভাঙতে সাহায্য করে।`,
+  currentSelection:'বর্তমান নির্বাচন:',
+  tipFrostCrop:n=>`আজ রাতে হিমপাতের ঝুঁকি — ${n} হিমে সংবেদনশীল; চারা ঢেকে দিন এবং আগাম সেচ বিলম্বিত করুন।`,
+  tipFrostGeneric:'আজ রাতে হিমপাতের ঝুঁকি — কচি চারা সুরক্ষিত রাখুন।',
+  tipHeat:'তাপজনিত চাপের সম্ভাবনা — সকালে বা সন্ধ্যায় সেচ দিন, নার্সারি ও গবাদি পশুকে ছায়া দিন।',
+  tipRain:'বৃষ্টির সম্ভাবনা — স্প্রে ও সার প্রয়োগ স্থগিত রাখুন; জমির নিষ্কাশন পরীক্ষা করুন।',
+  tipDry:(n,w)=>`শুষ্ক ও গরম — ${n} (${w} জলের চাহিদা) শীঘ্রই সেচের প্রয়োজন হতে পারে।`,
+  tipWind:'তীব্র বাতাসের সম্ভাবনা — কচি গাছ খুঁটি দিয়ে বাঁধুন এবং স্প্রে এড়িয়ে চলুন।',
+  tipHumidity:'উচ্চ আর্দ্রতা — ছত্রাকজনিত রোগের জন্য নজর রাখুন, সারির মধ্যে বাতাস চলাচল নিশ্চিত করুন।',
+  tipDefault:'পরিস্থিতি অনুকূল — নিয়মিত ক্ষেতের কাজের জন্য ভালো দিন।',
+  bestSprayLabel:'🧴 স্প্রে করার সেরা দিন', bestHarvestLabel:'🌾 ফসল কাটার সেরা দিন',
+  bestSprayText:(d,r,w)=>`${d} — ${r}% বৃষ্টির সম্ভাবনা, ${w} কিমি/ঘণ্টা বাতাস। কম বৃষ্টি ও বাতাস প্রবাহ ও ধুয়ে যাওয়া কমায়।`,
+  bestHarvestText:(d,r)=>`${d} — ${r}% বৃষ্টির সম্ভাবনা। শুষ্ক পরিস্থিতি শস্য শুকানো ও সংরক্ষণে সাহায্য করে।`,
+  econDown:(t,r,w)=>`১৫% হ্রাস — এই সপ্তাহ গরম ও শুষ্ক দেখাচ্ছে (গড় ${t}°সে, ${r}% বৃষ্টির সম্ভাবনা), যা ${w} জলের চাহিদার ফসলের জন্য প্রতিকূল।`,
+  econUp:(t,r,n)=>`৮% বৃদ্ধি — এই সপ্তাহের পূর্বাভাস (গড় ${t}°সে, ${r}% বৃষ্টির সম্ভাবনা) ${n}-এর জন্য অনুকূল দেখাচ্ছে।`,
+  econNeutral:(t,r)=>`এই সপ্তাহের পূর্বাভাসের ভিত্তিতে (গড় ${t}°সে, ${r}% বৃষ্টির সম্ভাবনা) — কোনো বড় সমন্বয় প্রয়োগ করা হয়নি।`,
+  irriHigh:'মাটি সবসময় ভেজা রাখুন; শুষ্ক আবহাওয়ায় প্রতি ৩-৫ দিনে সেচ দিন, ফুল ফোটার সময় বেশি।',
+  irriMedium:'বৃষ্টিপাত অনুযায়ী প্রতি ৭-১০ দিনে সেচ দিন; জলাবদ্ধতা এড়িয়ে চলুন।',
+  irriLow:'খরা-সহনশীল — মূলত বপন, ফুল ফোটা ও ফল ধরার সময় সেচ দিন।',
+  waterReqLabel:(n,w)=>`${n} — ${w} জলের চাহিদা`, perUnit:'প্রতি',
+  popSpacingNote:(row,plant,name)=>`${name}-এর জন্য প্রস্তাবিত দূরত্ব ${row}সেমি × ${plant}সেমি অনুযায়ী।`,
+  manureRateNote:(rate,w)=>`(${w} জলের চাহিদার ফসলের জন্য প্রায় ${rate} টন/একর)`, yourLocation:'আপনার অবস্থান',
+  geoTimeout:'আপনার অবস্থান পাওয়া যায়নি — এই প্রিভিউ অবস্থান অ্যাক্সেস আটকাতে পারে। সরাসরি আপনার ফোনের ব্রাউজারে পেজটি খুলে দেখুন।',
+  trialBannerText:'ফ্রি ট্রায়াল:', daysLeft:'দিন বাকি', subscribeNow:'এখনই সাবস্ক্রাইব করুন',
+  paywallTitleTrial:'Farmio আনলক করুন', paywallTitleExpired:'আপনার ফ্রি ট্রায়াল শেষ হয়ে গেছে',
+  paywallSubtitle:'আবহাওয়া, ফসলের তথ্য, ক্যালকুলেটর ও আরও সবকিছুর সম্পূর্ণ অ্যাক্সেস',
+  perMonth:' / মাস', payViaUpi:'UPI অ্যাপ দিয়ে ₹২৯৯ পরিশোধ করুন', copy:'কপি করুন', copied:'কপি হয়েছে!',
+  paywallInstructions:'যেকোনো UPI অ্যাপ (GPay, PhonePe, Paytm…) দিয়ে পরিশোধ করতে ট্যাপ করুন, অথবা উপরের UPI আইডি দিয়ে নিজে পরিশোধ করুন। পরিশোধের পর আপনাকে একটি আনলক পাসওয়ার্ড পাঠানো হবে — ৩০ দিনের জন্য Farmio সক্রিয় করতে নিচে সেটি লিখুন।',
+  licensePlaceholder:'আনলক পাসওয়ার্ড লিখুন', unlockBtn:'আনলক করুন', wrongPassword:'ভুল পাসওয়ার্ড — অনুগ্রহ করে যাচাই করে আবার চেষ্টা করুন।',
+  unlockSuccess:d=>`আনলক হয়েছে! মেয়াদ ${d} পর্যন্ত বৈধ।`, deviceIdNote:'আপনার ডিভাইস আইডি (পেমেন্ট নিশ্চিত করার সময় উল্লেখ করুন):'
+ },
+ hi: {
+  tagline:'किसानों के लिए मौसम व खेत सलाह', locBtn:'📍 मेरा वर्तमान स्थान उपयोग करें', cityPh:'गाँव, शहर या क्षेत्र खोजें…', search:'खोजें',
+  statusDefault:'आज की सलाह देखने के लिए कोई स्थान खोजें या अपना स्थान उपयोग करें।', offlineMsg:'आप ऑफ़लाइन हैं — अंतिम सहेजा गया मौसम दिखाया जा रहा है।',
+  humidity:'नमी', wind:'हवा', rainChance:'बारिश की संभावना', hExtended:'📊 विस्तृत स्थिति', feelsLike:'महसूस तापमान', windGusts:'हवा के झोंके',
+  cloudCover:'बादल छाए', pressure:'दाब', uvIndex:'यूवी सूचकांक', windDir:'हवा की दिशा', sunrise:'सूर्योदय', sunset:'सूर्यास्त', rainToday:'आज की बारिश',
+  evapo:'वाष्पीकरण', hAdvisory:'🌾 खेत सलाह', hOutlook:'5-दिन का पूर्वानुमान', hBestDay:'📅 इस सप्ताह का सबसे अच्छा दिन',
+  hCropProfile:'🌱 फसल विवरण', hSowHarvest:'📅 बुवाई व कटाई का समय', hPests:'🐛 सामान्य कीट व रोग',
+  notePests:'लक्षण-आधारित संदर्भ सूची — निश्चित निदान हेतु स्थानीय कृषि विस्तार कार्यालय से संपर्क करें।',
+  hNutrient:'🔬 पोषक तत्व कमी मार्गदर्शिका', noteNutrient:'सामान्य संदर्भ — लक्षण रोग या जल तनाव से भी मिल सकते हैं। मिट्टी परीक्षण विश्वसनीय उत्तर देता है।',
+  hFieldSize:'📐 जमीन का आकार (नीचे के उपकरणों हेतु)', landArea:'भूमि क्षेत्र', unitLbl:'इकाई', acre:'एकड़', hectare:'हेक्टेयर',
+  hFertilizer:'🧮 उर्वरक कैलकुलेटर', btnCalcNpk:'NPK मात्रा हिसाब करें', kgN:'किग्रा N', kgP:'किग्रा P', kgK:'किग्रा K',
+  noteFertilizer:'चयनित फसल हेतु मानक मात्रा — मिट्टी परीक्षण परिणाम अनुसार समायोजित करें।',
+  hIrrigationGuide:'💧 सिंचाई मार्गदर्शिका', hSeedRate:'🌰 बीज / रोपण सामग्री दर', btnCalcSeed:'आवश्यक मात्रा हिसाब करें', seedNeeded:'बीज/रोपण सामग्री आवश्यक:',
+  hPlantPop:'🌿 पौधों की संख्या', btnEstPlants:'पौधों की संख्या अनुमानित करें', estPlants:'अनुमानित पौधे:',
+  hIrrWater:'💦 सिंचाई जल आवश्यकता', btnEstWater:'जल आवश्यकता अनुमानित करें', waterPer:'प्रति सिंचाई जल:',
+  hEconomics:'📈 कृषि अर्थशास्त्र (उपज · आय · लागत · लाभ)', btnEstEcon:'अर्थशास्त्र हिसाब करें', yieldQtl:'उपज (क्विंटल)', revenue:'आय', cost:'लागत',
+  estProfit:'अनुमानित लाभ:', econNoteDefault:'रुझान-समायोजित उपज हेतु पहले अपने क्षेत्र का मौसम लोड करें।',
+  noteEconomics:'संदर्भ उपज/लागत आँकड़ों पर आधारित — वास्तविक मान आदान, बाज़ार व मौसम अनुसार बदलते हैं।',
+  hManure:'🐄 जैविक खाद (गोबर खाद/कम्पोस्ट)', btnEstManure:'खाद मात्रा अनुमानित करें', manureNeeded:'जैविक खाद आवश्यक:',
+  hPesticide:'🧴 कीटनाशक घोल', tankSize:'स्प्रेयर टैंक आकार (लीटर)', doseLbl:'मात्रा (मिली प्रति लीटर)', calculate:'हिसाब करें',
+  productPerTank:'प्रति टैंक उत्पाद:', tankFills:'खेत हेतु टैंक-भराव:', totalProduct:'खेत हेतु कुल उत्पाद:',
+  notePesticide:'प्रति एकड़ लगभग 200 लीटर स्प्रे घोल मानकर हिसाब — हमेशा उत्पाद लेबल की मात्रा का पालन करें।',
+  hAreaConv:'📏 क्षेत्र इकाई परिवर्तक', value:'मान', from:'से', bigha:'बीघा (अनुमानित)', sqft:'वर्ग फ़ीट', sqm:'वर्ग मीटर', convert:'परिवर्तित करें',
+  noteBigha:'बीघा क्षेत्र अनुसार भिन्न होता है (यहाँ यूपी मानक उपयोग किया गया) — भरोसा करने से पहले स्थानीय माप जाँचें।',
+  hPrices:'💰 संदर्भ बाज़ार भाव', thCrop:'फसल', thPrice:'मूल्य', thUnit:'इकाई',
+  notePrices:'केवल संदर्भ हेतु अनुमानित मूल्य — लाइव बाज़ार डेटा नहीं। वर्तमान दरों हेतु स्थानीय मंडी/बाज़ार देखें।',
+  hSchemes:'🏛 सरकारी योजनाएँ', noteSchemes:'केवल सारांश — आवेदन से पहले आधिकारिक पोर्टल पर पात्रता व विवरण जाँचें।', officialSite:'आधिकारिक साइट ↗',
+  hRotation:'🔄 फसल चक्र योजनाकार', rotCurrentDefault:'चक्र सुझाव देखने हेतु ऊपर एक फसल चुनें।',
+  hSoil:'🧑‍🔬 मिट्टी प्रकार स्व-मूल्यांकन', soilPrompt:'गीली मिट्टी की मुट्ठी लेकर गोला बनाएँ। क्या होता है?',
+  soilClay:'मज़बूत, चिपचिपा गोला बना रहता है', soilLoam:'आकार बना रहता है पर टूट जाता है', soilSandy:'तुरंत बिखर जाता है', soilSilty:'चिकना, साबुन जैसा महसूस होता है',
+  hGps:'📐 GPS खेत सीमा मानचित्रण', gpsPrompt:'अपने खेत के हर कोने पर खड़े होकर "यह कोना चिह्नित करें" दबाएँ। कम से कम 3 बिंदु चिह्नित करने के बाद क्षेत्रफल निकालें।',
+  btnMark:'📍 यह कोना चिह्नित करें', btnUndo:'पूर्ववत करें', markListDefault:'अभी तक कोई बिंदु चिह्नित नहीं।', btnCalcArea:'खेत क्षेत्रफल निकालें', fieldArea:'खेत क्षेत्रफल:', btnClearPoints:'सभी बिंदु मिटाएँ',
+  hMarket:'🏪 नज़दीकी बाज़ार खोजक', marketPrompt:'आपके स्थान व मुफ़्त OpenStreetMap डेटा का उपयोग कर पास के बाज़ार ढूँढता है। कवरेज आपके क्षेत्र की मैपिंग पर निर्भर करता है।',
+  btnFindMarkets:'पास के बाज़ार खोजें', tabWeather:'मौसम', tabCrop:'फसल देखभाल', tabCalc:'कैलकुलेटर', tabPrices:'भाव', tabSchemes:'योजनाएँ', tabTools:'खेत उपकरण',
+  allRights:'सर्वाधिकार सुरक्षित।',
+  locating:'स्थान पता किया जा रहा है…', fetching:'मौसम लाया जा रहा है…', searching:'खोजा जा रहा है…', noPlaceFound:'कोई स्थान नहीं मिला — अलग वर्तनी आज़माएँ।',
+  searchFailed:'खोज विफल रही। पुनः प्रयास करें।', locNotSupported:'इस डिवाइस पर स्थान समर्थित नहीं है।', locDenied:'स्थान पहुँच अस्वीकृत।',
+  weatherLoadFailed:'मौसम लोड नहीं हो सका। पुनः प्रयास करें।', updatedAt:'अपडेट किया गया', today:'आज',
+  days:['रवि','सोम','मंगल','बुध','गुरु','शुक्र','शनि'],
+  waterNoLive:'अभी कोई लाइव मौसम लोड नहीं हुआ — प्रतिदिन 5 मिमी डिफ़ॉल्ट अनुमान उपयोग हो रहा है। सटीक आँकड़े हेतु मौसम लोड करें।',
+  waterFromLive:et=>`मौसम टैब से आज के वाष्पीकरण (${et} मिमी) के आधार पर।`,
+  goodFor:'उपयुक्त:', tipLbl:'सलाह:', symptomLbl:'लक्षण:', remedyLbl:'उपचार:', waterNeedLbl:'जल आवश्यकता:',
+  frostSensitive:'पाला संवेदनशील', frostTolerant:'पाला सहनशील', sowingLbl:'बुवाई', harvestLbl:'कटाई',
+  pointsMarked:n=>`${n} बिंदु चिह्नित।`, gettingLoc:'आपका स्थान प्राप्त किया जा रहा है…', markAtLeast3:'खेत क्षेत्रफल: -- (कम से कम 3 कोने चिह्नित करें)',
+  marketSearching:'पास के बाज़ारों हेतु OpenStreetMap पर खोजा जा रहा है…', marketNoResults:'20 किमी में कोई मैप किया बाज़ार नहीं मिला — इस क्षेत्र में OpenStreetMap कवरेज सीमित हो सकता है।',
+  marketFailed:'अभी OpenStreetMap खोज तक नहीं पहुँच सके — कृपया पुनः प्रयास करें।', kmAway:d=>`${d} किमी दूर`, unnamedMarket:'अज्ञात बाज़ार',
+  waterHigh:'अधिक', waterMedium:'मध्यम', waterLow:'कम',
+  perennialNote:n=>`${n} एक बहुवर्षीय/वृक्ष फसल है — सामान्य अर्थ में फसल चक्र लागू नहीं होता। पंक्तियों के बीच दलहन फसल लगाने पर विचार करें।`,
+  rotLegume:n=>`मिट्टी में नाइट्रोजन स्थिर करती है, ${n} जैसी भारी पोषक-ग्राही फसल के बाद अच्छी।`, rotOther:n=>`${n} से भिन्न पोषक माँग, कीट/रोग चक्र तोड़ने में मदद करती है।`,
+  currentSelection:'वर्तमान चयन:',
+  tipFrostCrop:n=>`आज रात पाले का ख़तरा — ${n} पाला-संवेदनशील है; पौध ढकें व शुरुआती सिंचाई टालें।`,
+  tipFrostGeneric:'आज रात पाले का ख़तरा — नई पौध को सुरक्षित रखें।',
+  tipHeat:'गर्मी का तनाव संभव — सुबह या शाम सिंचाई करें, नर्सरी व पशुओं को छाया दें।',
+  tipRain:'बारिश की संभावना — स्प्रे व उर्वरक रोकें; खेत की निकासी जाँचें।',
+  tipDry:(n,w)=>`सूखा व गर्म — ${n} (${w} जल आवश्यकता) को जल्द सिंचाई की आवश्यकता हो सकती है।`,
+  tipWind:'तेज़ हवा संभव — नए पौधों को सहारा दें व स्प्रे से बचें।',
+  tipHumidity:'अधिक नमी — फफूंद रोग हेतु सतर्क रहें, पंक्तियों में हवा का आवागमन सुनिश्चित करें।',
+  tipDefault:'स्थितियाँ अनुकूल दिख रही हैं — नियमित खेत कार्य हेतु अच्छा दिन।',
+  bestSprayLabel:'🧴 स्प्रे हेतु सबसे अच्छा दिन', bestHarvestLabel:'🌾 कटाई हेतु सबसे अच्छा दिन',
+  bestSprayText:(d,r,w)=>`${d} — ${r}% बारिश संभावना, ${w} किमी/घं हवा। कम बारिश व हवा बहाव व धुलाई कम करते हैं।`,
+  bestHarvestText:(d,r)=>`${d} — ${r}% बारिश संभावना। सूखी स्थिति अनाज सुखाने व भंडारण गुणवत्ता में मदद करती है।`,
+  econDown:(t,r,w)=>`15% घटाया गया — यह सप्ताह गर्म व सूखा दिख रहा है (औसत ${t}°से, ${r}% बारिश संभावना), जो ${w} जल आवश्यकता वाली फसल हेतु प्रतिकूल है।`,
+  econUp:(t,r,n)=>`8% बढ़ाया गया — इस सप्ताह का पूर्वानुमान (औसत ${t}°से, ${r}% बारिश संभावना) ${n} हेतु अनुकूल दिख रहा है।`,
+  econNeutral:(t,r)=>`इस सप्ताह के पूर्वानुमान के आधार पर (औसत ${t}°से, ${r}% बारिश संभावना) — कोई बड़ा समायोजन लागू नहीं किया गया।`,
+  irriHigh:'मिट्टी को हमेशा नम रखें; शुष्क मौसम में हर 3–5 दिन में सिंचाई करें, फूल आने पर अधिक।',
+  irriMedium:'वर्षा अनुसार हर 7–10 दिन में सिंचाई करें; जलभराव से बचें।',
+  irriLow:'सूखा-सहनशील — मुख्यतः बुवाई, फूल आने व फली भरने के समय सिंचाई करें।',
+  waterReqLabel:(n,w)=>`${n} — ${w} जल आवश्यकता`, perUnit:'प्रति',
+  popSpacingNote:(row,plant,name)=>`${name} हेतु अनुशंसित दूरी ${row}सेमी × ${plant}सेमी के आधार पर।`,
+  manureRateNote:(rate,w)=>`(${w} जल आवश्यकता वाली फसलों हेतु लगभग ${rate} टन/एकड़)`, yourLocation:'आपका स्थान',
+  geoTimeout:'आपका स्थान नहीं मिल सका — यह प्रीव्यू लोकेशन एक्सेस रोक सकता है। कृपया पेज सीधे अपने फ़ोन के ब्राउज़र में खोलें।',
+  trialBannerText:'फ्री ट्रायल:', daysLeft:'दिन शेष', subscribeNow:'अभी सब्सक्राइब करें',
+  paywallTitleTrial:'Farmio अनलॉक करें', paywallTitleExpired:'आपकी फ्री ट्रायल समाप्त हो गई है',
+  paywallSubtitle:'मौसम, फसल जानकारी, कैलकुलेटर व सभी सुविधाओं तक पूर्ण पहुँच',
+  perMonth:' / माह', payViaUpi:'UPI ऐप से ₹299 भुगतान करें', copy:'कॉपी करें', copied:'कॉपी हो गया!',
+  paywallInstructions:'किसी भी UPI ऐप (GPay, PhonePe, Paytm…) से भुगतान हेतु टैप करें, या ऊपर दिए UPI ID से स्वयं भुगतान करें। भुगतान के बाद आपको एक अनलॉक पासवर्ड भेजा जाएगा — 30 दिनों हेतु Farmio सक्रिय करने के लिए नीचे दर्ज करें।',
+  licensePlaceholder:'अनलॉक पासवर्ड दर्ज करें', unlockBtn:'अनलॉक करें', wrongPassword:'गलत पासवर्ड — कृपया जाँचें और पुनः प्रयास करें।',
+  unlockSuccess:d=>`अनलॉक हो गया! ${d} तक मान्य।`, deviceIdNote:'आपकी डिवाइस ID (भुगतान की पुष्टि करते समय इसका उल्लेख करें):'
+ }
+};
+function t(key){ const v = (I18N[LANG] && I18N[LANG][key] !== undefined) ? I18N[LANG][key] : I18N.en[key]; return v; }
+
+/* ===================== LICENSE / TRIAL / MONETIZATION =====================
+   IMPORTANT — read before relying on this for real revenue protection:
+   This is a static, backend-less HTML file. There is no server to verify
+   payments or validate credentials, so this system is a soft deterrent,
+   not real security:
+   - "Device ID" is a random token stored in this browser only. It is NOT a
+     hardware fingerprint. Clearing browser data or using another browser
+     resets it — it cannot enforce true "one license per physical machine".
+   - The unlock password below is a single shared secret checked in plain
+     client-side JS. Anyone who views page source can read it. It deters
+     casual sharing, it does not stop a technical user.
+   - There is no automatic payment verification. You must check your UPI
+     app for incoming ₹299 payments yourself, then message the buyer the
+     current unlock password. To actually enforce monthly renewal (rather
+     than one payment unlocking forever), change UNLOCK_PASSWORD below
+     every month and only give the new one to that month's payers.
+   ========================================================================= */
+const LICENSE_STORAGE_KEY = 'farmio-license';
+const TRIAL_DAYS = 14;
+const LICENSE_DAYS = 30;
+const UPI_ID = '9433082017@ybl';
+const PRICE_INR = 299;
+const UNLOCK_PASSWORD = 'FARMIO299'; // change this to your own secret; rotate monthly to enforce real renewal
+
+async function storageGet(key){
+  try{ if (window.storage){ const r = await window.storage.get(key); return r ? r.value : null; } }catch(e){}
+  try{ return localStorage.getItem(key); }catch(e){ return null; }
 }
-themeBtns.forEach(b => b.addEventListener('click', () => setTheme(b.dataset.theme)));
-
-// ---------- Seed data: 50 world's most popular + 25 India's most popular sites ----------
-const WORLD = ['google.com','youtube.com','facebook.com','instagram.com','whatsapp.com','wikipedia.org',
-  'x.com','amazon.com','yahoo.com','tiktok.com','netflix.com','reddit.com','linkedin.com','bing.com',
-  'baidu.com','yandex.ru','live.com','microsoft.com','apple.com','pinterest.com','temu.com','canva.com',
-  'cnn.com','bbc.com','nytimes.com','ebay.com','twitch.tv','spotify.com','zoom.us','openai.com',
-  'discord.com','telegram.org','quora.com','github.com','stackoverflow.com','dropbox.com','adobe.com',
-  'salesforce.com','paypal.com','walmart.com','aliexpress.com','samsung.com','weather.com','indeed.com',
-  'booking.com','imdb.com','espn.com','roblox.com','duckduckgo.com','wordpress.com'];
-const INDIA = ['flipkart.com','hotstar.com','irctc.co.in','ndtv.com','timesofindia.indiatimes.com',
-  'hindustantimes.com','indiatimes.com','zomato.com','swiggy.com','paytm.com','myntra.com','bookmyshow.com',
-  'naukri.com','rediff.com','moneycontrol.com','jiocinema.com','sbi.co.in','icicibank.com','hdfcbank.com',
-  'olx.in','shaadi.com','quikr.com','makemytrip.com','cleartrip.com','indianrail.gov.in'];
-
-// ---------- State ----------
-const sites = [];         // {id, name, url, tag, status:'pend'|'up'|'down', code, time, history:[]}
-const HISTORY_LEN = 24;
-const REFRESH_MS = 60000;
-let uid = 0;
-let filter = 'all';
-
-const listEl = document.getElementById('list');
-const form = document.getElementById('addForm');
-const input = document.getElementById('urlInput');
-const countEl = document.getElementById('count');
-
-function makeSite(domain, tag){
-  return { id: uid++, url: 'https://' + domain, name: domain, tag,
-    status:'pend', code:null, time:null, history:[] };
+async function storageSet(key, value){
+  try{ if (window.storage){ await window.storage.set(key, value); return; } }catch(e){}
+  try{ localStorage.setItem(key, value); }catch(e){}
 }
-WORLD.forEach(d => sites.push(makeSite(d, 'world')));
-INDIA.forEach(d => sites.push(makeSite(d, 'in')));
+function genDeviceId(){
+  try{ if (crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+  return 'dev-' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+}
 
-document.getElementById('filters').addEventListener('click', e => {
-  const b = e.target.closest('button[data-f]');
-  if(!b) return;
-  filter = b.dataset.f;
-  document.querySelectorAll('#filters button').forEach(x => x.setAttribute('aria-pressed', String(x===b)));
-  render();
+let licenseState = null; // {deviceId, trialStart, licensedUntil}
+
+async function loadLicenseState(){
+  try{
+    const raw = await storageGet(LICENSE_STORAGE_KEY);
+    licenseState = raw ? JSON.parse(raw) : null;
+  }catch(e){ licenseState = null; }
+  if (!licenseState || !licenseState.deviceId){
+    licenseState = { deviceId: genDeviceId(), trialStart: Date.now(), licensedUntil: null };
+    await storageSet(LICENSE_STORAGE_KEY, JSON.stringify(licenseState));
+  }
+}
+async function saveLicenseState(){
+  try{ await storageSet(LICENSE_STORAGE_KEY, JSON.stringify(licenseState)); }catch(e){}
+}
+function trialDaysLeft(){
+  const elapsed = (Date.now() - licenseState.trialStart) / 86400000;
+  return Math.max(0, Math.ceil(TRIAL_DAYS - elapsed));
+}
+function isLicensed(){ return !!(licenseState.licensedUntil && Date.now() < licenseState.licensedUntil); }
+function isActive(){ return isLicensed() || trialDaysLeft() > 0; }
+function upiPayLink(){
+  return `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent('Farmio')}&am=${PRICE_INR}&cu=INR&tn=${encodeURIComponent('Farmio Monthly Subscription')}`;
+}
+
+function refreshTrialBanner(){
+  const banner = document.getElementById('trialBanner');
+  if (isLicensed()){ banner.classList.add('hidden'); return; }
+  document.getElementById('trialDaysLeft').textContent = trialDaysLeft();
+  banner.classList.remove('hidden');
+}
+function openPaywall(mandatory){
+  document.getElementById('paywallModal').classList.remove('hidden');
+  document.getElementById('paywallClose').style.display = mandatory ? 'none' : '';
+  document.getElementById('paywallTitle').textContent = isActive() ? t('paywallTitleTrial') : t('paywallTitleExpired');
+  document.getElementById('deviceIdText').textContent = licenseState.deviceId;
+  document.getElementById('licenseInput').value = '';
+  const statusEl = document.getElementById('paywallStatus');
+  statusEl.textContent = ''; statusEl.className = 'paywall-status';
+}
+function closePaywall(){ document.getElementById('paywallModal').classList.add('hidden'); }
+
+async function copyText(text, btnId){
+  try{ await navigator.clipboard.writeText(text); }catch(e){}
+  const btn = document.getElementById(btnId);
+  const orig = btn.textContent;
+  btn.textContent = t('copied');
+  setTimeout(()=>{ btn.textContent = t('copy'); }, 1500);
+}
+
+document.getElementById('trialBanner').addEventListener('click', ()=> openPaywall(!isActive()));
+document.getElementById('paywallClose').addEventListener('click', closePaywall);
+document.getElementById('payUpiBtn').addEventListener('click', ()=>{ window.location.href = upiPayLink(); });
+document.getElementById('copyUpiBtn').addEventListener('click', ()=> copyText(UPI_ID, 'copyUpiBtn'));
+document.getElementById('copyDeviceBtn').addEventListener('click', ()=> copyText(licenseState.deviceId, 'copyDeviceBtn'));
+document.getElementById('unlockBtn').addEventListener('click', async ()=>{
+  const entered = document.getElementById('licenseInput').value.trim();
+  const statusEl = document.getElementById('paywallStatus');
+  if (entered && entered === UNLOCK_PASSWORD){
+    licenseState.licensedUntil = Date.now() + LICENSE_DAYS*86400000;
+    await saveLicenseState();
+    statusEl.textContent = t('unlockSuccess')(new Date(licenseState.licensedUntil).toLocaleDateString());
+    statusEl.className = 'paywall-status ok';
+    refreshTrialBanner();
+    document.getElementById('paywallClose').style.display = '';
+    setTimeout(closePaywall, 1600);
+  }else{
+    statusEl.textContent = t('wrongPassword');
+    statusEl.className = 'paywall-status err';
+  }
 });
 
-function normalizeUrl(raw){
-  let u = raw.trim();
-  if(!/^https?:\/\//i.test(u)) u = 'https://' + u;
-  try { return new URL(u).toString(); } catch(e){ return null; }
+async function initLicense(){
+  await loadLicenseState();
+  refreshTrialBanner();
+  if (!isActive()) openPaywall(true);
 }
 
-function render(){
-  const visible = sites.filter(s => filter === 'all' || s.tag === filter);
-  countEl.textContent = visible.length + ' / ' + sites.length + ' sites';
-  if(visible.length === 0){
-    listEl.innerHTML = '<div class="empty">No sites monitored yet. Add one above to start pinging.</div>';
+/* ===================== CROP NAME TRANSLATIONS ===================== */
+const CROP_NAMES = {
+ rice:{bn:'ধান',hi:'धान'}, wheat:{bn:'গম',hi:'गेहूँ'}, maize:{bn:'ভুট্টা',hi:'मक्का'}, cotton:{bn:'তুলা',hi:'कपास'},
+ potato:{bn:'আলু',hi:'आलू'}, tomato:{bn:'টমেটো',hi:'टमाटर'}, sugarcane:{bn:'আখ',hi:'गन्ना'}, soybean:{bn:'সয়াবিন',hi:'सोयाबीन'},
+ onion:{bn:'পেঁয়াজ',hi:'प्याज़'}, chickpea:{bn:'ছোলা',hi:'चना'}, groundnut:{bn:'চিনাবাদাম',hi:'मूंगफली'}, mustard:{bn:'সরিষা',hi:'सरसों'},
+ barley:{bn:'যব',hi:'जौ'}, sunflower:{bn:'সূর্যমুখী',hi:'सूरजमुखी'}, sesame:{bn:'তিল',hi:'तिल'}, turmeric:{bn:'হলুদ',hi:'हल्दी'},
+ cabbage:{bn:'বাঁধাকপি',hi:'पत्तागोभी'}, peas:{bn:'মটরশুঁটি',hi:'मटर'}, brinjal:{bn:'বেগুন',hi:'बैंगन'}, okra:{bn:'ঢেঁড়স',hi:'भिंडी'},
+ banana:{bn:'কলা',hi:'केला'}, mango:{bn:'আম',hi:'आम'}, papaya:{bn:'পেঁপে',hi:'पपीता'}, guava:{bn:'পেয়ারা',hi:'अमरूद'},
+ grapes:{bn:'আঙুর',hi:'अंगूर'}, watermelon:{bn:'তরমুজ',hi:'तरबूज़'}, muskmelon:{bn:'বাঙ্গি',hi:'खरबूजा'}, pineapple:{bn:'আনারস',hi:'अनानास'},
+ pomegranate:{bn:'ডালিম',hi:'अनार'}, coconut:{bn:'নারিকেল',hi:'नारियल'}, cashew:{bn:'কাজু',hi:'काजू'}, tea:{bn:'চা',hi:'चाय'},
+ coffee:{bn:'কফি',hi:'कॉफ़ी'}, jute:{bn:'পাট',hi:'जूट'}, lentil:{bn:'মসুর ডাল',hi:'मसूर'}, pigeonpea:{bn:'অড়হর',hi:'अरहर'},
+ moong:{bn:'মুগ ডাল',hi:'मूंग'}, urad:{bn:'বিউলি ডাল',hi:'उड़द'}, castor:{bn:'ভেরেন্ডা',hi:'अरंडी'}, linseed:{bn:'তিসি',hi:'अलसी'},
+ carrot:{bn:'গাজর',hi:'गाजर'}, spinach:{bn:'পালং শাক',hi:'पालक'}, cauliflower:{bn:'ফুলকপি',hi:'फूलगोभी'}, garlic:{bn:'রসুন',hi:'लहसुन'}, chili:{bn:'লঙ্কা',hi:'मिर्च'}
+};
+function cropName(c){ return LANG==='en' ? c.n : (CROP_NAMES[c.k] && CROP_NAMES[c.k][LANG]) || c.n; }
+
+const FAMILY_I18N = {
+  cereal:{en:'Cereal',bn:'শস্যদানা',hi:'अनाज'}, legume:{en:'Legume',bn:'ডাল জাতীয়',hi:'दलहन'}, oilseed:{en:'Oilseed',bn:'তৈলবীজ',hi:'तिलहन'},
+  vegetable:{en:'Vegetable',bn:'সবজি',hi:'सब्ज़ी'}, fiber:{en:'Fiber crop',bn:'আঁশ ফসল',hi:'रेशा फसल'}, spice:{en:'Spice',bn:'মশলা',hi:'मसाला'},
+  fruit:{en:'Fruit tree',bn:'ফলগাছ',hi:'फलदार वृक्ष'}, plantation:{en:'Plantation crop',bn:'বাগান ফসল',hi:'बागान फसल'}
+};
+function familyLabel(fam){ return (FAMILY_I18N[fam] && FAMILY_I18N[fam][LANG]) || (FAMILY_I18N[fam] && FAMILY_I18N[fam].en) || fam; }
+function waterLabel(w){ return w==='High' ? t('waterHigh') : w==='Medium' ? t('waterMedium') : t('waterLow'); }
+
+/* ===================== CROP DATABASE (45 crops) ===================== */
+const CROPS = [
+ {k:'rice',fam:'cereal',n:'Rice',ic:'🌾',water:'High',frost:false,season:'Kharif',sow:'June – July',harv:'October – November',npk:[50,25,25],price:2183,unit:'quintal',seed:20,sp:[20,15],yld:25,cost:25000,
+  pests:[{n:'Stem borer',s:'Dead hearts in young plants, white empty ears later',r:'Use resistant variety; neem-based spray at early infestation'},{n:'Blast disease',s:'Diamond-shaped grey lesions on leaves',r:'Avoid excess nitrogen; apply recommended fungicide'}]},
+ {k:'wheat',fam:'cereal',n:'Wheat',ic:'🌾',water:'Medium',frost:true,season:'Rabi',sow:'October – December',harv:'March – April',npk:[60,30,20],price:2275,unit:'quintal',seed:40,sp:[20,5],yld:18,cost:20000,
+  pests:[{n:'Aphids',s:'Curled yellow leaves, sticky honeydew residue',r:'Spray neem oil or insecticidal soap early'},{n:'Yellow rust',s:'Orange-yellow pustules in stripes on leaves',r:'Use rust-resistant variety; fungicide if severe'}]},
+ {k:'maize',fam:'cereal',n:'Maize',ic:'🌽',water:'Medium',frost:true,season:'Kharif/Rabi',sow:'June – July',harv:'September – October',npk:[80,40,20],price:2090,unit:'quintal',seed:8,sp:[60,20],yld:20,cost:18000,
+  pests:[{n:'Fall armyworm',s:'Ragged holes and sawdust-like frass in leaf whorl',r:'Handpick larvae; apply biopesticide spray'},{n:'Stalk rot',s:'Wilting with soft, rotten stalk base',r:'Improve field drainage; avoid waterlogging'}]},
+ {k:'cotton',fam:'fiber',n:'Cotton',ic:'🌱',water:'High',frost:false,season:'Kharif',sow:'April – June',harv:'October – January',npk:[40,20,20],price:7121,unit:'quintal',seed:2,sp:[90,60],yld:8,cost:30000,
+  pests:[{n:'Bollworm',s:'Holes in bolls and damaged flower buds',r:'Use pheromone traps; Bt-based spray'},{n:'Whitefly',s:'Yellowing leaves with sooty black mould',r:'Yellow sticky traps; neem oil spray'}]},
+ {k:'potato',fam:'vegetable',n:'Potato',ic:'🥔',water:'Medium',frost:true,season:'Rabi',sow:'October – November',harv:'January – February',npk:[60,40,40],price:1200,unit:'quintal',seed:800,sp:[60,20],yld:80,cost:40000,
+  pests:[{n:'Late blight',s:'Dark water-soaked spots on leaves',r:'Fungicide spray; avoid overhead irrigation'},{n:'Tuber moth',s:'Tunnels in leaves and stored tubers',r:'Earth up soil over tubers; remove crop debris'}]},
+ {k:'tomato',fam:'vegetable',n:'Tomato',ic:'🍅',water:'Medium',frost:true,season:'Year-round (season-dependent)',sow:'Varies by region',harv:'60–80 days after transplant',npk:[50,25,25],price:1500,unit:'quintal',seed:0.1,sp:[90,45],yld:100,cost:45000,
+  pests:[{n:'Fruit borer',s:'Round holes bored into fruit',r:'Pheromone traps; neem-based spray'},{n:'Leaf curl virus',s:'Upward curling and yellowing of leaves',r:'Control whitefly vector; remove infected plants'}]},
+ {k:'sugarcane',fam:'plantation',n:'Sugarcane',ic:'🎋',water:'High',frost:false,season:'Perennial',sow:'February – March',harv:'December – March (next yr)',npk:[100,50,50],price:340,unit:'quintal',seed:4000,sp:[90,30],yld:350,cost:50000,
+  pests:[{n:'Early shoot borer',s:'Dead heart in young cane shoots',r:'Remove and destroy affected shoots promptly'},{n:'Red rot',s:'Reddened internal tissue with alcohol-like smell',r:'Use disease-free setts and resistant variety'}]},
+ {k:'soybean',fam:'legume',n:'Soybean',ic:'🌱',water:'Medium',frost:false,season:'Kharif',sow:'June – July',harv:'October',npk:[20,40,20],price:4600,unit:'quintal',seed:30,sp:[45,5],yld:10,cost:15000,
+  pests:[{n:'Girdle beetle',s:'Girdling ring on stem, plant wilts',r:'Destroy old stubble; sow at the recommended time'},{n:'Yellow mosaic virus',s:'Yellow-green mosaic pattern on leaves',r:'Control whitefly vector; use resistant varieties'}]},
+ {k:'onion',fam:'vegetable',n:'Onion',ic:'🧅',water:'Medium',frost:false,season:'Rabi',sow:'November – December',harv:'March – April',npk:[60,30,30],price:1500,unit:'quintal',seed:4,sp:[15,10],yld:80,cost:35000,
+  pests:[{n:'Thrips',s:'Silvery streaks and curling on leaves',r:'Blue sticky traps; neem oil spray'},{n:'Purple blotch',s:'Purple-brown patches on leaves',r:'Fungicide spray; rotate crops each season'}]},
+ {k:'chickpea',fam:'legume',n:'Chickpea',ic:'🫘',water:'Low',frost:false,season:'Rabi',sow:'October – November',harv:'February – March',npk:[20,40,20],price:5335,unit:'quintal',seed:40,sp:[30,10],yld:8,cost:14000,
+  pests:[{n:'Pod borer',s:'Round holes bored into pods',r:'Pheromone traps; neem-based spray'},{n:'Wilt',s:'Sudden drooping and drying of whole plant',r:'Use wilt-resistant variety; treat seed before sowing'}]},
+ {k:'groundnut',fam:'oilseed',n:'Groundnut',ic:'🥜',water:'Low',frost:false,season:'Kharif',sow:'June – July',harv:'October – November',npk:[20,40,0],price:6377,unit:'quintal',seed:40,sp:[30,10],yld:8,cost:18000,
+  pests:[{n:'Leaf spot',s:'Dark circular spots on leaves',r:'Fungicide spray; rotate crops'},{n:'Aphids',s:'Curled leaves, sticky residue',r:'Neem oil spray'}]},
+ {k:'mustard',fam:'oilseed',n:'Mustard',ic:'🌼',water:'Low',frost:true,season:'Rabi',sow:'October – November',harv:'February – March',npk:[40,20,20],price:5650,unit:'quintal',seed:2,sp:[30,10],yld:6,cost:10000,
+  pests:[{n:'Mustard aphid',s:'Clustered aphids on flowering shoots',r:'Neem oil spray at early sign'},{n:'Painted bug',s:'Holes in leaves, stunted plants',r:'Timely sowing; insecticide if severe'}]},
+ {k:'barley',fam:'cereal',n:'Barley',ic:'🌾',water:'Low',frost:true,season:'Rabi',sow:'November',harv:'March – April',npk:[40,20,10],price:1850,unit:'quintal',seed:40,sp:[20,4],yld:16,cost:12000,
+  pests:[{n:'Aphids',s:'Yellowing leaves, sticky residue',r:'Neem oil spray'},{n:'Yellow rust',s:'Orange pustules on leaves',r:'Resistant variety; fungicide'}]},
+ {k:'sunflower',fam:'oilseed',n:'Sunflower',ic:'🌻',water:'Medium',frost:false,season:'Kharif/Rabi',sow:'June–July or Jan–Feb',harv:'90–100 days after sowing',npk:[40,30,20],price:6760,unit:'quintal',seed:2,sp:[60,30],yld:8,cost:16000,
+  pests:[{n:'Head borer',s:'Holes bored into flower head',r:'Pheromone traps'},{n:'Leaf blight',s:'Brown spots spreading on leaves',r:'Fungicide spray'}]},
+ {k:'sesame',fam:'oilseed',n:'Sesame',ic:'🌰',water:'Low',frost:false,season:'Kharif',sow:'June – July',harv:'September – October',npk:[20,20,0],price:8635,unit:'quintal',seed:1.5,sp:[30,10],yld:3,cost:9000,
+  pests:[{n:'Phyllody',s:'Leaf-like sterile flowers',r:'Remove infected plants; control leafhopper vector'},{n:'Leaf webber',s:'Webbed, folded leaves',r:'Neem oil spray'}]},
+ {k:'turmeric',fam:'spice',n:'Turmeric',ic:'🫚',water:'High',frost:false,season:'Kharif (long duration)',sow:'April – May',harv:'January – March',npk:[60,30,60],price:15000,unit:'quintal',seed:800,sp:[30,25],yld:80,cost:60000,
+  pests:[{n:'Rhizome rot',s:'Soft, rotten rhizomes with wilting',r:'Well-drained soil; avoid waterlogging'},{n:'Leaf spot',s:'Brown spots on leaves',r:'Fungicide spray'}]},
+ {k:'cabbage',fam:'vegetable',n:'Cabbage',ic:'🥬',water:'Medium',frost:true,season:'Rabi',sow:'September – October',harv:'December – January',npk:[50,25,25],price:1200,unit:'quintal',seed:0.15,sp:[45,45],yld:120,cost:30000,
+  pests:[{n:'Diamondback moth',s:'Holes and shot-holes in leaves',r:'Bt spray; pheromone traps'},{n:'Aphids',s:'Curled, sticky leaves',r:'Neem oil spray'}]},
+ {k:'peas',fam:'legume',n:'Peas',ic:'🫛',water:'Medium',frost:true,season:'Rabi',sow:'October – November',harv:'January – February',npk:[20,40,20],price:4000,unit:'quintal',seed:30,sp:[30,7],yld:15,cost:15000,
+  pests:[{n:'Pod borer',s:'Holes bored into pods',r:'Neem spray; pheromone traps'},{n:'Powdery mildew',s:'White powdery coating on leaves',r:'Sulfur-based fungicide spray'}]},
+ {k:'brinjal',fam:'vegetable',n:'Brinjal',ic:'🍆',water:'Medium',frost:true,season:'Kharif/Rabi',sow:'Varies by region',harv:'60–70 days after transplant',npk:[50,25,25],price:1500,unit:'quintal',seed:0.15,sp:[75,60],yld:100,cost:35000,
+  pests:[{n:'Fruit & shoot borer',s:'Holes in fruit and wilted shoot tips',r:'Remove affected parts; pheromone traps'},{n:'Aphids',s:'Curled, sticky leaves',r:'Neem oil spray'}]},
+ {k:'okra',fam:'vegetable',n:'Okra',ic:'🌿',water:'Medium',frost:false,season:'Kharif/Summer',sow:'Feb–Mar or June–July',harv:'45–50 days after sowing',npk:[40,20,20],price:2000,unit:'quintal',seed:5,sp:[45,30],yld:40,cost:20000,
+  pests:[{n:'Fruit borer',s:'Holes bored into young pods',r:'Neem-based spray'},{n:'Yellow vein mosaic',s:'Yellow veins on leaves',r:'Control whitefly vector; resistant variety'}]},
+ {k:'banana',fam:'fruit',n:'Banana',ic:'🍌',water:'High',frost:true,season:'Perennial',sow:'Year-round (region-dependent)',harv:'10–12 months after planting',npk:[200,60,300],price:1200,unit:'quintal',seed:1000,seedUnit:'suckers',sp:[180,180],yld:300,cost:80000,
+  pests:[{n:'Panama wilt',s:'Yellowing and wilting leaves, browned vascular tissue',r:'Use resistant variety; avoid waterlogged soil'},{n:'Banana weevil',s:'Tunnels in pseudostem, plant toppling',r:'Use clean planting material; pheromone traps'}]},
+ {k:'mango',fam:'fruit',n:'Mango',ic:'🥭',water:'Medium',frost:true,season:'Perennial',sow:'June – August (planting)',harv:'March – June',npk:[100,50,100],price:3000,unit:'quintal',seed:100,seedUnit:'saplings',sp:[900,900],yld:60,cost:40000,
+  pests:[{n:'Mango hopper',s:'Sooty mould and shedding of flowers',r:'Insecticide spray at flowering stage'},{n:'Anthracnose',s:'Black spots on fruit and leaves',r:'Fungicide spray; prune affected parts'}]},
+ {k:'papaya',fam:'fruit',n:'Papaya',ic:'🟠',water:'Medium',frost:true,season:'Year-round (warm season)',sow:'February–March or June–July',harv:'9–11 months after planting',npk:[100,100,100],price:1500,unit:'quintal',seed:0.2,sp:[200,200],yld:400,cost:60000,
+  pests:[{n:'Ring spot virus',s:'Ring-shaped spots on fruit, mosaic leaves',r:'Control aphid vector; resistant variety'},{n:'Root rot',s:'Wilting with soft, rotten roots',r:'Ensure drainage; avoid waterlogging'}]},
+ {k:'guava',fam:'fruit',n:'Guava',ic:'🍐',water:'Medium',frost:false,season:'Perennial',sow:'July – August (planting)',harv:'Year-round, main crop Oct–Jan',npk:[80,40,80],price:1800,unit:'quintal',seed:150,seedUnit:'saplings',sp:[600,600],yld:100,cost:30000,
+  pests:[{n:'Fruit fly',s:'Maggots inside fruit, premature drop',r:'Fruit bagging; pheromone traps'},{n:'Wilt disease',s:'Sudden wilting and drying of tree',r:'Remove and destroy affected trees; avoid waterlogging'}]},
+ {k:'grapes',fam:'fruit',n:'Grapes',ic:'🍇',water:'Medium',frost:true,season:'Perennial',sow:'December – January (planting)',harv:'February – April',npk:[80,40,80],price:4000,unit:'quintal',seed:600,seedUnit:'vines',sp:[300,150],yld:150,cost:100000,
+  pests:[{n:'Powdery mildew',s:'White powdery coating on leaves and berries',r:'Sulfur-based fungicide spray'},{n:'Downy mildew',s:'Yellow oily patches on leaves',r:'Copper-based fungicide; ensure airflow'}]},
+ {k:'watermelon',fam:'fruit',n:'Watermelon',ic:'🍉',water:'High',frost:false,season:'Summer (Zaid)',sow:'January – March',harv:'80–90 days after sowing',npk:[60,40,40],price:800,unit:'quintal',seed:1,sp:[200,60],yld:200,cost:25000,
+  pests:[{n:'Fruit fly',s:'Maggots inside fruit',r:'Fruit bagging; pheromone traps'},{n:'Powdery mildew',s:'White powdery coating on leaves',r:'Sulfur-based fungicide spray'}]},
+ {k:'muskmelon',fam:'fruit',n:'Muskmelon',ic:'🍈',water:'Medium',frost:false,season:'Summer (Zaid)',sow:'January – March',harv:'80–90 days after sowing',npk:[50,30,30],price:1200,unit:'quintal',seed:1,sp:[150,60],yld:80,cost:22000,
+  pests:[{n:'Fruit fly',s:'Maggots inside fruit',r:'Fruit bagging; pheromone traps'},{n:'Downy mildew',s:'Yellow patches on leaves',r:'Fungicide spray'}]},
+ {k:'pineapple',fam:'fruit',n:'Pineapple',ic:'🍍',water:'Medium',frost:true,season:'Perennial',sow:'April – June (planting)',harv:'18–20 months after planting',npk:[80,40,160],price:1500,unit:'quintal',seed:22000,seedUnit:'suckers',sp:[60,30],yld:250,cost:90000,
+  pests:[{n:'Mealybug',s:'White waxy patches, wilting',r:'Neem oil spray'},{n:'Heart rot',s:'Rotting central leaves with foul smell',r:'Improve drainage; avoid waterlogging'}]},
+ {k:'pomegranate',fam:'fruit',n:'Pomegranate',ic:'🔴',water:'Low',frost:false,season:'Perennial',sow:'Feb–Mar or Aug–Sept (planting)',harv:'5–7 months after flowering',npk:[80,40,80],price:8000,unit:'quintal',seed:150,seedUnit:'saplings',sp:[450,450],yld:80,cost:50000,
+  pests:[{n:'Fruit borer',s:'Holes bored into fruit',r:'Pheromone traps'},{n:'Bacterial blight',s:'Dark oily spots on fruit and leaves',r:'Copper-based bactericide spray'}]},
+ {k:'coconut',fam:'plantation',n:'Coconut',ic:'🥥',water:'High',frost:false,season:'Perennial',sow:'June – July (planting)',harv:'Year-round bearing',npk:[50,30,120],price:15,unit:'nut',seed:65,seedUnit:'saplings',sp:[750,750],yld:6500,cost:40000,
+  pests:[{n:'Rhinoceros beetle',s:'V-shaped cuts on fronds, damaged crown',r:'Pheromone traps; remove breeding sites'},{n:'Red palm weevil',s:'Tunnels in trunk, oozing fluid',r:'Pheromone traps; remove and destroy infested palms'}]},
+ {k:'cashew',fam:'plantation',n:'Cashew',ic:'🌰',water:'Low',frost:false,season:'Perennial',sow:'June – July (planting)',harv:'February – May',npk:[50,30,50],price:12000,unit:'quintal',seed:100,seedUnit:'saplings',sp:[600,600],yld:8,cost:25000,
+  pests:[{n:'Tea mosquito bug',s:'Blackened shoots and nuts',r:'Insecticide spray at flushing/flowering'},{n:'Stem borer',s:'Tunnels in trunk, wilting',r:'Remove and destroy infested wood'}]},
+ {k:'tea',fam:'plantation',n:'Tea',ic:'🍃',water:'High',frost:true,season:'Perennial',sow:'May – June (planting)',harv:'Year-round plucking, peak Apr–Nov',npk:[120,40,60],price:250,unit:'kg',seed:6000,seedUnit:'saplings',sp:[120,60],yld:20,cost:60000,
+  pests:[{n:'Tea mosquito bug',s:'Blistered, distorted young leaves',r:'Insecticide spray'},{n:'Red spider mite',s:'Bronzing of leaves',r:'Miticide spray; maintain shade cover'}]},
+ {k:'coffee',fam:'plantation',n:'Coffee',ic:'☕',water:'Medium',frost:true,season:'Perennial',sow:'June – July (planting)',harv:'November – February',npk:[100,50,100],price:25000,unit:'quintal',seed:600,seedUnit:'saplings',sp:[200,200],yld:6,cost:45000,
+  pests:[{n:'White stem borer',s:'Grubs tunnel into stem, wilting',r:'Remove and destroy infested stems'},{n:'Berry borer',s:'Small holes bored into berries',r:'Sanitation; remove fallen berries'}]},
+ {k:'jute',fam:'fiber',n:'Jute',ic:'🌿',water:'High',frost:false,season:'Kharif',sow:'March – May',harv:'July – September',npk:[40,20,20],price:4500,unit:'quintal',seed:5,sp:[30,5],yld:10,cost:15000,
+  pests:[{n:'Semilooper',s:'Defoliation of leaves',r:'Neem-based spray'},{n:'Stem weevil',s:'Tunnels in stem, plant lodging',r:'Remove and destroy affected plants'}]},
+ {k:'lentil',fam:'legume',n:'Lentil (Masoor)',ic:'🟤',water:'Low',frost:false,season:'Rabi',sow:'October – November',harv:'February – March',npk:[20,40,20],price:6300,unit:'quintal',seed:30,sp:[30,10],yld:7,cost:12000,
+  pests:[{n:'Aphids',s:'Curled, sticky leaves',r:'Neem oil spray'},{n:'Wilt',s:'Sudden drooping and drying of plant',r:'Resistant variety; treated seed'}]},
+ {k:'pigeonpea',fam:'legume',n:'Pigeon Pea (Tur/Arhar)',ic:'🌱',water:'Low',frost:false,season:'Kharif',sow:'June – July',harv:'December – February',npk:[20,50,20],price:7000,unit:'quintal',seed:8,sp:[75,20],yld:8,cost:15000,
+  pests:[{n:'Pod borer',s:'Holes bored into pods',r:'Pheromone traps; neem spray'},{n:'Wilt',s:'Sudden wilting of plants',r:'Resistant variety; crop rotation'}]},
+ {k:'moong',fam:'legume',n:'Green Gram (Moong)',ic:'🟢',water:'Low',frost:false,season:'Kharif/Summer',sow:'June–July or March–April',harv:'65–70 days after sowing',npk:[20,40,20],price:8500,unit:'quintal',seed:10,sp:[30,10],yld:5,cost:10000,
+  pests:[{n:'Yellow mosaic virus',s:'Yellow mosaic pattern on leaves',r:'Control whitefly vector; resistant variety'},{n:'Pod borer',s:'Holes bored into pods',r:'Neem-based spray'}]},
+ {k:'urad',fam:'legume',n:'Black Gram (Urad)',ic:'⚫',water:'Low',frost:false,season:'Kharif',sow:'June – July',harv:'September – October',npk:[20,40,20],price:7300,unit:'quintal',seed:10,sp:[30,10],yld:5,cost:10000,
+  pests:[{n:'Yellow mosaic virus',s:'Yellow mosaic pattern on leaves',r:'Control whitefly vector'},{n:'Leaf spot',s:'Brown spots on leaves',r:'Fungicide spray'}]},
+ {k:'castor',fam:'oilseed',n:'Castor',ic:'🌱',water:'Low',frost:false,season:'Kharif',sow:'June – July',harv:'150–180 days after sowing',npk:[40,20,20],price:5800,unit:'quintal',seed:5,sp:[90,45],yld:12,cost:15000,
+  pests:[{n:'Semilooper',s:'Defoliation of leaves',r:'Neem-based spray'},{n:'Capsule borer',s:'Holes bored into seed capsules',r:'Pheromone traps'}]},
+ {k:'linseed',fam:'oilseed',n:'Linseed (Flaxseed)',ic:'🌾',water:'Low',frost:true,season:'Rabi',sow:'October – November',harv:'February – March',npk:[20,20,20],price:6200,unit:'quintal',seed:8,sp:[20,5],yld:6,cost:9000,
+  pests:[{n:'Aphids',s:'Curled leaves, sticky residue',r:'Neem oil spray'},{n:'Bud fly',s:'Damaged buds and flowers, reduced seed set',r:'Timely sowing; insecticide if severe'}]},
+ {k:'carrot',fam:'vegetable',n:'Carrot',ic:'🥕',water:'Medium',frost:true,season:'Rabi',sow:'October – November',harv:'90–100 days after sowing',npk:[40,30,40],price:1500,unit:'quintal',seed:4,sp:[30,5],yld:80,cost:25000,
+  pests:[{n:'Root fly',s:'Tunnels bored into roots',r:'Crop rotation; remove affected roots'},{n:'Leaf blight',s:'Brown spots on leaves',r:'Fungicide spray'}]},
+ {k:'spinach',fam:'vegetable',n:'Spinach',ic:'🥬',water:'Medium',frost:true,season:'Rabi',sow:'October – November',harv:'30–40 days after sowing',npk:[30,20,20],price:1000,unit:'quintal',seed:8,sp:[20,5],yld:60,cost:15000,
+  pests:[{n:'Leaf miner',s:'Winding trails inside leaves',r:'Remove affected leaves; neem spray'},{n:'Aphids',s:'Curled, sticky leaves',r:'Neem oil spray'}]},
+ {k:'cauliflower',fam:'vegetable',n:'Cauliflower',ic:'🥦',water:'Medium',frost:true,season:'Rabi',sow:'September – October',harv:'90–120 days after transplant',npk:[60,30,30],price:1200,unit:'quintal',seed:0.15,sp:[45,45],yld:100,cost:30000,
+  pests:[{n:'Diamondback moth',s:'Holes and shot-holes in leaves',r:'Bt spray; pheromone traps'},{n:'Black rot',s:'V-shaped yellow lesions on leaves',r:'Disease-free seed; crop rotation'}]},
+ {k:'garlic',fam:'spice',n:'Garlic',ic:'🧄',water:'Medium',frost:false,season:'Rabi',sow:'October – November',harv:'February – March',npk:[50,25,25],price:12000,unit:'quintal',seed:200,seedUnit:'kg (cloves)',sp:[15,10],yld:40,cost:40000,
+  pests:[{n:'Thrips',s:'Silvery streaks on leaves',r:'Blue sticky traps; neem oil spray'},{n:'Purple blotch',s:'Purple-brown patches on leaves',r:'Fungicide spray; crop rotation'}]},
+ {k:'chili',fam:'spice',n:'Chili Pepper',ic:'🌶️',water:'Medium',frost:true,season:'Kharif/Rabi',sow:'Varies by region',harv:'90–120 days after transplant',npk:[60,30,30],price:12000,unit:'quintal',seed:0.4,sp:[60,45],yld:15,cost:40000,
+  pests:[{n:'Thrips',s:'Curled, bronzed leaves',r:'Blue sticky traps; neem oil spray'},{n:'Fruit rot',s:'Dark sunken lesions on fruit',r:'Fungicide spray; avoid overhead irrigation'}]}
+];
+
+/* ===================== REFERENCE DATA: schemes, nutrients, soil ===================== */
+const SCHEMES = [
+ {en:{n:'PM-KISAN', d:'Direct income support of ₹6,000/year to eligible farmer families, paid in three instalments.'},
+  bn:{n:'পিএম-কিষান', d:'যোগ্য কৃষক পরিবারকে বছরে ₹৬,০০০ সরাসরি আয় সহায়তা, তিনটি কিস্তিতে প্রদান করা হয়।'},
+  hi:{n:'पीएम-किसान', d:'पात्र किसान परिवारों को ₹6,000/वर्ष प्रत्यक्ष आय सहायता, तीन किस्तों में दी जाती है।'}, u:'https://pmkisan.gov.in'},
+ {en:{n:'Pradhan Mantri Fasal Bima Yojana (PMFBY)', d:'Crop insurance scheme covering losses from natural calamities, pests and disease.'},
+  bn:{n:'প্রধানমন্ত্রী ফসল বিমা যোজনা (PMFBY)', d:'প্রাকৃতিক দুর্যোগ, পোকা ও রোগে ক্ষতির জন্য ফসল বিমা প্রকল্প।'},
+  hi:{n:'प्रधानमंत्री फसल बीमा योजना (PMFBY)', d:'प्राकृतिक आपदा, कीट व रोग से हुए नुकसान को कवर करने वाली फसल बीमा योजना।'}, u:'https://pmfby.gov.in'},
+ {en:{n:'Soil Health Card Scheme', d:'Free periodic soil testing with crop-wise nutrient and fertilizer recommendations.'},
+  bn:{n:'সয়েল হেলথ কার্ড স্কিম', d:'ফসল-ভিত্তিক পুষ্টি ও সার সুপারিশসহ বিনামূল্যে নিয়মিত মাটি পরীক্ষা।'},
+  hi:{n:'मृदा स्वास्थ्य कार्ड योजना', d:'फसल-अनुसार पोषक व उर्वरक सिफ़ारिशों सहित मुफ़्त नियमित मिट्टी परीक्षण।'}, u:'https://soilhealth.dac.gov.in'},
+ {en:{n:'Kisan Credit Card (KCC)', d:'Low-interest short-term credit for seeds, inputs and other farming needs.'},
+  bn:{n:'কিষান ক্রেডিট কার্ড (KCC)', d:'বীজ, উপকরণ ও অন্যান্য কৃষি প্রয়োজনে স্বল্প-সুদে স্বল্পমেয়াদী ঋণ।'},
+  hi:{n:'किसान क्रेडिट कार्ड (KCC)', d:'बीज, आदानों व अन्य कृषि आवश्यकताओं हेतु कम ब्याज पर अल्पकालिक ऋण।'}, u:'https://www.nabard.org'},
+ {en:{n:'PM Krishi Sinchayee Yojana', d:'Support for irrigation infrastructure and efficient water-use practices ("more crop per drop").'},
+  bn:{n:'পিএম কৃষি সেচ যোজনা', d:'সেচ পরিকাঠামো ও দক্ষ জল ব্যবহারের জন্য সহায়তা ("প্রতি ফোঁটায় বেশি ফসল")।'},
+  hi:{n:'पीएम कृषि सिंचाई योजना', d:'सिंचाई अवसंरचना व कुशल जल-उपयोग हेतु सहायता ("हर बूंद अधिक फसल")।'}, u:'https://pmksy.gov.in'}
+];
+
+const NUTRIENTS = [
+ {en:{n:'Nitrogen (N)', s:'Older, lower leaves turn pale yellow; overall stunted, spindly growth.', r:'Apply urea or another nitrogen fertilizer; split doses across growth stages.'},
+  bn:{n:'নাইট্রোজেন (N)', s:'পুরনো, নিচের পাতা ফ্যাকাশে হলুদ হয়ে যায়; সামগ্রিক বৃদ্ধি রুদ্ধ ও পাতলা হয়।', r:'ইউরিয়া বা অন্য নাইট্রোজেন সার প্রয়োগ করুন; বৃদ্ধির পর্যায় অনুযায়ী ভাগ করে দিন।'},
+  hi:{n:'नाइट्रोजन (N)', s:'पुरानी, निचली पत्तियाँ हल्की पीली पड़ जाती हैं; समग्र वृद्धि रुकी व पतली रहती है।', r:'यूरिया या अन्य नाइट्रोजन उर्वरक डालें; वृद्धि चरणों में बाँटकर मात्रा दें।'}},
+ {en:{n:'Phosphorus (P)', s:'Dark green or purplish leaf tinge, weak roots, delayed flowering/maturity.', r:'Apply DAP or single super phosphate (SSP) at sowing.'},
+  bn:{n:'ফসফরাস (P)', s:'গাঢ় সবুজ বা বেগুনি আভাযুক্ত পাতা, দুর্বল শিকড়, দেরিতে ফুল/পরিপক্বতা।', r:'বপনের সময় DAP বা সিঙ্গেল সুপার ফসফেট (SSP) প্রয়োগ করুন।'},
+  hi:{n:'फॉस्फोरस (P)', s:'गहरे हरे या बैंगनी रंग की पत्तियाँ, कमज़ोर जड़ें, फूल/परिपक्वता में देरी।', r:'बुवाई के समय DAP या सिंगल सुपर फॉस्फेट (SSP) डालें।'}},
+ {en:{n:'Potassium (K)', s:'Yellowing and scorching along leaf edges, weak stems, poor grain fill.', r:'Apply muriate of potash (MOP); avoid excess nitrogen without matching K.'},
+  bn:{n:'পটাসিয়াম (K)', s:'পাতার কিনারা হলুদ ও পোড়া, দুর্বল কাণ্ড, দানা ভরাটে ঘাটতি।', r:'মিউরেট অফ পটাশ (MOP) প্রয়োগ করুন; K ছাড়া অতিরিক্ত নাইট্রোজেন এড়িয়ে চলুন।'},
+  hi:{n:'पोटैशियम (K)', s:'पत्तियों के किनारे पीले व झुलसे, कमज़ोर तना, दाना भराव कम।', r:'म्यूरेट ऑफ़ पोटाश (MOP) डालें; K के बिना अधिक नाइट्रोजन से बचें।'}},
+ {en:{n:'Zinc (Zn)', s:'Small, pale, distorted young leaves; shortened stem internodes.', r:'Apply zinc sulfate to soil or as a foliar spray.'},
+  bn:{n:'জিঙ্ক (Zn)', s:'ছোট, ফ্যাকাশে, বিকৃত কচি পাতা; কাণ্ডের গিঁটের দূরত্ব কম।', r:'মাটিতে বা পাতায় স্প্রে হিসেবে জিঙ্ক সালফেট প্রয়োগ করুন।'},
+  hi:{n:'ज़िंक (Zn)', s:'छोटी, फीकी, विकृत नई पत्तियाँ; तने की गाँठों के बीच दूरी कम।', r:'मिट्टी में या पत्तियों पर स्प्रे के रूप में ज़िंक सल्फेट डालें।'}},
+ {en:{n:'Iron (Fe)', s:'Yellowing between veins on young leaves, veins stay green.', r:'Foliar spray of ferrous sulfate; improve soil drainage if waterlogged.'},
+  bn:{n:'আয়রন (Fe)', s:'কচি পাতায় শিরার মাঝে হলুদ ভাব, শিরা সবুজ থাকে।', r:'ফেরাস সালফেটের পাতায় স্প্রে করুন; জলাবদ্ধ হলে নিষ্কাশন উন্নত করুন।'},
+  hi:{n:'आयरन (Fe)', s:'नई पत्तियों में शिराओं के बीच पीलापन, शिराएँ हरी रहती हैं।', r:'फेरस सल्फेट का पत्तियों पर स्प्रे करें; जलभराव हो तो निकासी सुधारें।'}},
+ {en:{n:'Magnesium (Mg)', s:'Interveinal yellowing on older leaves, sometimes reddish-purple tint.', r:'Apply magnesium sulfate (Epsom salt) as foliar spray or soil amendment.'},
+  bn:{n:'ম্যাগনেসিয়াম (Mg)', s:'পুরনো পাতায় শিরার মাঝে হলুদভাব, কখনো লালচে-বেগুনি আভা।', r:'ম্যাগনেসিয়াম সালফেট (এপসম সল্ট) পাতায় স্প্রে বা মাটিতে প্রয়োগ করুন।'},
+  hi:{n:'मैग्नीशियम (Mg)', s:'पुरानी पत्तियों में शिराओं के बीच पीलापन, कभी-कभी लाल-बैंगनी रंगत।', r:'मैग्नीशियम सल्फेट (एप्सम सॉल्ट) पत्तियों पर स्प्रे या मिट्टी में डालें।'}}
+];
+
+const SOIL_TYPES = {
+  sandy: {en:{n:'Sandy soil', desc:'Falls apart immediately, feels gritty, drains very fast and dries out quickly.',
+    good:'Groundnut, watermelon, carrot, potato — crops that prefer sharp drainage.',
+    tip:'Add organic compost/FYM to improve water and nutrient retention; irrigate more often in smaller amounts.'},
+   bn:{n:'বালুমাটি', desc:'সাথে সাথে ভেঙে যায়, খসখসে অনুভূত হয়, খুব দ্রুত নিষ্কাশিত হয় ও শুকিয়ে যায়।',
+    good:'চিনাবাদাম, তরমুজ, গাজর, আলু — ভালো নিষ্কাশন পছন্দ করা ফসল।',
+    tip:'জল ও পুষ্টি ধরে রাখতে জৈব কম্পোস্ট/গোবর সার যোগ করুন; অল্প অল্প করে বেশি বার সেচ দিন।'},
+   hi:{n:'बलुई मिट्टी', desc:'तुरंत बिखर जाती है, खुरदरी लगती है, बहुत तेज़ी से निकास होता है व जल्दी सूख जाती है।',
+    good:'मूंगफली, तरबूज़, गाजर, आलू — अच्छी निकासी पसंद करने वाली फसलें।',
+    tip:'जल व पोषक तत्व बनाए रखने हेतु जैविक कम्पोस्ट/गोबर खाद डालें; थोड़ी-थोड़ी मात्रा में अधिक बार सिंचाई करें।'}},
+  loam: {en:{n:'Loamy soil', desc:'Holds its shape when squeezed but crumbles easily — a balanced, crumbly texture.',
+    good:'Best all-purpose soil — suits most cereals, vegetables and fruits well.',
+    tip:'Maintain this balance with regular compost application; avoid overworking when wet.'},
+   bn:{n:'দোআঁশ মাটি', desc:'চাপ দিলে আকার ধরে রাখে কিন্তু সহজে ভেঙে যায় — সুষম, ঝুরঝুরে গঠন।',
+    good:'সর্বোত্তম সাধারণ মাটি — বেশিরভাগ শস্য, সবজি ও ফলের জন্য উপযুক্ত।',
+    tip:'নিয়মিত কম্পোস্ট প্রয়োগ করে এই ভারসাম্য বজায় রাখুন; ভেজা অবস্থায় অতিরিক্ত কাজ এড়িয়ে চলুন।'},
+   hi:{n:'दोमट मिट्टी', desc:'दबाने पर आकार बना रहता है पर आसानी से टूट जाती है — संतुलित, भुरभुरी बनावट।',
+    good:'सर्वश्रेष्ठ सामान्य मिट्टी — अधिकांश अनाज, सब्ज़ी व फलों हेतु उपयुक्त।',
+    tip:'नियमित कम्पोस्ट डालकर यह संतुलन बनाए रखें; गीली होने पर अधिक जुताई से बचें।'}},
+  clay: {en:{n:'Clay soil', desc:'Stays a firm, sticky ball and can be rolled into a shiny ribbon — heavy and slow-draining.',
+    good:'Rice, wheat, sugarcane — crops tolerant of heavier, water-retentive soil.',
+    tip:'Improve drainage with raised beds; avoid tilling when wet to prevent compaction.'},
+   bn:{n:'এঁটেল মাটি', desc:'শক্ত, আঠালো বল থাকে এবং চকচকে ফিতার মতো গড়ানো যায় — ভারী ও ধীর নিষ্কাশন।',
+    good:'ধান, গম, আখ — ভারী, জলধারণকারী মাটি সহনশীল ফসল।',
+    tip:'উঁচু বেড দিয়ে নিষ্কাশন উন্নত করুন; মাটি সংকোচন এড়াতে ভেজা অবস্থায় চাষ এড়িয়ে চলুন।'},
+   hi:{n:'चिकनी मिट्टी', desc:'मज़बूत, चिपचिपा गोला बना रहता है व चमकदार रिबन की तरह बेला जा सकता है — भारी व धीमी निकासी।',
+    good:'चावल, गेहूँ, गन्ना — भारी, जलधारण करने वाली मिट्टी सहनशील फसलें।',
+    tip:'उठी हुई क्यारियों से निकासी सुधारें; संकुचन रोकने हेतु गीली होने पर जुताई से बचें।'}},
+  silty: {en:{n:'Silty soil', desc:'Feels smooth and soapy, forms a ball but breaks apart easily, holds moisture well.',
+    good:'Onion, leafy vegetables, and most field crops grow well in silty soil.',
+    tip:'Prone to crusting and compaction — add organic matter and avoid heavy machinery when wet.'},
+   bn:{n:'পলি মাটি', desc:'মসৃণ ও সাবানের মতো অনুভূত হয়, বল বানানো যায় কিন্তু সহজে ভেঙে যায়, আর্দ্রতা ভালো ধরে রাখে।',
+    good:'পেঁয়াজ, শাকসবজি ও বেশিরভাগ ফসল পলি মাটিতে ভালো জন্মায়।',
+    tip:'ভূত্বক ও সংকোচনপ্রবণ — জৈব পদার্থ যোগ করুন এবং ভেজা অবস্থায় ভারী যন্ত্র এড়িয়ে চলুন।'},
+   hi:{n:'दोमट-सिल्ट मिट्टी', desc:'चिकनी व साबुन जैसी लगती है, गोला बनता है पर आसानी से टूटता है, नमी अच्छी बनाए रखती है।',
+    good:'प्याज़, पत्तेदार सब्ज़ियाँ व अधिकांश फसलें सिल्ट मिट्टी में अच्छी उगती हैं।',
+    tip:'पपड़ी व संकुचन की संभावना — जैविक पदार्थ डालें और गीली होने पर भारी मशीनरी से बचें।'}}
+};
+
+/* ===================== UTILITIES ===================== */
+const c2f = c => Math.round(c*9/5+32);
+const k2mph = k => Math.round(k*0.621371);
+function money(v){ const rate = CURRENCY==='INR' ? 1 : 0.012; const sym = CURRENCY==='INR' ? '₹' : '$'; return sym + Math.round(v*rate).toLocaleString(); }
+function getAreaAcres(){
+  let v = Math.max(0, parseFloat(document.getElementById('areaInput').value) || 0);
+  if(document.getElementById('areaUnit').value === 'hectare') v = v * 2.47105;
+  return v;
+}
+function degToCompass(d){ const dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']; return dirs[Math.round(d/22.5)%16]; }
+function fmtTime(iso){ return iso ? new Date(iso).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '--'; }
+function wInfo(code){
+  const m = {0:['☀️','Clear sky'],1:['🌤️','Mostly clear'],2:['⛅','Partly cloudy'],3:['☁️','Overcast'],
+    45:['🌫️','Fog'],48:['🌫️','Rime fog'],51:['🌦️','Light drizzle'],53:['🌦️','Drizzle'],55:['🌦️','Dense drizzle'],
+    61:['🌧️','Light rain'],63:['🌧️','Rain'],65:['🌧️','Heavy rain'],71:['🌨️','Light snow'],73:['🌨️','Snow'],75:['❄️','Heavy snow'],
+    80:['🌧️','Rain showers'],81:['🌧️','Heavy showers'],82:['⛈️','Violent showers'],95:['⛈️','Thunderstorm'],96:['⛈️','Thunderstorm & hail'],99:['⛈️','Severe thunderstorm']};
+  return m[code] || ['🌡️','—'];
+}
+
+/* Defensive geolocation wrapper: handles missing API, synchronous throws (common when a
+   sandboxed preview blocks geolocation via Permissions-Policy), denial, and silent hangs. */
+function safeGeolocate(onSuccess, onFail){
+  if(!navigator.geolocation){ onFail('unsupported'); return; }
+  let settled = false;
+  const timer = setTimeout(()=>{ if(!settled){ settled = true; onFail('timeout'); } }, 10000);
+  try{
+    navigator.geolocation.getCurrentPosition(
+      pos => { if(settled) return; settled = true; clearTimeout(timer); onSuccess(pos); },
+      err => { if(settled) return; settled = true; clearTimeout(timer); onFail('denied'); }
+    );
+  }catch(e){
+    if(!settled){ settled = true; clearTimeout(timer); onFail('timeout'); }
+  }
+}
+function geoFailMessage(reason){
+  return reason==='unsupported' ? t('locNotSupported') : reason==='timeout' ? t('geoTimeout') : t('locDenied');
+}
+
+/* ===================== THEME ===================== */
+const themebar = document.getElementById('themebar');
+themebar.addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.documentElement.setAttribute('data-theme', b.dataset.theme);
+  [...themebar.children].forEach(c=>c.setAttribute('aria-pressed', c===b));
+});
+if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches){
+  document.documentElement.setAttribute('data-theme','dark');
+  [...themebar.children].forEach(c=>c.setAttribute('aria-pressed', c.dataset.theme==='dark'));
+}
+
+/* ===================== LANGUAGE ===================== */
+function applyI18n(){
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    const v = I18N[LANG][key];
+    if (typeof v === 'string') el.textContent = v;
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const key = el.getAttribute('data-i18n-ph');
+    const v = I18N[LANG][key];
+    if (typeof v === 'string') el.placeholder = v;
+  });
+}
+const LANG_CYCLE = ['en','bn','hi'];
+const LANG_LABELS = {en:'EN', bn:'বাং', hi:'हिं'};
+function setLanguage(lang){
+  LANG = lang;
+  document.getElementById('langBtn').textContent = LANG_LABELS[LANG];
+  applyI18n();
+  populateCropSelect();
+  renderCropTab();
+  renderSchemes();
+  renderNutrients();
+  renderMarks();
+  if (licenseState){
+    refreshTrialBanner();
+    if (!document.getElementById('paywallModal').classList.contains('hidden')){
+      document.getElementById('paywallTitle').textContent = isActive() ? t('paywallTitleTrial') : t('paywallTitleExpired');
+    }
+  }
+  if (lastWeather) render(lastWeather.place, lastWeather.cur, lastWeather.daily, lastWeather.time);
+}
+document.getElementById('langBtn').addEventListener('click', ()=>{
+  setLanguage(LANG_CYCLE[(LANG_CYCLE.indexOf(LANG)+1) % LANG_CYCLE.length]);
+});
+
+/* ===================== UNIT TOGGLE ===================== */
+document.getElementById('unitBtn').addEventListener('click', ()=>{
+  UNIT = UNIT==='metric' ? 'imperial' : 'metric';
+  document.getElementById('unitBtn').textContent = UNIT==='metric' ? '°C · km/h' : '°F · mph';
+  if(lastWeather) render(lastWeather.place, lastWeather.cur, lastWeather.daily, lastWeather.time);
+});
+
+/* ===================== TABS ===================== */
+document.getElementById('tabbar').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('.tabbar button').forEach(x=>x.classList.toggle('active', x===b));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+b.dataset.tab));
+});
+
+/* ===================== CROP SELECTOR & CROP CARE TAB ===================== */
+const cropSelect = document.getElementById('cropSelect');
+function populateCropSelect(){
+  const prev = cropSelect.value;
+  cropSelect.innerHTML = '';
+  [...CROPS].sort((a,b)=>cropName(a).localeCompare(cropName(b), LANG==='en'?'en':undefined)).forEach(c=>{
+    const o=document.createElement('option'); o.value=c.k; o.textContent=`${c.ic} ${cropName(c)}`; cropSelect.appendChild(o);
+  });
+  if (prev) cropSelect.value = prev;
+}
+function currentCrop(){ return CROPS.find(c=>c.k===cropSelect.value) || CROPS[0]; }
+cropSelect.addEventListener('change', renderCropTab);
+
+function renderCropTab(){
+  const c = currentCrop();
+  document.getElementById('cropProfile').innerHTML = `<div class="card">
+    <b>${c.ic} ${cropName(c)}</b>
+    <span class="pill">${t('waterNeedLbl')} ${waterLabel(c.water)}</span>
+    <span class="pill">${c.frost ? t('frostSensitive') : t('frostTolerant')}</span>
+    <span class="pill">${c.season}</span></div>`;
+  document.getElementById('cropCalendar').innerHTML = `<div class="card">
+    <b>${t('sowingLbl')}</b><div class="sym">${c.sow}</div>
+    <b style="margin-top:8px;">${t('harvestLbl')}</b><div class="sym">${c.harv}</div></div>`;
+  document.getElementById('pestList').innerHTML = c.pests.map(p=>`<div class="card">
+    <b>${p.n}</b><div class="sym">${t('symptomLbl')} ${p.s}</div><div class="sym">${t('remedyLbl')} ${p.r}</div></div>`).join('');
+  document.getElementById('irriGuide').innerHTML = `<div class="card">
+    <b>${t('waterReqLabel')(cropName(c), waterLabel(c.water))}</b>
+    <div class="sym">${c.water==='High' ? t('irriHigh') : c.water==='Medium' ? t('irriMedium') : t('irriLow')}</div></div>`;
+  renderPrices();
+  renderRotation();
+}
+
+/* ===================== ROTATION PLANNER ===================== */
+function renderRotation(){
+  const c = currentCrop();
+  const fam = c.fam;
+  document.getElementById('rotCurrent').textContent = `${t('currentSelection')} ${c.ic} ${cropName(c)} (${familyLabel(fam)})`;
+  if (fam==='fruit' || fam==='plantation'){
+    document.getElementById('rotOut').innerHTML = `<div class="card"><div class="sym">${t('perennialNote')(cropName(c))}</div></div>`;
     return;
   }
-  listEl.innerHTML = visible.map(s => `
-    <div class="card">
-      <div class="card-top">
-        <span class="status-dot ${s.status}"></span>
-        <div class="card-info">
-          <div class="name">${s.name}${s.tag==='world'?'<span class="tag">WORLD</span>':s.tag==='in'?'<span class="tag">IN</span>':''}</div>
-          <div class="url">${s.url}</div>
-        </div>
-        <div class="card-meta">
-          <div class="code ${s.status}">${s.code ? 'HTTP ' + s.code : (s.status==='pend' ? 'checking…' : 'no response')}</div>
-          <div>${s.time != null ? s.time + ' ms' : '—'}</div>
-        </div>
-        <button class="sitebtn" title="Recheck now" onclick="recheck(${s.id})">↻</button>
-        <button class="sitebtn" title="Remove" onclick="removeSite(${s.id})">×</button>
-      </div>
-      <div class="pulse">${renderPulse(s.history)}</div>
-    </div>
-  `).join('');
+  const suggestFamilies = fam==='cereal' ? ['legume','oilseed'] : fam==='legume' ? ['cereal','vegetable'] :
+    fam==='oilseed' ? ['cereal','legume'] : fam==='fiber' ? ['legume','cereal'] :
+    fam==='vegetable' ? ['legume','cereal'] : ['legume','cereal'];
+  const candidates = CROPS.filter(x=>x.k!==c.k && suggestFamilies.includes(x.fam))
+    .sort((a,b)=>cropName(a).localeCompare(cropName(b), LANG==='en'?'en':undefined)).slice(0,4);
+  document.getElementById('rotOut').innerHTML = candidates.map(x=>{
+    const reason = x.fam==='legume' ? t('rotLegume')(cropName(c)) : t('rotOther')(cropName(c));
+    return `<div class="card"><b>${x.ic} ${cropName(x)}</b><div class="sym">${familyLabel(x.fam)} — ${reason}</div></div>`;
+  }).join('');
 }
 
-function renderPulse(history){
-  const bars = history.slice(-HISTORY_LEN);
-  const pad = HISTORY_LEN - bars.length;
-  let out = '';
-  for(let i=0;i<pad;i++) out += '<i></i>';
-  out += bars.map(h => `<i class="${h}"></i>`).join('');
-  return out;
+/* ===================== PRICES / SCHEMES / NUTRIENTS ===================== */
+function renderPrices(){
+  const tbody = document.querySelector('#priceTable tbody');
+  tbody.innerHTML = CROPS.map(c=>`<tr><td>${c.ic} ${cropName(c)}</td><td>${money(c.price)}</td><td>${t('perUnit')} ${c.unit}</td></tr>`).join('');
 }
-
-// ---------- Checking (free, no key, no signup CORS proxies) ----------
-async function pingUrl(url){
-  const t0 = performance.now();
-  try{
-    const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url), { cache:'no-store' });
-    const time = Math.round(performance.now() - t0);
-    if(!r.ok) throw new Error('proxy error');
-    const data = await r.json();
-    const code = data && data.status ? data.status.http_code : null;
-    return { up: !!code && code < 400, code, time };
-  }catch(e1){
-    try{
-      const t1 = performance.now();
-      const r2 = await fetch('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url), { cache:'no-store' });
-      const time2 = Math.round(performance.now() - t1);
-      return { up: r2.ok, code: r2.status || null, time: time2 };
-    }catch(e2){
-      return { up:false, code:null, time:null };
-    }
-  }
-}
-
-async function checkSite(site){
-  site.status = 'pend';
-  render();
-  const result = await pingUrl(site.url);
-  site.status = result.up ? 'up' : 'down';
-  site.code = result.code;
-  site.time = result.time;
-  site.history.push(site.status);
-  if(site.history.length > HISTORY_LEN) site.history.shift();
-  render();
-}
-
-function recheck(id){
-  const s = sites.find(x => x.id === id);
-  if(s) checkSite(s);
-}
-
-function removeSite(id){
-  const i = sites.findIndex(x => x.id === id);
-  if(i > -1){ sites.splice(i,1); render(); }
-}
-
-form.addEventListener('submit', e => {
-  e.preventDefault();
-  const url = normalizeUrl(input.value);
-  if(!url) return alert('Please enter a valid domain or URL.');
-  const site = makeSite(url.replace(/^https?:\/\//,'').replace(/\/$/,''), 'custom');
-  site.url = url;
-  sites.unshift(site);
-  input.value = '';
-  render();
-  checkSite(site);
+document.getElementById('currBtn').addEventListener('click', ()=>{
+  CURRENCY = CURRENCY==='INR' ? 'USD' : 'INR';
+  document.getElementById('currBtn').textContent = CURRENCY==='INR' ? '₹ INR' : '$ USD';
+  renderPrices();
 });
 
-// Run checks through a small concurrency pool so 75+ sites don't fire at once
-async function checkAll(){
-  const POOL = 6;
-  let i = 0;
-  async function worker(){
-    while(i < sites.length){
-      const site = sites[i++];
-      await checkSite(site);
-    }
-  }
-  await Promise.all(Array.from({length: POOL}, worker));
-}
-
-render();
-checkAll();
-setInterval(checkAll, REFRESH_MS);
-</script>
-</body>
-</html>
+function renderSchemes(){
+  document.getElementById('schemeList').innerHTML = SCHEMES.map(s=>{ const d = s[LANG]||s.en
