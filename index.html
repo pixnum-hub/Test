@@ -1,323 +1,354 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b0d12">
-<title>Anti-Theft Alarm Pro</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capture — Screen Recorder</title>
 <style>
-*{box-sizing:border-box} :root{--bg:#edf1f6;--card:#fff;--tx:#18202b;--mut:#647080;--bd:#d5dbe4;--a:#e63946;--ok:#12905b}
-body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,sans-serif}
-body.dark{--bg:#11151c;--card:#1b2029;--tx:#f5f7fa;--mut:#aab3c0;--bd:#333b48}
-body.oled{--bg:#000;--card:#050505;--tx:#fff;--mut:#aaa;--bd:#333}
-body.hc{--bg:#000;--card:#000;--tx:#fff;--mut:#fff;--bd:#fff;--a:#ff0}
-main{max-width:620px;margin:auto;min-height:100vh;padding:14px;display:flex;flex-direction:column}
-h1{text-align:center;font-size:27px;margin:6px 0}.tag{text-align:center;color:var(--mut);font-size:12px;margin-bottom:10px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:15px;margin:7px 0}
-.status{text-align:center;padding:20px}.led{display:inline-block;width:15px;height:15px;border-radius:50%;background:#777}
-.status.on .led{background:var(--a);box-shadow:0 0 18px var(--a)}
-.status b{display:block;font-size:25px;margin:6px}.mut{color:var(--mut);font-size:12px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-button{border:0;border-radius:13px;padding:13px;background:#687383;color:#fff;font-weight:800;font-size:14px}
-button:active{transform:scale(.97)}button.primary{background:var(--a)}button.ok{background:var(--ok)}
-button:disabled{opacity:.55}
-.full{width:100%;margin-top:9px}label{display:block;color:var(--mut);font-size:12px;margin:10px 0 5px}
-input,select{width:100%;padding:11px;border:1px solid var(--bd);border-radius:11px;background:var(--bg);color:var(--tx);font:inherit}
-.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0}.v{font-weight:800}
-#alarm{display:none;background:#8c0012;color:white;border-radius:18px;text-align:center;padding:18px;margin:7px 0}
-#alarm.show{display:block;animation:pulse .45s infinite alternate}@keyframes pulse{to{transform:scale(1.02)}}
-.log{max-height:150px;overflow:auto;font-size:11px}.log div{padding:6px 0;border-bottom:1px solid var(--bd)}
-footer{text-align:center;color:var(--mut);font-size:11px;padding:18px 0;margin-top:auto}
-.bad{color:var(--a)}.good{color:var(--ok)}
+  :root{
+    --bg:#0D0F14; --surface:#161920; --surface-2:#1E222B; --border:#2A2F3A;
+    --text:#EDEFF3; --muted:#8891A0; --accent:#FF4B4B; --accent-text:#2A0A0A; --ok:#34D399;
+    --radius:14px; --mono:'SF Mono','Cascadia Code','Roboto Mono',Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  html[data-theme="light"]{
+    --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#F0F1F4; --border:#DEE1E7;
+    --text:#14161B; --muted:#666D7A; --accent:#E6392F; --accent-text:#FFFFFF; --ok:#0E9F6E;
+  }
+  html[data-theme="oled"]{
+    --bg:#000000; --surface:#050505; --surface-2:#0D0D0D; --border:#1C1C1C;
+    --text:#F2F2F2; --muted:#8A8A8A; --accent:#FF4B4B; --accent-text:#1A0000; --ok:#34D399;
+  }
+  html[data-theme="hc"]{
+    --bg:#000000; --surface:#000000; --surface-2:#000000; --border:#FFFFFF;
+    --text:#FFFFFF; --muted:#FFFFFF; --accent:#FFD500; --accent-text:#000000; --ok:#00FF66;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--sans);
+    min-height:100dvh; display:flex; flex-direction:column;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;}
+  main{
+    flex:1; width:100%; max-width:480px; margin:0 auto;
+    padding:20px 16px 12px; display:flex; flex-direction:column; gap:18px;
+  }
+  header.top{text-align:center; padding-top:6px;}
+  header.top h1{
+    margin:0; font-size:22px; letter-spacing:-0.02em; font-weight:700;
+  }
+  header.top p{margin:6px 0 0; color:var(--muted); font-size:13px;}
+
+  .stage{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; position:relative;
+  }
+  .preview-wrap{
+    aspect-ratio:16/10; background:var(--surface-2); display:flex; align-items:center; justify-content:center;
+  }
+  video#preview{width:100%; height:100%; object-fit:contain; display:none; background:#000;}
+  .stage-empty{color:var(--muted); font-size:13px; text-align:center; padding:0 24px; line-height:1.5;}
+
+  .status-row{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:12px 10px; border-top:1px solid var(--border); font-family:var(--mono); font-size:14px;
+  }
+  .status-dot{width:9px; height:9px; border-radius:50%; background:var(--muted); flex:none;}
+  .status-dot.live{background:var(--accent); animation:pulse 1.4s ease-in-out infinite;}
+  @media (prefers-reduced-motion:reduce){ .status-dot.live{animation:none;} }
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);} 50%{box-shadow:0 0 0 7px transparent;}}
+  #timer{letter-spacing:0.03em;}
+
+  .record-zone{display:flex; flex-direction:column; align-items:center; gap:10px; padding:6px 0;}
+  #recordBtn{
+    width:84px; height:84px; border-radius:50%; border:2px solid var(--border);
+    background:var(--surface); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  #recordBtn:active{transform:scale(0.94);}
+  #recordBtn .core{width:30px; height:30px; border-radius:50%; background:var(--accent); transition:border-radius .2s ease, width .2s ease, height .2s ease;}
+  #recordBtn.recording{border-color:var(--accent);}
+  #recordBtn.recording .core{border-radius:6px; width:24px; height:24px;}
+  #recordBtn:disabled{opacity:0.4; cursor:not-allowed;}
+  #recordLabel{font-size:13px; color:var(--muted);}
+
+  .chip-row{display:flex; flex-wrap:wrap; gap:8px; justify-content:center;}
+  .chip{
+    border:1px solid var(--border); background:var(--surface); color:var(--text);
+    border-radius:999px; padding:7px 13px; font-size:12.5px; cursor:pointer; display:flex; align-items:center; gap:6px;
+  }
+  .chip[aria-pressed="true"]{border-color:var(--accent); color:var(--accent);}
+  select.chip{appearance:none; -webkit-appearance:none; padding-right:26px;
+    background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+    background-position:calc(100% - 14px) center, calc(100% - 9px) center; background-size:5px 5px; background-repeat:no-repeat;}
+  #pauseBtn{display:none;}
+
+  section.list h2{font-size:13px; text-transform:none; color:var(--muted); margin:0 0 8px; font-weight:600;}
+  #recordings{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+  #recordings li{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:10px 12px; display:flex; align-items:center; gap:10px;
+  }
+  .rec-meta{flex:1; min-width:0;}
+  .rec-name{font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .rec-sub{font-size:11.5px; color:var(--muted); font-family:var(--mono); margin-top:2px;}
+  .rec-actions{display:flex; gap:6px; flex:none;}
+  .rec-actions a, .rec-actions button{
+    border:1px solid var(--border); background:var(--surface-2); color:var(--text);
+    border-radius:8px; padding:6px 10px; font-size:12px; text-decoration:none; cursor:pointer;
+  }
+  .empty-note{color:var(--muted); font-size:12.5px; text-align:center; padding:14px 0;}
+
+  footer{
+    border-top:1px solid var(--border); padding:16px; margin-top:auto;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+  }
+  .theme-toggle{display:flex; align-items:center; justify-content:center; gap:4px; background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:4px;}
+  .theme-toggle button{
+    border:none; background:transparent; color:var(--muted); border-radius:999px;
+    width:34px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px;
+  }
+  .theme-toggle button[aria-pressed="true"]{background:var(--accent); color:var(--accent-text);}
+  .copyright{
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-size:11.5px; color:var(--muted); line-height:1.5;
+  }
 </style>
 </head>
 <body>
+
 <main>
-<h1>🛡️ Anti-Theft Alarm Pro</h1>
-<div class="tag">Motion • Shake • Siren • Vibration • Local Security</div>
+  <header class="top">
+    <h1>Capture</h1>
+    <p>Record your screen. No sign-up, no key — runs entirely in this tab.</p>
+  </header>
 
-<div id="alarm">
-<b>🚨 ALARM TRIGGERED 🚨</b>
-<div id="why">Movement detected</div>
-<button class="full" onclick="disarm()">🔓 DISARM</button>
-</div>
+  <div class="stage">
+    <div class="preview-wrap">
+      <video id="preview" muted playsinline></video>
+      <p class="stage-empty" id="stageEmpty">Your recording preview appears here once capture starts.</p>
+    </div>
+    <div class="status-row">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Ready</span>
+      <span id="timer">00:00</span>
+    </div>
+  </div>
 
-<section class="card status" id="status">
-<span class="led"></span>
-<b id="state">DISARMED</b>
-<span class="mut" id="info">Protection is inactive.</span>
-</section>
+  <div class="record-zone">
+    <button id="recordBtn" aria-label="Start recording">
+      <span class="core"></span>
+    </button>
+    <span id="recordLabel">Tap to start recording</span>
+  </div>
 
-<section class="card">
-<div class="grid">
-<button class="primary" id="arm" onclick="prepare()">🔒 ARM PHONE</button>
-<button onclick="enableMotion()">📡 SENSOR TEST</button>
-</div>
-<button class="ok full" onclick="testAlarm()">🔊 TEST SIREN</button>
-<button class="full" onclick="disarm()">🔓 DISARM</button>
-</section>
+  <div class="chip-row">
+    <button class="chip" id="micToggle" aria-pressed="false">🎙 Mic audio: Off</button>
+    <select class="chip" id="qualitySelect" aria-label="Recording quality">
+      <option value="1920x1080">1080p</option>
+      <option value="1280x720" selected>720p</option>
+      <option value="source">Source quality</option>
+    </select>
+    <button class="chip" id="pauseBtn">⏸ Pause</button>
+  </div>
 
-<section class="card">
-<b>Protection Settings</b>
-<label>Motion sensitivity: <span id="sv">2.8</span> m/s²</label>
-<input id="sensitivity" type="range" min="1" max="8" step=".1" value="2.8"
-oninput="sv.textContent=this.value;save()">
-<label>Arming delay</label>
-<select id="delay" onchange="save()">
-<option value="3">3 seconds</option><option value="5" selected>5 seconds</option>
-<option value="10">10 seconds</option><option value="15">15 seconds</option>
-</select>
-<label>Disarm PIN</label>
-<input id="pin" type="password" inputmode="numeric" maxlength="8"
-placeholder="Optional PIN" onchange="save()">
-</section>
-
-<section class="card">
-<b>Device Monitor</b>
-<div class="row"><span>Motion sensor</span><span class="v" id="sensor">OFF</span></div>
-<div class="row"><span>Battery</span><span class="v" id="battery">—</span></div>
-<div class="row"><span>Wake Lock</span><span class="v" id="wake">OFF</span></div>
-<div class="row"><span>Events</span><span class="v" id="events">0</span></div>
-</section>
-
-<section class="card">
-<b>Quick Actions</b>
-<div class="grid" style="margin-top:9px">
-<button onclick="locate()">📍 Location</button>
-<button onclick="notification()">🔔 Notification</button>
-</div>
-<div id="loc" class="mut" style="margin-top:8px;text-align:center">Location not captured</div>
-</section>
-
-<section class="card">
-<div class="row"><b>Security Log</b><button onclick="clearLog()">Clear</button></div>
-<div class="log" id="log"><div>System initialized.</div></div>
-</section>
-
-<section class="card">
-<b>Appearance</b>
-<div class="grid" style="margin-top:9px">
-<button onclick="theme('')">☀️ Light</button>
-<button onclick="theme('dark')">🌙 Dark</button>
-<button onclick="theme('oled')">⬛ OLED</button>
-<button onclick="theme('hc')">◼ HC</button>
-</div>
-</section>
-
-<footer>© <span id="year"></span> Manik Roy. All Rights Reserved.</footer>
+  <section class="list">
+    <h2>Recordings this session</h2>
+    <ul id="recordings"></ul>
+    <p class="empty-note" id="emptyNote">Nothing recorded yet — finished clips will land here.</p>
+  </section>
 </main>
 
+<footer>
+  <div class="theme-toggle" role="group" aria-label="Theme">
+    <button data-theme-btn="light" aria-pressed="false" title="Light">☀</button>
+    <button data-theme-btn="dark" aria-pressed="true" title="Dark">☾</button>
+    <button data-theme-btn="oled" aria-pressed="false" title="OLED True Black">●</button>
+    <button data-theme-btn="hc" aria-pressed="false" title="High Contrast">◐</button>
+  </div>
+  <p class="copyright">© <span id="year"></span> Manik Roy. All Rights Reserved.</p>
+</footer>
+
 <script>
-const $=x=>document.getElementById(x);
-let armed=false,triggered=false,motionOK=false,last=0,count=0;
-let ctx=null,osc=null,gain=null,wlock=null,armTimer=null;
-const KEY="antiTheftPro";
-
-$("year").textContent=new Date().getFullYear();
-
-function save(){
- localStorage.setItem(KEY,JSON.stringify({
-  s:$("sensitivity").value,d:$("delay").value,p:$("pin").value,t:document.body.className
- }));
-}
-function load(){
- try{
-  let x=JSON.parse(localStorage.getItem(KEY)||"{}");
-  if(x.s){$("sensitivity").value=x.s;$("sv").textContent=x.s}
-  if(x.d)$("delay").value=x.d;
-  if(x.p)$("pin").value=x.p;
-  if(x.t)document.body.className=x.t;
- }catch(e){}
-}
-load();
-
-function log(x){
- count++;$("events").textContent=count;
- $("log").innerHTML="<div>["+new Date().toLocaleTimeString()+"] "+x+
- "</div>"+$("log").innerHTML;
-}
-
-async function enableMotion(){
- try{
-  if(!window.isSecureContext){
-   alert("Motion sensors require HTTPS. Open this app through HTTPS hosting.");
-   return false;
+(function(){
+  // ---------- Theme ----------
+  var root = document.documentElement;
+  var themeButtons = document.querySelectorAll('[data-theme-btn]');
+  function setTheme(name){
+    root.setAttribute('data-theme', name);
+    themeButtons.forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.themeBtn === name ? 'true' : 'false'); });
   }
-  if(typeof DeviceMotionEvent==="undefined"){
-   alert("This browser/device does not expose motion sensors.");
-   return false;
+  themeButtons.forEach(function(b){ b.addEventListener('click', function(){ setTheme(b.dataset.themeBtn); }); });
+
+  // ---------- Footer year ----------
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // ---------- Elements ----------
+  var recordBtn = document.getElementById('recordBtn');
+  var recordLabel = document.getElementById('recordLabel');
+  var pauseBtn = document.getElementById('pauseBtn');
+  var micToggle = document.getElementById('micToggle');
+  var qualitySelect = document.getElementById('qualitySelect');
+  var preview = document.getElementById('preview');
+  var stageEmpty = document.getElementById('stageEmpty');
+  var statusDot = document.getElementById('statusDot');
+  var statusText = document.getElementById('statusText');
+  var timerEl = document.getElementById('timer');
+  var recordingsList = document.getElementById('recordings');
+  var emptyNote = document.getElementById('emptyNote');
+
+  var micOn = false;
+  var mediaRecorder = null, displayStream = null, micStream = null;
+  var chunks = [], startTime = 0, pausedElapsed = 0, timerHandle = null, isPaused = false;
+
+  var supported = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia && window.MediaRecorder);
+  if(!supported){
+    statusText.textContent = 'Not supported on this browser';
+    recordBtn.disabled = true;
+    stageEmpty.textContent = 'This browser doesn\'t support screen capture in-tab. Try a desktop Chrome, Edge, or Firefox window.';
   }
-  if(typeof DeviceMotionEvent.requestPermission==="function"){
-   let p=await DeviceMotionEvent.requestPermission();
-   if(p!=="granted")throw Error("Permission denied");
+
+  micToggle.addEventListener('click', function(){
+    micOn = !micOn;
+    micToggle.setAttribute('aria-pressed', String(micOn));
+    micToggle.textContent = (micOn ? '🎙 Mic audio: On' : '🎙 Mic audio: Off');
+  });
+
+  function fmtTime(s){
+    var m = Math.floor(s/60), sec = Math.floor(s%60);
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
   }
-  if(!motionOK){
-   window.addEventListener("devicemotion",motion,{passive:true});
-   motionOK=true;
+  function tick(){
+    var elapsed = pausedElapsed + (isPaused ? 0 : (Date.now() - startTime)/1000);
+    timerEl.textContent = fmtTime(elapsed);
   }
-  $("sensor").textContent="READY";
-  $("sensor").className="v good";
-  log("Motion sensor ready");
-  return true;
- }catch(e){
-  $("sensor").textContent="DENIED";
-  $("sensor").className="v bad";
-  alert("Motion permission was not granted.");
-  return false;
- }
-}
 
-function motion(e){
- if(!armed||triggered)return;
- let a=e.acceleration;
- if(!a)return;
- let x=a.x||0,y=a.y||0,z=a.z||0;
- let force=Math.sqrt(x*x+y*y+z*z);
- let threshold=+($("sensitivity").value);
- if(force>threshold&&Date.now()-last>900){
-  last=Date.now();fire("Strong movement detected ("+force.toFixed(1)+" m/s²)");
- }
-}
-
-async function prepare(){
- if(armed)return;
- if($("pin").value.length<4&&
- !confirm("No PIN or a PIN shorter than 4 digits is set. Continue?"))return;
- let ok=await enableMotion();
- if(!ok)return;
- let sec=+$("delay").value;
- $("state").textContent="ARMING…";
- $("info").textContent="Place the phone down now.";
- $("arm").disabled=true;
- armTimer=setTimeout(async()=>{
-  armed=true;
-  $("status").classList.add("on");
-  $("state").textContent="ARMED";
-  $("info").textContent="Movement monitoring is active.";
-  $("arm").textContent="🛡️ PROTECTED";
-  await wake();
-  log("Protection armed");
-  notification("Phone Armed","Anti-theft monitoring is active.");
- },sec*1000);
-}
-
-function fire(reason){
- if(!armed||triggered)return;
- triggered=true;
- $("alarm").classList.add("show");
- $("why").textContent=reason;
- $("state").textContent="🚨 ALARM";
- $("info").textContent="Unauthorized movement detected!";
- log("ALARM: "+reason);
- siren(true);
- if(navigator.vibrate)navigator.vibrate([800,250,800,250,1200]);
- notification("🚨 ANTI-THEFT ALARM",reason);
-}
-
-function siren(loop=false){
- try{
-  if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();
-  if(ctx.state==="suspended")ctx.resume();
-  if(osc)try{osc.stop()}catch(e){}
-  osc=ctx.createOscillator();gain=ctx.createGain();
-  osc.type="square";osc.frequency.value=900;gain.gain.value=.2;
-  osc.connect(gain).connect(ctx.destination);osc.start();
-  let hi=false;
-  osc.timer=setInterval(()=>{
-   if(!osc)return;
-   hi=!hi;osc.frequency.setValueAtTime(hi?1400:650,ctx.currentTime);
-  },280);
- }catch(e){}
-}
-
-function stopSiren(){
- if(osc){
-  clearInterval(osc.timer);
-  try{osc.stop()}catch(e){}
-  osc=null;
- }
- if(navigator.vibrate)navigator.vibrate(0);
-}
-
-function testAlarm(){
- if(!ctx)try{ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}
- siren();
- setTimeout(stopSiren,3000);
- log("Siren test");
-}
-
-function disarm(){
- if(armTimer)clearTimeout(armTimer);
- if(triggered){
-  let p=$("pin").value;
-  if(p&&prompt("Enter disarm PIN:")!==p){
-   log("Incorrect PIN");
-   alert("Incorrect PIN");
-   return;
+  function pickMime(){
+    var options = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+    for(var i=0;i<options.length;i++){ if(MediaRecorder.isTypeSupported(options[i])) return options[i]; }
+    return '';
   }
- }
- armed=false;triggered=false;stopSiren();unlock();
- $("alarm").classList.remove("show");
- $("status").classList.remove("on");
- $("state").textContent="DISARMED";
- $("info").textContent="Protection is inactive.";
- $("arm").disabled=false;$("arm").textContent="🔒 ARM PHONE";
- log("Protection disarmed");
-}
 
-async function wake(){
- try{
-  if(navigator.wakeLock){
-   wlock=await navigator.wakeLock.request("screen");
-   $("wake").textContent="ON";
-   wlock.addEventListener("release",()=>{$("wake").textContent="OFF"});
+  async function startCapture(){
+    var quality = qualitySelect.value;
+    var videoConstraints = { cursor: 'always' };
+    if(quality !== 'source'){
+      var parts = quality.split('x');
+      videoConstraints.width = { ideal: parseInt(parts[0],10) };
+      videoConstraints.height = { ideal: parseInt(parts[1],10) };
+    }
+    try{
+      displayStream = await navigator.mediaDevices.getDisplayMedia({ video: videoConstraints, audio: true });
+    }catch(err){
+      statusText.textContent = 'Permission denied';
+      return;
+    }
+    var tracks = displayStream.getVideoTracks().concat(displayStream.getAudioTracks());
+    if(micOn){
+      try{
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        tracks = tracks.concat(micStream.getAudioTracks());
+      }catch(err){ /* mic denied — continue without it */ }
+    }
+    var combined = new MediaStream(tracks);
+    preview.srcObject = combined;
+    preview.style.display = 'block';
+    stageEmpty.style.display = 'none';
+    preview.play().catch(function(){});
+
+    chunks = [];
+    var mime = pickMime();
+    mediaRecorder = new MediaRecorder(combined, mime ? { mimeType: mime } : undefined);
+    mediaRecorder.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
+    mediaRecorder.onstop = onRecordingStop;
+    mediaRecorder.start(1000);
+
+    displayStream.getVideoTracks()[0].addEventListener('ended', function(){ if(mediaRecorder && mediaRecorder.state !== 'inactive') stopCapture(); });
+
+    startTime = Date.now(); pausedElapsed = 0; isPaused = false;
+    timerHandle = setInterval(tick, 250);
+
+    recordBtn.classList.add('recording');
+    recordBtn.setAttribute('aria-label','Stop recording');
+    recordLabel.textContent = 'Tap to stop';
+    statusDot.classList.add('live');
+    statusText.textContent = 'Recording';
+    pauseBtn.style.display = 'inline-flex';
+    pauseBtn.textContent = '⏸ Pause';
+    qualitySelect.disabled = true; micToggle.disabled = true;
   }
- }catch(e){}
-}
-function unlock(){
- if(wlock){wlock.release().catch(()=>{});wlock=null}
- $("wake").textContent="OFF";
-}
 
-async function notification(title="Anti-Theft Alarm",body="Test notification"){
- try{
-  if(!("Notification"in window))return;
-  if(Notification.permission==="default")
-   await Notification.requestPermission();
-  if(Notification.permission==="granted")
-   new Notification(title,{body});
- }catch(e){}
-}
+  function stopCapture(){
+    if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    if(displayStream) displayStream.getTracks().forEach(function(t){ t.stop(); });
+    if(micStream) micStream.getTracks().forEach(function(t){ t.stop(); });
+    clearInterval(timerHandle);
+    recordBtn.classList.remove('recording');
+    recordBtn.setAttribute('aria-label','Start recording');
+    recordLabel.textContent = 'Tap to start recording';
+    statusDot.classList.remove('live');
+    statusText.textContent = 'Ready';
+    pauseBtn.style.display = 'none';
+    qualitySelect.disabled = false; micToggle.disabled = false;
+    preview.style.display = 'none'; stageEmpty.style.display = 'block';
+    preview.srcObject = null;
+  }
 
-function locate(){
- if(!navigator.geolocation)return alert("Geolocation unavailable.");
- $("loc").textContent="Requesting location…";
- navigator.geolocation.getCurrentPosition(p=>{
-  let a=p.coords.latitude.toFixed(5),b=p.coords.longitude.toFixed(5);
-  $("loc").textContent=a+", "+b;
-  log("Location captured");
- },()=>{$("loc").textContent="Location denied";});
-}
+  function onRecordingStop(){
+    var blob = new Blob(chunks, { type: 'video/webm' });
+    var url = URL.createObjectURL(blob);
+    var stamp = new Date();
+    var name = 'capture-' + stamp.toISOString().replace(/[:.]/g,'-').slice(0,19) + '.webm';
+    var sizeMB = (blob.size / (1024*1024)).toFixed(1);
+    var duration = timerEl.textContent;
 
-function clearLog(){
- count=0;$("events").textContent="0";
- $("log").innerHTML="<div>Log cleared.</div>";
-}
+    var li = document.createElement('li');
+    li.innerHTML =
+      '<div class="rec-meta">' +
+        '<div class="rec-name">' + name + '</div>' +
+        '<div class="rec-sub">' + duration + ' · ' + sizeMB + ' MB</div>' +
+      '</div>' +
+      '<div class="rec-actions">' +
+        '<a href="' + url + '" download="' + name + '">Save</a>' +
+        '<button type="button" class="del">Delete</button>' +
+      '</div>';
+    li.querySelector('.del').addEventListener('click', function(){
+      URL.revokeObjectURL(url);
+      li.remove();
+      emptyNote.style.display = recordingsList.children.length ? 'none' : 'block';
+    });
+    recordingsList.prepend(li);
+    emptyNote.style.display = 'none';
+    timerEl.textContent = '00:00';
+  }
 
-function theme(x){
- document.body.className=x;save();log("Theme: "+(x||"Light"));
-}
+  pauseBtn.addEventListener('click', function(){
+    if(!mediaRecorder) return;
+    if(!isPaused){
+      mediaRecorder.pause();
+      pausedElapsed += (Date.now() - startTime)/1000;
+      isPaused = true;
+      pauseBtn.textContent = '▶ Resume';
+      statusText.textContent = 'Paused';
+      statusDot.classList.remove('live');
+    } else {
+      mediaRecorder.resume();
+      startTime = Date.now();
+      isPaused = false;
+      pauseBtn.textContent = '⏸ Pause';
+      statusText.textContent = 'Recording';
+      statusDot.classList.add('live');
+    }
+  });
 
-if(navigator.getBattery){
- navigator.getBattery().then(b=>{
-  function bat(){$("battery").textContent=Math.round(b.level*100)+"%"+(b.charging?" ⚡":"")}
-  bat();b.addEventListener("levelchange",bat);b.addEventListener("chargingchange",bat);
- });
-}
-
-document.addEventListener("visibilitychange",()=>{
- if(document.visibilityState==="visible"&&armed)wake();
-});
+  recordBtn.addEventListener('click', function(){
+    if(recordBtn.classList.contains('recording')) stopCapture();
+    else startCapture();
+  });
+})();
 </script>
 </body>
 </html>
