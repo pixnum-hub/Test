@@ -1,377 +1,329 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#07111f">
-<link rel="manifest" href="manifest.json">
-<title>SKYORA</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PixMin — Image Compressor</title>
 <style>
-:root{--bg:#07111f;--card:#101d2d;--card2:#17283c;--txt:#f5f8ff;--muted:#91a3b8;--accent:#63c7ff;--line:#294158;--ok:#52e6a0;--warn:#ffd34d;--bad:#ff6478}
-body.light{--bg:#edf3f8;--card:#fff;--card2:#f5f8fb;--txt:#102033;--muted:#617387;--line:#d5e0e9}
-body.oled{--bg:#000;--card:#050505;--card2:#090909}
-body.hc{--bg:#000;--card:#111;--card2:#181818;--txt:#fff;--muted:#fff;--accent:#ff0;--line:#fff}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px system-ui,sans-serif}
-.app{max-width:900px;margin:auto;padding:12px;position:relative}.hero{text-align:center;padding:12px 50px}
-.logo{font-size:42px}h1{margin:0;letter-spacing:5px}h2,h3,p{margin:6px 0}p,small{color:var(--muted)}
-button,input,select{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:12px;padding:9px}
-button{cursor:pointer}.primary{background:var(--accent);color:#00131e;font-weight:800;border:0}
-.settings{position:absolute;right:12px;top:12px}.search{display:flex;gap:6px}.search input{flex:1}
-.card{background:linear-gradient(145deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:19px;padding:13px;margin:9px 0}
-.title{font-weight:900;font-size:17px;margin-bottom:10px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
-.stat{padding:9px;border:1px solid var(--line);border-radius:13px;background:#ffffff05}.stat b{display:block;font-size:15px;margin-top:3px}
-.current{text-align:center}.temp{font-size:64px;font-weight:900}.status{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:20px;padding:5px 11px}.dot{width:9px;height:9px;border-radius:50%;background:var(--ok)}
-.status.stale .dot{background:var(--warn)}.status.offline .dot{background:var(--bad)}
-.scroll{display:flex;gap:7px;overflow:auto}.item{min-width:88px;text-align:center;border:1px solid var(--line);border-radius:13px;padding:8px}
-.item b{display:block;font-size:16px;margin:4px}.results button{width:100%;display:block;text-align:left;margin:4px 0}
-.radar{width:100%;height:300px;object-fit:cover;background:#000;border-radius:15px;border:1px solid var(--line)}
-.bar{height:9px;border-radius:10px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;background:var(--accent)}
-canvas{width:100%;height:190px;background:#0002;border-radius:12px}.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{border:1px solid var(--line);border-radius:20px;padding:6px 9px}
-.modal{display:none;position:fixed;inset:0;background:#000b;z-index:30;padding:15px}.modal.show{display:block}
-.modalbox{max-width:520px;margin:30px auto}.close{float:right}footer{text-align:center;color:var(--muted);font-size:10px;padding:20px}
-@media(min-width:650px){.grid{grid-template-columns:repeat(4,1fr)}}
+  :root{
+    --bg:#F5F2EA; --surface:#FFFFFF; --surface-2:#EFEBE0; --text:#1C1A16; --muted:#8A8272;
+    --accent:#C25E2E; --accent-text:#FFF8EF; --border:#DDD6C6; --ring:#C25E2E55;
+    --radius:14px; --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  html[data-theme="dark"]{
+    --bg:#16151A; --surface:#1E1D23; --surface-2:#26242C; --text:#EDE9E1; --muted:#948C7C;
+    --accent:#E58A4E; --accent-text:#1A1410; --border:#332F38; --ring:#E58A4E55;
+  }
+  html[data-theme="oled"]{
+    --bg:#000000; --surface:#0A0A0A; --surface-2:#131313; --text:#ECE8E0; --muted:#8C867A;
+    --accent:#E58A4E; --accent-text:#000000; --border:#232323; --ring:#E58A4E55;
+  }
+  html[data-theme="hc"]{
+    --bg:#000000; --surface:#000000; --surface-2:#000000; --text:#FFFFFF; --muted:#FFFFFF;
+    --accent:#FFD400; --accent-text:#000000; --border:#FFFFFF; --ring:#FFD40088;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+    min-height:100dvh; display:flex; flex-direction:column; transition:background .2s,color .2s;}
+  .wrap{max-width:640px; margin:0 auto; padding:20px 18px 8px; width:100%; flex:1;}
+  header.top{text-align:center; padding:18px 0 6px;}
+  .eyebrow{font:700 11px/1 var(--mono); letter-spacing:.18em; text-transform:uppercase; color:var(--accent);}
+  h1{font-size:clamp(28px,7vw,40px); margin:8px 0 4px; letter-spacing:-.02em; font-weight:800;}
+  .sub{color:var(--muted); font-size:14.5px; margin:0 auto; max-width:46ch;}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:16px;}
+
+  .drop{border:2px dashed var(--border); border-radius:var(--radius); padding:34px 16px; text-align:center;
+    cursor:pointer; background:var(--surface-2); transition:border-color .15s, background .15s;}
+  .drop.drag{border-color:var(--accent); background:var(--ring);}
+  .drop .icon{font-size:30px; display:block; margin-bottom:8px;}
+  .drop b{color:var(--text);}
+  .drop small{display:block; color:var(--muted); margin-top:4px; font-size:12.5px;}
+  input[type=file]{display:none;}
+
+  .controls{display:grid; gap:14px; margin-top:16px;}
+  .row{display:flex; justify-content:space-between; align-items:baseline; font:700 11px/1 var(--mono);
+    letter-spacing:.1em; text-transform:uppercase; color:var(--muted);}
+  .row span.val{color:var(--accent);}
+  input[type=range]{width:100%; accent-color:var(--accent); height:22px;}
+  select{width:100%; background:var(--surface-2); color:var(--text); border:1px solid var(--border);
+    border-radius:10px; padding:9px 10px; font-family:var(--sans); font-size:14px;}
+  .fmt-row{display:flex; gap:8px;}
+  .fmt-row select{flex:1;}
+
+  .filmstrip{margin-top:18px;}
+  .reel{position:relative; height:34px; border-radius:8px; background:var(--surface-2); overflow:hidden;
+    border:1px solid var(--border);}
+  .reel .fill{position:absolute; inset:0; width:0%; background:var(--accent); transition:width .35s ease;}
+  .reel .holes{position:absolute; inset:0; display:flex; justify-content:space-between; align-items:center;
+    padding:0 6px; pointer-events:none;}
+  .reel .holes i{width:6px; height:6px; border-radius:50%; background:var(--bg); opacity:.55;}
+  .ratio-label{display:flex; justify-content:space-between; margin-top:8px; font:700 13px/1 var(--mono);}
+  .ratio-label .pct{color:var(--accent); font-size:20px;}
+
+  .stats{display:flex; gap:10px; margin-top:14px;}
+  .stat{flex:1; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px;}
+  .stat span{display:block; font:700 10px/1 var(--mono); letter-spacing:.1em; color:var(--muted); margin-bottom:4px;}
+  .stat b{font-size:16px;}
+
+  .preview{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
+  .preview figure{margin:0; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; overflow:hidden;}
+  .preview img{display:block; width:100%; height:120px; object-fit:cover;}
+  .preview figcaption{font:700 10px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
+    padding:6px 8px;}
+
+  .fallback-hint{margin:10px 0 0; font-size:12px; color:var(--muted); text-align:center;}
+  .fallback-hint a{color:var(--accent); font-weight:700;}
+  .actions{display:flex; gap:10px; margin-top:16px;}
+  button{font:700 13px/1 var(--sans); letter-spacing:.02em; border-radius:10px; padding:13px 16px; border:1px solid var(--border);
+    background:var(--surface-2); color:var(--text); cursor:pointer; flex:1;}
+  button:active{transform:scale(.98);}
+  button.primary{background:var(--accent); color:var(--accent-text); border-color:var(--accent);}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  button:focus-visible, .drop:focus-visible, .seg button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  footer{margin-top:auto; padding:22px 16px 26px; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:12px; text-align:center; border-top:1px solid var(--border);}
+  .seg{display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px;}
+  .seg button{flex:none; padding:7px 12px; border:none; border-radius:999px; background:transparent; font:700 11px/1 var(--mono);
+    letter-spacing:.06em;}
+  .seg button.active{background:var(--accent); color:var(--accent-text);}
+  .copyright{color:var(--muted); font-size:12px; line-height:1.5;}
+
+  @media (min-width:560px){ .wrap{padding-top:36px;} }
 </style>
 </head>
 <body>
-<div class="app">
-<button class="settings" onclick="settings()">⚙️</button>
+<div class="wrap">
+  <header class="top">
+    <h1>PixMin</h1>
+    <p class="sub">Image Compressor Desk</p>
+  </header>
 
-<header class="hero">
-<div class="logo">🌦️</div><h1>SKYORA</h1>
-<p>PREMIUM WEATHER INTELLIGENCE</p>
-<div id="status" class="status"><i class="dot"></i><span>CONNECTING</span></div>
-<p id="updated">Loading weather services…</p>
-</header>
+  <div class="card">
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose an image to compress">
+      <span class="icon">🖼️</span>
+      <b>Tap to choose a photo</b>
+      <small>or drag &amp; drop · JPG, PNG, WEBP</small>
+      <input type="file" id="file" accept="image/*">
+    </div>
 
-<div class="search">
-<input id="query" placeholder="Search city">
-<button class="primary" onclick="searchCity()">Search</button>
-</div><div id="results"></div>
+    <div class="controls" id="controls" hidden>
+      <div>
+        <div class="row"><span>Quality</span><span class="val" id="qVal">75%</span></div>
+        <input type="range" id="quality" min="1" max="100" value="75">
+      </div>
+      <div>
+        <div class="row"><span>Max Width</span><span class="val" id="wVal">1600px</span></div>
+        <input type="range" id="maxw" min="200" max="4000" step="50" value="1600">
+      </div>
+      <div class="fmt-row">
+        <select id="format">
+          <option value="image/jpeg">JPEG</option>
+          <option value="image/webp">WEBP</option>
+          <option value="image/png">PNG</option>
+        </select>
+      </div>
+    </div>
 
-<p style="text-align:center">
-<button onclick="gps()">📍 GPS</button>
-<button onclick="refresh()">↻ Update</button>
-<button onclick="share()">↗ Share</button>
-<button onclick="exportData()">⇩ Export</button>
-</p>
+    <div class="filmstrip" id="filmstrip" hidden>
+      <div class="reel"><div class="fill" id="fill"></div>
+        <div class="holes" id="holes"></div>
+      </div>
+      <div class="ratio-label"><span>SAVED</span><span class="pct" id="pct">0%</span></div>
 
-<section class="card current">
-<h2 id="place">Kolkata, India</h2><div id="icon" class="logo">🌦️</div>
-<div id="temp" class="temp">--°</div><h3 id="condition">Loading…</h3>
-<p>Feels like <b id="feel">--</b></p>
-<div id="trend" class="chips"></div>
-</section>
+      <div class="stats">
+        <div class="stat"><span>Original</span><b id="origSize">–</b></div>
+        <div class="stat"><span>Compressed</span><b id="compSize">–</b></div>
+      </div>
 
-<section class="card"><div class="title">🌧️ PRECIPITATION INTELLIGENCE</div><div id="precip" class="grid"></div></section>
+      <div class="preview">
+        <figure><img id="origImg" alt="Original preview"><figcaption>Before</figcaption></figure>
+        <figure><img id="compImg" alt="Compressed preview"><figcaption>After</figcaption></figure>
+      </div>
 
-<section class="card">
-<div class="title">📡 RADAR OBSERVATION</div>
-<img id="radar" class="radar" alt="Weather radar">
-<p id="radarInfo">Loading radar…</p>
-</section>
-
-<section class="card"><div class="title">🕒 24-HOUR PRECIPITATION</div><div id="rain24" class="scroll"></div></section>
-
-<section class="card"><div class="title">🌡️ 48-HOUR TIMELINE</div><div id="hours" class="scroll"></div></section>
-
-<section class="card"><div class="title">📅 16-DAY FORECAST</div><div id="days" class="scroll"></div></section>
-
-<section class="card"><div class="title">📈 WEATHER CHARTS</div>
-<canvas id="chart"></canvas>
-<p id="chartInfo">Temperature / precipitation trend</p></section>
-
-<section class="card"><div class="title">🌤️ CURRENT CONDITIONS</div><div id="current" class="grid"></div></section>
-
-<section class="card"><div class="title">☀️ SUN & SKY</div><div id="sun" class="grid"></div></section>
-
-<section class="card"><div class="title">🌙 MOON</div><div id="moon" class="grid"></div></section>
-
-<section class="card"><div class="title">🌎 AIR QUALITY</div><div id="air" class="grid"></div></section>
-
-<section class="card"><div class="title">🌾 POLLEN / DUST / SMOKE</div><div id="pollution" class="grid"></div></section>
-
-<section class="card"><div class="title">🧠 FORECAST INTELLIGENCE</div><div id="intel" class="grid"></div></section>
-
-<section class="card"><div class="title">🏃 ACTIVITY SCORES</div><div id="scores" class="grid"></div></section>
-
-<section class="card"><div class="title">🏠 HOME COMFORT</div><div id="home" class="grid"></div></section>
-
-<section class="card"><div class="title">✈️ TRAVEL & OUTDOOR PLANNER</div><div id="travel" class="grid"></div></section>
-
-<section class="card"><div class="title">🎒 PACKING ASSISTANT</div><div id="pack" class="chips"></div></section>
-
-<section class="card"><div class="title">⚠️ ALERTS & RECOMMENDATIONS</div><div id="alerts"></div></section>
-
-<section class="card"><div class="title">⭐ SAVED / RECENT LOCATIONS</div><div id="saved" class="scroll"></div></section>
-
-<section class="card"><div class="title">📊 PERSONAL WEATHER STATISTICS</div><div id="stats" class="grid"></div></section>
-
-<footer>
-Weather & Air Quality: Open-Meteo • Radar: RainViewer<br>
-© <span id="year"></span> Manik Roy 2026. All Rights Reserved.
-</footer>
+      <div class="actions">
+        <button id="resetBtn">Choose Another</button>
+        <button id="downloadBtn" class="primary" disabled>Download</button>
+      </div>
+      <p class="fallback-hint">
+        Download not starting? <a id="openLink" href="#" target="_blank" rel="noopener">Open image in a new tab</a> and press &amp; hold (or right-click) to save.
+      </p>
+    </div>
+  </div>
 </div>
 
-<div id="modal" class="modal"><div class="modalbox card">
-<button class="close" onclick="settings()">✕</button><h2>⚙️ SKYORA Settings</h2>
-<div class="grid">
-<button onclick="theme('dark')">🌙 Dark</button><button onclick="theme('light')">☀️ Light</button>
-<button onclick="theme('oled')">⬛ OLED</button><button onclick="theme('hc')">◐ HC</button>
-</div><br>
-<button onclick="fahrenheit=!fahrenheit;render()">°C / °F</button>
-<button onclick="notify()">🔔 Notifications</button>
-<button onclick="autoGPS()">📍 Auto GPS</button>
-<br><br><small>Automatic refresh: 60 seconds<br>Radar refresh: 5 minutes</small>
-</div></div>
+<footer>
+  <div class="seg" id="themeSeg" role="group" aria-label="Theme">
+    <button data-theme="light">Light</button>
+    <button data-theme="dark">Dark</button>
+    <button data-theme="oled">OLED</button>
+    <button data-theme="hc">HC</button>
+  </div>
+  <div class="copyright">© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
+</footer>
 
 <script>
-const API="https://api.open-meteo.com/v1/forecast",
-AQ="https://air-quality-api.open-meteo.com/v1/air-quality",
-GEO="https://geocoding-api.open-meteo.com/v1/search",
-RV="https://api.rainviewer.com/public/weather-maps.json";
-let lat=22.5726,lon=88.3639,name="Kolkata, India",W,A,R;
-let fahrenheit=false,results=[],locations=[],lastUpdate=0;
-const $=x=>document.getElementById(x);
-const WX={
-0:["☀️","Clear"],1:["🌤️","Mainly clear"],2:["⛅","Partly cloudy"],3:["☁️","Overcast"],
-45:["🌫️","Fog"],48:["🌫️","Fog"],51:["🌦️","Drizzle"],53:["🌧️","Drizzle"],
-55:["🌧️","Heavy drizzle"],61:["🌧️","Rain"],63:["🌧️","Rain"],65:["🌧️","Heavy rain"],
-71:["🌨️","Snow"],73:["❄️","Snow"],75:["❄️","Heavy snow"],80:["🌦️","Showers"],
-81:["🌧️","Showers"],82:["⛈️","Heavy showers"],95:["⛈️","Thunderstorm"],
-96:["⛈️","Storm"],99:["⛈️","Severe storm"]};
-const D=c=>WX[c]||["🌡️","Weather"];
-const T=v=>fahrenheit?Math.round(v*9/5+32)+"°":Math.round(v)+"°";
-const K=v=>Math.round(v)+" km/h";
-const TM=x=>new Date(x).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
-const DD=x=>new Date(x).toLocaleDateString([],{weekday:"short",month:"short",day:"numeric"});
-const S=(a,b)=>`<div class="stat">${a}<b>${b}</b></div>`;
-function theme(x){document.body.className=x;localStorage.theme=x}
-theme(localStorage.theme||"dark");
-function settings(){$("modal").classList.toggle("show")}
-function st(c,t){$("status").className="status "+c;$("status span").textContent=t}
-async function refresh(){
-st("","UPDATING");
-try{
-let current="temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m";
-let min="precipitation,rain,showers,snowfall";
-let hourly="temperature_2m,relative_humidity_2m,apparent_temperature,dew_point_2m,precipitation_probability,precipitation,rain,showers,snowfall,weather_code,visibility,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index";
-let daily="weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_probability_max,sunrise,sunset,daylight_duration,sunshine_duration,uv_index_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_dominant";
-let u=`${API}?latitude=${lat}&longitude=${lon}&timezone=auto&current=${current}&minutely_15=${min}&past_minutely_15=96&forecast_minutely_15=16&hourly=${hourly}&past_hours=24&forecast_hours=120&daily=${daily}&forecast_days=16`;
-let aq=`${AQ}?latitude=${lat}&longitude=${lon}&timezone=auto&current=pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,ozone,sulphur_dioxide,us_aqi,alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen,dust&hourly=pm2_5,pm10,us_aqi,dust&forecast_days=2`;
-[W,A,R]=await Promise.all([
- fetch(u,{cache:"no-store"}).then(x=>x.json()),
- fetch(aq,{cache:"no-store"}).then(x=>x.json()),
- fetch(RV,{cache:"no-store"}).then(x=>x.json())
-]);
-lastUpdate=Date.now();
-localStorage.skyora=JSON.stringify({lat,lon,name,W,A,R,time:lastUpdate});
-saveLocation();render();st("","LIVE");
-$("updated").textContent="Latest data "+new Date().toLocaleTimeString();
-}catch(e){
-let x=localStorage.skyora;
-if(x){let q=JSON.parse(x);({lat,lon,name,W,A,R}=q);render();st("stale","STALE");$("updated").textContent="Showing cached data"}
-else{st("offline","OFFLINE");$("updated").textContent="Network unavailable"}
-}}
-function render(){
-let c=W.current,h=W.hourly,d=W.daily,z=D(c.weather_code);
-$("place").textContent=name;$("icon").textContent=z[0];$("temp").textContent=T(c.temperature_2m);
-$("condition").textContent=z[1];$("feel").textContent=T(c.apparent_temperature);
-trend(c,d);precip(c,h,d);radar();rain24(h);hours(h);days(d);charts(h);current(c);sun(d);moon();air();pollution();
-intel(c,h,d);scores(c,h,d);home(c);travel(h,d);pack(c,d);alerts(c,d);saved();stats(h,d);
-}
-function trend(c,d){
-$("trend").innerHTML=[
-"🌡️ "+(d.temperature_2m_max[0]>d.temperature_2m_max[1]?"↑":"↓")+" Temperature",
-"🌧️ "+(d.precipitation_sum[0]>d.precipitation_sum[1]?"↑":"↓")+" Rain",
-"💨 "+(d.wind_speed_10m_max[0]>d.wind_speed_10m_max[1]?"↑":"↓")+" Wind",
-"☁️ "+(d.precipitation_probability_max[0]>50?"Wet pattern":"Dry pattern")
-].map(x=>`<span class=chip>${x}</span>`).join("");
-}
-function precip(c,h,d){
-let m=W.minutely_15,a=m.precipitation,n=a.length;
-let sum=q=>a.slice(-q).reduce((x,y)=>x+(y||0),0);
-$("precip").innerHTML=[
-["🔴 Rain now",c.rain.toFixed(2)+" mm"],
-["🌦️ Showers",c.showers.toFixed(2)+" mm"],
-["💧 Precip. 15m",c.precipitation.toFixed(2)+" mm"],
-["❄️ Snow",c.snowfall.toFixed(2)+" cm"],
-["🕐 Last 1h",sum(4).toFixed(2)+" mm"],
-["🕒 Last 3h",sum(12).toFixed(2)+" mm"],
-["🕕 Last 6h",sum(24).toFixed(2)+" mm"],
-["📅 Today",d.precipitation_sum[0].toFixed(1)+" mm"],
-["☔ Rain chance",d.precipitation_probability_max[0]+"%"],
-["🌧️ Rain today",d.rain_sum[0].toFixed(1)+" mm"],
-["🌦️ Showers today",d.showers_sum[0].toFixed(1)+" mm"],
-["⏱️ Data time",TM(m.time[n-1])]
-].map(x=>S(...x)).join("");
-}
-function radar(){
-if(!R?.radar?.past?.length){$("radarInfo").textContent="Radar unavailable";return}
-let f=R.radar.past[R.radar.past.length-1],age=Math.round(Date.now()/1000-f.time);
-$("radar").src=`${R.host}${f.path}/512/7/${lat}/${lon}/2/1_1.png`;
-$("radarInfo").textContent=`Radar frame ${new Date(f.time*1000).toLocaleTimeString()} • ${Math.round(age/60)} min old • radar observation`;
-}
-function rain24(h){
-$("rain24").innerHTML=h.time.slice(0,24).map((x,i)=>`<div class=item><small>${TM(x)}</small><div>🌧️</div><b>${(h.precipitation[i]||0).toFixed(1)}mm</b><small>${h.precipitation_probability[i]}%</small></div>`).join("");
-}
-function hours(h){
-$("hours").innerHTML=h.time.slice(0,48).map((x,i)=>`<div class=item><small>${TM(x)}</small><div>${D(h.weather_code[i])[0]}</div><b>${T(h.temperature_2m[i])}</b><small>💧${h.precipitation_probability[i]}%</small></div>`).join("");
-}
-function days(d){
-$("days").innerHTML=d.time.map((x,i)=>`<div class=item><small>${DD(x)}</small><div>${D(d.weather_code[i])[0]}</div><b>${T(d.temperature_2m_max[i])}</b><small>${d.precipitation_sum[i].toFixed(1)}mm</small></div>`).join("");
-}
-function charts(h){
-let c=$("chart"),x=c.getContext("2d"),w=c.width=c.clientWidth*2,ht=c.height=380;
-x.clearRect(0,0,w,ht);x.beginPath();x.strokeStyle=getComputedStyle(document.body).getPropertyValue("--accent");
-let v=h.temperature_2m.slice(0,24),mn=Math.min(...v),mx=Math.max(...v);
-v.forEach((n,i)=>{let X=i*w/23,Y=ht-(n-mn)/(mx-mn||1)*300-30;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.stroke();
-$("chartInfo").textContent=`24h temperature range ${T(mn)} to ${T(mx)} • precipitation plotted in timeline above`;
-}
-function current(c){
-$("current").innerHTML=[
-["🌡️ Temperature",T(c.temperature_2m)],["🤚 Feels",T(c.apparent_temperature)],
-["💧 Humidity",c.relative_humidity_2m+"%"],["💨 Wind",K(c.wind_speed_10m)],
-["🧭 Direction",Math.round(c.wind_direction_10m)+"°"],["💨 Gust",K(c.wind_gusts_10m)],
-["☁️ Cloud",c.cloud_cover+"%"],["🔽 Pressure",Math.round(c.pressure_msl)+" hPa"],
-["🏔️ Surface",Math.round(c.surface_pressure)+" hPa"]
-].map(x=>S(...x)).join("");
-}
-function sun(d){
-let day=d.daylight_duration[0]||0;
-$("sun").innerHTML=[
-["🌅 Sunrise",TM(d.sunrise[0])],["🌇 Sunset",TM(d.sunset[0])],
-["☀️ Daylight",Math.round(day/3600)+"h "+Math.round(day%3600/60)+"m"],
-["☀️ UV",d.uv_index_max[0]],["🌤️ Sunshine",Math.round((d.sunshine_duration[0]||0)/3600)+"h"],
-["💨 Max wind",K(d.wind_speed_10m_max[0])]
-].map(x=>S(...x)).join("");
-}
-function moon(){
-let now=new Date(),cycle=29.53059;
-let known=new Date("2000-01-06T18:14:00Z"),age=((now-known)/86400000)%cycle;
-if(age<0)age+=cycle;let phase=age/cycle,emoji=phase<.125?"🌑":phase<.25?"🌒":phase<.375?"🌓":phase<.625?"🌕":phase<.75?"🌗":phase<.875?"🌘":"🌑";
-$("moon").innerHTML=[["Phase",emoji],["Age",age.toFixed(1)+" days"],["Illumination",Math.round((1-Math.cos(phase*2*Math.PI))/2*100)+"%"],["Cycle",cycle+" days"]].map(x=>S(...x)).join("");
-}
-function air(){
-let c=A?.current;if(!c)return;
-$("air").innerHTML=[
-["AQI",c.us_aqi??"--"],["PM2.5",Math.round(c.pm2_5??0)+" μg/m³"],
-["PM10",Math.round(c.pm10??0)+" μg/m³"],["O₃",Math.round(c.ozone??0)+" μg/m³"],
-["NO₂",Math.round(c.nitrogen_dioxide??0)+" μg/m³"],["CO",Math.round(c.carbon_monoxide??0)+" μg/m³"],
-["SO₂",Math.round(c.sulphur_dioxide??0)+" μg/m³"]
-].map(x=>S(...x)).join("");
-}
-function pollution(){
-let c=A?.current||{};
-$("pollution").innerHTML=[
-["🌾 Grass",c.grass_pollen??"--"],["🌿 Birch",c.birch_pollen??"--"],
-["🌳 Alder",c.alder_pollen??"--"],["🌾 Mugwort",c.mugwort_pollen??"--"],
-["🌿 Olive",c.olive_pollen??"--"],["🌾 Ragweed",c.ragweed_pollen??"--"],
-["🌫️ Dust",c.dust??"--"],["🌎 AQI",c.us_aqi??"--"]
-].map(x=>S(...x)).join("");
-}
-function score(v){return Math.max(0,Math.min(100,Math.round(v)))}
-function scores(c,h,d){
-let rain=d.precipitation_probability_max[0],wind=c.wind_speed_10m,uv=d.uv_index_max[0];
-let outdoor=score(100-rain-wind*1.5-uv*3);
-$("scores").innerHTML=[
-["🚶 Walking",score(outdoor+8)],["🏃 Running",score(outdoor-wind*1.5)],
-["🚴 Cycling",score(outdoor-wind)],["🚗 Driving",score(100-rain*0.8-wind)],
-["📷 Photography",score(outdoor+uv>80?outdoor-15:outdoor+5)],
-["⭐ Stargazing",score(100-c.cloud_cover-rain)],["🧺 Picnic",score(outdoor)],
-["🌱 Garden",score(100-rain*.3)]
-].map(x=>S(...x)).join("");
-}
-function home(c){
-let humid=c.relative_humidity_2m,temp=c.temperature_2m;
-$("home").innerHTML=[
-["🪟 Windows",humid<70&&temp>18?"Open":"Keep closed"],
-["❄️ AC",temp>29?"Recommended":"Optional"],
-["🌀 Fan",temp>25?"Recommended":"Optional"],
-["😴 Sleep",score(100-Math.abs(temp-22)*5-humid*.15)],
-["👕 Comfort",score(100-Math.abs(temp-22)*4-humid*.1)],
-["🧺 Laundry",score(100-humid*.5-c.precipitation*30)]
-].map(x=>S(...x)).join("");
-}
-function travel(h,d){
-let p=d.precipitation_probability_max[0],best=0;
-for(let i=0;i<24;i++)if(h.precipitation_probability[i]<p){p=h.precipitation_probability[i];best=i}
-$("travel").innerHTML=[
-["✈️ Travel",score(100-d.precipitation_probability_max[0]-cWind(d)*1)],
-["🚗 Road",score(100-d.precipitation_probability_max[0]*.7)],
-["🕐 Best time",TM(h.time[best])],["🌧️ Departure",h.precipitation_probability[0]+"%"],
-["🏁 Arrival",h.precipitation_probability[Math.min(23,best)]+"%"],
-["🧳 Comfort",score(100-d.precipitation_probability_max[0])]
-].map(x=>S(...x)).join("");
-}
-function cWind(d){return Math.min(30,d.wind_speed_10m_max[0])}
-function pack(c,d){
-let a=[];if(d.precipitation_probability_max[0]>40)a.push("☂️ Umbrella");
-if(d.uv_index_max[0]>5)a.push("🧴 Sunscreen");if(c.temperature_2m<18)a.push("🧥 Jacket");
-if(c.temperature_2m>30)a.push("🧢 Hat");if(c.precipitation>0)a.push("👟 Waterproof footwear");
-if(!a.length)a.push("👕 Light comfortable clothing");
-$("pack").innerHTML=a.map(x=>`<span class=chip>${x}</span>`).join("");
-}
-function intel(c,h,d){
-let p=d.precipitation_probability_max[0],stable=Math.abs(d.temperature_2m_max[0]-d.temperature_2m_max[1]);
-$("intel").innerHTML=[
-["🎯 Confidence",score(100-Math.abs(50-p)*.5)],
-["📊 Stability",score(100-stable*5)],
-["🔄 Change",Math.round(stable)+"°"],
-["🌧️ Pattern",p>60?"Wet":"Mostly dry"],
-["☀️ Dry period",p<30?"Likely":"Limited"],
-["🌧️ Wet period",p>60?"Likely":"Low"],
-["⭐ Best window",bestWindow(h)],
-["⚠️ Worst window",worstWindow(h)],
-["🕐 Forecast age",Math.round((Date.now()-new Date(W.current.time))/60000)+" min"]
-].map(x=>S(...x)).join("");
-}
-function bestWindow(h){let i=0;for(let n=1;n<24;n++)if(h.precipitation_probability[n]<h.precipitation_probability[i])i=n;return TM(h.time[i])}
-function worstWindow(h){let i=0;for(let n=1;n<24;n++)if(h.precipitation_probability[n]>h.precipitation_probability[i])i=n;return TM(h.time[i])}
-function alerts(c,d){
-let a=[];if(c.precipitation>0)a.push("🌧️ Rain currently detected by model");
-if(d.precipitation_probability_max[0]>=70)a.push("☔ High precipitation probability");
-if(c.wind_gusts_10m>=45)a.push("💨 Strong wind gusts");
-if(c.weather_code>=95)a.push("⛈️ Thunderstorm condition");
-if(d.uv_index_max[0]>=8)a.push("☀️ Very high UV");
-if(A?.current?.us_aqi>150)a.push("🌎 Poor air quality");
-$("alerts").innerHTML=a.length?a.map(x=>`<p>${x}</p>`).join(""):"<p>✓ No major automated alert detected.</p>";
-}
-function saveLocation(){
-locations=JSON.parse(localStorage.locations||"[]").filter(x=>x.name!==name);
-locations.unshift({name,lat,lon});locations=locations.slice(0,10);
-localStorage.locations=JSON.stringify(locations);
-}
-function saved(){
-locations=JSON.parse(localStorage.locations||"[]");
-$("saved").innerHTML=locations.map((x,i)=>`<button onclick="pick(${i})">${x.name}</button>`).join("")||"<small>No saved locations</small>";
-}
-function pick(i){let x=locations[i];lat=x.lat;lon=x.lon;name=x.name;refresh()}
-async function searchCity(){
-let q=$("query").value.trim();if(!q)return;
-try{let r=await fetch(`${GEO}?name=${encodeURIComponent(q)}&count=8&language=en&format=json`).then(x=>x.json());
-results=r.results||[];$("results").innerHTML=results.map((x,i)=>`<button onclick="choose(${i})"><b>${x.name}</b><br><small>${x.admin1||""} ${x.country||""}</small></button>`).join("");
-}catch(e){$("results").textContent="Search unavailable"}
-}
-function choose(i){let x=results[i];lat=x.latitude;lon=x.longitude;name=`${x.name}, ${x.country}`;$("results").innerHTML="";refresh()}
-function gps(){navigator.geolocation?.getCurrentPosition(p=>{lat=p.coords.latitude;lon=p.coords.longitude;name="My Location";refresh()},()=>alert("GPS unavailable"))}
-function autoGPS(){gps();localStorage.autoGPS=1}
-function notify(){if("Notification"in window)Notification.requestPermission()}
-function exportData(){
-let b=new Blob([JSON.stringify({location:name,weather:W,air:A},null,2)],{type:"application/json"});
-let a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="skyora-weather.json";a.click();
-}
-async function share(){
-let text=`SKYORA • ${name}\n${T(W.current.temperature_2m)} • ${D(W.current.weather_code)[1]}\nRain: ${W.current.precipitation.toFixed(2)} mm/15m`;
-if(navigator.share)await navigator.share({title:"SKYORA Weather",text});else navigator.clipboard?.writeText(text);
-}
-$("year").textContent=new Date().getFullYear();
-$("query").onkeydown=e=>e.key==="Enter"&&searchCity();
-refresh();
-setInterval(refresh,60000);
-setInterval(()=>W&&radar(),300000);
-if(localStorage.autoGPS)setInterval(gps,1800000);
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+(function(){
+  // ---- theme ----
+  var root = document.documentElement;
+  var seg = document.getElementById('themeSeg');
+  var saved = localStorage.getItem('pixmin-theme') ||
+    (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  applyTheme(saved);
+  seg.addEventListener('click', function(e){
+    var btn = e.target.closest('button'); if(!btn) return;
+    applyTheme(btn.dataset.theme);
+  });
+  function applyTheme(name){
+    root.setAttribute('data-theme', name);
+    localStorage.setItem('pixmin-theme', name);
+    Array.prototype.forEach.call(seg.children, function(b){
+      b.classList.toggle('active', b.dataset.theme === name);
+    });
+  }
+
+  // ---- footer year ----
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // ---- filmstrip sprocket holes ----
+  var holes = document.getElementById('holes');
+  for (var i=0;i<14;i++){ var d=document.createElement('i'); holes.appendChild(d); }
+
+  // ---- compressor ----
+  var drop = document.getElementById('drop');
+  var fileInput = document.getElementById('file');
+  var controls = document.getElementById('controls');
+  var filmstrip = document.getElementById('filmstrip');
+  var qualityEl = document.getElementById('quality');
+  var maxwEl = document.getElementById('maxw');
+  var formatEl = document.getElementById('format');
+  var qVal = document.getElementById('qVal');
+  var wVal = document.getElementById('wVal');
+  var origImg = document.getElementById('origImg');
+  var compImg = document.getElementById('compImg');
+  var origSize = document.getElementById('origSize');
+  var compSize = document.getElementById('compSize');
+  var fill = document.getElementById('fill');
+  var pct = document.getElementById('pct');
+  var downloadBtn = document.getElementById('downloadBtn');
+  var resetBtn = document.getElementById('resetBtn');
+  var openLink = document.getElementById('openLink');
+
+  var currentImage = null, originalBytes = 0, compressedBlob = null, srcName = 'image';
+
+  drop.addEventListener('click', function(){ fileInput.click(); });
+  drop.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' ') fileInput.click(); });
+  fileInput.addEventListener('change', function(e){ if(e.target.files[0]) loadFile(e.target.files[0]); });
+
+  ['dragover','dragenter'].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('drag'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('drag'); });
+  });
+  drop.addEventListener('drop', function(e){
+    var f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) loadFile(f);
+  });
+
+  function loadFile(file){
+    srcName = (file.name || 'image').replace(/\.[^.]+$/, '');
+    originalBytes = file.size;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        currentImage = img;
+        origImg.src = e.target.result;
+        controls.hidden = false;
+        filmstrip.hidden = false;
+        maxwEl.max = Math.max(img.width, 4000);
+        compress();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function onControlChange(){
+    qVal.textContent = qualityEl.value + '%';
+    wVal.textContent = maxwEl.value + 'px';
+    var pngNote = formatEl.value === 'image/png';
+    qualityEl.disabled = pngNote;
+    qVal.textContent = pngNote ? 'N/A' : qualityEl.value + '%';
+    if (currentImage) compress();
+  }
+  qualityEl.addEventListener('input', onControlChange);
+  maxwEl.addEventListener('input', onControlChange);
+  formatEl.addEventListener('input', onControlChange);
+  formatEl.addEventListener('change', onControlChange);
+
+  function compress(){
+    var maxW = parseInt(maxwEl.value, 10);
+    var scale = Math.min(1, maxW / currentImage.width);
+    var w = Math.round(currentImage.width * scale);
+    var h = Math.round(currentImage.height * scale);
+
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(currentImage, 0, 0, w, h);
+
+    var quality = parseInt(qualityEl.value, 10) / 100;
+    var type = formatEl.value;
+
+    canvas.toBlob(function(blob){
+      if (!blob) return;
+      compressedBlob = blob;
+      var url = URL.createObjectURL(blob);
+      compImg.src = url;
+      openLink.href = url;
+      compSize.textContent = formatBytes(blob.size);
+      origSize.textContent = formatBytes(originalBytes);
+
+      var saved = Math.max(0, Math.round((1 - blob.size / originalBytes) * 100));
+      fill.style.width = saved + '%';
+      pct.textContent = saved + '%';
+      downloadBtn.disabled = false;
+    }, type, type === 'image/png' ? undefined : quality);
+  }
+
+  function formatBytes(n){
+    if (n < 1024) return n + ' B';
+    if (n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+    return (n/(1024*1024)).toFixed(2) + ' MB';
+  }
+
+  function currentExt(){
+    return formatEl.value === 'image/png' ? 'png' : (formatEl.value === 'image/webp' ? 'webp' : 'jpg');
+  }
+
+  downloadBtn.addEventListener('click', function(){
+    if (!compressedBlob) return;
+    var url = URL.createObjectURL(compressedBlob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = srcName + '-compressed.' + currentExt();
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, view:window}));
+    document.body.removeChild(a);
+    openLink.href = url;
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+  });
+
+  resetBtn.addEventListener('click', function(){
+    currentImage = null; compressedBlob = null;
+    fileInput.value = '';
+    controls.hidden = true; filmstrip.hidden = true;
+    downloadBtn.disabled = true;
+    openLink.href = '#';
+    fill.style.width = '0%'; pct.textContent = '0%';
+  });
+})();
 </script>
 </body>
 </html>
