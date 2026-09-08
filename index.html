@@ -363,11 +363,16 @@ recBtn.addEventListener('click', async () => {
     alert('No audio was shared. Redo it and pick "Chrome Tab" (not a window or your entire screen), then check "Share tab audio" in the picker — otherwise the recording will be silent.');
   }
   if (stream.getAudioTracks().length){
+    const track = stream.getAudioTracks()[0];
+    if (track.muted){
+      alert('Your microphone track is muted at the system level — check your OS sound settings or another app holding exclusive access to it, then try again.');
+    }
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     analyser = audioCtx.createAnalyser();
     analyser.fftSize = 128;
     dataArray = new Uint8Array(analyser.frequencyBinCount);
     audioCtx.createMediaStreamSource(stream).connect(analyser);
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     drawMeter();
   }
   stream.getVideoTracks()[0]?.addEventListener('ended', () => { if (mediaRecorder?.state !== 'inactive') stopBtn.click(); });
