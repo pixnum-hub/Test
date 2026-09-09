@@ -1,443 +1,581 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>YouMax — Play &amp; Record</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark light" />
+<title>YTX — YouTube Extractor</title>
+<meta name="description" content="Pull title, thumbnail and audio/video streams from a public YouTube link. No key, no sign-up." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0b0d10; --surface:#14171c; --surface2:#1b1f26; --text:#e8eaed; --muted:#8b93a1;
-  --border:#262b33; --accent:#ff4d5e; --accent2:#34d399; --focus:#ffb020; --radius:14px;
+/* ============================================================
+   YTX — design tokens
+   Palette: ink + signal-teal. One accent, used sparingly.
+   Type: Space Grotesk (display) / IBM Plex Mono (technical data)
+   ============================================================ */
+:root {
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-pill: 999px;
+
+  --sp-1: .375rem;
+  --sp-2: .625rem;
+  --sp-3: 1rem;
+  --sp-4: 1.5rem;
+  --sp-5: 2.25rem;
+  --sp-6: 3.25rem;
+
+  --ease: cubic-bezier(.2, .7, .2, 1);
 }
-html[data-theme="light"]{
-  --bg:#f4f5f7; --surface:#ffffff; --surface2:#eef0f3; --text:#1b1e23; --muted:#5b6270;
-  --border:#dde1e6; --accent:#e63946; --accent2:#0f9d78; --focus:#c9770b;
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f5f4f0;
+  --bg-glow: radial-gradient(1100px 420px at 50% -12%, rgba(15,110,95,.10), transparent 60%);
+  --surface: #ffffff;
+  --surface-2: #fbfaf7;
+  --text: #171712;
+  --text-dim: #6d685d;
+  --border: #e4e0d5;
+  --border-strong: #cfc9ba;
+  --accent: #0f6e5f;
+  --accent-2: #17967e;
+  --accent-text: #ffffff;
+  --focus: #0f6e5f;
+  --shadow: 0 1px 2px rgba(30,25,10,.04), 0 12px 28px -14px rgba(30,25,10,.16);
+  --shadow-sm: 0 1px 2px rgba(30,25,10,.06);
 }
-html[data-theme="oled"]{
-  --bg:#000000; --surface:#0a0a0a; --surface2:#111111; --text:#eaeaea; --muted:#8a8a8a;
-  --border:#1d1d1d; --accent:#ff4d5e; --accent2:#2ee6a6; --focus:#ffb020;
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #101317;
+  --bg-glow: radial-gradient(1100px 460px at 50% -10%, rgba(47,191,154,.14), transparent 60%);
+  --surface: #171b1f;
+  --surface-2: #1d2226;
+  --text: #edece7;
+  --text-dim: #8d938f;
+  --border: #262c31;
+  --border-strong: #343b41;
+  --accent: #2fbf9a;
+  --accent-2: #58d8b6;
+  --accent-text: #04140f;
+  --focus: #2fbf9a;
+  --shadow: 0 1px 0 rgba(0,0,0,.4), 0 20px 40px -22px rgba(0,0,0,.7);
+  --shadow-sm: 0 1px 0 rgba(0,0,0,.5);
 }
-html[data-theme="hc"]{
-  --bg:#000000; --surface:#000000; --surface2:#000000; --text:#ffffff; --muted:#ffffff;
-  --border:#ffffff; --accent:#ffff00; --accent2:#00ffbf; --focus:#00ffff; --radius:4px;
+
+[data-theme="oled"] {
+  color-scheme: dark;
+  --bg: #000000;
+  --bg-glow: radial-gradient(1000px 420px at 50% -10%, rgba(47,191,154,.10), transparent 62%);
+  --surface: #060606;
+  --surface-2: #0b0c0c;
+  --text: #eeeeee;
+  --text-dim: #84867f;
+  --border: #1a1b1a;
+  --border-strong: #262726;
+  --accent: #2fe0b4;
+  --accent-2: #6dedd0;
+  --accent-text: #000000;
+  --focus: #2fe0b4;
+  --shadow: none;
+  --shadow-sm: none;
 }
-*{box-sizing:border-box;}
-body{
-  margin:0; min-height:100vh; display:flex; flex-direction:column;
-  background:var(--bg); color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  -webkit-tap-highlight-color:transparent;
+
+[data-theme="hc"] {
+  color-scheme: dark;
+  --bg: #000000;
+  --bg-glow: none;
+  --surface: #000000;
+  --surface-2: #000000;
+  --text: #ffffff;
+  --text-dim: #ffffff;
+  --border: #ffffff;
+  --border-strong: #ffffff;
+  --accent: #ffd400;
+  --accent-2: #ffe45c;
+  --accent-text: #000000;
+  --focus: #ffd400;
+  --shadow: none;
+  --shadow-sm: none;
 }
-button{font-family:inherit;}
-button:focus-visible, .dropzone:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
-.topbar{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:14px 16px; border-bottom:1px solid var(--border); position:sticky; top:0;
-  background:var(--bg); z-index:5;
+
+/* ---- Reset & base ---------------------------------------------- */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  background-image: var(--bg-glow);
+  background-repeat: no-repeat;
+  color: var(--text);
+  font-family: var(--font-display);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color .2s var(--ease), color .2s var(--ease);
+  animation: rise .5s var(--ease) both;
 }
-.brand{font-weight:700; letter-spacing:.02em; display:flex; align-items:center; gap:8px;}
-.brand .dot{width:9px; height:9px; border-radius:50%; background:var(--accent);}
-.theme-btn{
-  background:var(--surface2); color:var(--text); border:1px solid var(--border);
-  border-radius:999px; padding:7px 14px; font-size:.8rem; cursor:pointer;
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.hidden { display: none !important; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+[data-theme="hc"] * { border-radius: 0 !important; box-shadow: none !important; }
+[data-theme="hc"] .panel, [data-theme="hc"] .theme-switch, [data-theme="hc"] #url-input,
+[data-theme="hc"] #format-select { border-width: 2px !important; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ---- Topbar ------------------------------------------------------ */
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4) var(--sp-3) var(--sp-2);
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
 }
-.tabs{display:flex; gap:8px; padding:12px 16px 0;}
-.tab{
-  flex:1; padding:10px; border-radius:10px 10px 0 0; border:1px solid var(--border);
-  border-bottom:none; background:var(--surface); color:var(--muted); font-weight:600;
-  cursor:pointer; font-size:.9rem;
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: .45rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: -.01em;
 }
-.tab.active{color:var(--text); background:var(--surface2); border-color:var(--accent);}
-main{flex:1; max-width:640px; width:100%; margin:0 auto; padding:0 16px 24px;}
-.panel{display:none; background:var(--surface2); border:1px solid var(--border); border-top:none;
-  border-radius:0 0 var(--radius) var(--radius); padding:16px;}
-.panel.active{display:block;}
-.dropzone{
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
-  border:2px dashed var(--border); border-radius:var(--radius); padding:22px 12px;
-  color:var(--muted); cursor:pointer; text-align:center; font-size:.85rem;
+.wordmark .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+.wordmark .sub { font-weight: 500; color: var(--text-dim); font-size: .82rem; letter-spacing: 0; }
+
+.theme-switch {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-sm);
 }
-.dropzone.drag{border-color:var(--accent); color:var(--text);}
-.dz-icon{font-size:1.6rem; color:var(--accent);}
-.stage{margin-top:14px; background:var(--surface); border:1px solid var(--border);
-  border-radius:var(--radius); overflow:hidden;}
-video{width:100%; display:block; background:#000; aspect-ratio:16/9;}
-#ytFrame{width:100%; aspect-ratio:16/9; border:0; display:none;}
-.yt-input{display:flex; gap:8px; margin-bottom:12px;}
-.yt-input input{
-  flex:1; min-width:0; background:var(--surface); border:1px solid var(--border); color:var(--text);
-  border-radius:10px; padding:10px 12px; font-size:.85rem;
+.theme-switch button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-dim);
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: background-color .15s var(--ease), color .15s var(--ease), transform .1s var(--ease);
 }
-.yt-input button{
-  background:var(--accent); color:#fff; border:none; border-radius:10px; padding:0 16px;
-  font-weight:600; cursor:pointer; font-size:.85rem;
+.theme-switch button svg { width: 17px; height: 17px; }
+.theme-switch button:hover { color: var(--text); }
+.theme-switch button:active { transform: scale(.9); }
+.theme-switch button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
 }
-.now-playing{padding:10px 12px; font-size:.85rem; color:var(--muted); text-align:center;}
-.list{list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:8px;}
-.list li{
-  display:flex; align-items:center; justify-content:space-between; gap:8px;
-  background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:9px 12px;
-  font-size:.85rem;
+
+/* ---- Stage / panels ------------------------------------------------ */
+.stage {
+  flex: 1;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--sp-3) var(--sp-3) var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
 }
-.list .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;}
-.list button{background:none; border:1px solid var(--border); color:var(--text);
-  border-radius:8px; padding:5px 9px; font-size:.75rem; cursor:pointer;}
-.mode-switch{display:flex; gap:8px; margin-bottom:14px;}
-.mode{flex:1; padding:9px; border-radius:10px; border:1px solid var(--border);
-  background:var(--surface); color:var(--muted); font-weight:600; cursor:pointer;}
-.mode.active{color:var(--bg); background:var(--accent2); border-color:var(--accent2);}
-#recordPanel .stage{position:relative;}
-#recordPanel video{display:none;}
-#recordPanel.video-mode video{display:block;}
-.meter{display:flex; align-items:flex-end; gap:3px; height:56px; padding:10px 12px; justify-content:center;}
-.meter .bar{width:5px; min-height:3px; background:var(--accent2); border-radius:2px; transition:height .05s linear;}
-.timer{text-align:center; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  font-size:1.8rem; letter-spacing:.05em; margin-top:12px;}
-.rec-controls{display:flex; align-items:center; justify-content:center; gap:16px; margin-top:14px;}
-.rec-btn{
-  width:64px; height:64px; border-radius:50%; border:3px solid var(--accent);
-  background:var(--surface); position:relative; cursor:pointer;
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5) var(--sp-4);
+  box-shadow: var(--shadow);
 }
-.rec-btn::after{content:""; position:absolute; inset:14px; border-radius:50%; background:var(--accent);}
-.rec-btn.live{animation:pulse 1.2s infinite;}
-.rec-btn.live::after{border-radius:5px;}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,77,94,.5);}50%{box-shadow:0 0 0 10px rgba(255,77,94,0);}}
-.ctrl-btn{padding:11px 18px; border-radius:10px; border:1px solid var(--border);
-  background:var(--surface); color:var(--text); font-weight:600; cursor:pointer;}
-.ctrl-btn:disabled{opacity:.4; cursor:not-allowed;}
-.site-footer{
-  text-align:center; padding:18px 16px 22px; border-top:1px solid var(--border);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+.panel h1 {
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem);
+  letter-spacing: -.02em;
+  line-height: 1.15;
+  margin: 0 0 .5rem;
 }
-.site-footer p{margin:0; font-size:.8rem; color:var(--muted);}
-.site-footer .sub{font-size:.72rem; opacity:.75;}
-@media (min-width:480px){.rec-btn{width:72px; height:72px;}}
+.lede { color: var(--text-dim); margin: 0 0 var(--sp-4); font-size: .95rem; max-width: 52ch; line-height: 1.55; }
+
+.url-row { display: flex; flex-direction: column; gap: var(--sp-2); position: relative; }
+@media (min-width: 560px) { .url-row { flex-direction: row; } }
+
+#url-input {
+  flex: 1;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: .9rem;
+  padding: .85rem 1rem;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+}
+#url-input::placeholder { color: var(--text-dim); }
+#url-input:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+  outline: none;
+}
+
+#extract-btn, button.primary {
+  position: relative;
+  font: inherit;
+  font-weight: 600;
+  font-size: .9rem;
+  letter-spacing: -.005em;
+  padding: .85rem 1.3rem;
+  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+  color: var(--accent-text);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: transform .1s var(--ease), filter .15s var(--ease), box-shadow .15s var(--ease);
+  box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--accent) 65%, transparent);
+}
+#extract-btn:hover, button.primary:hover { filter: brightness(1.05); }
+#extract-btn:active, button.primary:active { transform: translateY(1px) scale(.99); }
+#extract-btn:disabled, button.primary:disabled { opacity: .55; cursor: progress; filter: none; box-shadow: none; }
+button.primary { width: 100%; margin-top: var(--sp-4); display: flex; align-items: center; justify-content: center; gap: .5rem; }
+
+.status { min-height: 1.3rem; font-size: .84rem; color: var(--text-dim); margin: var(--sp-3) 0 0; display: flex; align-items: center; gap: .5rem; }
+.status[data-tone="error"] { color: #e2685f; }
+.spinner {
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-top-color: var(--accent);
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Result -------------------------------------------------------- */
+.result { animation: rise .35s var(--ease) both; }
+.result-head { display: flex; gap: var(--sp-4); align-items: flex-start; }
+
+.kind-switch {
+  display: flex;
+  gap: 6px;
+  margin-top: var(--sp-4);
+}
+.kind-switch button {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font: inherit;
+  font-size: .84rem;
+  font-weight: 600;
+  padding: .5rem .9rem;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: background-color .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
+}
+.kind-switch button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+#thumb {
+  width: 148px;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--surface-2);
+}
+.result-meta h2 { font-size: 1.08rem; margin: 0 0 .4rem; line-height: 1.35; letter-spacing: -.01em; }
+#v-sub { color: var(--text-dim); font-size: .78rem; margin: 0; }
+
+#format-wrap { margin-top: var(--sp-4); display: flex; flex-direction: column; gap: .45rem; }
+#format-wrap label { font-size: .76rem; color: var(--text-dim); text-transform: none; }
+#format-select {
+  font-size: .85rem;
+  padding: .7rem .8rem;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  color: var(--text);
+}
+.note { font-size: .8rem; color: var(--text-dim); margin-top: var(--sp-3); line-height: 1.5; }
+
+/* ---- Footer: centered, stacked, auto-year --------------------------- */
+.site-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: .3rem;
+  padding: var(--sp-4) var(--sp-3) var(--sp-5);
+  border-top: 1px solid var(--border);
+}
+.foot-line { margin: 0; font-size: .8rem; color: var(--text-dim); }
+.foot-line.small { font-size: .72rem; opacity: .85; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
 </style>
 </head>
 <body>
 
 <header class="topbar">
-  <div class="brand"><span class="dot"></span>YouMax</div>
-  <button id="themeBtn" class="theme-btn" type="button">Dark</button>
+  <div class="wordmark">YTX<span class="dot">•</span><span class="sub">extractor</span></div>
+  <div class="theme-switch" role="group" aria-label="Theme">
+    <button data-theme-btn="light" aria-label="Light theme" title="Light">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></svg>
+    </button>
+    <button data-theme-btn="dark" aria-label="Dark theme" title="Dark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.6 6.6 0 0 0 10.5 10.5Z"/></svg>
+    </button>
+    <button data-theme-btn="oled" aria-label="OLED true black theme" title="OLED">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg>
+    </button>
+    <button data-theme-btn="hc" aria-label="High contrast theme" title="HC">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17Z" fill="currentColor" stroke="none"/></svg>
+    </button>
+  </div>
 </header>
 
-<nav class="tabs">
-  <button class="tab active" data-tab="play" type="button">▶ Play</button>
-  <button class="tab" data-tab="record" type="button">● Record</button>
-</nav>
+<main class="stage">
+  <section class="panel" aria-label="Extract a video">
+    <h1>Drop a YouTube link.</h1>
+    <p class="lede">Runs on yt-dlp + FFmpeg, with YouTube.js as a metadata fallback. Nothing to key in, nothing to sign up for.</p>
 
-<main>
-  <section id="playPanel" class="panel active">
-    <div class="yt-input">
-      <input type="url" id="ytInput" placeholder="Paste a YouTube link…" inputmode="url">
-      <button id="ytLoadBtn" type="button">Load</button>
-    </div>
-    <label id="dropZone" class="dropzone" for="fileInput" tabindex="0">
-      <span class="dz-icon">+</span>
-      <span>Drop audio or video files, or tap to browse</span>
-      <input type="file" id="fileInput" accept="audio/*,video/*" multiple hidden>
-    </label>
-    <div class="stage">
-      <video id="player" controls playsinline></video>
-      <iframe id="ytFrame" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-      <div id="nowPlaying" class="now-playing">No file loaded</div>
-    </div>
-    <ul id="playlist" class="list"></ul>
+    <form id="extract-form" class="url-row">
+      <input id="url-input" type="url" inputmode="url" autocomplete="off"
+             placeholder="https://www.youtube.com/watch?v=…" required />
+      <button type="submit" id="extract-btn">Extract</button>
+    </form>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
   </section>
 
-  <section id="recordPanel" class="panel">
-    <div class="mode-switch">
-      <button class="mode active" data-mode="audio" type="button">Audio</button>
-      <button class="mode" data-mode="video" type="button">Video</button>
-      <button class="mode" data-mode="screen" type="button">Screen</button>
+  <section id="result" class="panel result hidden" aria-label="Extraction result">
+    <div class="result-head">
+      <img id="thumb" alt="" />
+      <div class="result-meta">
+        <h2 id="v-title">—</h2>
+        <p id="v-sub" class="mono"></p>
+      </div>
     </div>
-    <div class="stage">
-      <video id="preview" muted playsinline></video>
-      <div class="meter" id="meter"></div>
+
+    <div class="kind-switch" role="group" aria-label="Extract as">
+      <button type="button" data-kind-btn="video" aria-pressed="true">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="14" height="13" rx="2"/><path d="m20.5 9 1-1v8l-1-1"/></svg>
+        Video
+      </button>
+      <button type="button" data-kind-btn="audio" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>
+        Audio
+      </button>
     </div>
-    <div class="timer" id="timer">00:00</div>
-    <div class="rec-controls">
-      <button id="pauseBtn" class="ctrl-btn" type="button" disabled>Pause</button>
-      <button id="recBtn" class="rec-btn" type="button" aria-label="Start recording"></button>
-      <button id="stopBtn" class="ctrl-btn" type="button" disabled>Stop</button>
+
+    <div id="format-wrap">
+      <label for="format-select" id="format-label">Video format</label>
+      <select id="format-select" class="mono"></select>
     </div>
-    <ul id="recordings" class="list"></ul>
+
+    <button id="download-btn" class="primary">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15 7.5 10.5"/><path d="M4 18.5V20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5"/></svg>
+      Download
+    </button>
+    <p id="fallback-note" class="note hidden"></p>
   </section>
 </main>
 
 <footer class="site-footer">
-  <p>© Manik Roy <span id="year"></span>. All Rights Reserved.</p>
-  <p class="sub">YouMax — local playback &amp; recording studio</p>
+  <p class="foot-line">© <span id="year"></span> Manik Roy. All Rights Reserved.</p>
+  <p class="foot-line small">Use only on videos you own or have permission to save.</p>
 </footer>
 
 <script>
-document.getElementById('year').textContent = new Date().getFullYear();
+// ---- Footer year, always current, zero maintenance ----
+document.getElementById("year").textContent = new Date().getFullYear();
 
-/* ---------- Theme ---------- */
-const themes = ['dark','light','oled','hc'];
-const themeLabels = {dark:'Dark', light:'Light', oled:'OLED', hc:'HC'};
-const html = document.documentElement;
-const themeBtn = document.getElementById('themeBtn');
-function setTheme(t){
-  html.setAttribute('data-theme', t);
-  themeBtn.textContent = themeLabels[t];
-  localStorage.setItem('youmax-theme', t);
-}
-setTheme(localStorage.getItem('youmax-theme') || 'dark');
-themeBtn.addEventListener('click', () => {
-  const next = themes[(themes.indexOf(html.getAttribute('data-theme')) + 1) % themes.length];
-  setTheme(next);
+// ---- Theme: light / dark / oled / hc, persisted, defaults to system pref ----
+const THEMES = ["light", "dark", "oled", "hc"];
+const root = document.documentElement;
+const saved = localStorage.getItem("ytx-theme");
+const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+setTheme(THEMES.includes(saved) ? saved : (systemDark ? "dark" : "light"));
+
+document.querySelectorAll("[data-theme-btn]").forEach((btn) => {
+  btn.addEventListener("click", () => setTheme(btn.dataset.themeBtn));
 });
 
-/* ---------- Tabs ---------- */
-const tabs = document.querySelectorAll('.tab');
-const panels = {play: document.getElementById('playPanel'), record: document.getElementById('recordPanel')};
-tabs.forEach(tab => tab.addEventListener('click', () => {
-  tabs.forEach(t => t.classList.remove('active'));
-  tab.classList.add('active');
-  Object.values(panels).forEach(p => p.classList.remove('active'));
-  panels[tab.dataset.tab].classList.add('active');
-  if (tab.dataset.tab !== 'record') stopStream();
-}));
-
-/* ---------- Play panel ---------- */
-const fileInput = document.getElementById('fileInput');
-const dropZone = document.getElementById('dropZone');
-const player = document.getElementById('player');
-const nowPlaying = document.getElementById('nowPlaying');
-const playlist = document.getElementById('playlist');
-
-function addToPlaylist(file){
-  const url = URL.createObjectURL(file);
-  const li = document.createElement('li');
-  const nameSpan = document.createElement('span');
-  nameSpan.className = 'name';
-  nameSpan.textContent = file.name;
-  const btn = document.createElement('button');
-  btn.textContent = 'Play';
-  btn.type = 'button';
-  btn.addEventListener('click', () => loadIntoPlayer(url, file.name));
-  li.append(nameSpan, btn);
-  playlist.appendChild(li);
-  if (playlist.children.length === 1) loadIntoPlayer(url, file.name);
-}
-function loadIntoPlayer(url, name){
-  ytFrame.style.display = 'none';
-  ytFrame.src = '';
-  player.style.display = 'block';
-  player.src = url;
-  player.play().catch(() => {});
-  nowPlaying.textContent = name;
-}
-
-/* ---------- YouTube embed ---------- */
-const ytInput = document.getElementById('ytInput');
-const ytLoadBtn = document.getElementById('ytLoadBtn');
-const ytFrame = document.getElementById('ytFrame');
-
-function extractYouTubeId(url){
-  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
-  return m ? m[1] : null;
-}
-function loadYouTube(){
-  const id = extractYouTubeId(ytInput.value.trim());
-  if (!id){ alert('That doesn\'t look like a valid YouTube link.'); return; }
-  player.pause();
-  player.style.display = 'none';
-  ytFrame.src = `https://www.youtube.com/embed/${id}?autoplay=1`;
-  ytFrame.style.display = 'block';
-  nowPlaying.textContent = `YouTube: ${id}`;
-}
-ytLoadBtn.addEventListener('click', loadYouTube);
-ytInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadYouTube(); });
-fileInput.addEventListener('change', e => [...e.target.files].forEach(addToPlaylist));
-['dragover','dragleave','drop'].forEach(evt => dropZone.addEventListener(evt, e => {
-  e.preventDefault();
-  dropZone.classList.toggle('drag', evt === 'dragover');
-}));
-dropZone.addEventListener('drop', e => [...e.dataTransfer.files].forEach(addToPlaylist));
-dropZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
-
-/* ---------- Record panel ---------- */
-const modeBtns = document.querySelectorAll('.mode');
-const recordPanel = document.getElementById('recordPanel');
-const preview = document.getElementById('preview');
-const meter = document.getElementById('meter');
-const timerEl = document.getElementById('timer');
-const recBtn = document.getElementById('recBtn');
-const pauseBtn = document.getElementById('pauseBtn');
-const stopBtn = document.getElementById('stopBtn');
-const recordings = document.getElementById('recordings');
-
-const BAR_COUNT = 24;
-for (let i = 0; i < BAR_COUNT; i++){
-  const bar = document.createElement('div');
-  bar.className = 'bar';
-  meter.appendChild(bar);
-}
-const bars = meter.querySelectorAll('.bar');
-
-let mode = 'audio';
-let stream, mediaRecorder, chunks = [], recordedMime = '';
-let audioCtx, analyser, dataArray, rafId;
-let seconds = 0, timerId = null;
-
-modeBtns.forEach(btn => btn.addEventListener('click', () => {
-  modeBtns.forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  mode = btn.dataset.mode;
-  recordPanel.classList.toggle('video-mode', mode !== 'audio');
-  stopStream();
-}));
-
-async function getStream(){
-  if (mode === 'screen'){
-    return navigator.mediaDevices.getDisplayMedia({video:true, audio:true});
-  }
-  const constraints = mode === 'video' ? {audio:true, video:{facingMode:'user'}} : {audio:true, video:false};
-  return navigator.mediaDevices.getUserMedia(constraints);
-}
-function stopStream(){
-  if (stream) stream.getTracks().forEach(t => t.stop());
-  stream = null;
-  cancelAnimationFrame(rafId);
-  bars.forEach(b => b.style.height = '3px');
-}
-function drawMeter(){
-  analyser.getByteFrequencyData(dataArray);
-  const step = Math.floor(dataArray.length / BAR_COUNT);
-  bars.forEach((bar, i) => {
-    const v = dataArray[i * step] || 0;
-    bar.style.height = Math.max(3, (v / 255) * 56) + 'px';
+function setTheme(name) {
+  root.setAttribute("data-theme", name);
+  localStorage.setItem("ytx-theme", name);
+  document.querySelectorAll("[data-theme-btn]").forEach((btn) => {
+    btn.setAttribute("aria-pressed", String(btn.dataset.themeBtn === name));
   });
-  rafId = requestAnimationFrame(drawMeter);
-}
-function startTimer(){
-  seconds = 0;
-  timerEl.textContent = '00:00';
-  timerId = setInterval(() => {
-    seconds++;
-    const m = String(Math.floor(seconds / 60)).padStart(2,'0');
-    const s = String(seconds % 60).padStart(2,'0');
-    timerEl.textContent = `${m}:${s}`;
-  }, 1000);
-}
-function stopTimer(){ clearInterval(timerId); }
-
-function pickMimeType(){
-  const options = mode === 'audio'
-    ? ['audio/webm;codecs=opus','audio/webm']
-    : ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
-  return options.find(o => MediaRecorder.isTypeSupported(o)) || '';
 }
 
-/* ---------- Download helper (Web Share fallback for mobile) ---------- */
-async function downloadBlob(blob, filename){
-  const file = new File([blob], filename, {type: blob.type});
-  if (navigator.canShare && navigator.canShare({files:[file]})){
-    try { await navigator.share({files:[file], title: filename}); return; }
-    catch(e){ /* user cancelled share sheet — fall back to direct download */ }
+// ---- Extraction ----
+const form = document.getElementById("extract-form");
+const urlInput = document.getElementById("url-input");
+const extractBtn = document.getElementById("extract-btn");
+const statusEl = document.getElementById("status");
+const result = document.getElementById("result");
+const thumb = document.getElementById("thumb");
+const vTitle = document.getElementById("v-title");
+const vSub = document.getElementById("v-sub");
+const formatSelect = document.getElementById("format-select");
+const formatLabel = document.getElementById("format-label");
+const downloadBtn = document.getElementById("download-btn");
+const fallbackNote = document.getElementById("fallback-note");
+const kindButtons = document.querySelectorAll("[data-kind-btn]");
+
+let current = null;   // { url, title }
+let lastFormats = []; // formats from the last successful /api/info call
+let kind = "video";   // "video" | "audio"
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const url = urlInput.value.trim();
+  setLoading("Reading video info…");
+  extractBtn.disabled = true;
+  result.classList.add("hidden");
+
+  try {
+    const res = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) {
+      throw new Error("The server didn't return data — is `npm start` running? The API lives at the same address as this page, not opened as a plain file.");
+    }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Extraction failed.");
+    renderResult(url, data);
+    setStatus("");
+  } catch (err) {
+    setStatus(err.message, "error");
+  } finally {
+    extractBtn.disabled = false;
   }
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+});
+
+function setLoading(msg) {
+  statusEl.removeAttribute("data-tone");
+  statusEl.innerHTML = `<span class="spinner" aria-hidden="true"></span>${msg}`;
 }
 
-recBtn.addEventListener('click', async () => {
-  try{
-    stream = await getStream();
-  } catch(err){
-    alert(mode === 'screen'
-      ? 'Screen sharing was cancelled or unavailable.'
-      : 'Microphone/camera access was denied or unavailable.');
+function renderResult(url, data) {
+  current = { url, title: data.title };
+  lastFormats = data.formats || [];
+  thumb.src = data.thumbnail || "";
+  vTitle.textContent = data.title || "Untitled";
+  vSub.textContent = [data.uploader, formatDuration(data.duration)].filter(Boolean).join(" · ");
+
+  fallbackNote.textContent = data.note || "";
+  fallbackNote.classList.toggle("hidden", !data.note);
+
+  kind = "video";
+  kindButtons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.kindBtn === kind)));
+  populateFormats();
+  result.classList.remove("hidden");
+}
+
+kindButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    kind = btn.dataset.kindBtn;
+    kindButtons.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+    populateFormats();
+  });
+});
+
+function populateFormats() {
+  formatLabel.textContent = kind === "video" ? "Video format" : "Audio format";
+  formatSelect.innerHTML = "";
+
+  const pool = kind === "video"
+    ? lastFormats.filter((f) => f.hasVideo)
+    : lastFormats.filter((f) => f.hasAudio && !f.hasVideo);
+
+  if (kind === "audio") {
+    const best = document.createElement("option");
+    best.value = "";
+    best.textContent = "Best available · MP3";
+    formatSelect.appendChild(best);
+  }
+
+  if (!pool.length && kind === "video") {
+    const opt = document.createElement("option");
+    opt.textContent = "No downloadable formats on this server";
+    formatSelect.appendChild(opt);
+    downloadBtn.disabled = true;
     return;
   }
-  if (mode === 'video' || mode === 'screen'){
-    preview.srcObject = stream;
-    preview.play().catch(() => {});
-  }
-  if (mode === 'screen' && !stream.getAudioTracks().length){
-    alert('No audio was shared. Redo it and pick "Chrome Tab" (not a window or your entire screen), then check "Share tab audio" in the picker — otherwise the recording will be silent.');
-  }
-  if (stream.getAudioTracks().length){
-    const track = stream.getAudioTracks()[0];
-    if (track.muted){
-      alert('Your microphone track is muted at the system level — check your OS sound settings or another app holding exclusive access to it, then try again.');
-    }
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 128;
-    dataArray = new Uint8Array(analyser.frequencyBinCount);
-    audioCtx.createMediaStreamSource(stream).connect(analyser);
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    drawMeter();
-  }
-  stream.getVideoTracks()[0]?.addEventListener('ended', () => { if (mediaRecorder?.state !== 'inactive') stopBtn.click(); });
 
-  chunks = [];
-  const mimeType = pickMimeType();
-  mediaRecorder = new MediaRecorder(stream, mimeType ? {mimeType} : undefined);
-  recordedMime = mediaRecorder.mimeType || mimeType || (mode === 'audio' ? 'audio/webm' : 'video/webm');
-  mediaRecorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-  mediaRecorder.onstop = () => {
-    saveRecording();
-    stopStream();
-    if (audioCtx){ audioCtx.close(); audioCtx = null; }
-    preview.srcObject = null;
-  };
-  mediaRecorder.start();
-  startTimer();
-
-  recBtn.classList.add('live');
-  recBtn.disabled = true;
-  pauseBtn.disabled = false;
-  stopBtn.disabled = false;
-});
-
-pauseBtn.addEventListener('click', () => {
-  if (mediaRecorder.state === 'recording'){
-    mediaRecorder.pause(); stopTimer(); pauseBtn.textContent = 'Resume';
-  } else if (mediaRecorder.state === 'paused'){
-    mediaRecorder.resume(); startTimer(); pauseBtn.textContent = 'Pause';
-  }
-});
-
-stopBtn.addEventListener('click', () => {
-  mediaRecorder.stop();
-  stopTimer();
-  recBtn.classList.remove('live');
-  recBtn.disabled = false;
-  pauseBtn.disabled = true;
-  pauseBtn.textContent = 'Pause';
-  stopBtn.disabled = true;
-});
-
-function saveRecording(){
-  const blob = new Blob(chunks, {type: recordedMime});
-  const url = URL.createObjectURL(blob);
-  const stamp = new Date().toISOString().replace(/[:.]/g,'-');
-  const ext = recordedMime.includes('mp4') ? 'mp4' : 'webm';
-  const filename = `youmax-${mode}-${stamp}.${ext}`;
-
-  const li = document.createElement('li');
-  const nameSpan = document.createElement('span');
-  nameSpan.className = 'name';
-  nameSpan.textContent = filename;
-
-  const playBtn = document.createElement('button');
-  playBtn.type = 'button'; playBtn.textContent = 'Play';
-  playBtn.addEventListener('click', () => loadIntoPlayer(url, filename));
-
-  const dlBtn = document.createElement('button');
-  dlBtn.type = 'button'; dlBtn.textContent = 'Save';
-  dlBtn.addEventListener('click', () => downloadBlob(blob, filename));
-
-  li.append(nameSpan, playBtn, dlBtn);
-  recordings.prepend(li);
+  pool.forEach((f) => {
+    const opt = document.createElement("option");
+    opt.value = f.id;
+    opt.dataset.hasAudio = String(f.hasAudio);
+    const bits = kind === "video"
+      ? [f.note, f.ext, f.hasAudio ? "with audio" : "video only", f.filesize && formatSize(f.filesize)]
+      : [f.abr ? `${f.abr}kbps` : f.note, f.ext, f.filesize && formatSize(f.filesize)];
+    opt.textContent = bits.filter(Boolean).join(" · ");
+    formatSelect.appendChild(opt);
+  });
+  downloadBtn.disabled = false;
 }
+
+downloadBtn.addEventListener("click", () => {
+  if (!current) return;
+  const opt = formatSelect.selectedOptions[0];
+  let format = opt ? opt.value : "";
+
+  // Video-only stream picked in "video" mode: mux with the best audio track.
+  if (kind === "video" && format && opt.dataset.hasAudio === "false") {
+    format = `${format}+bestaudio/best`;
+  }
+
+  const q = new URLSearchParams({ url: current.url, format, kind, title: current.title || "video" });
+  window.location.href = `/api/download?${q.toString()}`;
+});
+
+function setStatus(msg, tone) {
+  statusEl.textContent = msg;
+  if (tone) statusEl.setAttribute("data-tone", tone);
+  else statusEl.removeAttribute("data-tone");
+}
+
+function formatDuration(sec) {
+  if (!sec && sec !== 0) return "";
+  const m = Math.floor(sec / 60), s = String(sec % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function formatSize(bytes) {
+  if (!bytes) return "";
+  const mb = bytes / (1024 * 1024);
+  return mb >= 1 ? `${mb.toFixed(1)} MB` : `${(bytes / 1024).toFixed(0)} KB`;
+}
+
 </script>
 </body>
 </html>
