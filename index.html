@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<title>SkyTrace — Live Flight Tracker</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121820; --card:#171f2a; --border:#26313f;
+  --fg:#e7eef7; --muted:#8aa0b8; --accent:#3aa0ff; --accent2:#22c55e;
+  --danger:#ef4444; --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html[data-theme="light"]{--bg:#f3f6fa;--panel:#ffffff;--card:#ffffff;--border:#dbe3ee;--fg:#101722;--muted:#5b6b80;--accent:#0b6fe0;--accent2:#0f9d58;}
+html[data-theme="oled"]{--bg:#000000;--panel:#000000;--card:#0a0a0a;--border:#1c1c1c;--fg:#f2f2f2;--muted:#8f8f8f;--accent:#3aa0ff;--accent2:#22c55e;}
+html[data-theme="hc"]{--bg:#000000;--panel:#000000;--card:#000000;--border:#ffffff;--fg:#ffffff;--muted:#ffffff;--accent:#ffff00;--accent2:#00ffff;}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  background:var(--bg); color:var(--fg); font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  display:flex; flex-direction:column; min-height:100%;
+  padding-top:var(--safe-top); padding-bottom:var(--safe-bottom);
+}
+header{
+  padding:12px 14px; display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--border); background:var(--panel); position:sticky; top:var(--safe-top); z-index:1000; gap:8px;
+}
+header h1{font-size:1.05rem; margin:0; display:flex; align-items:center; gap:8px;}
+header h1 span.dot{width:9px;height:9px;border-radius:50%;background:var(--accent2);display:inline-block;}
+.theme-row{display:flex; gap:6px;}
+.theme-btn{
+  border:1px solid var(--border); background:var(--card); color:var(--fg); border-radius:8px;
+  width:40px; height:40px; font-size:0.85rem; display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.theme-btn.active{border-color:var(--accent); color:var(--accent);}
+main{flex:1; display:flex; flex-direction:column; min-height:0;}
+#map{width:100%; height:44vh; min-height:260px; background:var(--panel);}
+.toolbar{
+  display:flex; gap:8px; padding:10px 12px; background:var(--panel); border-bottom:1px solid var(--border); flex-wrap:wrap; align-items:center;
+}
+.toolbar input[type="text"]{
+  flex:1; min-width:120px; background:var(--card); color:var(--fg); border:1px solid var(--border);
+  border-radius:10px; padding:10px 12px; font-size:16px;
+}
+.btn{
+  border:1px solid var(--border); background:var(--card); color:var(--fg); border-radius:10px;
+  padding:10px 14px; font-size:0.9rem; cursor:pointer; min-height:44px;
+}
+.btn.primary{background:var(--accent); color:#03101c; border-color:var(--accent); font-weight:600;}
+.status-bar{
+  display:flex; justify-content:space-between; gap:8px; padding:6px 14px; font-size:0.75rem; color:var(--muted);
+  border-bottom:1px solid var(--border); background:var(--panel); flex-wrap:wrap;
+}
+#list{flex:1; overflow-y:auto; padding:10px 12px 20px; -webkit-overflow-scrolling:touch;}
+.flight-card{
+  background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px;
+  margin-bottom:10px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; align-items:center;
+}
+.flight-card:active{border-color:var(--accent);}
+.fc-main .callsign{font-weight:700; font-size:1rem;}
+.fc-main .sub{color:var(--muted); font-size:0.78rem; margin-top:2px;}
+.fc-stats{text-align:right; font-size:0.78rem; color:var(--muted); line-height:1.5;}
+.fc-stats b{color:var(--fg); font-size:0.85rem;}
+.empty, .loading{text-align:center; color:var(--muted); padding:30px 10px; font-size:0.9rem;}
+.plane-icon{
+  color:var(--accent); font-size:20px; text-shadow:0 0 3px #000, 0 0 3px #000;
+  display:flex; align-items:center; justify-content:center; transform-origin:center;
+}
+footer{
+  border-top:1px solid var(--border); background:var(--panel); padding:14px 10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; text-align:center;
+}
+footer p{margin:0; font-size:0.75rem; color:var(--muted);}
+.leaflet-popup-content-wrapper{background:var(--card); color:var(--fg); border-radius:10px;}
+.leaflet-popup-tip{background:var(--card);}
+.leaflet-container{background:var(--panel);}
+.src-pill{
+  border:1px solid var(--border); border-radius:20px; padding:2px 8px; font-size:0.7rem;
+}
+.src-pill.ok{color:var(--accent2); border-color:var(--accent2);}
+.src-pill.err{color:var(--danger); border-color:var(--danger);}
+@media (min-width:760px){
+  #map{height:56vh;}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="dot" id="liveDot"></span>SkyTrace</h1>
+  <div class="theme-row" id="themeRow">
+    <button class="theme-btn" data-theme="dark" title="Dark">🌙</button>
+    <button class="theme-btn" data-theme="light" title="Light">☀️</button>
+    <button class="theme-btn" data-theme="oled" title="OLED Black">⚫</button>
+    <button class="theme-btn" data-theme="hc" title="High Contrast">◐</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Search callsign, ICAO24, country...">
+  <button class="btn" id="locBtn" title="Use my location">📍</button>
+  <button class="btn primary" id="refreshBtn">Refresh</button>
+</div>
+<div class="status-bar">
+  <span id="statusText">Loading flight data…</span>
+  <span class="src-pill" id="srcPill">source: —</span>
+</div>
+
+<main>
+  <div id="map"></div>
+  <div id="list"><div class="loading">Fetching live aircraft…</div></div>
+</main>
+
+<footer>
+  <p>© <span id="year"></span> Manik Roy. All Rights Reserved.</p>
+  <p>Data: adsb.lol · airplanes.live · adsb.one · OpenSky — no key required</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Theme ---------- */
+  var root = document.documentElement;
+  var themes = ["dark","light","oled","hc"];
+  function applyTheme(t){
+    if(themes.indexOf(t) === -1) t = "dark";
+    root.setAttribute("data-theme", t);
+    document.querySelectorAll(".theme-btn").forEach(function(b){
+      b.classList.toggle("active", b.dataset.theme === t);
+    });
+    try{ localStorage.setItem("skytrace-theme", t); }catch(e){}
+  }
+  document.getElementById("themeRow").addEventListener("click", function(e){
+    var b = e.target.closest(".theme-btn");
+    if(b) applyTheme(b.dataset.theme);
+  });
+  var savedTheme = "dark";
+  try{ savedTheme = localStorage.getItem("skytrace-theme") || "dark"; }catch(e){}
+  applyTheme(savedTheme);
+
+  /* ---------- Footer year ---------- */
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  /* ---------- Map ---------- */
+  var map = L.map("map", {zoomControl:true, attributionControl:true}).setView([51.47, -0.45], 6);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18,
+    attribution: "&copy; OpenStreetMap"
+  }).addTo(map);
+
+  var markers = {};
+  var markerLayer = L.layerGroup().addTo(map);
+
+  function planeIcon(heading, color){
+    var html = '<div class="plane-icon" style="transform:rotate(' + (heading||0) + 'deg); color:' + (color||"var(--accent)") + '">✈</div>';
+    return L.divIcon({html:html, className:"", iconSize:[26,26], iconAnchor:[13,13]});
+  }
+
+  /* ---------- State ---------- */
+  var center = {lat:51.4700, lon:-0.4543};
+  var haveGeo = false;
+  var flights = [];
+  var lastSource = "";
+  var REFRESH_MS = 25000;
+  var timer = null;
+
+  function setStatus(text){ document.getElementById("statusText").textContent = text; }
+  function setSourcePill(name, ok){
+    var el = document.getElementById("srcPill");
+    el.textContent = "source: " + name;
+    el.className = "src-pill " + (ok ? "ok" : "err");
+  }
+  function setLive(on){
+    document.getElementById("liveDot").style.background = on ? "var(--accent2)" : "var(--danger)";
+  }
+
+  function bboxAround(lat, lon, deg){
+    return {
+      lamin: Math.max(lat - deg, -90),
+      lamax: Math.min(lat + deg, 90),
+      lomin: Math.max(lon - deg, -180),
+      lomax: Math.min(lon + deg, 180)
+    };
+  }
+
+  /* ---------- Fetch chain ---------- */
+  // OpenSky's REST API does not send CORS headers, so browser fetch() calls to
+  // it fail even though the server itself responds fine — it is tried last,
+  // as a bonus, while the three ADS-B mirrors (which are CORS-enabled) go first.
+  function fetchOpenSky(){
+    var bb = bboxAround(center.lat, center.lon, 6);
+    var url = "https://opensky-network.org/api/states/all?lamin=" + bb.lamin +
+      "&lomin=" + bb.lomin + "&lamax=" + bb.lamax + "&lomax=" + bb.lomax;
+    return fetch(url).then(function(r){
+      if(!r.ok) throw new Error("opensky " + r.status);
+      return r.json();
+    }).then(function(data){
+      var rows = data && data.states ? data.states : [];
+      if(!rows.length) throw new Error("opensky empty");
+      return rows.map(function(s){
+        return {
+          icao: s[0], callsign: (s[1]||"").trim() || "—", country: s[2],
+          lon: s[5], lat: s[6], alt: s[7], onGround: s[8],
+          speed: s[9], heading: s[10], vrate: s[11], squawk: s[14] || null
+        };
+      }).filter(function(f){ return f.lat != null && f.lon != null; });
+    }).then(function(rows){ lastSource = "OpenSky Network"; return rows; });
+  }
+
+  function fetchPointApi(base, name, lat, lon){
+    var url = base + "/v2/point/" + lat.toFixed(2) + "/" + lon.toFixed(2) + "/250";
+    return fetch(url).then(function(r){
+      if(!r.ok) throw new Error(name + " " + r.status);
+      return r.json();
+    }).then(function(data){
+      var rows = data && data.ac ? data.ac : [];
+      if(!rows.length) throw new Error(name + " empty");
+      return rows.map(function(a){
+        return {
+          icao: a.hex, callsign: (a.flight||"").trim() || "—", country: a.r || "—",
+          lon: a.lon, lat: a.lat,
+          alt: typeof a.alt_baro === "number" ? a.alt_baro : null,
+          onGround: a.alt_baro === "ground",
+          speed: a.gs, heading: a.track, vrate: a.baro_rate, squawk: a.squawk || null
+        };
+      }).filter(function(f){ return f.lat != null && f.lon != null; });
+    }).then(function(rows){ lastSource = name; return rows; });
+  }
+
+  function fetchAroundPoint(lat, lon){
+    return fetchPointApi("https://api.adsb.lol", "adsb.lol", lat, lon)
+      .catch(function(){ return fetchPointApi("https://api.airplanes.live", "airplanes.live", lat, lon); })
+      .catch(function(){ return fetchPointApi("https://api.adsb.one", "adsb.one", lat, lon); });
+  }
+
+  // A busy 24/7 hub used only if the user's own area currently has no
+  // traffic in range on any source (e.g. over open ocean or at 3am locally).
+  var FALLBACK_HUB = {lat: 51.4700, lon: -0.4543, name: "London (Heathrow area)"};
+
+  function loadFlights(){
+    setStatus("Refreshing…");
+    fetchAroundPoint(center.lat, center.lon)
+      .catch(function(){ return fetchOpenSky(); })
+      .catch(function(){
+        return fetchAroundPoint(FALLBACK_HUB.lat, FALLBACK_HUB.lon).then(function(rows){
+          lastSource = lastSource + " · showing " + FALLBACK_HUB.name + " (no local traffic)";
+          return rows;
+        });
+      })
+      .then(function(rows){
+        flights = rows.slice(0, 300);
+        setLive(true);
+        setSourcePill(lastSource, true);
+        setStatus(flights.length + " aircraft tracked · updated " + new Date().toLocaleTimeString());
+        render();
+      })
+      .catch(function(err){
+        setLive(false);
+        setSourcePill("unavailable", false);
+        setStatus("Couldn't reach any flight data source (network blocked or all APIs down). Retrying in " + Math.round(REFRESH_MS/1000) + "s…");
+      });
+  }
+
+  /* ---------- Render ---------- */
+  var selectedIcao = null;
+
+  function render(){
+    var q = document.getElementById("search").value.trim().toLowerCase();
+    var filtered = flights.filter(function(f){
+      if(!q) return true;
+      return (f.callsign||"").toLowerCase().includes(q) ||
+             (f.icao||"").toLowerCase().includes(q) ||
+             (String(f.country)||"").toLowerCase().includes(q);
+    });
+
+    markerLayer.clearLayers();
+    markers = {};
+    filtered.forEach(function(f){
+      var color = f.onGround ? "var(--muted)" : "var(--accent)";
+      var m = L.marker([f.lat, f.lon], {icon: planeIcon(f.heading, color)});
+      m.bindPopup(popupHtml(f));
+      m.on("click", function(){ selectedIcao = f.icao; });
+      m.addTo(markerLayer);
+      markers[f.icao] = m;
+    });
+
+    var list = document.getElementById("list");
+    if(!filtered.length){
+      list.innerHTML = '<div class="empty">No matching aircraft found.</div>';
+      return;
+    }
+    list.innerHTML = filtered.map(function(f){
+      return '<div class="flight-card" data-icao="' + f.icao + '">' +
+        '<div class="fc-main">' +
+          '<div class="callsign">' + esc(f.callsign) + '</div>' +
+          '<div class="sub">' + esc(f.icao || "—") + ' · ' + esc(f.country || "Unknown") + '</div>' +
+        '</div>' +
+        '<div class="fc-stats">' +
+          '<div><b>' + fmtAlt(f.alt, f.onGround) + '</b> alt ' + fmtVrate(f.vrate) + '</div>' +
+          '<div><b>' + fmtSpeed(f.speed) + '</b> spd</div>' +
+          '<div>sq ' + esc(f.squawk || "—") + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+
+    list.querySelectorAll(".flight-card").forEach(function(card){
+      card.addEventListener("click", function(){
+        var icao = card.dataset.icao;
+        var f = flights.find(function(x){ return x.icao === icao; });
+        if(!f) return;
+        map.setView([f.lat, f.lon], 8, {animate:true});
+        var m = markers[icao];
+        if(m) m.openPopup();
+      });
+    });
+  }
+
+  function popupHtml(f){
+    return '<div style="font-size:0.8rem;">' +
+      '<b>' + esc(f.callsign) + '</b><br>' +
+      'ICAO24: ' + esc(f.icao||"—") + '<br>' +
+      'Country: ' + esc(f.country||"—") + '<br>' +
+      'Altitude: ' + fmtAlt(f.alt, f.onGround) + ' ' + fmtVrate(f.vrate) + '<br>' +
+      'Speed: ' + fmtSpeed(f.speed) + '<br>' +
+      'Heading: ' + (f.heading != null ? Math.round(f.heading) + '°' : '—') + '<br>' +
+      'Squawk: ' + esc(f.squawk || "—") +
+    '</div>';
+  }
+
+  function fmtAlt(a, ground){
+    if(ground) return "Ground";
+    if(a == null) return "—";
+    return Math.round(a * 3.28084).toLocaleString() + " ft";
+  }
+  function fmtSpeed(s){
+    if(s == null) return "—";
+    return Math.round(s * 1.94384) + " kt";
+  }
+  function fmtVrate(v){
+    if(v == null || Math.abs(v) < 0.5) return "▬";
+    return v > 0 ? "▲" : "▼";
+  }
+  function esc(str){
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  /* ---------- Controls ---------- */
+  document.getElementById("search").addEventListener("input", render);
+  document.getElementById("refreshBtn").addEventListener("click", loadFlights);
+  document.getElementById("locBtn").addEventListener("click", function(){
+    try{
+      if(!navigator.geolocation){ return; }
+      navigator.geolocation.getCurrentPosition(function(pos){
+        center.lat = pos.coords.latitude;
+        center.lon = pos.coords.longitude;
+        haveGeo = true;
+        map.setView([center.lat, center.lon], 7);
+        loadFlights();
+      }, function(){ /* denied — keep default */ }, {timeout:6000});
+    }catch(e){ /* geolocation blocked in this context */ }
+  });
+
+  /* ---------- Init ---------- */
+  try{
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(function(pos){
+        center.lat = pos.coords.latitude;
+        center.lon = pos.coords.longitude;
+        haveGeo = true;
+        map.setView([center.lat, center.lon], 6);
+        loadFlights();
+      }, function(){
+        loadFlights();
+      }, {timeout:5000});
+    } else {
+      loadFlights();
+    }
+  }catch(e){
+    loadFlights();
+  }
+
+  timer = setInterval(loadFlights, REFRESH_MS);
+  window.addEventListener("beforeunload", function(){ clearInterval(timer); });
+})();
+</script>
+</body>
+</html>
