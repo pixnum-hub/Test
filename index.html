@@ -1,298 +1,460 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>3D Map Explorer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1420">
+<title>TELLUS - 3D Earth Explorer</title>
+<meta name="description" content="Dual-engine 3D globe viewer built with CesiumJS and NASA WorldWindJS.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f5f7fa; --fg:#1a1d23; --panel:#ffffff; --border:#d8dce3;
-  --accent:#2563eb; --tab-bg:#eef1f5; --tab-active:#2563eb; --tab-fg:#1a1d23;
+/* ============ THEME TOKENS ============ */
+:root[data-theme="dark"]{
+  --bg:#0b0f1a; --surface:#131a2b; --surface-2:#1a2338; --raised:#202b46;
+  --text:#e8ecf6; --text-dim:#8f9ac2; --accent:#4fd1e8; --accent-2:#ff9e5e;
+  --border:#28324e; --danger:#ff6b6b; --focus:#4fd1e8; --shadow:rgba(0,0,0,.45);
 }
-[data-theme="dark"]{
-  --bg:#14161a; --fg:#e8eaed; --panel:#1d2026; --border:#2c3038;
-  --accent:#5b8cff; --tab-bg:#20232a; --tab-active:#5b8cff; --tab-fg:#e8eaed;
+:root[data-theme="light"]{
+  --bg:#eef1f7; --surface:#ffffff; --surface-2:#f4f6fb; --raised:#ffffff;
+  --text:#131829; --text-dim:#5b6584; --accent:#0e7ab0; --accent-2:#c0621a;
+  --border:#d7dcea; --danger:#c22b2b; --focus:#0e7ab0; --shadow:rgba(20,30,60,.14);
 }
-[data-theme="oled"]{
-  --bg:#000000; --fg:#f0f0f0; --panel:#000000; --border:#1a1a1a;
-  --accent:#4da3ff; --tab-bg:#0a0a0a; --tab-active:#4da3ff; --tab-fg:#f0f0f0;
+:root[data-theme="oled"]{
+  --bg:#000000; --surface:#050505; --surface-2:#0c0c0c; --raised:#131313;
+  --text:#f3f3f3; --text-dim:#8a8a8a; --accent:#39e6a0; --accent-2:#ff8a4c;
+  --border:#1c1c1c; --danger:#ff6b6b; --focus:#39e6a0; --shadow:rgba(0,0,0,.6);
 }
-[data-theme="hc"]{
-  --bg:#000000; --fg:#ffffff; --panel:#000000; --border:#ffffff;
-  --accent:#ffff00; --tab-bg:#000000; --tab-active:#ffff00; --tab-fg:#000000;
+:root[data-theme="hc"]{
+  --bg:#000000; --surface:#000000; --surface-2:#000000; --raised:#000000;
+  --text:#ffffff; --text-dim:#ffffff; --accent:#ffe600; --accent-2:#00e5ff;
+  --border:#ffffff; --danger:#ff5252; --focus:#ffe600; --shadow:rgba(0,0,0,.8);
 }
-*{box-sizing:border-box;}
-html,body{height:100%;margin:0;}
+:root[data-theme="hc"] *{ border-color:#ffffff !important; }
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ height:100%; margin:0; overscroll-behavior:none; }
 body{
-  display:flex;flex-direction:column;background:var(--bg);color:var(--fg);
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
-  transition:background .2s,color .2s;
+  background:var(--bg); color:var(--text);
+  font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  display:flex; flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  transition:background .25s ease,color .25s ease;
 }
+h1,h2,.brand,.btn,.seg button{ font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif; }
+::selection{ background:var(--accent); color:var(--bg); }
+:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+button,input{ font-family:inherit; color:inherit; }
+a{ color:var(--accent); }
+
+/* ============ HEADER ============ */
 header{
-  display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;
-  padding:.6rem .8rem;border-bottom:1px solid var(--border);background:var(--panel);
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; background:var(--surface);
+  border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:40;
 }
-h1{font-size:1rem;margin:0;flex:1 1 auto;white-space:nowrap;}
-[data-theme="hc"] h1{font-weight:800;}
-.theme-btn{
-  border:1px solid var(--border);background:var(--tab-bg);color:var(--fg);
-  border-radius:.5rem;padding:.4rem .7rem;font-size:.8rem;cursor:pointer;
+.brand{ display:flex; align-items:baseline; gap:8px; margin-right:auto; min-width:0; }
+.brand .mark{ font-weight:700; font-size:1.15rem; letter-spacing:.06em; color:var(--text); }
+.brand .tag{ font-size:.68rem; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:none; }
+@media(min-width:480px){ .brand .tag{ display:inline; } }
+
+.seg{
+  display:flex; background:var(--surface-2); border:1px solid var(--border);
+  border-radius:999px; padding:3px; gap:2px;
 }
-.theme-btn:focus-visible,.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-nav{
-  display:flex;gap:.4rem;overflow-x:auto;padding:.5rem .8rem;background:var(--panel);
-  border-bottom:1px solid var(--border);-webkit-overflow-scrolling:touch;
+.seg button{
+  border:0; background:transparent; color:var(--text-dim);
+  font-size:.72rem; font-weight:600; padding:7px 11px; border-radius:999px;
+  cursor:pointer; transition:background .15s,color .15s;
 }
-.tab{
-  flex:0 0 auto;border:1px solid var(--border);background:var(--tab-bg);color:var(--tab-fg);
-  border-radius:999px;padding:.5rem 1rem;font-size:.85rem;cursor:pointer;white-space:nowrap;
+.seg button[aria-pressed="true"]{ background:var(--accent); color:var(--bg); }
+
+.icon-btn{
+  border:1px solid var(--border); background:var(--surface-2); color:var(--text);
+  width:38px; height:38px; border-radius:10px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:.95rem;
+  flex-shrink:0;
 }
-.tab.active{background:var(--tab-active);border-color:var(--tab-active);color:var(--bg);font-weight:600;}
-[data-theme="hc"] .tab.active{color:#000;}
-main{flex:1 1 auto;position:relative;min-height:0;}
-.engine{position:absolute;inset:0;display:none;width:100%;height:100%;}
-.engine.active{display:block;}
-#cesiumContainer,#maplibreContainer,#olContainer,#threeContainer,#worldwindWrap{width:100%;height:100%;}
-#worldwindCanvas{width:100%;height:100%;display:block;}
-.loading,.fallback{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  text-align:center;padding:2rem;color:var(--fg);background:var(--bg);font-size:.95rem;
+.icon-btn:active{ transform:scale(.94); }
+
+/* ============ MAIN / GLOBE ============ */
+main{ position:relative; flex:1; min-height:0; background:#000; }
+.engine-pane{ position:absolute; inset:0; opacity:0; pointer-events:none; transition:opacity .3s ease; }
+.engine-pane.active{ opacity:1; pointer-events:auto; }
+#cesiumContainer,#wwdCanvas{ width:100%; height:100%; display:block; }
+
+.loading{
+  position:absolute; inset:0; display:flex; flex-direction:column; gap:10px;
+  align-items:center; justify-content:center; background:var(--bg); z-index:30;
+  transition:opacity .35s ease, visibility .35s ease;
 }
+.loading.hidden{ opacity:0; visibility:hidden; }
+.spinner{
+  width:34px; height:34px; border-radius:50%;
+  border:3px solid var(--border); border-top-color:var(--accent);
+  animation:spin 0.9s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+.loading span{ font-size:.72rem; color:var(--text-dim); letter-spacing:.04em; }
+
+.error-box{
+  position:absolute; inset:0; display:none; flex-direction:column; gap:10px;
+  align-items:center; justify-content:center; background:var(--bg); z-index:31;
+  text-align:center; padding:24px;
+}
+.error-box.show{ display:flex; }
+.error-box p{ max-width:320px; color:var(--text-dim); font-size:.78rem; line-height:1.5; }
+.error-box button{
+  border:1px solid var(--accent); background:transparent; color:var(--accent);
+  padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;
+}
+
+/* attribution */
+.attrib{
+  position:absolute; left:8px; bottom:8px; z-index:20;
+  font-size:.62rem; color:var(--text-dim); background:var(--shadow);
+  padding:3px 7px; border-radius:6px; pointer-events:none;
+}
+
+/* ============ DOCK (controls) ============ */
+.dock{
+  position:absolute; left:0; right:0; bottom:0; z-index:35;
+  background:var(--surface); border-top:1px solid var(--border);
+  padding:10px 10px calc(10px + env(safe-area-inset-bottom,0px));
+  box-shadow:0 -6px 18px var(--shadow);
+  transform:translateY(0); transition:transform .25s ease;
+}
+.dock.collapsed{ transform:translateY(calc(100% - 40px)); }
+.dock-handle{
+  width:100%; display:flex; justify-content:center; padding:2px 0 8px; cursor:pointer;
+  border:0; background:transparent;
+}
+.dock-handle .bar{ width:34px; height:4px; border-radius:99px; background:var(--border); }
+.dock-row{ display:flex; gap:8px; flex-wrap:wrap; }
+.field{ flex:1 1 90px; min-width:80px; }
+.field label{ display:block; font-size:.62rem; color:var(--text-dim); margin-bottom:4px; letter-spacing:.03em; }
+.field input{
+  width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text);
+  border-radius:8px; padding:9px 10px; font-size:.82rem;
+}
+.dock-actions{ display:flex; gap:8px; margin-top:8px; }
+.btn{
+  border:1px solid var(--border); background:var(--surface-2); color:var(--text);
+  padding:10px 14px; border-radius:8px; font-size:.78rem; font-weight:600; cursor:pointer;
+  flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.btn.primary{ background:var(--accent); color:var(--bg); border-color:var(--accent); }
+.btn:active{ transform:scale(.97); }
+.hint{ font-size:.6rem; color:var(--text-dim); margin-top:6px; line-height:1.5; }
+
+/* ============ FOOTER ============ */
 footer{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;gap:.15rem;padding:.7rem 1rem;border-top:1px solid var(--border);
-  background:var(--panel);font-size:.78rem;color:var(--fg);
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));
+  background:var(--surface); border-top:1px solid var(--border);
+  font-size:.65rem; color:var(--text-dim); position:relative; z-index:45;
 }
-footer .years{opacity:.75;}
-@media(min-width:640px){
-  h1{font-size:1.15rem;}
-  .tab{font-size:.9rem;}
+footer strong{ color:var(--text); }
+
+/* hide cesium's built-in credit/logo chrome since we render our own attribution */
+.cesium-widget-credits{ display:none !important; }
+.cesium-viewer-bottom{ display:none !important; }
+
+@media(min-width:768px){
+  .dock{ left:auto; right:16px; bottom:16px; width:320px; border-radius:14px; border:1px solid var(--border); }
+  .dock.collapsed{ transform:translateY(0); }
+  .dock-handle{ display:none; }
 }
 </style>
 </head>
-<body data-theme="light">
+<body>
+
 <header>
-  <h1>🌍 3D Map Explorer</h1>
-  <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">Theme: Light</button>
+  <div class="brand">
+    <span class="mark">TELLUS</span>
+    <span class="tag">3D Earth Explorer</span>
+  </div>
+  <div class="seg" role="group" aria-label="Rendering engine">
+    <button id="engineCesiumBtn" aria-pressed="true">Cesium</button>
+    <button id="engineWwdBtn" aria-pressed="false">WorldWind</button>
+  </div>
+  <button id="themeBtn" class="icon-btn" title="Toggle theme" aria-label="Toggle theme">D+</button>
 </header>
-<nav id="tabs">
-  <button class="tab active" data-engine="maplibre">MapLibre GL</button>
-  <button class="tab" data-engine="cesium">CesiumJS</button>
-  <button class="tab" data-engine="worldwind">NASA WorldWind</button>
-  <button class="tab" data-engine="three">Three.js</button>
-  <button class="tab" data-engine="ol">OpenLayers</button>
-</nav>
+
 <main>
-  <div class="engine active" id="pane-maplibre"><div id="maplibreContainer"></div></div>
-  <div class="engine" id="pane-cesium"><div id="cesiumContainer"></div></div>
-  <div class="engine" id="pane-worldwind"><div id="worldwindWrap"><canvas id="worldwindCanvas"></canvas></div></div>
-  <div class="engine" id="pane-three"><div id="threeContainer"></div></div>
-  <div class="engine" id="pane-ol"><div id="olContainer"></div></div>
+  <!-- CesiumJS pane -->
+  <section id="cesiumPane" class="engine-pane active">
+    <div id="cesiumContainer"></div>
+    <div class="attrib">Imagery &copy; OpenStreetMap contributors</div>
+  </section>
+
+  <!-- WorldWindJS pane -->
+  <section id="wwdPane" class="engine-pane">
+    <canvas id="wwdCanvas">Your browser does not support HTML5 canvas.</canvas>
+    <div class="attrib">Imagery: NASA Blue Marble / Web WorldWind</div>
+  </section>
+
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <span id="loadingLabel">LOADING CESIUM ENGINE...</span>
+  </div>
+
+  <div id="errorBox" class="error-box">
+    <p id="errorMsg">This engine could not be loaded, likely a network issue reaching its CDN.</p>
+    <button id="retryBtn">Retry</button>
+  </div>
+
+  <div class="dock" id="dock">
+    <button class="dock-handle" id="dockHandle" aria-label="Toggle control panel">
+      <span class="bar"></span>
+    </button>
+    <div class="dock-row">
+      <div class="field">
+        <label for="latInput">Latitude</label>
+        <input id="latInput" type="number" step="0.0001" min="-90" max="90" placeholder="e.g. 27.9881">
+      </div>
+      <div class="field">
+        <label for="lonInput">Longitude</label>
+        <input id="lonInput" type="number" step="0.0001" min="-180" max="180" placeholder="e.g. 86.9250">
+      </div>
+    </div>
+    <div class="dock-actions">
+      <button class="btn primary" id="goBtn">Fly to</button>
+      <button class="btn" id="homeBtn">Home</button>
+    </div>
+    <div class="hint">Pinch / drag to orbit. No API keys, no accounts &mdash; imagery is served free by OpenStreetMap and NASA.</div>
+  </div>
 </main>
+
 <footer>
-  <div>© <span class="years">Manik Roy</span> <span id="year"></span>. All Rights Reserved.</div>
+  <span>&copy; Manik Roy <strong id="year"></strong>. All Rights Reserved.</span>
 </footer>
 
 <script>
-/* ---------- Theme ---------- */
-const themes=['light','dark','oled','hc'];
-const themeLabels={light:'Light',dark:'Dark',oled:'OLED',hc:'High Contrast'};
-const themeBtn=document.getElementById('themeBtn');
-function applyTheme(t){
-  document.body.setAttribute('data-theme',t);
-  themeBtn.textContent='Theme: '+themeLabels[t];
-  try{localStorage.setItem('mapexp-theme',t);}catch(e){}
-}
-let savedTheme='light';
-try{savedTheme=localStorage.getItem('mapexp-theme')||'light';}catch(e){}
-applyTheme(savedTheme);
-themeBtn.addEventListener('click',()=>{
-  const i=(themes.indexOf(document.body.getAttribute('data-theme'))+1)%themes.length;
-  applyTheme(themes[i]);
-});
-document.getElementById('year').textContent=new Date().getFullYear();
+document.getElementById('year').textContent = new Date().getFullYear();
 
-/* ---------- Asset loader ---------- */
-const loaded=new Set();
-function loadCSS(href){
-  if(loaded.has(href))return Promise.resolve();
-  return new Promise((res,rej)=>{
-    const l=document.createElement('link');
-    l.rel='stylesheet';l.href=href;
-    l.onload=()=>{loaded.add(href);res();};l.onerror=rej;
-    document.head.appendChild(l);
-  });
+/* ============ THEME ============ */
+const THEMES = [
+  { id:'dark', label:'D+'  },
+  { id:'light', label:'L+' },
+  { id:'oled', label:'OL+' },
+  { id:'hc', label:'HC'   }
+];
+const root = document.documentElement;
+const themeBtn = document.getElementById('themeBtn');
+let themeIndex = 0;
+(function initTheme(){
+  const saved = localStorage.getItem('tellus-theme');
+  const found = THEMES.findIndex(t => t.id === saved);
+  if (found > -1) themeIndex = found;
+  applyTheme();
+})();
+function applyTheme(){
+  const t = THEMES[themeIndex];
+  root.setAttribute('data-theme', t.id);
+  themeBtn.textContent = t.label;
+  document.querySelector('meta[name="theme-color"]').setAttribute('content',
+    getComputedStyle(root).getPropertyValue('--bg').trim());
+  localStorage.setItem('tellus-theme', t.id);
 }
-function loadJS(src){
-  if(loaded.has(src))return Promise.resolve();
-  return new Promise((res,rej)=>{
-    const s=document.createElement('script');
-    s.src=src;s.onload=()=>{loaded.add(src);res();};s.onerror=rej;
+themeBtn.addEventListener('click', () => {
+  themeIndex = (themeIndex + 1) % THEMES.length;
+  applyTheme();
+});
+
+/* ============ DOCK COLLAPSE (mobile) ============ */
+const dock = document.getElementById('dock');
+document.getElementById('dockHandle').addEventListener('click', () => {
+  dock.classList.toggle('collapsed');
+});
+
+/* ============ ENGINE SWITCHING SHELL ============ */
+const cesiumPane = document.getElementById('cesiumPane');
+const wwdPane = document.getElementById('wwdPane');
+const engineCesiumBtn = document.getElementById('engineCesiumBtn');
+const engineWwdBtn = document.getElementById('engineWwdBtn');
+const loadingEl = document.getElementById('loading');
+const loadingLabel = document.getElementById('loadingLabel');
+const errorBox = document.getElementById('errorBox');
+const errorMsg = document.getElementById('errorMsg');
+const retryBtn = document.getElementById('retryBtn');
+
+let activeEngine = 'cesium';
+let cesiumState = { loaded:false, loading:false, failed:false, viewer:null };
+let wwdState = { loaded:false, loading:false, failed:false, wwd:null };
+
+function showLoading(text){
+  loadingLabel.textContent = text;
+  loadingEl.classList.remove('hidden');
+  errorBox.classList.remove('show');
+}
+function hideLoading(){ loadingEl.classList.add('hidden'); }
+function showError(msg){
+  errorMsg.textContent = msg;
+  errorBox.classList.add('show');
+  loadingEl.classList.add('hidden');
+}
+
+function loadScript(src){
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src; s.async = true;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to fetch ' + src));
     document.head.appendChild(s);
   });
 }
-function showMsg(pane,html){
-  const p=document.getElementById(pane);
-  const d=document.createElement('div');
-  d.className='fallback';d.innerHTML=html;
-  p.appendChild(d);
-}
-function showToast(msg){
-  console.error(msg);
-  let t=document.getElementById('errToast');
-  if(!t){
-    t=document.createElement('div');
-    t.id='errToast';
-    t.style.cssText='position:fixed;left:.5rem;right:.5rem;bottom:.5rem;z-index:9999;'+
-      'background:#3a0d0d;color:#ffb3b3;border:1px solid #a33;border-radius:.5rem;'+
-      'padding:.5rem .7rem;font:12px/1.4 monospace;max-height:30vh;overflow:auto;white-space:pre-wrap;';
-    document.body.appendChild(t);
-  }
-  const line=document.createElement('div');
-  line.textContent=msg;
-  t.appendChild(line);
-}
-window.addEventListener('error',e=>showToast('JS error: '+e.message));
-window.addEventListener('unhandledrejection',e=>showToast('Promise error: '+(e.reason&&e.reason.message||e.reason)));
 
-/* ---------- Tabs ---------- */
-const initFns={maplibre:initMapLibre,cesium:initCesium,worldwind:initWorldWind,three:initThree,ol:initOL};
-const initedEngines=new Set();
-document.getElementById('tabs').addEventListener('click',e=>{
-  const btn=e.target.closest('.tab');if(!btn)return;
-  const eng=btn.dataset.engine;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===btn));
-  document.querySelectorAll('.engine').forEach(p=>p.classList.toggle('active',p.id==='pane-'+eng));
-  if(!initedEngines.has(eng)){
-    initedEngines.add(eng);
-    initFns[eng]().catch(err=>{
-      console.error(eng,err);
-      showMsg('pane-'+eng,'Could not load this engine (network/CDN issue). Check your connection and reload.');
-    });
-  }
-  window.dispatchEvent(new Event('resize'));
+function switchEngine(target){
+  if (target === activeEngine) return;
+  activeEngine = target;
+  const toCesium = target === 'cesium';
+  cesiumPane.classList.toggle('active', toCesium);
+  wwdPane.classList.toggle('active', !toCesium);
+  engineCesiumBtn.setAttribute('aria-pressed', String(toCesium));
+  engineWwdBtn.setAttribute('aria-pressed', String(!toCesium));
+
+  if (toCesium) initCesium(); else initWorldWind();
+
+  // nudge each engine to redraw at its new visible size
+  setTimeout(() => {
+    if (toCesium && cesiumState.viewer) cesiumState.viewer.resize();
+    if (!toCesium && wwdState.wwd) wwdState.wwd.redraw();
+  }, 60);
+}
+engineCesiumBtn.addEventListener('click', () => switchEngine('cesium'));
+engineWwdBtn.addEventListener('click', () => switchEngine('worldwind'));
+retryBtn.addEventListener('click', () => {
+  if (activeEngine === 'cesium') { cesiumState.failed = false; initCesium(); }
+  else { wwdState.failed = false; initWorldWind(); }
 });
 
-/* Initialize whichever engine is active by default on page load */
-(function bootDefaultEngine(){
-  const activeTab=document.querySelector('.tab.active');
-  const eng=activeTab ? activeTab.dataset.engine : 'maplibre';
-  initedEngines.add(eng);
-  initFns[eng]().catch(err=>{
-    console.error(eng,err);
-    showMsg('pane-'+eng,'Could not load this engine (network/CDN issue). Check your connection and reload.');
-  });
-})();
+/* ============ CESIUM ENGINE ============ */
+const CESIUM_VERSION = '1.121';
+const CESIUM_BASE = 'https://cdn.jsdelivr.net/npm/cesium@' + CESIUM_VERSION + '/Build/Cesium/';
 
-/* ---------- MapLibre GL JS (free demotiles style, no key) ---------- */
-async function initMapLibre(){
-  await loadCSS('https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css');
-  await loadJS('https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js');
-  const map=new maplibregl.Map({
-    container:'maplibreContainer',
-    style:'https://demotiles.maplibre.org/style.json',
-    center:[0,20],zoom:1.4,projection:'globe'
-  });
-  map.addControl(new maplibregl.NavigationControl());
-  map.on('error',e=>showToast('MapLibre: '+(e.error&&e.error.message||e.error)));
-}
-
-/* ---------- OpenLayers (free OSM tiles, no key) ---------- */
-async function initOL(){
-  await loadCSS('https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css');
-  await loadJS('https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js');
-  new ol.Map({
-    target:'olContainer',
-    layers:[new ol.layer.Tile({source:new ol.source.OSM()})],
-    view:new ol.View({center:ol.proj.fromLonLat([0,20]),zoom:2})
-  });
-}
-
-/* ---------- CesiumJS (bundled offline Natural Earth II imagery, no Ion token, no external tile server) ---------- */
 async function initCesium(){
-  const ver='1.120';
-  window.CESIUM_BASE_URL='https://cdn.jsdelivr.net/npm/cesium@'+ver+'/Build/Cesium/';
-  await loadCSS(window.CESIUM_BASE_URL+'Widgets/widgets.css');
-  await loadJS(window.CESIUM_BASE_URL+'Cesium.js');
-  Cesium.Ion.defaultAccessToken=undefined;
-  const imageryProvider=await Cesium.TileMapServiceImageryProvider.fromUrl(
-    Cesium.buildModuleUrl('Assets/Tiles/NaturalEarthII')
-  );
-  imageryProvider.errorEvent.addEventListener(e=>showToast('Cesium imagery: '+(e.message||e)));
-  const viewer=new Cesium.Viewer('cesiumContainer',{
-    baseLayer:false,
-    terrainProvider:new Cesium.EllipsoidTerrainProvider(),
-    baseLayerPicker:false,geocoder:false,homeButton:true,sceneModePicker:true,
-    navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false,
-    requestRenderMode:false
-  });
-  viewer.scene.requestRenderMode=false;
-  viewer.imageryLayers.addImageryProvider(imageryProvider);
-  viewer.camera.flyHome(0);
-  let lastTick=performance.now();
-  viewer.scene.postRender.addEventListener(function(){
-    try{
-      const now=performance.now();
-      const dt=(now-lastTick)/1000;
-      lastTick=now;
-      viewer.scene.camera.rotate(Cesium.Cartesian3.UNIT_Z,-0.12*dt);
-      viewer.scene.requestRender();
-    }catch(err){
-      showToast('Cesium rotate: '+err.message);
+  if (cesiumState.loaded || cesiumState.loading) { hideLoading(); return; }
+  if (cesiumState.failed) return;
+  cesiumState.loading = true;
+  showLoading('LOADING CESIUM ENGINE...');
+  try{
+    if (!window.Cesium){
+      window.CESIUM_BASE_URL = CESIUM_BASE;
+      await loadScript(CESIUM_BASE + 'Cesium.js');
     }
-  });
-}
+    const Cesium = window.Cesium;
 
-/* ---------- Three.js (rotating textured globe, no key) ---------- */
-async function initThree(){
-  await loadJS('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js');
-  const c=document.getElementById('threeContainer');
-  const scene=new THREE.Scene();
-  const cam=new THREE.PerspectiveCamera(45,c.clientWidth/c.clientHeight,0.1,1000);
-  cam.position.z=3;
-  const renderer=new THREE.WebGLRenderer({antialias:true});
-  renderer.setSize(c.clientWidth,c.clientHeight);
-  c.appendChild(renderer.domElement);
-  const tex=new THREE.TextureLoader().load(
-    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/planets/earth_atmos_2048.jpg'
-  );
-  const earth=new THREE.Mesh(new THREE.SphereGeometry(1,64,64),new THREE.MeshStandardMaterial({map:tex}));
-  scene.add(earth);
-  scene.add(new THREE.AmbientLight(0xffffff,0.6));
-  const dl=new THREE.DirectionalLight(0xffffff,1);dl.position.set(5,3,5);scene.add(dl);
-  let dragging=false,lastX=0,lastY=0,rotY=0,rotX=0;
-  c.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;});
-  window.addEventListener('pointerup',()=>dragging=false);
-  window.addEventListener('pointermove',e=>{
-    if(!dragging)return;
-    rotY+=(e.clientX-lastX)*0.005;rotX+=(e.clientY-lastY)*0.005;
-    lastX=e.clientX;lastY=e.clientY;
-  });
-  function animate(){
-    requestAnimationFrame(animate);
-    earth.rotation.y=rotY+performance.now()*0.00004;
-    earth.rotation.x=rotX;
-    renderer.render(scene,cam);
+    // Free, no-key OpenStreetMap raster imagery
+    const osm = new Cesium.UrlTemplateImageryProvider({
+      url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      credit:'\u00A9 OpenStreetMap contributors',
+      maximumLevel:19
+    });
+
+    // Lightweight widget (no Cesium ion, no default toolbar chrome)
+    const widget = new Cesium.CesiumWidget('cesiumContainer', {
+      imageryProvider:osm,
+      terrainProvider:new Cesium.EllipsoidTerrainProvider(),
+      baseLayerPicker:false, geocoder:false, homeButton:false,
+      sceneModePicker:false, navigationHelpButton:false,
+      animation:false, timeline:false, fullscreenButton:false,
+      infoBox:false, selectionIndicator:false, shadows:false,
+      creditContainer:document.createElement('div')
+    });
+    widget.scene.globe.enableLighting = false;
+    widget.camera.flyHome(0);
+
+    cesiumState.viewer = widget;
+    cesiumState.loaded = true;
+    cesiumState.loading = false;
+    hideLoading();
+  }catch(err){
+    cesiumState.loading = false;
+    cesiumState.failed = true;
+    showError('CesiumJS failed to load from its CDN. Check your connection and retry.');
+    console.error(err);
   }
-  animate();
-  window.addEventListener('resize',()=>{
-    if(!document.getElementById('pane-three').classList.contains('active'))return;
-    cam.aspect=c.clientWidth/c.clientHeight;cam.updateProjectionMatrix();
-    renderer.setSize(c.clientWidth,c.clientHeight);
-  });
 }
 
-/* ---------- NASA WorldWind (community WorldWindJS fork, bundled offline imagery) ---------- */
+/* ============ WORLDWINDJS ENGINE (NASA / ESA fork, npm-maintained) ============ */
+const WWD_VERSION = '1.9.5';
+const WWD_URL = 'https://cdn.jsdelivr.net/npm/worldwindjs@' + WWD_VERSION + '/build/dist/worldwind.min.js';
+
 async function initWorldWind(){
-  await loadJS('https://cdn.jsdelivr.net/npm/worldwindjs@1.9.5/build/dist/worldwind.min.js');
-  if(typeof WorldWind==='undefined')throw new Error('WorldWind not available');
-  const wwd=new WorldWind.WorldWindow('worldwindCanvas');
-  wwd.addLayer(new WorldWind.BMNGOneImageLayer());
-  wwd.addLayer(new WorldWind.CompassLayer());
-  wwd.addLayer(new WorldWind.CoordinatesDisplayLayer(wwd));
-  wwd.addLayer(new WorldWind.ViewControlsLayer(wwd));
+  if (wwdState.loaded || wwdState.loading) { hideLoading(); return; }
+  if (wwdState.failed) return;
+  wwdState.loading = true;
+  showLoading('LOADING WORLDWIND ENGINE...');
+  try{
+    if (!window.WorldWind){
+      await loadScript(WWD_URL);
+    }
+    const WorldWind = window.WorldWind;
+    const wwd = new WorldWind.WorldWindow('wwdCanvas');
+
+    // Free NASA-hosted layers - no key required
+    wwd.addLayer(new WorldWind.BMNGOneImageLayer());   // bundled low-res base, works offline
+    wwd.addLayer(new WorldWind.BMNGLayer());            // NASA Blue Marble tiled imagery
+    wwd.addLayer(new WorldWind.CompassLayer());
+    wwd.addLayer(new WorldWind.CoordinatesDisplayLayer(wwd));
+    wwd.addLayer(new WorldWind.ViewControlsLayer(wwd));
+
+    wwdState.wwd = wwd;
+    wwdState.loaded = true;
+    wwdState.loading = false;
+    hideLoading();
+  }catch(err){
+    wwdState.loading = false;
+    wwdState.failed = true;
+    showError('WorldWindJS failed to load from its CDN. Check your connection and retry.');
+    console.error(err);
+  }
 }
+
+/* ============ NAVIGATION: FLY TO / HOME ============ */
+function flyTo(lat, lon){
+  if (isNaN(lat) || isNaN(lon)) return;
+  if (activeEngine === 'cesium' && cesiumState.viewer){
+    const Cesium = window.Cesium;
+    cesiumState.viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(lon, lat, 900000)
+    });
+  } else if (activeEngine === 'worldwind' && wwdState.wwd){
+    const wwd = wwdState.wwd;
+    wwd.navigator.lookAtLocation.latitude = lat;
+    wwd.navigator.lookAtLocation.longitude = lon;
+    wwd.navigator.range = 1200000;
+    wwd.redraw();
+  }
+}
+function goHome(){
+  if (activeEngine === 'cesium' && cesiumState.viewer){
+    cesiumState.viewer.camera.flyHome(1.2);
+  } else if (activeEngine === 'worldwind' && wwdState.wwd){
+    const wwd = wwdState.wwd;
+    wwd.navigator.lookAtLocation.latitude = 0;
+    wwd.navigator.lookAtLocation.longitude = 0;
+    wwd.navigator.range = 15000000;
+    wwd.redraw();
+  }
+}
+document.getElementById('goBtn').addEventListener('click', () => {
+  flyTo(parseFloat(document.getElementById('latInput').value),
+        parseFloat(document.getElementById('lonInput').value));
+});
+document.getElementById('homeBtn').addEventListener('click', goHome);
+
+window.addEventListener('resize', () => {
+  if (cesiumState.viewer) cesiumState.viewer.resize();
+  if (wwdState.wwd) wwdState.wwd.redraw();
+});
+
+/* ============ BOOT ============ */
+initCesium();
 </script>
 </body>
 </html>
