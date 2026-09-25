@@ -1,391 +1,260 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b0f14">
-<title>SkyTrace — Live Flight Tracker</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<title>3D Map Explorer</title>
 <style>
 :root{
-  --bg:#0b0f14; --panel:#121820; --card:#171f2a; --border:#26313f;
-  --fg:#e7eef7; --muted:#8aa0b8; --accent:#3aa0ff; --accent2:#22c55e;
-  --danger:#ef4444; --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f5f7fa; --fg:#1a1d23; --panel:#ffffff; --border:#d8dce3;
+  --accent:#2563eb; --tab-bg:#eef1f5; --tab-active:#2563eb; --tab-fg:#1a1d23;
 }
-html[data-theme="light"]{--bg:#f3f6fa;--panel:#ffffff;--card:#ffffff;--border:#dbe3ee;--fg:#101722;--muted:#5b6b80;--accent:#0b6fe0;--accent2:#0f9d58;}
-html[data-theme="oled"]{--bg:#000000;--panel:#000000;--card:#0a0a0a;--border:#1c1c1c;--fg:#f2f2f2;--muted:#8f8f8f;--accent:#3aa0ff;--accent2:#22c55e;}
-html[data-theme="hc"]{--bg:#000000;--panel:#000000;--card:#000000;--border:#ffffff;--fg:#ffffff;--muted:#ffffff;--accent:#ffff00;--accent2:#00ffff;}
+[data-theme="dark"]{
+  --bg:#14161a; --fg:#e8eaed; --panel:#1d2026; --border:#2c3038;
+  --accent:#5b8cff; --tab-bg:#20232a; --tab-active:#5b8cff; --tab-fg:#e8eaed;
+}
+[data-theme="oled"]{
+  --bg:#000000; --fg:#f0f0f0; --panel:#000000; --border:#1a1a1a;
+  --accent:#4da3ff; --tab-bg:#0a0a0a; --tab-active:#4da3ff; --tab-fg:#f0f0f0;
+}
+[data-theme="hc"]{
+  --bg:#000000; --fg:#ffffff; --panel:#000000; --border:#ffffff;
+  --accent:#ffff00; --tab-bg:#000000; --tab-active:#ffff00; --tab-fg:#000000;
+}
 *{box-sizing:border-box;}
 html,body{height:100%;margin:0;}
 body{
-  background:var(--bg); color:var(--fg); font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-  display:flex; flex-direction:column; min-height:100%;
-  padding-top:var(--safe-top); padding-bottom:var(--safe-bottom);
+  display:flex;flex-direction:column;background:var(--bg);color:var(--fg);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  transition:background .2s,color .2s;
 }
 header{
-  padding:12px 14px; display:flex; align-items:center; justify-content:space-between;
-  border-bottom:1px solid var(--border); background:var(--panel); position:sticky; top:var(--safe-top); z-index:1000; gap:8px;
+  display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;
+  padding:.6rem .8rem;border-bottom:1px solid var(--border);background:var(--panel);
 }
-header h1{font-size:1.05rem; margin:0; display:flex; align-items:center; gap:8px;}
-header h1 span.dot{width:9px;height:9px;border-radius:50%;background:var(--accent2);display:inline-block;}
-.theme-row{display:flex; gap:6px;}
+h1{font-size:1rem;margin:0;flex:1 1 auto;white-space:nowrap;}
+[data-theme="hc"] h1{font-weight:800;}
 .theme-btn{
-  border:1px solid var(--border); background:var(--card); color:var(--fg); border-radius:8px;
-  width:40px; height:40px; font-size:0.85rem; display:flex; align-items:center; justify-content:center; cursor:pointer;
+  border:1px solid var(--border);background:var(--tab-bg);color:var(--fg);
+  border-radius:.5rem;padding:.4rem .7rem;font-size:.8rem;cursor:pointer;
 }
-.theme-btn.active{border-color:var(--accent); color:var(--accent);}
-main{flex:1; display:flex; flex-direction:column; min-height:0;}
-#map{width:100%; height:44vh; min-height:260px; background:var(--panel);}
-.toolbar{
-  display:flex; gap:8px; padding:10px 12px; background:var(--panel); border-bottom:1px solid var(--border); flex-wrap:wrap; align-items:center;
+.theme-btn:focus-visible,.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+nav{
+  display:flex;gap:.4rem;overflow-x:auto;padding:.5rem .8rem;background:var(--panel);
+  border-bottom:1px solid var(--border);-webkit-overflow-scrolling:touch;
 }
-.toolbar input[type="text"]{
-  flex:1; min-width:120px; background:var(--card); color:var(--fg); border:1px solid var(--border);
-  border-radius:10px; padding:10px 12px; font-size:16px;
+.tab{
+  flex:0 0 auto;border:1px solid var(--border);background:var(--tab-bg);color:var(--tab-fg);
+  border-radius:999px;padding:.5rem 1rem;font-size:.85rem;cursor:pointer;white-space:nowrap;
 }
-.btn{
-  border:1px solid var(--border); background:var(--card); color:var(--fg); border-radius:10px;
-  padding:10px 14px; font-size:0.9rem; cursor:pointer; min-height:44px;
-}
-.btn.primary{background:var(--accent); color:#03101c; border-color:var(--accent); font-weight:600;}
-.status-bar{
-  display:flex; justify-content:space-between; gap:8px; padding:6px 14px; font-size:0.75rem; color:var(--muted);
-  border-bottom:1px solid var(--border); background:var(--panel); flex-wrap:wrap;
-}
-#list{flex:1; overflow-y:auto; padding:10px 12px 20px; -webkit-overflow-scrolling:touch;}
-.flight-card{
-  background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px;
-  margin-bottom:10px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; align-items:center;
-}
-.flight-card:active{border-color:var(--accent);}
-.fc-main .callsign{font-weight:700; font-size:1rem;}
-.fc-main .sub{color:var(--muted); font-size:0.78rem; margin-top:2px;}
-.fc-stats{text-align:right; font-size:0.78rem; color:var(--muted); line-height:1.5;}
-.fc-stats b{color:var(--fg); font-size:0.85rem;}
-.empty, .loading{text-align:center; color:var(--muted); padding:30px 10px; font-size:0.9rem;}
-.plane-icon{
-  color:var(--accent); font-size:20px; text-shadow:0 0 3px #000, 0 0 3px #000;
-  display:flex; align-items:center; justify-content:center; transform-origin:center;
+.tab.active{background:var(--tab-active);border-color:var(--tab-active);color:var(--bg);font-weight:600;}
+[data-theme="hc"] .tab.active{color:#000;}
+main{flex:1 1 auto;position:relative;min-height:0;}
+.engine{position:absolute;inset:0;display:none;width:100%;height:100%;}
+.engine.active{display:block;}
+#cesiumContainer,#maplibreContainer,#olContainer,#threeContainer,#worldwindWrap{width:100%;height:100%;}
+#worldwindCanvas{width:100%;height:100%;display:block;}
+.loading,.fallback{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:2rem;color:var(--fg);background:var(--bg);font-size:.95rem;
 }
 footer{
-  border-top:1px solid var(--border); background:var(--panel); padding:14px 10px;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; text-align:center;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;gap:.15rem;padding:.7rem 1rem;border-top:1px solid var(--border);
+  background:var(--panel);font-size:.78rem;color:var(--fg);
 }
-footer p{margin:0; font-size:0.75rem; color:var(--muted);}
-.leaflet-popup-content-wrapper{background:var(--card); color:var(--fg); border-radius:10px;}
-.leaflet-popup-tip{background:var(--card);}
-.leaflet-container{background:var(--panel);}
-.src-pill{
-  border:1px solid var(--border); border-radius:20px; padding:2px 8px; font-size:0.7rem;
-}
-.src-pill.ok{color:var(--accent2); border-color:var(--accent2);}
-.src-pill.err{color:var(--danger); border-color:var(--danger);}
-@media (min-width:760px){
-  #map{height:56vh;}
+footer .years{opacity:.75;}
+@media(min-width:640px){
+  h1{font-size:1.15rem;}
+  .tab{font-size:.9rem;}
 }
 </style>
 </head>
-<body>
+<body data-theme="light">
 <header>
-  <h1><span class="dot" id="liveDot"></span>SkyTrace</h1>
-  <div class="theme-row" id="themeRow">
-    <button class="theme-btn" data-theme="dark" title="Dark">🌙</button>
-    <button class="theme-btn" data-theme="light" title="Light">☀️</button>
-    <button class="theme-btn" data-theme="oled" title="OLED Black">⚫</button>
-    <button class="theme-btn" data-theme="hc" title="High Contrast">◐</button>
-  </div>
+  <h1>🌍 3D Map Explorer</h1>
+  <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">Theme: Light</button>
 </header>
-
-<div class="toolbar">
-  <input type="text" id="search" placeholder="Search callsign, ICAO24, country...">
-  <button class="btn" id="locBtn" title="Use my location">📍</button>
-  <button class="btn primary" id="refreshBtn">Refresh</button>
-</div>
-<div class="status-bar">
-  <span id="statusText">Loading flight data…</span>
-  <span class="src-pill" id="srcPill">source: —</span>
-</div>
-
+<nav id="tabs">
+  <button class="tab active" data-engine="maplibre">MapLibre GL</button>
+  <button class="tab" data-engine="cesium">CesiumJS</button>
+  <button class="tab" data-engine="worldwind">NASA WorldWind</button>
+  <button class="tab" data-engine="three">Three.js</button>
+  <button class="tab" data-engine="ol">OpenLayers</button>
+</nav>
 <main>
-  <div id="map"></div>
-  <div id="list"><div class="loading">Fetching live aircraft…</div></div>
+  <div class="engine active" id="pane-maplibre"><div id="maplibreContainer"></div></div>
+  <div class="engine" id="pane-cesium"><div id="cesiumContainer"></div></div>
+  <div class="engine" id="pane-worldwind"><div id="worldwindWrap"><canvas id="worldwindCanvas"></canvas></div></div>
+  <div class="engine" id="pane-three"><div id="threeContainer"></div></div>
+  <div class="engine" id="pane-ol"><div id="olContainer"></div></div>
 </main>
-
 <footer>
-  <p>© <span id="year"></span> Manik Roy. All Rights Reserved.</p>
-  <p>Data: adsb.lol · airplanes.live · adsb.one · OpenSky — no key required</p>
+  <div>© <span class="years">Manik Roy</span> <span id="year"></span>. All Rights Reserved.</div>
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-(function(){
-  "use strict";
+/* ---------- Theme ---------- */
+const themes=['light','dark','oled','hc'];
+const themeLabels={light:'Light',dark:'Dark',oled:'OLED',hc:'High Contrast'};
+const themeBtn=document.getElementById('themeBtn');
+function applyTheme(t){
+  document.body.setAttribute('data-theme',t);
+  themeBtn.textContent='Theme: '+themeLabels[t];
+  try{localStorage.setItem('mapexp-theme',t);}catch(e){}
+}
+let savedTheme='light';
+try{savedTheme=localStorage.getItem('mapexp-theme')||'light';}catch(e){}
+applyTheme(savedTheme);
+themeBtn.addEventListener('click',()=>{
+  const i=(themes.indexOf(document.body.getAttribute('data-theme'))+1)%themes.length;
+  applyTheme(themes[i]);
+});
+document.getElementById('year').textContent=new Date().getFullYear();
 
-  /* ---------- Theme ---------- */
-  var root = document.documentElement;
-  var themes = ["dark","light","oled","hc"];
-  function applyTheme(t){
-    if(themes.indexOf(t) === -1) t = "dark";
-    root.setAttribute("data-theme", t);
-    document.querySelectorAll(".theme-btn").forEach(function(b){
-      b.classList.toggle("active", b.dataset.theme === t);
-    });
-    try{ localStorage.setItem("skytrace-theme", t); }catch(e){}
-  }
-  document.getElementById("themeRow").addEventListener("click", function(e){
-    var b = e.target.closest(".theme-btn");
-    if(b) applyTheme(b.dataset.theme);
+/* ---------- Asset loader ---------- */
+const loaded=new Set();
+function loadCSS(href){
+  if(loaded.has(href))return Promise.resolve();
+  return new Promise((res,rej)=>{
+    const l=document.createElement('link');
+    l.rel='stylesheet';l.href=href;
+    l.onload=()=>{loaded.add(href);res();};l.onerror=rej;
+    document.head.appendChild(l);
   });
-  var savedTheme = "dark";
-  try{ savedTheme = localStorage.getItem("skytrace-theme") || "dark"; }catch(e){}
-  applyTheme(savedTheme);
-
-  /* ---------- Footer year ---------- */
-  document.getElementById("year").textContent = new Date().getFullYear();
-
-  /* ---------- Map ---------- */
-  var map = L.map("map", {zoomControl:true, attributionControl:true}).setView([51.47, -0.45], 6);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 18,
-    attribution: "&copy; OpenStreetMap"
-  }).addTo(map);
-
-  var markers = {};
-  var markerLayer = L.layerGroup().addTo(map);
-
-  function planeIcon(heading, color){
-    var html = '<div class="plane-icon" style="transform:rotate(' + (heading||0) + 'deg); color:' + (color||"var(--accent)") + '">✈</div>';
-    return L.divIcon({html:html, className:"", iconSize:[26,26], iconAnchor:[13,13]});
-  }
-
-  /* ---------- State ---------- */
-  var center = {lat:51.4700, lon:-0.4543};
-  var haveGeo = false;
-  var flights = [];
-  var lastSource = "";
-  var REFRESH_MS = 25000;
-  var timer = null;
-
-  function setStatus(text){ document.getElementById("statusText").textContent = text; }
-  function setSourcePill(name, ok){
-    var el = document.getElementById("srcPill");
-    el.textContent = "source: " + name;
-    el.className = "src-pill " + (ok ? "ok" : "err");
-  }
-  function setLive(on){
-    document.getElementById("liveDot").style.background = on ? "var(--accent2)" : "var(--danger)";
-  }
-
-  function bboxAround(lat, lon, deg){
-    return {
-      lamin: Math.max(lat - deg, -90),
-      lamax: Math.min(lat + deg, 90),
-      lomin: Math.max(lon - deg, -180),
-      lomax: Math.min(lon + deg, 180)
-    };
-  }
-
-  /* ---------- Fetch chain ---------- */
-  // OpenSky's REST API does not send CORS headers, so browser fetch() calls to
-  // it fail even though the server itself responds fine — it is tried last,
-  // as a bonus, while the three ADS-B mirrors (which are CORS-enabled) go first.
-  function fetchOpenSky(){
-    var bb = bboxAround(center.lat, center.lon, 6);
-    var url = "https://opensky-network.org/api/states/all?lamin=" + bb.lamin +
-      "&lomin=" + bb.lomin + "&lamax=" + bb.lamax + "&lomax=" + bb.lomax;
-    return fetch(url).then(function(r){
-      if(!r.ok) throw new Error("opensky " + r.status);
-      return r.json();
-    }).then(function(data){
-      var rows = data && data.states ? data.states : [];
-      if(!rows.length) throw new Error("opensky empty");
-      return rows.map(function(s){
-        return {
-          icao: s[0], callsign: (s[1]||"").trim() || "—", country: s[2],
-          lon: s[5], lat: s[6], alt: s[7], onGround: s[8],
-          speed: s[9], heading: s[10], vrate: s[11], squawk: s[14] || null
-        };
-      }).filter(function(f){ return f.lat != null && f.lon != null; });
-    }).then(function(rows){ lastSource = "OpenSky Network"; return rows; });
-  }
-
-  function fetchPointApi(base, name, lat, lon){
-    var url = base + "/v2/point/" + lat.toFixed(2) + "/" + lon.toFixed(2) + "/250";
-    return fetch(url).then(function(r){
-      if(!r.ok) throw new Error(name + " " + r.status);
-      return r.json();
-    }).then(function(data){
-      var rows = data && data.ac ? data.ac : [];
-      if(!rows.length) throw new Error(name + " empty");
-      return rows.map(function(a){
-        return {
-          icao: a.hex, callsign: (a.flight||"").trim() || "—", country: a.r || "—",
-          lon: a.lon, lat: a.lat,
-          alt: typeof a.alt_baro === "number" ? a.alt_baro : null,
-          onGround: a.alt_baro === "ground",
-          speed: a.gs, heading: a.track, vrate: a.baro_rate, squawk: a.squawk || null
-        };
-      }).filter(function(f){ return f.lat != null && f.lon != null; });
-    }).then(function(rows){ lastSource = name; return rows; });
-  }
-
-  function fetchAroundPoint(lat, lon){
-    return fetchPointApi("https://api.adsb.lol", "adsb.lol", lat, lon)
-      .catch(function(){ return fetchPointApi("https://api.airplanes.live", "airplanes.live", lat, lon); })
-      .catch(function(){ return fetchPointApi("https://api.adsb.one", "adsb.one", lat, lon); });
-  }
-
-  // A busy 24/7 hub used only if the user's own area currently has no
-  // traffic in range on any source (e.g. over open ocean or at 3am locally).
-  var FALLBACK_HUB = {lat: 51.4700, lon: -0.4543, name: "London (Heathrow area)"};
-
-  function loadFlights(){
-    setStatus("Refreshing…");
-    fetchAroundPoint(center.lat, center.lon)
-      .catch(function(){ return fetchOpenSky(); })
-      .catch(function(){
-        return fetchAroundPoint(FALLBACK_HUB.lat, FALLBACK_HUB.lon).then(function(rows){
-          lastSource = lastSource + " · showing " + FALLBACK_HUB.name + " (no local traffic)";
-          return rows;
-        });
-      })
-      .then(function(rows){
-        flights = rows.slice(0, 300);
-        setLive(true);
-        setSourcePill(lastSource, true);
-        setStatus(flights.length + " aircraft tracked · updated " + new Date().toLocaleTimeString());
-        render();
-      })
-      .catch(function(err){
-        setLive(false);
-        setSourcePill("unavailable", false);
-        setStatus("Couldn't reach any flight data source (network blocked or all APIs down). Retrying in " + Math.round(REFRESH_MS/1000) + "s…");
-      });
-  }
-
-  /* ---------- Render ---------- */
-  var selectedIcao = null;
-
-  function render(){
-    var q = document.getElementById("search").value.trim().toLowerCase();
-    var filtered = flights.filter(function(f){
-      if(!q) return true;
-      return (f.callsign||"").toLowerCase().includes(q) ||
-             (f.icao||"").toLowerCase().includes(q) ||
-             (String(f.country)||"").toLowerCase().includes(q);
-    });
-
-    markerLayer.clearLayers();
-    markers = {};
-    filtered.forEach(function(f){
-      var color = f.onGround ? "var(--muted)" : "var(--accent)";
-      var m = L.marker([f.lat, f.lon], {icon: planeIcon(f.heading, color)});
-      m.bindPopup(popupHtml(f));
-      m.on("click", function(){ selectedIcao = f.icao; });
-      m.addTo(markerLayer);
-      markers[f.icao] = m;
-    });
-
-    var list = document.getElementById("list");
-    if(!filtered.length){
-      list.innerHTML = '<div class="empty">No matching aircraft found.</div>';
-      return;
-    }
-    list.innerHTML = filtered.map(function(f){
-      return '<div class="flight-card" data-icao="' + f.icao + '">' +
-        '<div class="fc-main">' +
-          '<div class="callsign">' + esc(f.callsign) + '</div>' +
-          '<div class="sub">' + esc(f.icao || "—") + ' · ' + esc(f.country || "Unknown") + '</div>' +
-        '</div>' +
-        '<div class="fc-stats">' +
-          '<div><b>' + fmtAlt(f.alt, f.onGround) + '</b> alt ' + fmtVrate(f.vrate) + '</div>' +
-          '<div><b>' + fmtSpeed(f.speed) + '</b> spd</div>' +
-          '<div>sq ' + esc(f.squawk || "—") + '</div>' +
-        '</div>' +
-      '</div>';
-    }).join("");
-
-    list.querySelectorAll(".flight-card").forEach(function(card){
-      card.addEventListener("click", function(){
-        var icao = card.dataset.icao;
-        var f = flights.find(function(x){ return x.icao === icao; });
-        if(!f) return;
-        map.setView([f.lat, f.lon], 8, {animate:true});
-        var m = markers[icao];
-        if(m) m.openPopup();
-      });
-    });
-  }
-
-  function popupHtml(f){
-    return '<div style="font-size:0.8rem;">' +
-      '<b>' + esc(f.callsign) + '</b><br>' +
-      'ICAO24: ' + esc(f.icao||"—") + '<br>' +
-      'Country: ' + esc(f.country||"—") + '<br>' +
-      'Altitude: ' + fmtAlt(f.alt, f.onGround) + ' ' + fmtVrate(f.vrate) + '<br>' +
-      'Speed: ' + fmtSpeed(f.speed) + '<br>' +
-      'Heading: ' + (f.heading != null ? Math.round(f.heading) + '°' : '—') + '<br>' +
-      'Squawk: ' + esc(f.squawk || "—") +
-    '</div>';
-  }
-
-  function fmtAlt(a, ground){
-    if(ground) return "Ground";
-    if(a == null) return "—";
-    return Math.round(a * 3.28084).toLocaleString() + " ft";
-  }
-  function fmtSpeed(s){
-    if(s == null) return "—";
-    return Math.round(s * 1.94384) + " kt";
-  }
-  function fmtVrate(v){
-    if(v == null || Math.abs(v) < 0.5) return "▬";
-    return v > 0 ? "▲" : "▼";
-  }
-  function esc(str){
-    return String(str == null ? "" : str).replace(/[&<>"']/g, function(c){
-      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
-    });
-  }
-
-  /* ---------- Controls ---------- */
-  document.getElementById("search").addEventListener("input", render);
-  document.getElementById("refreshBtn").addEventListener("click", loadFlights);
-  document.getElementById("locBtn").addEventListener("click", function(){
-    try{
-      if(!navigator.geolocation){ return; }
-      navigator.geolocation.getCurrentPosition(function(pos){
-        center.lat = pos.coords.latitude;
-        center.lon = pos.coords.longitude;
-        haveGeo = true;
-        map.setView([center.lat, center.lon], 7);
-        loadFlights();
-      }, function(){ /* denied — keep default */ }, {timeout:6000});
-    }catch(e){ /* geolocation blocked in this context */ }
+}
+function loadJS(src){
+  if(loaded.has(src))return Promise.resolve();
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=src;s.onload=()=>{loaded.add(src);res();};s.onerror=rej;
+    document.head.appendChild(s);
   });
+}
+function showMsg(pane,html){
+  const p=document.getElementById(pane);
+  const d=document.createElement('div');
+  d.className='fallback';d.innerHTML=html;
+  p.appendChild(d);
+}
 
-  /* ---------- Init ---------- */
-  try{
-    if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(function(pos){
-        center.lat = pos.coords.latitude;
-        center.lon = pos.coords.longitude;
-        haveGeo = true;
-        map.setView([center.lat, center.lon], 6);
-        loadFlights();
-      }, function(){
-        loadFlights();
-      }, {timeout:5000});
-    } else {
-      loadFlights();
-    }
-  }catch(e){
-    loadFlights();
+/* ---------- Tabs ---------- */
+const initFns={maplibre:initMapLibre,cesium:initCesium,worldwind:initWorldWind,three:initThree,ol:initOL};
+const initedEngines=new Set();
+document.getElementById('tabs').addEventListener('click',e=>{
+  const btn=e.target.closest('.tab');if(!btn)return;
+  const eng=btn.dataset.engine;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===btn));
+  document.querySelectorAll('.engine').forEach(p=>p.classList.toggle('active',p.id==='pane-'+eng));
+  if(!initedEngines.has(eng)){
+    initedEngines.add(eng);
+    initFns[eng]().catch(err=>{
+      console.error(eng,err);
+      showMsg('pane-'+eng,'Could not load this engine (network/CDN issue). Check your connection and reload.');
+    });
   }
+  window.dispatchEvent(new Event('resize'));
+});
 
-  timer = setInterval(loadFlights, REFRESH_MS);
-  window.addEventListener("beforeunload", function(){ clearInterval(timer); });
+/* Initialize whichever engine is active by default on page load */
+(function bootDefaultEngine(){
+  const activeTab=document.querySelector('.tab.active');
+  const eng=activeTab ? activeTab.dataset.engine : 'maplibre';
+  initedEngines.add(eng);
+  initFns[eng]().catch(err=>{
+    console.error(eng,err);
+    showMsg('pane-'+eng,'Could not load this engine (network/CDN issue). Check your connection and reload.');
+  });
 })();
+
+/* ---------- MapLibre GL JS (free demotiles style, no key) ---------- */
+async function initMapLibre(){
+  await loadCSS('https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.css');
+  await loadJS('https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.js');
+  const map=new maplibregl.Map({
+    container:'maplibreContainer',
+    style:'https://demotiles.maplibre.org/style.json',
+    center:[0,20],zoom:1.4,projection:'globe'
+  });
+  map.addControl(new maplibregl.NavigationControl());
+}
+
+/* ---------- OpenLayers (free OSM tiles, no key) ---------- */
+async function initOL(){
+  await loadCSS('https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css');
+  await loadJS('https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js');
+  new ol.Map({
+    target:'olContainer',
+    layers:[new ol.layer.Tile({source:new ol.source.OSM()})],
+    view:new ol.View({center:ol.proj.fromLonLat([0,20]),zoom:2})
+  });
+}
+
+/* ---------- CesiumJS (free OSM imagery, no Ion token) ---------- */
+async function initCesium(){
+  const ver='1.120';
+  window.CESIUM_BASE_URL='https://cdn.jsdelivr.net/npm/cesium@'+ver+'/Build/Cesium/';
+  await loadCSS(window.CESIUM_BASE_URL+'Widgets/widgets.css');
+  await loadJS(window.CESIUM_BASE_URL+'Cesium.js');
+  Cesium.Ion.defaultAccessToken=undefined;
+  new Cesium.Viewer('cesiumContainer',{
+    imageryProvider:new Cesium.OpenStreetMapImageryProvider({url:'https://tile.openstreetmap.org/'}),
+    terrainProvider:new Cesium.EllipsoidTerrainProvider(),
+    baseLayerPicker:false,geocoder:false,homeButton:true,sceneModePicker:true,
+    navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false
+  });
+}
+
+/* ---------- Three.js (rotating textured globe, no key) ---------- */
+async function initThree(){
+  await loadJS('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js');
+  const c=document.getElementById('threeContainer');
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(45,c.clientWidth/c.clientHeight,0.1,1000);
+  cam.position.z=3;
+  const renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(c.clientWidth,c.clientHeight);
+  c.appendChild(renderer.domElement);
+  const tex=new THREE.TextureLoader().load(
+    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/textures/planets/earth_atmos_2048.jpg'
+  );
+  const earth=new THREE.Mesh(new THREE.SphereGeometry(1,64,64),new THREE.MeshStandardMaterial({map:tex}));
+  scene.add(earth);
+  scene.add(new THREE.AmbientLight(0xffffff,0.6));
+  const dl=new THREE.DirectionalLight(0xffffff,1);dl.position.set(5,3,5);scene.add(dl);
+  let dragging=false,lastX=0,lastY=0,rotY=0,rotX=0;
+  c.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;});
+  window.addEventListener('pointerup',()=>dragging=false);
+  window.addEventListener('pointermove',e=>{
+    if(!dragging)return;
+    rotY+=(e.clientX-lastX)*0.005;rotX+=(e.clientY-lastY)*0.005;
+    lastX=e.clientX;lastY=e.clientY;
+  });
+  function animate(){
+    requestAnimationFrame(animate);
+    earth.rotation.y=rotY+performance.now()*0.00004;
+    earth.rotation.x=rotX;
+    renderer.render(scene,cam);
+  }
+  animate();
+  window.addEventListener('resize',()=>{
+    if(!document.getElementById('pane-three').classList.contains('active'))return;
+    cam.aspect=c.clientWidth/c.clientHeight;cam.updateProjectionMatrix();
+    renderer.setSize(c.clientWidth,c.clientHeight);
+  });
+}
+
+/* ---------- NASA WorldWind (community WorldWindJS fork, bundled offline imagery) ---------- */
+async function initWorldWind(){
+  await loadJS('https://cdn.jsdelivr.net/npm/worldwindjs@1.9.5/build/dist/worldwind.min.js');
+  if(typeof WorldWind==='undefined')throw new Error('WorldWind not available');
+  const wwd=new WorldWind.WorldWindow('worldwindCanvas');
+  wwd.addLayer(new WorldWind.BMNGOneImageLayer());
+  wwd.addLayer(new WorldWind.CompassLayer());
+  wwd.addLayer(new WorldWind.CoordinatesDisplayLayer(wwd));
+  wwd.addLayer(new WorldWind.ViewControlsLayer(wwd));
+}
 </script>
 </body>
 </html>
