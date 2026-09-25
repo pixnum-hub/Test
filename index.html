@@ -138,6 +138,23 @@ function showMsg(pane,html){
   d.className='fallback';d.innerHTML=html;
   p.appendChild(d);
 }
+function showToast(msg){
+  console.error(msg);
+  let t=document.getElementById('errToast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='errToast';
+    t.style.cssText='position:fixed;left:.5rem;right:.5rem;bottom:.5rem;z-index:9999;'+
+      'background:#3a0d0d;color:#ffb3b3;border:1px solid #a33;border-radius:.5rem;'+
+      'padding:.5rem .7rem;font:12px/1.4 monospace;max-height:30vh;overflow:auto;white-space:pre-wrap;';
+    document.body.appendChild(t);
+  }
+  const line=document.createElement('div');
+  line.textContent=msg;
+  t.appendChild(line);
+}
+window.addEventListener('error',e=>showToast('JS error: '+e.message));
+window.addEventListener('unhandledrejection',e=>showToast('Promise error: '+(e.reason&&e.reason.message||e.reason)));
 
 /* ---------- Tabs ---------- */
 const initFns={maplibre:initMapLibre,cesium:initCesium,worldwind:initWorldWind,three:initThree,ol:initOL};
@@ -170,14 +187,15 @@ document.getElementById('tabs').addEventListener('click',e=>{
 
 /* ---------- MapLibre GL JS (free demotiles style, no key) ---------- */
 async function initMapLibre(){
-  await loadCSS('https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.css');
-  await loadJS('https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.js');
+  await loadCSS('https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css');
+  await loadJS('https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js');
   const map=new maplibregl.Map({
     container:'maplibreContainer',
     style:'https://demotiles.maplibre.org/style.json',
     center:[0,20],zoom:1.4,projection:'globe'
   });
   map.addControl(new maplibregl.NavigationControl());
+  map.on('error',e=>showToast('MapLibre: '+(e.error&&e.error.message||e.error)));
 }
 
 /* ---------- OpenLayers (free OSM tiles, no key) ---------- */
@@ -191,19 +209,24 @@ async function initOL(){
   });
 }
 
-/* ---------- CesiumJS (free OSM imagery, no Ion token) ---------- */
+/* ---------- CesiumJS (bundled offline Natural Earth II imagery, no Ion token, no external tile server) ---------- */
 async function initCesium(){
   const ver='1.120';
   window.CESIUM_BASE_URL='https://cdn.jsdelivr.net/npm/cesium@'+ver+'/Build/Cesium/';
   await loadCSS(window.CESIUM_BASE_URL+'Widgets/widgets.css');
   await loadJS(window.CESIUM_BASE_URL+'Cesium.js');
   Cesium.Ion.defaultAccessToken=undefined;
-  new Cesium.Viewer('cesiumContainer',{
-    imageryProvider:new Cesium.OpenStreetMapImageryProvider({url:'https://tile.openstreetmap.org/'}),
+  const imageryProvider=await Cesium.TileMapServiceImageryProvider.fromUrl(
+    Cesium.buildModuleUrl('Assets/Tiles/NaturalEarthII')
+  );
+  imageryProvider.errorEvent.addEventListener(e=>showToast('Cesium imagery: '+(e.message||e)));
+  const viewer=new Cesium.Viewer('cesiumContainer',{
+    imageryProvider:imageryProvider,
     terrainProvider:new Cesium.EllipsoidTerrainProvider(),
     baseLayerPicker:false,geocoder:false,homeButton:true,sceneModePicker:true,
     navigationHelpButton:false,animation:false,timeline:false,fullscreenButton:false
   });
+  viewer.camera.flyHome(0);
 }
 
 /* ---------- Three.js (rotating textured globe, no key) ---------- */
