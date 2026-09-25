@@ -394,6 +394,13 @@ async function initWorldWind(){
   try{
     if (!window.WorldWind){
       await loadScript(WWD_URL);
+      // WorldWind builds its icon paths (compass, view-control buttons, crosshair)
+      // from configuration.baseUrl + "images/...". It auto-detects this from a
+      // same-origin <script> tag, which fails when loaded off a CDN - so point it
+      // at the folder that holds worldwind.min.js, BEFORE any WorldWind object
+      // is constructed, or the compass silently has no image to draw.
+      window.WorldWind.configuration.baseUrl =
+        WWD_URL.substring(0, WWD_URL.lastIndexOf('/') + 1);
     }
     const WorldWind = window.WorldWind;
     const wwd = new WorldWind.WorldWindow('wwdCanvas');
