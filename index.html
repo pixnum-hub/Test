@@ -1,581 +1,393 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b0f14">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<title>FRAMED — AI Headshot Studio</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236c5ce7'/%3E%3Ccircle cx='50' cy='40' r='18' fill='white'/%3E%3Cpath d='M20 90 Q50 55 80 90 Z' fill='white'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upgrid — Website Downtime Checker</title>
 <style>
   :root{
-    --bg:#f4f5f7; --bg-elev:#ffffff; --fg:#14161a; --fg-dim:#5b6270;
-    --accent:#6c5ce7; --accent-fg:#ffffff; --border:#d8dbe0;
-    --danger:#e0554f; --radius:14px; --shadow:0 6px 24px rgba(20,22,26,.08);
-    --focus:#6c5ce7;
+    --font-mono:'JetBrains Mono','SF Mono',Consolas,monospace;
+    --font-sans:'Inter',-apple-system,Segoe UI,sans-serif;
+    --radius:10px;
   }
-  [data-theme="dark"]{
-    --bg:#14161c; --bg-elev:#1e212a; --fg:#eceef2; --fg-dim:#a2a8b4;
-    --accent:#8b7cf6; --accent-fg:#0e0f14; --border:#2c3040;
-    --shadow:0 6px 24px rgba(0,0,0,.4);
+  html[data-theme="dark"]{
+    --bg:#0b0e11; --panel:#12161b; --panel2:#181d24; --border:#232a33;
+    --text:#e6edf3; --sub:#8b98a5; --up:#00d97e; --down:#ff5c5c; --pend:#ffb020;
+    --accent:#00d97e; --focus:#4fd1ff;
   }
-  [data-theme="oled"]{
-    --bg:#000000; --bg-elev:#0a0a0a; --fg:#f2f2f2; --fg-dim:#8d8d8d;
-    --accent:#7c9dff; --accent-fg:#000000; --border:#1c1c1c;
-    --shadow:0 0 0 1px #161616;
+  html[data-theme="light"]{
+    --bg:#f3f5f7; --panel:#ffffff; --panel2:#eef1f4; --border:#dbe1e6;
+    --text:#161b20; --sub:#5b6670; --up:#0a9d5c; --down:#d33b3b; --pend:#b6790a;
+    --accent:#0a9d5c; --focus:#0072e0;
   }
-  [data-theme="hc"]{
-    --bg:#000000; --bg-elev:#000000; --fg:#ffffff; --fg-dim:#ffff00;
-    --accent:#ffff00; --accent-fg:#000000; --border:#ffffff;
-    --shadow:none; --focus:#ffff00;
+  html[data-theme="oled"]{
+    --bg:#000000; --panel:#000000; --panel2:#0a0a0a; --border:#1c1c1c;
+    --text:#eaeaea; --sub:#7a7a7a; --up:#00e08a; --down:#ff5252; --pend:#ffb020;
+    --accent:#00e08a; --focus:#4fd1ff;
   }
-  *{box-sizing:border-box;}
-  html,body{height:100%;}
+  html[data-theme="hc"]{
+    --bg:#000000; --panel:#000000; --panel2:#000000; --border:#ffffff;
+    --text:#ffffff; --sub:#ffffff; --up:#00ff6a; --down:#ff2a2a; --pend:#ffd400;
+    --accent:#ffff00; --focus:#ffff00;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
   body{
-    margin:0; min-height:100%; display:flex; flex-direction:column; align-items:center;
-    background:var(--bg); color:var(--fg);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+    background:var(--bg); color:var(--text); font-family:var(--font-sans);
+    min-height:100vh; display:flex; flex-direction:column;
     transition:background .2s,color .2s;
   }
-  [data-theme="hc"] *{ transition:none !important; }
-  a{color:var(--accent);}
-  button{font-family:inherit;}
-  :focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
-
+  a{color:var(--accent)}
   header{
-    width:100%; max-width:760px; display:flex; align-items:center; justify-content:space-between;
-    padding:18px 20px 8px; gap:12px;
+    padding:18px 16px 10px; display:flex; align-items:center;
+    justify-content:space-between; gap:10px; flex-wrap:wrap;
   }
-  .brand{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.15rem; letter-spacing:.02em; }
-  .brand-badge{
-    width:34px; height:34px; border-radius:10px; background:var(--accent); color:var(--accent-fg);
-    display:flex; align-items:center; justify-content:center; font-weight:900; flex-shrink:0;
-  }
-  .theme-toggle{ display:flex; gap:4px; background:var(--bg-elev); border:1px solid var(--border); border-radius:999px; padding:4px; }
+  .brand{display:flex; align-items:center; gap:10px; font-family:var(--font-mono)}
+  .dot-logo{width:12px;height:12px;border-radius:50%;background:var(--up);
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--up) 25%, transparent);
+    animation:beat 1.8s ease-in-out infinite;}
+  @keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+  .brand h1{font-size:1.5rem; letter-spacing:.03em}
+  .brand span{color:var(--sub); font-size:.75rem}
+  .theme-toggle{display:flex; gap:4px; background:var(--panel2); border:1px solid var(--border);
+    border-radius:999px; padding:3px;}
   .theme-toggle button{
-    width:34px; height:34px; border-radius:999px; border:none; background:transparent; color:var(--fg-dim);
-    cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px;
+    border:none; background:transparent; color:var(--sub); width:34px; height:30px;
+    border-radius:999px; cursor:pointer; font-size:.9rem; font-family:var(--font-mono);
   }
-  .theme-toggle button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-fg); }
-
-  main{
-    width:100%; max-width:760px; flex:1; padding:8px 16px 24px; display:flex; flex-direction:column;
-    align-items:center; gap:16px; text-align:center;
+  .theme-toggle button[aria-pressed="true"]{background:var(--accent); color:#04140c; font-weight:700}
+  html[data-theme="hc"] .theme-toggle button[aria-pressed="true"]{color:#000}
+  main{flex:1; width:100%; max-width:720px; margin:0 auto; padding:6px 16px 24px;}
+  form.add{
+    display:flex; gap:8px; background:var(--panel); border:1px solid var(--border);
+    border-radius:var(--radius); padding:10px; margin-bottom:18px; flex-wrap:wrap;
   }
-  .subtitle{ color:var(--fg-dim); font-size:.95rem; max-width:520px; margin:0; }
-
+  form.add input{
+    flex:1 1 160px; background:var(--panel2); border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:10px 12px; font-family:var(--font-mono); font-size:.9rem; min-width:0;
+  }
+  form.add input:focus, .theme-toggle button:focus-visible, .sitebtn:focus-visible{
+    outline:2px solid var(--focus); outline-offset:2px;
+  }
+  form.add button{
+    background:var(--accent); color:#04140c; border:none; border-radius:8px;
+    padding:0 18px; font-weight:700; cursor:pointer; font-family:var(--font-mono);
+  }
+  html[data-theme="hc"] form.add button{color:#000}
+  .empty{color:var(--sub); text-align:center; padding:40px 10px; font-family:var(--font-mono); font-size:.85rem}
+  .filters{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; align-items:center}
+  .filters button{
+    background:var(--panel); border:1px solid var(--border); color:var(--sub);
+    border-radius:999px; padding:6px 13px; font-size:.75rem; font-family:var(--font-mono); cursor:pointer;
+  }
+  .filters button[aria-pressed="true"]{background:var(--accent); color:#04140c; border-color:var(--accent); font-weight:700}
+  html[data-theme="hc"] .filters button[aria-pressed="true"]{color:#000}
+  .filters .count{margin-left:auto; color:var(--sub); font-size:.72rem; font-family:var(--font-mono)}
+  .progress{height:2px; background:var(--panel2); border-radius:2px; margin:-6px 0 14px; overflow:hidden}
+  .progress i{display:block; height:100%; background:var(--accent); transition:width .2s}
   .card{
-    width:100%; background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius);
-    box-shadow:var(--shadow); padding:18px; display:flex; flex-direction:column; gap:14px; align-items:center;
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px; margin-bottom:12px;
   }
-
-  .stage{
-    width:100%; max-width:420px; aspect-ratio:4/5; border-radius:12px; border:2px dashed var(--border);
-    background:repeating-conic-gradient(var(--bg) 0% 25%, var(--bg-elev) 0% 50%) 50% / 20px 20px;
-    display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;
-  }
-  [data-theme="hc"] .stage{ background:#000; border-color:#fff; }
-  .stage canvas, .stage video{ width:100%; height:100%; object-fit:contain; display:block; }
-  .stage .hint{ color:var(--fg-dim); font-size:.9rem; padding:0 20px; }
-
-  .row{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; width:100%; }
-  .btn{
-    appearance:none; border:1px solid var(--border); background:var(--bg-elev); color:var(--fg);
-    padding:10px 16px; border-radius:10px; font-size:.92rem; font-weight:600; cursor:pointer;
-    display:inline-flex; align-items:center; gap:8px; transition:transform .05s;
-  }
-  .btn:active{ transform:scale(.97); }
-  .btn.primary{ background:var(--accent); color:var(--accent-fg); border-color:transparent; }
-  .btn.danger{ color:var(--danger); }
-  .btn[disabled]{ opacity:.45; cursor:not-allowed; }
-  input[type="file"]{ display:none; }
-
-  fieldset{ border:1px solid var(--border); border-radius:12px; padding:12px 14px; width:100%; text-align:left; }
-  legend{ padding:0 6px; font-size:.8rem; font-weight:700; color:var(--fg-dim); text-transform:uppercase; letter-spacing:.05em; }
-  .opt-row{ display:flex; flex-wrap:wrap; gap:8px; }
-  .chip{
-    border:1px solid var(--border); background:var(--bg); color:var(--fg); padding:7px 12px;
-    border-radius:999px; font-size:.85rem; cursor:pointer;
-  }
-  .chip[aria-pressed="true"]{ background:var(--accent); color:var(--accent-fg); border-color:transparent; font-weight:700; }
-  label.toggle-line{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:.9rem; }
-
-  .status{
-    width:100%; min-height:20px; font-size:.85rem; color:var(--fg-dim); text-align:center;
-  }
-  .status[data-level="error"]{ color:var(--danger); font-weight:600; }
-  .progress{ width:100%; height:6px; border-radius:6px; background:var(--border); overflow:hidden; display:none; }
-  .progress.active{ display:block; }
-  .progress > div{ height:100%; width:30%; background:var(--accent); animation:indeterminate 1.1s infinite ease-in-out; }
-  @keyframes indeterminate{ 0%{ transform:translateX(-100%);} 100%{ transform:translateX(400%);} }
-
+  .card-top{display:flex; align-items:center; gap:10px}
+  .status-dot{width:11px;height:11px;border-radius:50%; flex:none; background:var(--sub)}
+  .status-dot.up{background:var(--up); box-shadow:0 0 8px color-mix(in srgb, var(--up) 60%, transparent)}
+  .status-dot.down{background:var(--down); box-shadow:0 0 8px color-mix(in srgb, var(--down) 60%, transparent)}
+  .status-dot.pend{background:var(--pend); animation:beat 1s ease-in-out infinite}
+  .card-info{flex:1; min-width:0}
+  .card-info .name{font-weight:700; font-size:1.15rem; display:flex; align-items:center; gap:6px; min-width:0}
+  .card-info .name .name-text{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+  .tag{font-size:.6rem; font-family:var(--font-mono); color:var(--sub); border:1px solid var(--border);
+    border-radius:4px; padding:1px 5px; flex:none; letter-spacing:.03em}
+  .tag.warn-tag{color:var(--pend); border-color:var(--pend)}
+  .card-info .url{color:var(--sub); font-size:.75rem; font-family:var(--font-mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .card-meta{text-align:right; font-family:var(--font-mono); font-size:.75rem; color:var(--sub)}
+  .card-meta .code.up{color:var(--up)}
+  .card-meta .code.down{color:var(--down)}
+  .card-meta .code.warn{color:var(--pend)}
+  .sitebtn{background:none; border:1px solid var(--border); color:var(--sub); border-radius:6px;
+    width:28px;height:28px; cursor:pointer; font-size:.85rem;}
+  .pulse{display:flex; gap:2px; margin-top:12px; height:26px; align-items:flex-end}
+  .pulse i{flex:1; background:var(--panel2); border-radius:2px; height:100%; display:block}
+  .pulse i.up{background:var(--up)}
+  .pulse i.down{background:var(--down)}
   footer{
-    width:100%; max-width:760px; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; gap:2px; padding:22px 16px calc(18px + env(safe-area-inset-bottom,0px));
-    text-align:center; color:var(--fg-dim); font-size:.8rem; margin-top:auto;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px; text-align:center; padding:20px 16px 26px; border-top:1px solid var(--border);
+    color:var(--sub); font-family:var(--font-mono); font-size:.75rem;
   }
-  footer strong{ color:var(--fg); }
-  .sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
-
-  @media (min-width:640px){
-    .card{ padding:24px; }
+  @media (min-width:600px){
+    .card-top{gap:14px}
+    main{padding-top:10px}
   }
 </style>
 </head>
-<body data-theme="dark">
+<body>
 
 <header>
-  <div class="brand"><span class="brand-badge">F</span> FRAMED</div>
+  <div class="brand">
+    <span class="dot-logo"></span>
+    <div><h1>UPgrid</h1><span>live status console</span></div>
+  </div>
   <div class="theme-toggle" role="group" aria-label="Theme">
-    <button type="button" data-theme-btn="light" title="Light" aria-pressed="false">☀️</button>
-    <button type="button" data-theme-btn="dark" title="Dark" aria-pressed="true">🌙</button>
-    <button type="button" data-theme-btn="oled" title="OLED True Black" aria-pressed="false">⚫</button>
-    <button type="button" data-theme-btn="hc" title="High Contrast" aria-pressed="false">◐</button>
+    <button data-theme="dark" aria-pressed="true" title="Dark">D</button>
+    <button data-theme="light" aria-pressed="false" title="Light">L</button>
+    <button data-theme="oled" aria-pressed="false" title="OLED True Black">O</button>
+    <button data-theme="hc" aria-pressed="false" title="High Contrast">HC</button>
   </div>
 </header>
 
 <main>
-  <p class="subtitle">On-device AI headshots: face alignment, background removal &amp; auto-enhance — nothing leaves your browser.</p>
-
-  <div class="card">
-    <div class="stage" id="stage">
-      <video id="video" playsinline muted style="display:none;"></video>
-      <canvas id="previewCanvas" style="display:none;"></canvas>
-      <p class="hint" id="stageHint">Choose a photo or use your camera to begin</p>
-    </div>
-
-    <div class="row">
-      <label class="btn primary" for="fileInput">📁 Choose Photo</label>
-      <input id="fileInput" type="file" accept="image/*">
-      <button class="btn" id="cameraBtn" type="button">📷 Use Camera</button>
-      <button class="btn" id="captureBtn" type="button" style="display:none;">⏺ Capture</button>
-    </div>
-
-    <fieldset>
-      <legend>Frame</legend>
-      <div class="opt-row" id="aspectOpts">
-        <button type="button" class="chip" data-aspect="1" aria-pressed="true">Square 1:1</button>
-        <button type="button" class="chip" data-aspect="0.8">Portrait 4:5</button>
-        <button type="button" class="chip" data-aspect="0.75">Portrait 3:4</button>
-      </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>Background</legend>
-      <div class="opt-row" id="bgOpts">
-        <button type="button" class="chip" data-bg="transparent" aria-pressed="true">Transparent</button>
-        <button type="button" class="chip" data-bg="white">White</button>
-        <button type="button" class="chip" data-bg="gray">Studio Gray</button>
-        <button type="button" class="chip" data-bg="blur">Blurred Original</button>
-      </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>Enhance</legend>
-      <label class="toggle-line"><span>Auto-align eyes level</span><input type="checkbox" id="optAlign" checked></label>
-      <label class="toggle-line"><span>Auto brightness / contrast</span><input type="checkbox" id="optAutoTone" checked></label>
-      <label class="toggle-line"><span>Skin smoothing</span><input type="checkbox" id="optSmooth" checked></label>
-      <label class="toggle-line"><span>Sharpen</span><input type="checkbox" id="optSharpen" checked></label>
-    </fieldset>
-
-    <div class="row">
-      <button class="btn primary" id="processBtn" type="button" disabled>✨ Generate Headshot</button>
-      <button class="btn" id="downloadBtn" type="button" disabled>⬇️ Download PNG</button>
-      <button class="btn danger" id="resetBtn" type="button">↺ Reset</button>
-    </div>
-
-    <div class="progress" id="progress"><div></div></div>
-    <p class="status" id="status" role="status" aria-live="polite">Loading AI models…</p>
+  <form class="add" id="addForm">
+    <input id="urlInput" type="text" placeholder="example.com or https://example.com" required autocomplete="off">
+    <button type="submit">Add Site</button>
+  </form>
+  <div class="filters" id="filters">
+    <button data-f="all" aria-pressed="true">All</button>
+    <button data-f="world" aria-pressed="false">World</button>
+    <button data-f="in" aria-pressed="false">India</button>
+    <span class="count" id="count"></span>
   </div>
+  <div class="progress"><i id="progressBar" style="width:0%"></i></div>
+  <div id="list"></div>
 </main>
 
 <footer>
-  <div><strong>FRAMED</strong> — AI Headshot Studio</div>
-  <div>© Manik Roy <span id="year">2026</span>. All Rights Reserved.</div>
+  <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
 </footer>
 
 <script>
-  // ---------- Theme handling ----------
-  (function themeInit(){
-    const saved = localStorage.getItem('framed-theme');
-    const theme = saved || 'dark';
-    document.body.setAttribute('data-theme', theme);
-    document.querySelectorAll('[data-theme-btn]').forEach(b=>{
-      b.setAttribute('aria-pressed', String(b.dataset.themeBtn === theme));
-      b.addEventListener('click', ()=>{
-        document.body.setAttribute('data-theme', b.dataset.themeBtn);
-        localStorage.setItem('framed-theme', b.dataset.themeBtn);
-        document.querySelectorAll('[data-theme-btn]').forEach(x=>x.setAttribute('aria-pressed', String(x===b)));
-      });
-    });
-  })();
+document.getElementById('year').textContent = new Date().getFullYear();
 
-  // ---------- Footer auto year ----------
-  (function footerYear(){
-    const START = 2026;
-    const now = new Date().getFullYear();
-    document.getElementById('year').textContent = now > START ? (START + '–' + now) : String(START);
-  })();
-</script>
+// ---------- Theme ----------
+const themeBtns = document.querySelectorAll('.theme-toggle button');
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  themeBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.theme === t)));
+}
+themeBtns.forEach(b => b.addEventListener('click', () => setTheme(b.dataset.theme)));
 
-<script type="module">
-  import { FilesetResolver, FaceLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
-  import { removeBackground } from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm";
+// ---------- Seed data: 50 world's most popular + 25 India's most popular sites ----------
+const WORLD = ['google.com','youtube.com','facebook.com','instagram.com','whatsapp.com','wikipedia.org',
+  'x.com','amazon.com','yahoo.com','tiktok.com','netflix.com','reddit.com','linkedin.com','bing.com',
+  'baidu.com','yandex.ru','live.com','microsoft.com','apple.com','pinterest.com','temu.com','canva.com',
+  'cnn.com','bbc.com','nytimes.com','ebay.com','twitch.tv','spotify.com','zoom.us','openai.com','claude.ai',
+  'discord.com','telegram.org','quora.com','github.com','stackoverflow.com','dropbox.com','adobe.com',
+  'salesforce.com','paypal.com','walmart.com','aliexpress.com','samsung.com','weather.com','indeed.com',
+  'booking.com','imdb.com','espn.com','roblox.com','duckduckgo.com','wordpress.com'];
+const INDIA = ['flipkart.com','hotstar.com','irctc.co.in','ndtv.com','timesofindia.indiatimes.com',
+  'hindustantimes.com','indiatimes.com','zomato.com','swiggy.com','paytm.com','myntra.com','bookmyshow.com',
+  'naukri.com','rediff.com','moneycontrol.com','jiocinema.com','sbi.co.in','icicibank.com','hdfcbank.com',
+  'olx.in','shaadi.com','quikr.com','makemytrip.com','cleartrip.com','indianrail.gov.in'];
 
-  // ---------- DOM ----------
-  const $ = (id) => document.getElementById(id);
-  const statusEl = $('status'), progressEl = $('progress'), stageHint = $('stageHint');
-  const video = $('video'), previewCanvas = $('previewCanvas'), stage = $('stage');
-  const fileInput = $('fileInput'), cameraBtn = $('cameraBtn'), captureBtn = $('captureBtn');
-  const processBtn = $('processBtn'), downloadBtn = $('downloadBtn'), resetBtn = $('resetBtn');
+// Sites known to run aggressive bot/WAF protection that blocks free CORS proxies
+// and challenges plain fetch requests — a "down" result here is often a false
+// negative caused by the checking method, not the site itself.
+const WAF_PROTECTED = new Set(['x.com','paytm.com','instagram.com','linkedin.com']);
 
-  let sourceImage = null;      // HTMLImageElement of the loaded/captured photo
-  let outputCanvas = null;     // final rendered canvas
-  let faceLandmarker = null;
-  let cvReady = false;
-  let stream = null;
-  let aspect = 1;              // width/height ratio for the output frame
-  let bgChoice = 'transparent';
+// ---------- State ----------
+const sites = [];         // {id, name, url, tag, status:'pend'|'up'|'down', code, time, history:[]}
+const HISTORY_LEN = 24;
+const REFRESH_MS = 60000;
+let uid = 0;
+let filter = 'all';
 
-  function setStatus(msg, level){
-    statusEl.textContent = msg;
-    statusEl.dataset.level = level || 'info';
+const listEl = document.getElementById('list');
+const form = document.getElementById('addForm');
+const input = document.getElementById('urlInput');
+const countEl = document.getElementById('count');
+
+function makeSite(domain, tag){
+  return { id: uid++, url: 'https://' + domain, name: domain, tag,
+    status:'pend', code:null, time:null, history:[], checking:false };
+}
+WORLD.forEach(d => sites.push(makeSite(d, 'world')));
+INDIA.forEach(d => sites.push(makeSite(d, 'in')));
+
+document.getElementById('filters').addEventListener('click', e => {
+  const b = e.target.closest('button[data-f]');
+  if(!b) return;
+  filter = b.dataset.f;
+  document.querySelectorAll('#filters button').forEach(x => x.setAttribute('aria-pressed', String(x===b)));
+  render();
+});
+
+function normalizeUrl(raw){
+  let u = raw.trim();
+  if(!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  try { return new URL(u).toString().replace(/\/$/,''); } catch(e){ return null; }
+}
+
+function cap(name){
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+// Defense in depth: escape before inserting any site-derived text into innerHTML.
+// The URL constructor already blocks most injection attempts, but this covers
+// any edge case it doesn't.
+function esc(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function render(){
+  const visible = sites.filter(s => filter === 'all' || s.tag === filter);
+  countEl.textContent = visible.length + ' / ' + sites.length + ' sites';
+  if(visible.length === 0){
+    listEl.innerHTML = '<div class="empty">No sites monitored yet. Add one above to start pinging.</div>';
+    return;
   }
-  function busy(on){
-    progressEl.classList.toggle('active', !!on);
-    [fileInput, cameraBtn, processBtn, downloadBtn].forEach(el=>{ if(el) el.disabled = !!on || (el===downloadBtn && !outputCanvas); });
-    processBtn.disabled = on || !sourceImage;
-  }
+  listEl.innerHTML = visible.map(s => `
+    <div class="card" data-id="${s.id}">
+      <div class="card-top">
+        <span class="status-dot ${s.status}"></span>
+        <div class="card-info">
+          <div class="name"><span class="name-text">${esc(cap(s.name))}</span>${s.tag==='world'?'<span class="tag">WORLD</span>':s.tag==='in'?'<span class="tag">IN</span>':''}${WAF_PROTECTED.has(s.name)?'<span class="tag warn-tag" title="Known to block automated checks">🛡 PROTECTED</span>':''}</div>
+          <div class="url">${esc(s.url)}</div>
+        </div>
+        <div class="card-meta">
+          <div class="${codeClass(s)}">${codeText(s)}</div>
+          <div class="time-val">${s.time != null ? s.time + ' ms' : '—'}</div>
+        </div>
+        <button class="sitebtn" title="Recheck now" onclick="recheck(${s.id})">↻</button>
+        <button class="sitebtn" title="Remove" onclick="removeSite(${s.id})">×</button>
+      </div>
+      <div class="pulse">${renderPulse(s.history)}</div>
+    </div>
+  `).join('');
+}
 
-  // ---------- Load models ----------
-  async function initModels(){
+function codeText(s){
+  if(s.status === 'pend') return 'checking…';
+  if(s.status === 'down' && WAF_PROTECTED.has(s.name)) return 'blocked by site security';
+  if(s.code) return 'HTTP ' + s.code;
+  if(s.status === 'up') return 'reachable';
+  return 'no response';
+}
+
+function codeClass(s){
+  if(s.status === 'down' && WAF_PROTECTED.has(s.name)) return 'code warn';
+  return `code ${s.status}`;
+}
+
+// Updates a single card's DOM in place — avoids rebuilding all 75+ cards on every
+// status change, which is what was causing the UI to freeze during a full sweep.
+function updateCard(site){
+  const el = listEl.querySelector(`[data-id="${site.id}"]`);
+  if(!el) return; // filtered out or not yet rendered — safe to skip
+  el.querySelector('.status-dot').className = `status-dot ${site.status}`;
+  const codeEl = el.querySelector('.code');
+  codeEl.className = codeClass(site);
+  codeEl.textContent = codeText(site);
+  el.querySelector('.time-val').textContent = site.time != null ? site.time + ' ms' : '—';
+  el.querySelector('.pulse').innerHTML = renderPulse(site.history);
+}
+
+function renderPulse(history){
+  const bars = history.slice(-HISTORY_LEN);
+  const pad = HISTORY_LEN - bars.length;
+  let out = '';
+  for(let i=0;i<pad;i++) out += '<i></i>';
+  out += bars.map(h => `<i class="${h}"></i>`).join('');
+  return out;
+}
+
+// ---------- Checking (free, no key, no signup — timed so nothing can hang) ----------
+function fetchTimeout(url, opts, ms){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+async function pingUrl(url){
+  const t0 = performance.now();
+  // Primary: direct no-cors request. No proxy hop, no rate limit, resolves as soon
+  // as the network connection succeeds — fast for the vast majority of sites.
+  try{
+    await fetchTimeout(url, { mode:'no-cors', cache:'no-store' }, 6000);
+    return { up:true, code:null, time: Math.round(performance.now() - t0) };
+  }catch(e1){
+    // Fallback: a public CORS proxy, only for sites the direct check couldn't reach —
+    // gives us a real HTTP status code, capped so it can never stall the queue.
     try{
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
-      );
-      faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-          delegate: "GPU"
-        },
-        outputFaceBlendshapes: false,
-        runningMode: "IMAGE",
-        numFaces: 1
-      });
-      setStatus('Ready. Choose a photo or use your camera.');
-    }catch(err){
-      console.error(err);
-      setStatus('Face model failed to load — you can still process without auto-align.', 'error');
+      const t1 = performance.now();
+      const r = await fetchTimeout('https://api.allorigins.win/get?url=' + encodeURIComponent(url), { cache:'no-store' }, 7000);
+      const time = Math.round(performance.now() - t1);
+      if(!r.ok) throw new Error('proxy error');
+      const data = await r.json();
+      const code = data && data.status ? data.status.http_code : null;
+      return { up: !!code && code < 400, code, time };
+    }catch(e2){
+      return { up:false, code:null, time:null };
     }
   }
-  function waitForOpenCV(){
-    return new Promise((resolve)=>{
-      const check = () => {
-        if (window.cv && window.cv.Mat){ cvReady = true; resolve(); }
-        else setTimeout(check, 150);
-      };
-      check();
-    });
+}
+
+async function checkSite(site){
+  if(site.checking) return; // prevents overlapping requests for the same site
+  site.checking = true;
+  site.status = 'pend';
+  updateCard(site);
+  const result = await pingUrl(site.url);
+  site.status = result.up ? 'up' : 'down';
+  site.code = result.code;
+  site.time = result.time;
+  site.history.push(site.status);
+  if(site.history.length > HISTORY_LEN) site.history.shift();
+  site.checking = false;
+  updateCard(site);
+}
+
+function recheck(id){
+  const s = sites.find(x => x.id === id);
+  if(s) checkSite(s);
+}
+
+function removeSite(id){
+  const i = sites.findIndex(x => x.id === id);
+  if(i > -1){ sites.splice(i,1); render(); }
+}
+
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const url = normalizeUrl(input.value);
+  if(!url) return alert('Please enter a valid domain or URL.');
+  const site = makeSite(url.replace(/^https?:\/\//,'').replace(/\/$/,''), 'custom');
+  site.url = url;
+  sites.unshift(site);
+  input.value = '';
+  render();
+  checkSite(site);
+});
+
+// Run checks through a concurrency pool with hard per-request timeouts, so a slow
+// or dead site can never block the rest of the queue.
+let checking = false;
+async function checkAll(){
+  if(checking) return;
+  checking = true;
+  const bar = document.getElementById('progressBar');
+  const queue = sites.slice(); // snapshot — add/remove during a sweep can't corrupt indexing
+  const total = queue.length;
+  let done = 0;
+  const POOL = 10;
+  let i = 0;
+  async function worker(){
+    while(i < queue.length){
+      const site = queue[i++];
+      await checkSite(site);
+      done++;
+      bar.style.width = Math.round(done / total * 100) + '%';
+    }
   }
-  initModels();
-  waitForOpenCV();
+  await Promise.all(Array.from({length: POOL}, worker));
+  checking = false;
+  setTimeout(() => bar.style.width = '0%', 600);
+}
 
-  // ---------- Option chips ----------
-  function wireChips(containerId, dataAttr, onPick){
-    document.querySelectorAll('#'+containerId+' [data-'+dataAttr+']').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        document.querySelectorAll('#'+containerId+' [data-'+dataAttr+']').forEach(b=>b.setAttribute('aria-pressed','false'));
-        btn.setAttribute('aria-pressed','true');
-        onPick(btn.dataset[dataAttr[0].toUpperCase()+dataAttr.slice(1)] ?? btn.dataset[dataAttr]);
-      });
-    });
-  }
-  wireChips('aspectOpts','aspect',(v)=>{ aspect = parseFloat(v); });
-  wireChips('bgOpts','bg',(v)=>{ bgChoice = v; });
-
-  // ---------- Loading a photo ----------
-  fileInput.addEventListener('change', async (e)=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    stopCamera();
-    const url = URL.createObjectURL(file);
-    await loadImageFromURL(url);
-  });
-
-  function loadImageFromURL(url){
-    return new Promise((resolve)=>{
-      const img = new Image();
-      img.onload = ()=>{
-        sourceImage = img;
-        showPreview(img);
-        outputCanvas = null;
-        downloadBtn.disabled = true;
-        processBtn.disabled = false;
-        setStatus('Photo loaded. Click "Generate Headshot" when ready.');
-        resolve();
-      };
-      img.src = url;
-    });
-  }
-
-  function showPreview(imgOrCanvas){
-    stageHint.style.display = 'none';
-    video.style.display = 'none';
-    previewCanvas.style.display = 'block';
-    const w = imgOrCanvas.width || imgOrCanvas.videoWidth;
-    const h = imgOrCanvas.height || imgOrCanvas.videoHeight;
-    previewCanvas.width = w; previewCanvas.height = h;
-    previewCanvas.getContext('2d').drawImage(imgOrCanvas, 0, 0, w, h);
-  }
-
-  // ---------- Camera ----------
-  cameraBtn.addEventListener('click', async ()=>{
-    try{
-      stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false });
-      video.srcObject = stream;
-      await video.play();
-      stageHint.style.display = 'none';
-      previewCanvas.style.display = 'none';
-      video.style.display = 'block';
-      captureBtn.style.display = 'inline-flex';
-      setStatus('Camera live. Click Capture when ready.');
-    }catch(err){
-      setStatus('Camera access denied or unavailable.', 'error');
-    }
-  });
-
-  captureBtn.addEventListener('click', ()=>{
-    const c = document.createElement('canvas');
-    c.width = video.videoWidth; c.height = video.videoHeight;
-    c.getContext('2d').drawImage(video, 0, 0);
-    stopCamera();
-    c.toBlob((blob)=>{ loadImageFromURL(URL.createObjectURL(blob)); }, 'image/png');
-  });
-
-  function stopCamera(){
-    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
-    video.style.display = 'none';
-    captureBtn.style.display = 'none';
-  }
-
-  // ---------- Reset ----------
-  resetBtn.addEventListener('click', ()=>{
-    stopCamera();
-    sourceImage = null; outputCanvas = null;
-    previewCanvas.style.display = 'none';
-    stageHint.style.display = 'block';
-    stageHint.textContent = 'Choose a photo or use your camera to begin';
-    downloadBtn.disabled = true; processBtn.disabled = true;
-    setStatus('Ready.');
-  });
-
-  // ---------- Face landmarks → alignment ----------
-  function getFaceGeometry(img){
-    if(!faceLandmarker) return null;
-    const result = faceLandmarker.detect(img);
-    if(!result.faceLandmarks || !result.faceLandmarks.length) return null;
-    const lm = result.faceLandmarks[0];
-    const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height;
-    let minX=1, minY=1, maxX=0, maxY=0;
-    for(const p of lm){
-      if(p.x<minX) minX=p.x; if(p.x>maxX) maxX=p.x;
-      if(p.y<minY) minY=p.y; if(p.y>maxY) maxY=p.y;
-    }
-    // Approx outer eye corners (MediaPipe FaceMesh indices): right=33, left=263
-    const rEye = lm[33], lEye = lm[263];
-    const angle = Math.atan2((lEye.y - rEye.y)*H, (lEye.x - rEye.x)*W);
-    return {
-      box:{ x:minX*W, y:minY*H, w:(maxX-minX)*W, h:(maxY-minY)*H },
-      eyeCenter:{ x:((lEye.x+rEye.x)/2)*W, y:((lEye.y+rEye.y)/2)*H },
-      angleRad: angle
-    };
-  }
-
-  // Rotates the image about the eye-line center, then crops a padded
-  // face-centered box matching the chosen aspect ratio, onto `outSize`.
-  function alignAndCrop(img, geometry, doAlign, outSize){
-    const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height;
-    const work = document.createElement('canvas');
-    work.width = W; work.height = H;
-    const wctx = work.getContext('2d');
-
-    let cx = W/2, cy = H*0.45, boxW = W*0.6, boxH = boxW/aspect;
-
-    if(geometry){
-      const rot = doAlign ? -geometry.angleRad : 0;
-      wctx.save();
-      wctx.translate(geometry.eyeCenter.x, geometry.eyeCenter.y);
-      wctx.rotate(rot);
-      wctx.translate(-geometry.eyeCenter.x, -geometry.eyeCenter.y);
-      wctx.drawImage(img, 0, 0, W, H);
-      wctx.restore();
-
-      const b = geometry.box;
-      cx = b.x + b.w/2;
-      cy = b.y + b.h*0.42;
-      boxH = b.h * 2.3;
-      boxW = boxH * aspect;
-      if(boxW < b.w*1.3){ boxW = b.w*1.3; boxH = boxW/aspect; }
-    } else {
-      wctx.drawImage(img, 0, 0, W, H);
-    }
-
-    const out = document.createElement('canvas');
-    out.width = outSize; out.height = Math.round(outSize/aspect);
-    const octx = out.getContext('2d');
-    const sx = Math.max(0, cx - boxW/2), sy = Math.max(0, cy - boxH/2);
-    const sw = Math.min(boxW, W - sx), sh = Math.min(boxH, H - sy);
-    octx.drawImage(work, sx, sy, sw, sh, 0, 0, out.width, out.height);
-    return out;
-  }
-
-  // ---------- OpenCV enhancement ----------
-  function enhanceWithOpenCV(canvas, { autoTone, smooth, sharpen }){
-    if(!cvReady) return canvas;
-    const cv = window.cv;
-    let src = cv.imread(canvas);
-    let rgb = new cv.Mat();
-    cv.cvtColor(src, rgb, cv.COLOR_RGBA2RGB);
-
-    if(autoTone){
-      const gray = new cv.Mat();
-      cv.cvtColor(rgb, gray, cv.COLOR_RGB2GRAY);
-      const srcVec = new cv.MatVector();
-      srcVec.push_back(gray);
-      const mask = new cv.Mat();
-      const hist = new cv.Mat();
-      cv.calcHist(srcVec, [0], mask, hist, [256], [0, 256]);
-      let total = gray.rows * gray.cols, clip = total * 0.01, acc = 0, lo = 0, hi = 255;
-      for(let i=0;i<256;i++){ acc += hist.floatAt(i,0); if(acc>clip){ lo=i; break; } }
-      acc = 0;
-      for(let i=255;i>=0;i--){ acc += hist.floatAt(i,0); if(acc>clip){ hi=i; break; } }
-      if(hi<=lo){ hi = lo+1; }
-      const alpha = 255/(hi-lo), beta = -lo*alpha;
-      const toned = new cv.Mat();
-      rgb.convertTo(toned, -1, alpha, beta);
-      rgb.delete(); rgb = toned;
-      gray.delete(); hist.delete(); mask.delete(); srcVec.delete();
-    }
-    if(smooth){
-      const sm = new cv.Mat();
-      cv.bilateralFilter(rgb, sm, 9, 55, 55);
-      rgb.delete(); rgb = sm;
-    }
-    if(sharpen){
-      const blurred = new cv.Mat();
-      cv.GaussianBlur(rgb, blurred, new cv.Size(0,0), 3);
-      const sharp = new cv.Mat();
-      cv.addWeighted(rgb, 1.4, blurred, -0.4, 0, sharp);
-      blurred.delete(); rgb.delete(); rgb = sharp;
-    }
-
-    const rgba = new cv.Mat();
-    cv.cvtColor(rgb, rgba, cv.COLOR_RGB2RGBA);
-    const out = document.createElement('canvas');
-    out.width = canvas.width; out.height = canvas.height;
-    cv.imshow(out, rgba);
-    src.delete(); rgb.delete(); rgba.delete();
-    return out;
-  }
-
-  // ---------- Background compositing ----------
-  async function applyBackground(cutoutBlob, choice, originalCanvas){
-    const cutoutImg = await blobToImage(cutoutBlob);
-    const out = document.createElement('canvas');
-    out.width = cutoutImg.width; out.height = cutoutImg.height;
-    const ctx = out.getContext('2d');
-
-    if(choice === 'white' || choice === 'gray'){
-      ctx.fillStyle = choice === 'white' ? '#ffffff' : '#c9ccd1';
-      ctx.fillRect(0,0,out.width,out.height);
-    } else if(choice === 'blur' && originalCanvas){
-      ctx.filter = 'blur(18px)';
-      ctx.drawImage(originalCanvas, -20, -20, out.width+40, out.height+40);
-      ctx.filter = 'none';
-    }
-    ctx.drawImage(cutoutImg, 0, 0, out.width, out.height);
-    return out;
-  }
-  function blobToImage(blob){
-    return new Promise((resolve)=>{
-      const img = new Image();
-      img.onload = ()=>resolve(img);
-      img.src = URL.createObjectURL(blob);
-    });
-  }
-
-  // ---------- Main pipeline ----------
-  processBtn.addEventListener('click', async ()=>{
-    if(!sourceImage) return;
-    busy(true);
-    let framed, composed, final;
-
-    try{
-      setStatus('Detecting face…');
-      const align = $('optAlign').checked;
-      let geometry = null;
-      try{ geometry = getFaceGeometry(sourceImage); }catch(e){ console.warn('landmark detect failed', e); }
-      if(!geometry) setStatus('No face detected — using center crop.');
-      framed = alignAndCrop(sourceImage, geometry, align, 1000);
-      showPreview(framed);
-    }catch(err){
-      console.error('align/crop step failed', err);
-      setStatus('Face alignment / crop step failed — see console.', 'error');
-      busy(false); return;
-    }
-
-    composed = framed;
-    if(bgChoice !== 'none'){
-      try{
-        setStatus('Removing background…');
-        const blob = await new Promise(res => framed.toBlob(res, 'image/png'));
-        const cutout = await removeBackground(blob);
-        setStatus('Compositing background…');
-        composed = await applyBackground(cutout, bgChoice, framed);
-      }catch(err){
-        console.error('background removal step failed', err);
-        setStatus('Background removal step failed — see console.', 'error');
-        busy(false); return;
-      }
-    }
-
-    try{
-      setStatus('Enhancing…');
-      final = enhanceWithOpenCV(composed, {
-        autoTone: $('optAutoTone').checked,
-        smooth: $('optSmooth').checked,
-        sharpen: $('optSharpen').checked
-      });
-    }catch(err){
-      console.error('enhance step failed', err);
-      setStatus('Enhancement step failed — see console.', 'error');
-      busy(false); return;
-    }
-
-    try{
-      outputCanvas = final;
-      showPreview(final);
-      downloadBtn.disabled = false;
-      setStatus('Done. Download your headshot below.');
-    }catch(err){
-      console.error(err);
-      setStatus('Something went wrong during processing. See console for details.', 'error');
-    }finally{
-      busy(false);
-    }
-  });
-
-  downloadBtn.addEventListener('click', ()=>{
-    if(!outputCanvas) return;
-    outputCanvas.toBlob((blob)=>{
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'framed-headshot.png';
-      a.click();
-    }, 'image/png');
-  });
+render();
+checkAll();
+setInterval(checkAll, REFRESH_MS);
 </script>
 </body>
 </html>
