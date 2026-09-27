@@ -1,496 +1,455 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>PixelRetouch</title>
+<title>FadeIt — Manik Roy</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✂️</text></svg>">
+<meta name="theme-color" content="#0b0f14">
 <style>
 :root{
-  --bg:#f4f5f7;--panel:#ffffff;--text:#1a1a1a;--sub:#666;--accent:#3b82f6;--border:#e2e4e8;--btn:#eef0f3;
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f4f6f8; --panel:#ffffff; --text:#111418; --sub:#5b6570;
+  --accent:#3d7cf4; --accent-text:#ffffff; --border:#dde2e7;
+  --danger:#e0453f; --ok:#2fae6b; --radius:14px;
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){--bg:#15171c;--panel:#1e2129;--text:#eee;--sub:#9aa0a8;--accent:#5b9dff;--border:#2c303a;--btn:#282c35;}
+:root[data-theme="dark"]{
+  --bg:#12161c; --panel:#1b2028; --text:#eef1f5; --sub:#9aa4b2;
+  --accent:#5b8def; --accent-text:#0b0f14; --border:#2a3038;
 }
-:root[data-theme="dark"]{--bg:#15171c;--panel:#1e2129;--text:#eee;--sub:#9aa0a8;--accent:#5b9dff;--border:#2c303a;--btn:#282c35;}
-:root[data-theme="oled"]{--bg:#000;--panel:#000;--text:#fff;--sub:#a0a0a0;--accent:#5b9dff;--border:#1a1a1a;--btn:#0d0d0d;}
-:root[data-theme="hc"]{--bg:#000;--panel:#000;--text:#fff;--sub:#fff;--accent:#ffff00;--border:#fff;--btn:#000;}
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-body{display:flex;flex-direction:column;min-height:100%}
-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--border);background:var(--panel);position:sticky;top:0;z-index:5}
-header h1{font-size:16px;margin:0;font-weight:700}
-#themeBtn{background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;cursor:pointer}
-main{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px;max-width:900px;margin:0 auto;width:100%}
-#stage{position:relative;background:repeating-conic-gradient(#8884 0% 25%,#0000 0% 50%) 50%/16px 16px;border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:280px;touch-action:none}
-#canvas{max-width:100%;max-height:60vh;display:block}
-#cropBox{position:absolute;border:2px dashed var(--accent);display:none}
-#dropHint{position:absolute;color:var(--sub);font-size:13px;text-align:center;padding:20px}
-.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.row + .row{margin-top:8px}
-button.tool{background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;cursor:pointer}
-button.tool.active{border-color:var(--accent);color:var(--accent)}
-label.sl{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--sub);flex:1;min-width:110px}
-input[type=range]{accent-color:var(--accent)}
-input[type=file]{display:none}
-.primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer;font-weight:600}
-h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--sub);margin:0 0 8px}
-footer{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;padding:14px 10px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--border);background:var(--panel);font-size:12px;color:var(--sub)}
+:root[data-theme="oled"]{
+  --bg:#000000; --panel:#0a0a0a; --text:#f5f5f5; --sub:#9a9a9a;
+  --accent:#5b8def; --accent-text:#000000; --border:#1c1c1c;
+}
+:root[data-theme="hc"]{
+  --bg:#000000; --panel:#000000; --text:#ffffff; --sub:#ffffff;
+  --accent:#ffff00; --accent-text:#000000; --border:#ffffff;
+}
+*{box-sizing:border-box;}
+html,body{
+  height:100%; margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  transition:background .2s,color .2s;
+}
+.wrap{
+  min-height:100%; display:flex; flex-direction:column; align-items:center;
+  max-width:640px; margin:0 auto; padding:16px;
+}
+.topbar{
+  width:100%; display:flex; justify-content:space-between; align-items:center;
+  padding:8px 4px 20px;
+}
+h1{font-size:1.25rem; margin:0; letter-spacing:.2px;}
+.sub{color:var(--sub); font-size:.85rem; margin-top:2px;}
+button{font-family:inherit; cursor:pointer;}
+.theme-btn{
+  background:var(--panel); border:1px solid var(--border); color:var(--text);
+  border-radius:999px; padding:8px 14px; font-size:.85rem; font-weight:600;
+}
+.theme-btn:active{transform:scale(.96);}
+main{width:100%; flex:1; display:flex; flex-direction:column; gap:16px;}
+.panel{
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+  padding:18px;
+}
+.drop{
+  border:2px dashed var(--border); border-radius:var(--radius);
+  padding:36px 16px; text-align:center; color:var(--sub);
+  transition:border-color .15s, background .15s;
+}
+.drop.drag{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, transparent);}
+.drop input{display:none;}
+.drop .icon{font-size:2.2rem; display:block; margin-bottom:8px;}
+.pick-btn{
+  background:var(--accent); color:var(--accent-text); border:none; border-radius:10px;
+  padding:10px 18px; font-weight:700; font-size:.9rem; margin-top:10px;
+}
+.preview-grid{
+  display:grid; grid-template-columns:1fr; gap:12px;
+}
+@media(min-width:480px){ .preview-grid.has-result{grid-template-columns:1fr 1fr;} }
+.pv{
+  background:
+    linear-gradient(45deg,#0000 25%,#8883 25%,#8883 50%,#0000 50%,#0000 75%,#8883 75%,#8883) 0 0/16px 16px,
+    var(--panel);
+  border:1px solid var(--border); border-radius:10px; overflow:hidden;
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+}
+.pv img{max-width:100%; max-height:100%; object-fit:contain; display:block;}
+.pv .label{position:absolute;}
+.pv-wrap{position:relative;}
+.pv-tag{
+  position:absolute; top:8px; left:8px; background:var(--bg); color:var(--sub);
+  font-size:.7rem; font-weight:700; padding:2px 8px; border-radius:999px; border:1px solid var(--border);
+}
+.actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; justify-content:center;}
+.btn{
+  border-radius:10px; padding:11px 20px; font-weight:700; font-size:.9rem; border:1px solid var(--border);
+  background:var(--panel); color:var(--text);
+}
+.btn.primary{background:var(--accent); color:var(--accent-text); border-color:transparent;}
+.btn:disabled{opacity:.5; cursor:not-allowed;}
+.status{
+  display:flex; align-items:center; gap:10px; justify-content:center;
+  color:var(--sub); font-size:.85rem; min-height:20px; margin-top:12px;
+}
+.spinner{
+  width:16px; height:16px; border-radius:50%; border:2px solid var(--border);
+  border-top-color:var(--accent); animation:spin .8s linear infinite; display:none;
+}
+.spinner.on{display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.progressbar{
+  width:100%; height:6px; background:var(--border); border-radius:999px; overflow:hidden; margin-top:10px; display:none;
+}
+.progressbar.on{display:block;}
+.progressbar > div{height:100%; width:0%; background:var(--accent); transition:width .2s;}
+.err{color:var(--danger); font-size:.85rem; text-align:center; margin-top:8px; display:none;}
+.err.on{display:block;}
+footer{
+  width:100%; text-align:center; padding:24px 0 12px; color:var(--sub); font-size:.78rem;
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+.hint{font-size:.78rem; color:var(--sub); text-align:center; margin-top:6px;}
+.seg{ display:flex; flex-wrap:wrap; gap:8px; }
+.seg button{ flex:1 1 auto; min-width:70px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:8px 10px; font-size:.8rem; font-weight:600; }
+.seg button.active{ background:var(--accent); color:var(--accent-text); border-color:transparent; }
+.subctrl{ margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.subctrl label{ font-size:.8rem; color:var(--sub); }
+input[type=color]{width:40px; height:32px; border:1px solid var(--border); border-radius:6px; background:none;}
+input[type=range]{flex:1; min-width:100px;}
+.file-chip{ background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:6px 10px; font-size:.78rem; }
 </style>
 </head>
 <body>
-<header>
-  <h1>PixelRetouch</h1>
-  <button id="themeBtn" type="button">Theme</button>
-</header>
-<main>
-  <div class="panel row">
-    <button class="tool" id="uploadBtn" type="button">Open Photo</button>
-    <input type="file" id="fileInput" accept="image/*">
-    <button class="tool" id="cropTool" type="button">Crop</button>
-    <button class="tool" id="brushTool" type="button">Heal/Smooth Brush</button>
-    <button class="tool" id="cloneTool" type="button">Clone Stamp</button>
-    <button class="tool" id="redeyeTool" type="button">Red-Eye</button>
-    <button class="tool" id="textTool" type="button">Text</button>
-    <button class="tool" id="rotL" type="button">↺ Rotate</button>
-    <button class="tool" id="rotR" type="button">↻ Rotate</button>
-    <button class="tool" id="flipH" type="button">Flip H</button>
-    <button class="tool" id="flipV" type="button">Flip V</button>
-    <button class="tool" id="undoBtn" type="button">Undo</button>
-    <button class="tool" id="redoBtn" type="button">Redo</button>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <h1>FadeIt</h1>
+      <div class="sub">On-device · No upload · No API key</div>
+    </div>
+    <button class="theme-btn" id="themeBtn">🌙 Dark</button>
   </div>
 
-  <div id="stage">
-    <div id="dropHint">Open a photo to start retouching</div>
-    <canvas id="canvas"></canvas>
-    <div id="cropBox"></div>
-  </div>
+  <main>
+    <div class="panel">
+      <div class="drop" id="drop">
+        <span class="icon">🖼️</span>
+        <div>Drag & drop an image here</div>
+        <div class="sub" style="margin-top:4px;">JPG, PNG, or WEBP</div>
+        <input type="file" id="fileInput" accept="image/*">
+        <button class="pick-btn" id="pickBtn">Choose Image</button>
+      </div>
 
-  <div class="panel" id="adjustPanel">
-    <h3>Adjustments</h3>
-    <div class="row">
-      <label class="sl">Brightness <input type="range" id="brightness" min="50" max="150" value="100"></label>
-      <label class="sl">Contrast <input type="range" id="contrast" min="50" max="150" value="100"></label>
-      <label class="sl">Saturation <input type="range" id="saturation" min="0" max="200" value="100"></label>
-      <label class="sl">Exposure <input type="range" id="exposure" min="-50" max="50" value="0"></label>
-    </div>
-    <div class="row">
-      <label class="sl">Vignette (WebGL) <input type="range" id="vignette" min="0" max="100" value="0"></label>
-      <label class="sl">Blur <input type="range" id="blur" min="0" max="20" value="0"></label>
-      <label class="sl">Temperature <input type="range" id="temp" min="-50" max="50" value="0"></label>
-      <label class="sl">Tint <input type="range" id="tint" min="-50" max="50" value="0"></label>
-    </div>
-    <div class="row">
-      <label class="sl">Brush size <input type="range" id="brushSize" min="5" max="80" value="24"></label>
-      <label class="sl">Brush softness <input type="range" id="brushStrength" min="1" max="10" value="4"></label>
-      <label class="sl">Text content <input type="text" id="textContent" placeholder="Type, then click canvas" style="background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px"></label>
-      <label class="sl">Text size <input type="range" id="textSize" min="12" max="120" value="36"></label>
-      <label class="sl">Text color <input type="color" id="textColor" value="#ffffff"></label>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button class="primary" id="applyBtn" type="button">Apply Adjustments</button>
-      <button class="tool" id="resetBtn" type="button">Reset</button>
-    </div>
-  </div>
+      <div class="preview-grid" id="grid" style="display:none;"></div>
 
-  <div class="panel" id="filterPanel">
-    <h3>Presets & Sharpen</h3>
-    <div class="row">
-      <button class="tool" id="fNone" type="button">None</button>
-      <button class="tool" id="fGray" type="button">Grayscale</button>
-      <button class="tool" id="fSepia" type="button">Vintage</button>
-      <button class="tool" id="fDuo" type="button">Duotone</button>
-      <label class="sl">Sharpen amount <input type="range" id="sharpen" min="0" max="10" value="3"></label>
-      <button class="primary" id="sharpenBtn" type="button">Apply Sharpen</button>
-    </div>
-  </div>
+      <div class="progressbar" id="bar"><div id="barFill"></div></div>
+      <div class="status" id="status"><span class="spinner" id="spinner"></span><span id="statusText"></span></div>
+      <div class="err" id="err"></div>
 
-  <div class="panel" id="resizePanel">
-    <h3>Resize & Export</h3>
-    <div class="row">
-      <label class="sl">Width (px) <input type="number" id="rw" min="1" style="background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px"></label>
-      <label class="sl">Height (px) <input type="number" id="rh" min="1" style="background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px"></label>
-      <label class="sl"><input type="checkbox" id="lockAspect" checked> Lock aspect ratio</label>
-      <button class="tool" id="resizeBtn" type="button">Apply Resize</button>
-    </div>
-    <div class="row">
-      <label class="sl">Format
-        <select id="fmt" style="background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px">
-          <option value="png">PNG</option><option value="jpeg">JPEG</option>
-        </select>
-      </label>
-      <label class="sl">JPEG quality <input type="range" id="quality" min="10" max="100" value="90"></label>
-      <button class="primary" id="downloadBtn" type="button">Download</button>
-    </div>
-  </div>
-</main>
-<footer>
-  <div>© <span id="year"></span> Manik Roy. All Rights Reserved.</div>
-</footer>
-<script>
-(function(){
-'use strict';
-var canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
-var stage=document.getElementById('stage'),dropHint=document.getElementById('dropHint');
-var cropBox=document.getElementById('cropBox');
-var baseImg=null;
-var history=[],redoStack=[];
-var mode='none';
-var cropStart=null,cropRect=null;
-var gl,glCanvas;
+      <div class="actions" id="actions" style="display:none;">
+        <button class="btn primary" id="removeBtn">Remove Background</button>
+        <button class="btn" id="downloadBtn" style="display:none;">Download PNG</button>
+        <button class="btn" id="resetBtn">Reset</button>
+      </div>
 
-document.getElementById('year').textContent=new Date().getFullYear();
+      <div id="bgSwap" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+        <div class="sub" style="margin-bottom:8px; font-weight:600;">Background</div>
+        <div class="seg" id="bgSeg">
+          <button data-mode="transparent" class="active">Transparent</button>
+          <button data-mode="color">Color</button>
+          <button data-mode="blur">Blur</button>
+          <button data-mode="image">Image</button>
+        </div>
+        <div class="subctrl" id="colorCtrl" style="display:none;">
+          <label>Pick color</label><input type="color" id="bgColor" value="#3d7cf4">
+        </div>
+        <div class="subctrl" id="blurCtrl" style="display:none;">
+          <label>Blur amount</label><input type="range" id="blurAmt" min="2" max="30" value="12">
+        </div>
+        <div class="subctrl" id="imageCtrl" style="display:none;">
+          <input type="file" id="bgImageInput" accept="image/*" style="display:none;">
+          <button class="btn" id="bgImagePick">Choose Image</button>
+          <span class="file-chip" id="bgImageName" style="display:none;"></span>
+        </div>
+      </div>
 
-var themes=['auto','light','dark','oled','hc'],ti=0;
-var themeBtn=document.getElementById('themeBtn');
+      <div class="hint">First run downloads the model (~40–80MB, cached after) and runs fully in your browser via Transformers.js — ONNX Runtime Web + an ISNet-based model.</div>
+    </div>
+  </main>
+
+  <footer>
+    <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
+  </footer>
+</div>
+
+<script type="module">
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// ---------- Theme toggle (Dark → Light → OLED → HC → Dark) ----------
+const themes = [
+  {key:'dark', label:'🌙 Dark'},
+  {key:'light', label:'☀️ Light'},
+  {key:'oled', label:'⚫ OLED'},
+  {key:'hc', label:'◐ HC'}
+];
+const root = document.documentElement;
+const themeBtn = document.getElementById('themeBtn');
+let themeIdx = 0;
+try{
+  const saved = localStorage.getItem('bgr-theme');
+  const found = themes.findIndex(t=>t.key===saved);
+  if(found>=0) themeIdx = found;
+}catch(e){}
 function applyTheme(){
-  var t=themes[ti];
-  if(t==='auto')document.documentElement.removeAttribute('data-theme');
-  else document.documentElement.setAttribute('data-theme',t);
-  themeBtn.textContent='Theme: '+t[0].toUpperCase()+t.slice(1);
+  const t = themes[themeIdx];
+  root.setAttribute('data-theme', t.key);
+  themeBtn.textContent = t.label;
+  try{ localStorage.setItem('bgr-theme', t.key); }catch(e){}
 }
-themeBtn.addEventListener('click',function(){ti=(ti+1)%themes.length;applyTheme();});
 applyTheme();
+themeBtn.addEventListener('click', ()=>{
+  themeIdx = (themeIdx+1) % themes.length;
+  applyTheme();
+});
 
-var fileInput=document.getElementById('fileInput');
-document.getElementById('uploadBtn').addEventListener('click',function(){fileInput.click();});
-fileInput.addEventListener('change',function(e){if(e.target.files[0])loadFile(e.target.files[0]);});
-stage.addEventListener('dragover',function(e){e.preventDefault();});
-stage.addEventListener('drop',function(e){e.preventDefault();if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+// ---------- Elements ----------
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('fileInput');
+const pickBtn = document.getElementById('pickBtn');
+const grid = document.getElementById('grid');
+const actions = document.getElementById('actions');
+const removeBtn = document.getElementById('removeBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const resetBtn = document.getElementById('resetBtn');
+const statusText = document.getElementById('statusText');
+const spinner = document.getElementById('spinner');
+const bar = document.getElementById('bar');
+const barFill = document.getElementById('barFill');
+const errBox = document.getElementById('err');
+const bgSwap = document.getElementById('bgSwap');
+const bgSeg = document.getElementById('bgSeg');
+const colorCtrl = document.getElementById('colorCtrl');
+const blurCtrl = document.getElementById('blurCtrl');
+const imageCtrl = document.getElementById('imageCtrl');
+const bgColorInput = document.getElementById('bgColor');
+const blurAmt = document.getElementById('blurAmt');
+const bgImageInput = document.getElementById('bgImageInput');
+const bgImagePick = document.getElementById('bgImagePick');
+const bgImageName = document.getElementById('bgImageName');
+
+let bgMode = 'transparent';
+let bgImageURL = null;
+
+let originalFile = null;
+let originalURL = null;
+let cutoutBlob = null;
+let resultURL = null;
+
+function showError(msg){
+  errBox.textContent = msg;
+  errBox.classList.add('on');
+}
+function clearError(){
+  errBox.classList.remove('on');
+  errBox.textContent = '';
+}
+function setStatus(msg, busy){
+  statusText.textContent = msg || '';
+  spinner.classList.toggle('on', !!busy);
+}
+function setProgress(p){
+  if(p==null){ bar.classList.remove('on'); return; }
+  bar.classList.add('on');
+  barFill.style.width = Math.max(0,Math.min(100,p)) + '%';
+}
+
+function renderGrid(){
+  grid.style.display = 'grid';
+  grid.classList.toggle('has-result', !!resultURL);
+  grid.innerHTML = '';
+
+  const origWrap = document.createElement('div');
+  origWrap.className = 'pv-wrap';
+  origWrap.innerHTML = `<div class="pv-tag">ORIGINAL</div><div class="pv"><img src="${originalURL}"></div>`;
+  grid.appendChild(origWrap);
+
+  if(resultURL){
+    const resWrap = document.createElement('div');
+    resWrap.className = 'pv-wrap';
+    resWrap.innerHTML = `<div class="pv-tag">RESULT</div><div class="pv"><img src="${resultURL}"></div>`;
+    grid.appendChild(resWrap);
+  }
+}
 
 function loadFile(file){
-  var img=new Image();
-  img.onload=function(){
-    dropHint.style.display='none';
-    var maxW=1400,scale=Math.min(1,maxW/img.width);
-    canvas.width=Math.round(img.width*scale);
-    canvas.height=Math.round(img.height*scale);
-    ctx.filter='none';
-    ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    document.getElementById('rw').value=canvas.width;
-    document.getElementById('rh').value=canvas.height;
-    commit();
-  };
-  img.src=URL.createObjectURL(file);
-}
-var rw=document.getElementById('rw'),rh=document.getElementById('rh'),lockA=document.getElementById('lockAspect');
-rw.addEventListener('input',function(){if(lockA.checked&&baseImg)rh.value=Math.round(rw.value*baseImg.height/baseImg.width);});
-rh.addEventListener('input',function(){if(lockA.checked&&baseImg)rw.value=Math.round(rh.value*baseImg.width/baseImg.height);});
-document.getElementById('resizeBtn').addEventListener('click',function(){
-  if(!baseImg)return;
-  var w=parseInt(rw.value,10),h=parseInt(rh.value,10);
-  if(!w||!h)return;
-  var c=document.createElement('canvas');c.width=w;c.height=h;
-  c.getContext('2d').drawImage(canvas,0,0,w,h);
-  canvas.width=w;canvas.height=h;
-  ctx.drawImage(c,0,0);
-  commit();
-});
-
-function snapshot(){
-  var c=document.createElement('canvas');c.width=canvas.width;c.height=canvas.height;
-  c.getContext('2d').drawImage(canvas,0,0);
-  return c;
-}
-function commit(){
-  baseImg=snapshot();
-  history.push(baseImg);
-  if(history.length>15)history.shift();
-  redoStack=[];
-}
-function restore(c){
-  canvas.width=c.width;canvas.height=c.height;
-  ctx.filter='none';ctx.drawImage(c,0,0);
-  baseImg=snapshot();
-}
-document.getElementById('undoBtn').addEventListener('click',function(){
-  if(history.length>1){redoStack.push(history.pop());restore(history[history.length-1]);}
-});
-document.getElementById('redoBtn').addEventListener('click',function(){
-  if(redoStack.length){var c=redoStack.pop();history.push(c);restore(c);}
-});
-document.getElementById('resetBtn').addEventListener('click',function(){
-  ['brightness','contrast','saturation'].forEach(function(id){document.getElementById(id).value=100;});
-  ['exposure','vignette','blur','temp','tint'].forEach(function(id){document.getElementById(id).value=0;});
-  liveAdjust();
-});
-
-var sliders=['brightness','contrast','saturation','exposure','vignette','blur','temp','tint'];
-sliders.forEach(function(id){document.getElementById(id).addEventListener('input',liveAdjust);});
-function liveAdjust(){
-  if(!baseImg)return;
-  var b=document.getElementById('brightness').value,
-      c=document.getElementById('contrast').value,
-      s=document.getElementById('saturation').value,
-      e=parseInt(document.getElementById('exposure').value,10),
-      bl=parseInt(document.getElementById('blur').value,10);
-  var bAdj=parseInt(b,10)+e;
-  ctx.filter='brightness('+bAdj+'%) contrast('+c+'%) saturate('+s+'%)'+(bl>0?' blur('+bl+'px)':'');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.drawImage(baseImg,0,0);
-  ctx.filter='none';
-  var temp=parseInt(document.getElementById('temp').value,10),tint=parseInt(document.getElementById('tint').value,10);
-  if(temp!==0||tint!==0)applyTempTint(temp,tint);
-  var v=parseInt(document.getElementById('vignette').value,10);
-  if(v>0)applyVignetteWebGL(v);
-}
-function applyTempTint(temp,tint){
-  var img=ctx.getImageData(0,0,canvas.width,canvas.height),d=img.data;
-  for(var i=0;i<d.length;i+=4){
-    d[i]+=temp*0.6;d[i+2]-=temp*0.6;
-    d[i+1]+=tint*0.5;
+  if(!file || !file.type.startsWith('image/')){
+    showError('Please choose a valid image file.');
+    return;
   }
-  ctx.putImageData(img,0,0);
+  clearError();
+  originalFile = file;
+  if(originalURL) URL.revokeObjectURL(originalURL);
+  if(resultURL) URL.revokeObjectURL(resultURL);
+  resultURL = null;
+  cutoutBlob = null;
+  originalURL = URL.createObjectURL(file);
+  renderGrid();
+  actions.style.display = 'flex';
+  downloadBtn.style.display = 'none';
+  bgSwap.style.display = 'none';
+  removeBtn.disabled = false;
+  removeBtn.textContent = 'Remove Background';
+  setStatus('');
+  setProgress(null);
 }
-document.getElementById('applyBtn').addEventListener('click',function(){
-  if(!baseImg)return;
-  commit();
-  ['brightness','contrast','saturation'].forEach(function(id){document.getElementById(id).value=100;});
-  ['exposure','vignette','blur','temp','tint'].forEach(function(id){document.getElementById(id).value=0;});
-  var b=document.getElementById('applyBtn'),old=b.textContent;
-  b.textContent='Applied ✓';
-  setTimeout(function(){b.textContent=old;},900);
+
+pickBtn.addEventListener('click', ()=>fileInput.click());
+fileInput.addEventListener('change', e=>{
+  if(e.target.files[0]) loadFile(e.target.files[0]);
+});
+['dragenter','dragover'].forEach(ev=>{
+  drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add('drag'); });
+});
+['dragleave','drop'].forEach(ev=>{
+  drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove('drag'); });
+});
+drop.addEventListener('drop', e=>{
+  const f = e.dataTransfer.files[0];
+  if(f) loadFile(f);
 });
 
-document.getElementById('sharpenBtn').addEventListener('click',function(){
-  sharpen();
-  var b=document.getElementById('sharpenBtn'),old=b.textContent;
-  b.textContent='Applied ✓';
-  setTimeout(function(){b.textContent=old;},900);
+resetBtn.addEventListener('click', ()=>{
+  originalFile = null;
+  if(originalURL) URL.revokeObjectURL(originalURL);
+  if(resultURL) URL.revokeObjectURL(resultURL);
+  originalURL = null; resultURL = null; cutoutBlob = null;
+  grid.style.display = 'none';
+  actions.style.display = 'none';
+  bgSwap.style.display = 'none';
+  bgMode = 'transparent';
+  [...bgSeg.children].forEach(b=>b.classList.toggle('active', b.dataset.mode==='transparent'));
+  colorCtrl.style.display = 'none';
+  blurCtrl.style.display = 'none';
+  imageCtrl.style.display = 'none';
+  fileInput.value = '';
+  clearError();
+  setStatus('');
+  setProgress(null);
 });
-function sharpen(){
-  if(!baseImg)return;
-  var amt=parseInt(document.getElementById('sharpen').value,10)/10;
-  var w=canvas.width,h=canvas.height,img=ctx.getImageData(0,0,w,h),d=img.data,src=new Uint8ClampedArray(d);
-  var k=[0,-1,0,-1,5,-1,0,-1,0];
-  for(var y=1;y<h-1;y++){
-    for(var x=1;x<w-1;x++){
-      for(var c=0;c<3;c++){
-        var sum=0,ki=0;
-        for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++){
-          sum+=src[((y+dy)*w+(x+dx))*4+c]*k[ki++];
-        }
-        var idx=(y*w+x)*4+c;
-        d[idx]=src[idx]*(1-amt)+sum*amt;
+
+// ---------- Background swap (canvas compositing on top of the raw cutout) ----------
+function loadImgEl(src){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src; }); }
+
+async function composite(){
+  if(!cutoutBlob) return;
+  const cutoutURL = URL.createObjectURL(cutoutBlob);
+  const cutout = await loadImgEl(cutoutURL);
+  const w = cutout.width, h = cutout.height;
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+
+  if(bgMode === 'color'){
+    ctx.fillStyle = bgColorInput.value;
+    ctx.fillRect(0,0,w,h);
+  }else if(bgMode === 'blur'){
+    const orig = await loadImgEl(originalURL);
+    ctx.filter = `blur(${blurAmt.value}px)`;
+    ctx.drawImage(orig,0,0,w,h);
+    ctx.filter = 'none';
+  }else if(bgMode === 'image' && bgImageURL){
+    const bgImg = await loadImgEl(bgImageURL);
+    const scale = Math.max(w/bgImg.width, h/bgImg.height);
+    const bw = bgImg.width*scale, bh = bgImg.height*scale;
+    ctx.drawImage(bgImg, (w-bw)/2, (h-bh)/2, bw, bh);
+  }
+  // 'transparent' mode: leave the canvas blank (alpha 0) before drawing the cutout
+
+  ctx.drawImage(cutout,0,0);
+  URL.revokeObjectURL(cutoutURL);
+  const blob = await new Promise(r=>canvas.toBlob(r,'image/png'));
+  if(resultURL) URL.revokeObjectURL(resultURL);
+  resultURL = URL.createObjectURL(blob);
+  renderGrid();
+}
+
+bgSeg.addEventListener('click', e=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  bgMode = btn.dataset.mode;
+  [...bgSeg.children].forEach(b=>b.classList.toggle('active', b===btn));
+  colorCtrl.style.display = bgMode==='color' ? 'flex' : 'none';
+  blurCtrl.style.display = bgMode==='blur' ? 'flex' : 'none';
+  imageCtrl.style.display = bgMode==='image' ? 'flex' : 'none';
+  composite();
+});
+bgColorInput.addEventListener('input', ()=>{ if(bgMode==='color') composite(); });
+blurAmt.addEventListener('change', ()=>{ if(bgMode==='blur') composite(); });
+bgImagePick.addEventListener('click', ()=>bgImageInput.click());
+bgImageInput.addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  if(bgImageURL) URL.revokeObjectURL(bgImageURL);
+  bgImageURL = URL.createObjectURL(f);
+  bgImageName.textContent = f.name;
+  bgImageName.style.display = 'inline-block';
+  if(bgMode==='image') composite();
+});
+
+// ---------- Background removal engine (Transformers.js: ONNX Runtime Web + ISNet-based "ormbg" model, Apache-2.0) ----------
+let segmenterPromise = null;
+async function loadEngine(){
+  if(segmenterPromise) return segmenterPromise;
+  const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
+  segmenterPromise = pipeline('background-removal', 'onnx-community/ormbg-ONNX', {
+    device: 'wasm',
+    dtype: 'fp16',
+    progress_callback: (data) => {
+      if(data.status === 'progress' && typeof data.progress === 'number'){
+        setProgress(data.progress);
+        setStatus(`Downloading model… ${Math.round(data.progress)}%`, true);
+      } else if(data.status === 'ready'){
+        setStatus('Model ready…', true);
       }
     }
-  }
-  ctx.putImageData(img,0,0);
-  commit();
+  });
+  return segmenterPromise;
 }
 
-['fNone','fGray','fSepia','fDuo'].forEach(function(id){
-  document.getElementById(id).addEventListener('click',function(){applyPreset(id);});
-});
-function applyPreset(id){
-  if(!baseImg)return;
-  if(id==='fNone'){restore(baseImg);return;}
-  var w=canvas.width,h=canvas.height,img=ctx.getImageData(0,0,w,h),d=img.data;
-  for(var i=0;i<d.length;i+=4){
-    var lum=0.3*d[i]+0.59*d[i+1]+0.11*d[i+2];
-    if(id==='fGray'){d[i]=d[i+1]=d[i+2]=lum;}
-    else if(id==='fSepia'){d[i]=Math.min(255,lum*1.07+40);d[i+1]=Math.min(255,lum*0.86+20);d[i+2]=Math.min(255,lum*0.63);}
-    else if(id==='fDuo'){
-      var t=lum/255;
-      d[i]=20+t*(255-20);d[i+1]=10+t*(180-10);d[i+2]=60+t*(120-60);
-    }
-  }
-  ctx.putImageData(img,0,0);
-  commit();
-}
-
-function applyVignetteWebGL(amount){
-  if(!glCanvas){glCanvas=document.createElement('canvas');gl=glCanvas.getContext('webgl');}
-  if(!gl)return;
-  glCanvas.width=canvas.width;glCanvas.height=canvas.height;
-  gl.viewport(0,0,glCanvas.width,glCanvas.height);
-  var vs='attribute vec2 p;varying vec2 uv;void main(){uv=p*0.5+0.5;gl_Position=vec4(p,0.0,1.0);}';
-  var fs='precision mediump float;varying vec2 uv;uniform sampler2D tex;uniform float amt;'+
-    'void main(){vec4 c=texture2D(tex,vec2(uv.x,1.0-uv.y));float d=distance(uv,vec2(0.5));'+
-    'float v=smoothstep(0.35,0.9,d)*amt;gl_FragColor=vec4(c.rgb*(1.0-v),c.a);}';
-  var prog=buildProgram(vs,fs);
-  gl.useProgram(prog);
-  var buf=gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER,buf);
-  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-  var loc=gl.getAttribLocation(prog,'p');
-  gl.enableVertexAttribArray(loc);
-  gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
-  var tex=gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D,tex);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,canvas);
-  gl.uniform1i(gl.getUniformLocation(prog,'tex'),0);
-  gl.uniform1f(gl.getUniformLocation(prog,'amt'),amount/100);
-  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.drawImage(glCanvas,0,0);
-}
-function buildProgram(vsSrc,fsSrc){
-  function sh(type,src){var s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return s;}
-  var p=gl.createProgram();
-  gl.attachShader(p,sh(gl.VERTEX_SHADER,vsSrc));
-  gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fsSrc));
-  gl.linkProgram(p);
-  return p;
-}
-
-var toolBtns={crop:document.getElementById('cropTool'),brush:document.getElementById('brushTool'),
-  clone:document.getElementById('cloneTool'),redeye:document.getElementById('redeyeTool'),text:document.getElementById('textTool')};
-var cloneSrc=null,cloneAnchor=null;
-function setMode(m){
-  mode=mode===m?'none':m;
-  Object.keys(toolBtns).forEach(function(k){toolBtns[k].classList.toggle('active',mode===k);});
-  cropBox.style.display='none';cropRect=null;cloneSrc=null;cloneAnchor=null;
-}
-toolBtns.crop.addEventListener('click',function(){setMode('crop');});
-toolBtns.brush.addEventListener('click',function(){setMode('brush');});
-toolBtns.clone.addEventListener('click',function(){setMode('clone');});
-toolBtns.redeye.addEventListener('click',function(){setMode('redeye');});
-toolBtns.text.addEventListener('click',function(){setMode('text');});
-
-function canvasPos(e){
-  var r=canvas.getBoundingClientRect();
-  var t=e.touches?e.touches[0]:e;
-  return {x:(t.clientX-r.left)*(canvas.width/r.width),y:(t.clientY-r.top)*(canvas.height/r.height),
-          cx:t.clientX-r.left,cy:t.clientY-r.top};
-}
-canvas.addEventListener('pointerdown',function(e){
-  if(!baseImg)return;
-  if(mode==='crop'){
-    cropStart=canvasPos(e);cropBox.style.display='block';
-    updateCropBox(cropStart,cropStart);
-  }else if(mode==='brush'){
-    canvas.setPointerCapture(e.pointerId);
-    retouchAt(canvasPos(e));
-    canvas._drawing=true;
-  }else if(mode==='clone'){
-    var p=canvasPos(e);
-    if(e.altKey||!cloneSrc){cloneSrc=p;cloneAnchor=null;}
-    else{canvas.setPointerCapture(e.pointerId);canvas._drawing=true;cloneAnchor=p;cloneAt(p);}
-  }else if(mode==='redeye'){
-    redeyeAt(canvasPos(e));commit();
-  }else if(mode==='text'){
-    var txt=document.getElementById('textContent').value;
-    if(txt){
-      var p2=canvasPos(e),size=parseInt(document.getElementById('textSize').value,10);
-      ctx.fillStyle=document.getElementById('textColor').value;
-      ctx.font=size+'px system-ui,sans-serif';
-      ctx.fillText(txt,p2.x,p2.y);
-      commit();
-    }
+removeBtn.addEventListener('click', async ()=>{
+  if(!originalFile) return;
+  clearError();
+  removeBtn.disabled = true;
+  removeBtn.textContent = 'Processing…';
+  setProgress(0);
+  try{
+    setStatus('Loading model engine…', true);
+    const segmenter = await loadEngine();
+    setStatus('Removing background…', true);
+    const output = await segmenter(originalURL);
+    cutoutBlob = await output[0].toBlob();
+    await composite();
+    downloadBtn.style.display = 'inline-block';
+    downloadBtn.onclick = ()=>{
+      const a = document.createElement('a');
+      a.href = resultURL;
+      a.download = 'FadeIt-result.png';
+      a.click();
+    };
+    bgSwap.style.display = 'block';
+    setStatus('Done ✓', false);
+    removeBtn.textContent = 'Re-run';
+  }catch(err){
+    console.error(err);
+    const detail = (err && (err.message || String(err))) || 'Unknown error';
+    showError('Could not process this image: ' + detail + ' — try a smaller file or a different browser (Chrome/Edge/Safari).');
+    setStatus('', false);
+    removeBtn.textContent = 'Remove Background';
+  }finally{
+    removeBtn.disabled = false;
+    setProgress(null);
   }
 });
-canvas.addEventListener('pointermove',function(e){
-  if(mode==='crop'&&cropStart){updateCropBox(cropStart,canvasPos(e));}
-  else if(mode==='brush'&&canvas._drawing){retouchAt(canvasPos(e));}
-  else if(mode==='clone'&&canvas._drawing&&cloneSrc){cloneAt(canvasPos(e));}
-});
-canvas.addEventListener('pointerup',function(){if(mode==='brush'||mode==='clone')commit();canvas._drawing=false;});
-function cloneAt(dst){
-  if(!cloneAnchor)cloneAnchor=dst;
-  var size=parseInt(document.getElementById('brushSize').value,10),half=size/2;
-  var srcX=cloneSrc.x+(dst.x-cloneAnchor.x),srcY=cloneSrc.y+(dst.y-cloneAnchor.y);
-  var sx=Math.round(srcX-half),sy=Math.round(srcY-half);
-  var dx=Math.round(dst.x-half),dy=Math.round(dst.y-half);
-  if(sx<0||sy<0||sx+size>canvas.width||sy+size>canvas.height)return;
-  if(dx<0||dy<0||dx+size>canvas.width||dy+size>canvas.height)return;
-  var img=ctx.getImageData(sx,sy,size,size);
-  ctx.putImageData(img,dx,dy);
-}
-function redeyeAt(pos){
-  var r=18,x0=Math.max(0,Math.round(pos.x-r)),y0=Math.max(0,Math.round(pos.y-r));
-  var w=Math.min(r*2,canvas.width-x0),h=Math.min(r*2,canvas.height-y0);
-  if(w<=0||h<=0)return;
-  var img=ctx.getImageData(x0,y0,w,h),d=img.data;
-  for(var i=0;i<d.length;i+=4){
-    if(d[i]>60&&d[i]>d[i+1]*1.3&&d[i]>d[i+2]*1.3){
-      var g=(d[i+1]+d[i+2])/2;d[i]=g*0.6;
-    }
-  }
-  ctx.putImageData(img,x0,y0);
-}
-function updateCropBox(a,b){
-  var r=canvas.getBoundingClientRect(),stageRect=stage.getBoundingClientRect();
-  var x1=Math.min(a.cx,b.cx),y1=Math.min(a.cy,b.cy),w=Math.abs(a.cx-b.cx),h=Math.abs(a.cy-b.cy);
-  cropBox.style.left=(r.left-stageRect.left+x1)+'px';
-  cropBox.style.top=(r.top-stageRect.top+y1)+'px';
-  cropBox.style.width=w+'px';cropBox.style.height=h+'px';
-  cropRect={x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w:Math.abs(a.x-b.x),h:Math.abs(a.y-b.y)};
-}
-document.addEventListener('dblclick',function(){
-  if(mode==='crop'&&cropRect&&cropRect.w>4&&cropRect.h>4){
-    var c=document.createElement('canvas');c.width=cropRect.w;c.height=cropRect.h;
-    c.getContext('2d').drawImage(canvas,cropRect.x,cropRect.y,cropRect.w,cropRect.h,0,0,cropRect.w,cropRect.h);
-    canvas.width=c.width;canvas.height=c.height;
-    ctx.drawImage(c,0,0);
-    commit();
-    cropBox.style.display='none';cropRect=null;mode='none';toolBtns.crop.classList.remove('active');
-  }
-});
-
-function retouchAt(pos){
-  var size=parseInt(document.getElementById('brushSize').value,10);
-  var soft=parseInt(document.getElementById('brushStrength').value,10);
-  var x=Math.max(0,Math.round(pos.x-size/2)),y=Math.max(0,Math.round(pos.y-size/2));
-  var w=Math.min(size,canvas.width-x),h=Math.min(size,canvas.height-y);
-  if(w<=0||h<=0)return;
-  var img=ctx.getImageData(x,y,w,h);
-  var d=img.data,orig=new Uint8ClampedArray(d),k=soft;
-  for(var i=0;i<h;i++){
-    for(var j=0;j<w;j++){
-      var r=0,g=0,bl=0,a=0,n=0;
-      for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++){
-        var yy=i+dy*k,xx=j+dx*k;
-        if(yy<0||yy>=h||xx<0||xx>=w)continue;
-        var idx=(yy*w+xx)*4;
-        r+=orig[idx];g+=orig[idx+1];bl+=orig[idx+2];a+=orig[idx+3];n++;
-      }
-      var idx2=(i*w+j)*4;
-      d[idx2]=r/n;d[idx2+1]=g/n;d[idx2+2]=bl/n;d[idx2+3]=a/n;
-    }
-  }
-  ctx.putImageData(img,x,y);
-}
-
-document.getElementById('rotL').addEventListener('click',function(){rotate(-90);});
-document.getElementById('rotR').addEventListener('click',function(){rotate(90);});
-function rotate(deg){
-  if(!baseImg)return;
-  var c=document.createElement('canvas');c.width=canvas.height;c.height=canvas.width;
-  var cx=c.getContext('2d');
-  cx.translate(c.width/2,c.height/2);cx.rotate(deg*Math.PI/180);
-  cx.drawImage(canvas,-canvas.width/2,-canvas.height/2);
-  canvas.width=c.width;canvas.height=c.height;
-  ctx.drawImage(c,0,0);
-  commit();
-}
-document.getElementById('flipH').addEventListener('click',function(){flip(-1,1);});
-document.getElementById('flipV').addEventListener('click',function(){flip(1,-1);});
-function flip(sx,sy){
-  if(!baseImg)return;
-  var c=document.createElement('canvas');c.width=canvas.width;c.height=canvas.height;
-  var cx=c.getContext('2d');
-  cx.translate(sx<0?c.width:0,sy<0?c.height:0);cx.scale(sx,sy);
-  cx.drawImage(canvas,0,0);
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.drawImage(c,0,0);
-  commit();
-}
-
-document.getElementById('downloadBtn').addEventListener('click',function(){
-  if(!baseImg)return;
-  var fmt=document.getElementById('fmt').value,q=parseInt(document.getElementById('quality').value,10)/100;
-  var a=document.createElement('a');
-  a.download='pixelretouch.'+(fmt==='jpeg'?'jpg':'png');
-  a.href=fmt==='jpeg'?canvas.toDataURL('image/jpeg',q):canvas.toDataURL('image/png');
-  a.click();
-});
-})();
 </script>
 </body>
 </html>
