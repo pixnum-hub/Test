@@ -1,393 +1,484 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<!doctype html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Upgrid — Website Downtime Checker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PixelRetouch</title>
 <style>
-  :root{
-    --font-mono:'JetBrains Mono','SF Mono',Consolas,monospace;
-    --font-sans:'Inter',-apple-system,Segoe UI,sans-serif;
-    --radius:10px;
-  }
-  html[data-theme="dark"]{
-    --bg:#0b0e11; --panel:#12161b; --panel2:#181d24; --border:#232a33;
-    --text:#e6edf3; --sub:#8b98a5; --up:#00d97e; --down:#ff5c5c; --pend:#ffb020;
-    --accent:#00d97e; --focus:#4fd1ff;
-  }
-  html[data-theme="light"]{
-    --bg:#f3f5f7; --panel:#ffffff; --panel2:#eef1f4; --border:#dbe1e6;
-    --text:#161b20; --sub:#5b6670; --up:#0a9d5c; --down:#d33b3b; --pend:#b6790a;
-    --accent:#0a9d5c; --focus:#0072e0;
-  }
-  html[data-theme="oled"]{
-    --bg:#000000; --panel:#000000; --panel2:#0a0a0a; --border:#1c1c1c;
-    --text:#eaeaea; --sub:#7a7a7a; --up:#00e08a; --down:#ff5252; --pend:#ffb020;
-    --accent:#00e08a; --focus:#4fd1ff;
-  }
-  html[data-theme="hc"]{
-    --bg:#000000; --panel:#000000; --panel2:#000000; --border:#ffffff;
-    --text:#ffffff; --sub:#ffffff; --up:#00ff6a; --down:#ff2a2a; --pend:#ffd400;
-    --accent:#ffff00; --focus:#ffff00;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    background:var(--bg); color:var(--text); font-family:var(--font-sans);
-    min-height:100vh; display:flex; flex-direction:column;
-    transition:background .2s,color .2s;
-  }
-  a{color:var(--accent)}
-  header{
-    padding:18px 16px 10px; display:flex; align-items:center;
-    justify-content:space-between; gap:10px; flex-wrap:wrap;
-  }
-  .brand{display:flex; align-items:center; gap:10px; font-family:var(--font-mono)}
-  .dot-logo{width:12px;height:12px;border-radius:50%;background:var(--up);
-    box-shadow:0 0 0 4px color-mix(in srgb, var(--up) 25%, transparent);
-    animation:beat 1.8s ease-in-out infinite;}
-  @keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
-  .brand h1{font-size:1.5rem; letter-spacing:.03em}
-  .brand span{color:var(--sub); font-size:.75rem}
-  .theme-toggle{display:flex; gap:4px; background:var(--panel2); border:1px solid var(--border);
-    border-radius:999px; padding:3px;}
-  .theme-toggle button{
-    border:none; background:transparent; color:var(--sub); width:34px; height:30px;
-    border-radius:999px; cursor:pointer; font-size:.9rem; font-family:var(--font-mono);
-  }
-  .theme-toggle button[aria-pressed="true"]{background:var(--accent); color:#04140c; font-weight:700}
-  html[data-theme="hc"] .theme-toggle button[aria-pressed="true"]{color:#000}
-  main{flex:1; width:100%; max-width:720px; margin:0 auto; padding:6px 16px 24px;}
-  form.add{
-    display:flex; gap:8px; background:var(--panel); border:1px solid var(--border);
-    border-radius:var(--radius); padding:10px; margin-bottom:18px; flex-wrap:wrap;
-  }
-  form.add input{
-    flex:1 1 160px; background:var(--panel2); border:1px solid var(--border); color:var(--text);
-    border-radius:8px; padding:10px 12px; font-family:var(--font-mono); font-size:.9rem; min-width:0;
-  }
-  form.add input:focus, .theme-toggle button:focus-visible, .sitebtn:focus-visible{
-    outline:2px solid var(--focus); outline-offset:2px;
-  }
-  form.add button{
-    background:var(--accent); color:#04140c; border:none; border-radius:8px;
-    padding:0 18px; font-weight:700; cursor:pointer; font-family:var(--font-mono);
-  }
-  html[data-theme="hc"] form.add button{color:#000}
-  .empty{color:var(--sub); text-align:center; padding:40px 10px; font-family:var(--font-mono); font-size:.85rem}
-  .filters{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; align-items:center}
-  .filters button{
-    background:var(--panel); border:1px solid var(--border); color:var(--sub);
-    border-radius:999px; padding:6px 13px; font-size:.75rem; font-family:var(--font-mono); cursor:pointer;
-  }
-  .filters button[aria-pressed="true"]{background:var(--accent); color:#04140c; border-color:var(--accent); font-weight:700}
-  html[data-theme="hc"] .filters button[aria-pressed="true"]{color:#000}
-  .filters .count{margin-left:auto; color:var(--sub); font-size:.72rem; font-family:var(--font-mono)}
-  .progress{height:2px; background:var(--panel2); border-radius:2px; margin:-6px 0 14px; overflow:hidden}
-  .progress i{display:block; height:100%; background:var(--accent); transition:width .2s}
-  .card{
-    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
-    padding:14px; margin-bottom:12px;
-  }
-  .card-top{display:flex; align-items:center; gap:10px}
-  .status-dot{width:11px;height:11px;border-radius:50%; flex:none; background:var(--sub)}
-  .status-dot.up{background:var(--up); box-shadow:0 0 8px color-mix(in srgb, var(--up) 60%, transparent)}
-  .status-dot.down{background:var(--down); box-shadow:0 0 8px color-mix(in srgb, var(--down) 60%, transparent)}
-  .status-dot.pend{background:var(--pend); animation:beat 1s ease-in-out infinite}
-  .card-info{flex:1; min-width:0}
-  .card-info .name{font-weight:700; font-size:1.15rem; display:flex; align-items:center; gap:6px; min-width:0}
-  .card-info .name .name-text{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
-  .tag{font-size:.6rem; font-family:var(--font-mono); color:var(--sub); border:1px solid var(--border);
-    border-radius:4px; padding:1px 5px; flex:none; letter-spacing:.03em}
-  .tag.warn-tag{color:var(--pend); border-color:var(--pend)}
-  .card-info .url{color:var(--sub); font-size:.75rem; font-family:var(--font-mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .card-meta{text-align:right; font-family:var(--font-mono); font-size:.75rem; color:var(--sub)}
-  .card-meta .code.up{color:var(--up)}
-  .card-meta .code.down{color:var(--down)}
-  .card-meta .code.warn{color:var(--pend)}
-  .sitebtn{background:none; border:1px solid var(--border); color:var(--sub); border-radius:6px;
-    width:28px;height:28px; cursor:pointer; font-size:.85rem;}
-  .pulse{display:flex; gap:2px; margin-top:12px; height:26px; align-items:flex-end}
-  .pulse i{flex:1; background:var(--panel2); border-radius:2px; height:100%; display:block}
-  .pulse i.up{background:var(--up)}
-  .pulse i.down{background:var(--down)}
-  footer{
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:2px; text-align:center; padding:20px 16px 26px; border-top:1px solid var(--border);
-    color:var(--sub); font-family:var(--font-mono); font-size:.75rem;
-  }
-  @media (min-width:600px){
-    .card-top{gap:14px}
-    main{padding-top:10px}
-  }
+:root{
+  --bg:#f4f5f7;--panel:#ffffff;--text:#1a1a1a;--sub:#666;--accent:#3b82f6;--border:#e2e4e8;--btn:#eef0f3;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#15171c;--panel:#1e2129;--text:#eee;--sub:#9aa0a8;--accent:#5b9dff;--border:#2c303a;--btn:#282c35;}
+}
+:root[data-theme="dark"]{--bg:#15171c;--panel:#1e2129;--text:#eee;--sub:#9aa0a8;--accent:#5b9dff;--border:#2c303a;--btn:#282c35;}
+:root[data-theme="oled"]{--bg:#000;--panel:#000;--text:#fff;--sub:#a0a0a0;--accent:#5b9dff;--border:#1a1a1a;--btn:#0d0d0d;}
+:root[data-theme="hc"]{--bg:#000;--panel:#000;--text:#fff;--sub:#fff;--accent:#ffff00;--border:#fff;--btn:#000;}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{display:flex;flex-direction:column;min-height:100%}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--border);background:var(--panel);position:sticky;top:0;z-index:5}
+header h1{font-size:16px;margin:0;font-weight:700}
+#themeBtn{background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;cursor:pointer}
+main{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px;max-width:900px;margin:0 auto;width:100%}
+#stage{position:relative;background:repeating-conic-gradient(#8884 0% 25%,#0000 0% 50%) 50%/16px 16px;border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:280px;touch-action:none}
+#canvas{max-width:100%;max-height:60vh;display:block}
+#cropBox{position:absolute;border:2px dashed var(--accent);display:none}
+#dropHint{position:absolute;color:var(--sub);font-size:13px;text-align:center;padding:20px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row + .row{margin-top:8px}
+button.tool{background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;cursor:pointer}
+button.tool.active{border-color:var(--accent);color:var(--accent)}
+label.sl{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--sub);flex:1;min-width:110px}
+input[type=range]{accent-color:var(--accent)}
+input[type=file]{display:none}
+.primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer;font-weight:600}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--sub);margin:0 0 8px}
+footer{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;padding:14px 10px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--border);background:var(--panel);font-size:12px;color:var(--sub)}
 </style>
 </head>
 <body>
-
 <header>
-  <div class="brand">
-    <span class="dot-logo"></span>
-    <div><h1>UPgrid</h1><span>live status console</span></div>
-  </div>
-  <div class="theme-toggle" role="group" aria-label="Theme">
-    <button data-theme="dark" aria-pressed="true" title="Dark">D</button>
-    <button data-theme="light" aria-pressed="false" title="Light">L</button>
-    <button data-theme="oled" aria-pressed="false" title="OLED True Black">O</button>
-    <button data-theme="hc" aria-pressed="false" title="High Contrast">HC</button>
-  </div>
+  <h1>PixelRetouch</h1>
+  <button id="themeBtn" type="button">Theme</button>
 </header>
-
 <main>
-  <form class="add" id="addForm">
-    <input id="urlInput" type="text" placeholder="example.com or https://example.com" required autocomplete="off">
-    <button type="submit">Add Site</button>
-  </form>
-  <div class="filters" id="filters">
-    <button data-f="all" aria-pressed="true">All</button>
-    <button data-f="world" aria-pressed="false">World</button>
-    <button data-f="in" aria-pressed="false">India</button>
-    <span class="count" id="count"></span>
+  <div class="panel row">
+    <button class="tool" id="uploadBtn" type="button">Open Photo</button>
+    <input type="file" id="fileInput" accept="image/*">
+    <button class="tool" id="cropTool" type="button">Crop</button>
+    <button class="tool" id="brushTool" type="button">Heal/Smooth Brush</button>
+    <button class="tool" id="cloneTool" type="button">Clone Stamp</button>
+    <button class="tool" id="redeyeTool" type="button">Red-Eye</button>
+    <button class="tool" id="textTool" type="button">Text</button>
+    <button class="tool" id="rotL" type="button">↺ Rotate</button>
+    <button class="tool" id="rotR" type="button">↻ Rotate</button>
+    <button class="tool" id="flipH" type="button">Flip H</button>
+    <button class="tool" id="flipV" type="button">Flip V</button>
+    <button class="tool" id="undoBtn" type="button">Undo</button>
+    <button class="tool" id="redoBtn" type="button">Redo</button>
   </div>
-  <div class="progress"><i id="progressBar" style="width:0%"></i></div>
-  <div id="list"></div>
-</main>
 
-<footer>
-  <div>© Manik Roy <span id="year"></span>. All Rights Reserved.</div>
-</footer>
+  <div id="stage">
+    <div id="dropHint">Open a photo to start retouching</div>
+    <canvas id="canvas"></canvas>
+    <div id="cropBox"></div>
+  </div>
 
-<script>
-document.getElementById('year').textContent = new Date().getFullYear();
-
-// ---------- Theme ----------
-const themeBtns = document.querySelectorAll('.theme-toggle button');
-function setTheme(t){
-  document.documentElement.setAttribute('data-theme', t);
-  themeBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.theme === t)));
-}
-themeBtns.forEach(b => b.addEventListener('click', () => setTheme(b.dataset.theme)));
-
-// ---------- Seed data: 50 world's most popular + 25 India's most popular sites ----------
-const WORLD = ['google.com','youtube.com','facebook.com','instagram.com','whatsapp.com','wikipedia.org',
-  'x.com','amazon.com','yahoo.com','tiktok.com','netflix.com','reddit.com','linkedin.com','bing.com',
-  'baidu.com','yandex.ru','live.com','microsoft.com','apple.com','pinterest.com','temu.com','canva.com',
-  'cnn.com','bbc.com','nytimes.com','ebay.com','twitch.tv','spotify.com','zoom.us','openai.com','claude.ai',
-  'discord.com','telegram.org','quora.com','github.com','stackoverflow.com','dropbox.com','adobe.com',
-  'salesforce.com','paypal.com','walmart.com','aliexpress.com','samsung.com','weather.com','indeed.com',
-  'booking.com','imdb.com','espn.com','roblox.com','duckduckgo.com','wordpress.com'];
-const INDIA = ['flipkart.com','hotstar.com','irctc.co.in','ndtv.com','timesofindia.indiatimes.com',
-  'hindustantimes.com','indiatimes.com','zomato.com','swiggy.com','paytm.com','myntra.com','bookmyshow.com',
-  'naukri.com','rediff.com','moneycontrol.com','jiocinema.com','sbi.co.in','icicibank.com','hdfcbank.com',
-  'olx.in','shaadi.com','quikr.com','makemytrip.com','cleartrip.com','indianrail.gov.in'];
-
-// Sites known to run aggressive bot/WAF protection that blocks free CORS proxies
-// and challenges plain fetch requests — a "down" result here is often a false
-// negative caused by the checking method, not the site itself.
-const WAF_PROTECTED = new Set(['x.com','paytm.com','instagram.com','linkedin.com']);
-
-// ---------- State ----------
-const sites = [];         // {id, name, url, tag, status:'pend'|'up'|'down', code, time, history:[]}
-const HISTORY_LEN = 24;
-const REFRESH_MS = 60000;
-let uid = 0;
-let filter = 'all';
-
-const listEl = document.getElementById('list');
-const form = document.getElementById('addForm');
-const input = document.getElementById('urlInput');
-const countEl = document.getElementById('count');
-
-function makeSite(domain, tag){
-  return { id: uid++, url: 'https://' + domain, name: domain, tag,
-    status:'pend', code:null, time:null, history:[], checking:false };
-}
-WORLD.forEach(d => sites.push(makeSite(d, 'world')));
-INDIA.forEach(d => sites.push(makeSite(d, 'in')));
-
-document.getElementById('filters').addEventListener('click', e => {
-  const b = e.target.closest('button[data-f]');
-  if(!b) return;
-  filter = b.dataset.f;
-  document.querySelectorAll('#filters button').forEach(x => x.setAttribute('aria-pressed', String(x===b)));
-  render();
-});
-
-function normalizeUrl(raw){
-  let u = raw.trim();
-  if(!/^https?:\/\//i.test(u)) u = 'https://' + u;
-  try { return new URL(u).toString().replace(/\/$/,''); } catch(e){ return null; }
-}
-
-function cap(name){
-  return name.charAt(0).toUpperCase() + name.slice(1);
-}
-
-// Defense in depth: escape before inserting any site-derived text into innerHTML.
-// The URL constructor already blocks most injection attempts, but this covers
-// any edge case it doesn't.
-function esc(str){
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
-
-function render(){
-  const visible = sites.filter(s => filter === 'all' || s.tag === filter);
-  countEl.textContent = visible.length + ' / ' + sites.length + ' sites';
-  if(visible.length === 0){
-    listEl.innerHTML = '<div class="empty">No sites monitored yet. Add one above to start pinging.</div>';
-    return;
-  }
-  listEl.innerHTML = visible.map(s => `
-    <div class="card" data-id="${s.id}">
-      <div class="card-top">
-        <span class="status-dot ${s.status}"></span>
-        <div class="card-info">
-          <div class="name"><span class="name-text">${esc(cap(s.name))}</span>${s.tag==='world'?'<span class="tag">WORLD</span>':s.tag==='in'?'<span class="tag">IN</span>':''}${WAF_PROTECTED.has(s.name)?'<span class="tag warn-tag" title="Known to block automated checks">🛡 PROTECTED</span>':''}</div>
-          <div class="url">${esc(s.url)}</div>
-        </div>
-        <div class="card-meta">
-          <div class="${codeClass(s)}">${codeText(s)}</div>
-          <div class="time-val">${s.time != null ? s.time + ' ms' : '—'}</div>
-        </div>
-        <button class="sitebtn" title="Recheck now" onclick="recheck(${s.id})">↻</button>
-        <button class="sitebtn" title="Remove" onclick="removeSite(${s.id})">×</button>
-      </div>
-      <div class="pulse">${renderPulse(s.history)}</div>
+  <div class="panel" id="adjustPanel">
+    <h3>Adjustments</h3>
+    <div class="row">
+      <label class="sl">Brightness <input type="range" id="brightness" min="50" max="150" value="100"></label>
+      <label class="sl">Contrast <input type="range" id="contrast" min="50" max="150" value="100"></label>
+      <label class="sl">Saturation <input type="range" id="saturation" min="0" max="200" value="100"></label>
+      <label class="sl">Exposure <input type="range" id="exposure" min="-50" max="50" value="0"></label>
     </div>
-  `).join('');
-}
+    <div class="row">
+      <label class="sl">Vignette (WebGL) <input type="range" id="vignette" min="0" max="100" value="0"></label>
+      <label class="sl">Blur <input type="range" id="blur" min="0" max="20" value="0"></label>
+      <label class="sl">Temperature <input type="range" id="temp" min="-50" max="50" value="0"></label>
+      <label class="sl">Tint <input type="range" id="tint" min="-50" max="50" value="0"></label>
+    </div>
+    <div class="row">
+      <label class="sl">Brush size <input type="range" id="brushSize" min="5" max="80" value="24"></label>
+      <label class="sl">Brush softness <input type="range" id="brushStrength" min="1" max="10" value="4"></label>
+      <label class="sl">Text content <input type="text" id="textContent" placeholder="Type, then click canvas" style="background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px"></label>
+      <label class="sl">Text size <input type="range" id="textSize" min="12" max="120" value="36"></label>
+      <label class="sl">Text color <input type="color" id="textColor" value="#ffffff"></label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" id="applyBtn" type="button">Apply Adjustments</button>
+      <button class="tool" id="sharpenBtn" type="button">Apply Sharpen</button>
+      <button class="tool" id="resetBtn" type="button">Reset</button>
+    </div>
+  </div>
 
-function codeText(s){
-  if(s.status === 'pend') return 'checking…';
-  if(s.status === 'down' && WAF_PROTECTED.has(s.name)) return 'blocked by site security';
-  if(s.code) return 'HTTP ' + s.code;
-  if(s.status === 'up') return 'reachable';
-  return 'no response';
-}
+  <div class="panel" id="filterPanel">
+    <h3>Presets & Sharpen</h3>
+    <div class="row">
+      <button class="tool" id="fNone" type="button">None</button>
+      <button class="tool" id="fGray" type="button">Grayscale</button>
+      <button class="tool" id="fSepia" type="button">Vintage</button>
+      <button class="tool" id="fDuo" type="button">Duotone</button>
+      <label class="sl">Sharpen amount <input type="range" id="sharpen" min="0" max="10" value="3"></label>
+    </div>
+  </div>
 
-function codeClass(s){
-  if(s.status === 'down' && WAF_PROTECTED.has(s.name)) return 'code warn';
-  return `code ${s.status}`;
-}
+  <div class="panel" id="resizePanel">
+    <h3>Resize & Export</h3>
+    <div class="row">
+      <label class="sl">Width (px) <input type="number" id="rw" min="1" style="background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px"></label>
+      <label class="sl">Height (px) <input type="number" id="rh" min="1" style="background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px"></label>
+      <label class="sl"><input type="checkbox" id="lockAspect" checked> Lock aspect ratio</label>
+      <button class="tool" id="resizeBtn" type="button">Apply Resize</button>
+    </div>
+    <div class="row">
+      <label class="sl">Format
+        <select id="fmt" style="background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px">
+          <option value="png">PNG</option><option value="jpeg">JPEG</option>
+        </select>
+      </label>
+      <label class="sl">JPEG quality <input type="range" id="quality" min="10" max="100" value="90"></label>
+      <button class="primary" id="downloadBtn" type="button">Download</button>
+    </div>
+  </div>
+</main>
+<footer>
+  <div>© <span id="year"></span> Manik Roy. All Rights Reserved.</div>
+</footer>
+<script>
+(function(){
+'use strict';
+var canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+var stage=document.getElementById('stage'),dropHint=document.getElementById('dropHint');
+var cropBox=document.getElementById('cropBox');
+var baseImg=null;
+var history=[],redoStack=[];
+var mode='none';
+var cropStart=null,cropRect=null;
+var gl,glCanvas;
 
-// Updates a single card's DOM in place — avoids rebuilding all 75+ cards on every
-// status change, which is what was causing the UI to freeze during a full sweep.
-function updateCard(site){
-  const el = listEl.querySelector(`[data-id="${site.id}"]`);
-  if(!el) return; // filtered out or not yet rendered — safe to skip
-  el.querySelector('.status-dot').className = `status-dot ${site.status}`;
-  const codeEl = el.querySelector('.code');
-  codeEl.className = codeClass(site);
-  codeEl.textContent = codeText(site);
-  el.querySelector('.time-val').textContent = site.time != null ? site.time + ' ms' : '—';
-  el.querySelector('.pulse').innerHTML = renderPulse(site.history);
-}
+document.getElementById('year').textContent=new Date().getFullYear();
 
-function renderPulse(history){
-  const bars = history.slice(-HISTORY_LEN);
-  const pad = HISTORY_LEN - bars.length;
-  let out = '';
-  for(let i=0;i<pad;i++) out += '<i></i>';
-  out += bars.map(h => `<i class="${h}"></i>`).join('');
-  return out;
+var themes=['auto','light','dark','oled','hc'],ti=0;
+var themeBtn=document.getElementById('themeBtn');
+function applyTheme(){
+  var t=themes[ti];
+  if(t==='auto')document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme',t);
+  themeBtn.textContent='Theme: '+t[0].toUpperCase()+t.slice(1);
 }
+themeBtn.addEventListener('click',function(){ti=(ti+1)%themes.length;applyTheme();});
+applyTheme();
 
-// ---------- Checking (free, no key, no signup — timed so nothing can hang) ----------
-function fetchTimeout(url, opts, ms){
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
+var fileInput=document.getElementById('fileInput');
+document.getElementById('uploadBtn').addEventListener('click',function(){fileInput.click();});
+fileInput.addEventListener('change',function(e){if(e.target.files[0])loadFile(e.target.files[0]);});
+stage.addEventListener('dragover',function(e){e.preventDefault();});
+stage.addEventListener('drop',function(e){e.preventDefault();if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+
+function loadFile(file){
+  var img=new Image();
+  img.onload=function(){
+    dropHint.style.display='none';
+    var maxW=1400,scale=Math.min(1,maxW/img.width);
+    canvas.width=Math.round(img.width*scale);
+    canvas.height=Math.round(img.height*scale);
+    ctx.filter='none';
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    document.getElementById('rw').value=canvas.width;
+    document.getElementById('rh').value=canvas.height;
+    commit();
+  };
+  img.src=URL.createObjectURL(file);
 }
-
-async function pingUrl(url){
-  const t0 = performance.now();
-  // Primary: direct no-cors request. No proxy hop, no rate limit, resolves as soon
-  // as the network connection succeeds — fast for the vast majority of sites.
-  try{
-    await fetchTimeout(url, { mode:'no-cors', cache:'no-store' }, 6000);
-    return { up:true, code:null, time: Math.round(performance.now() - t0) };
-  }catch(e1){
-    // Fallback: a public CORS proxy, only for sites the direct check couldn't reach —
-    // gives us a real HTTP status code, capped so it can never stall the queue.
-    try{
-      const t1 = performance.now();
-      const r = await fetchTimeout('https://api.allorigins.win/get?url=' + encodeURIComponent(url), { cache:'no-store' }, 7000);
-      const time = Math.round(performance.now() - t1);
-      if(!r.ok) throw new Error('proxy error');
-      const data = await r.json();
-      const code = data && data.status ? data.status.http_code : null;
-      return { up: !!code && code < 400, code, time };
-    }catch(e2){
-      return { up:false, code:null, time:null };
-    }
-  }
-}
-
-async function checkSite(site){
-  if(site.checking) return; // prevents overlapping requests for the same site
-  site.checking = true;
-  site.status = 'pend';
-  updateCard(site);
-  const result = await pingUrl(site.url);
-  site.status = result.up ? 'up' : 'down';
-  site.code = result.code;
-  site.time = result.time;
-  site.history.push(site.status);
-  if(site.history.length > HISTORY_LEN) site.history.shift();
-  site.checking = false;
-  updateCard(site);
-}
-
-function recheck(id){
-  const s = sites.find(x => x.id === id);
-  if(s) checkSite(s);
-}
-
-function removeSite(id){
-  const i = sites.findIndex(x => x.id === id);
-  if(i > -1){ sites.splice(i,1); render(); }
-}
-
-form.addEventListener('submit', e => {
-  e.preventDefault();
-  const url = normalizeUrl(input.value);
-  if(!url) return alert('Please enter a valid domain or URL.');
-  const site = makeSite(url.replace(/^https?:\/\//,'').replace(/\/$/,''), 'custom');
-  site.url = url;
-  sites.unshift(site);
-  input.value = '';
-  render();
-  checkSite(site);
+var rw=document.getElementById('rw'),rh=document.getElementById('rh'),lockA=document.getElementById('lockAspect');
+rw.addEventListener('input',function(){if(lockA.checked&&baseImg)rh.value=Math.round(rw.value*baseImg.height/baseImg.width);});
+rh.addEventListener('input',function(){if(lockA.checked&&baseImg)rw.value=Math.round(rh.value*baseImg.width/baseImg.height);});
+document.getElementById('resizeBtn').addEventListener('click',function(){
+  if(!baseImg)return;
+  var w=parseInt(rw.value,10),h=parseInt(rh.value,10);
+  if(!w||!h)return;
+  var c=document.createElement('canvas');c.width=w;c.height=h;
+  c.getContext('2d').drawImage(canvas,0,0,w,h);
+  canvas.width=w;canvas.height=h;
+  ctx.drawImage(c,0,0);
+  commit();
 });
 
-// Run checks through a concurrency pool with hard per-request timeouts, so a slow
-// or dead site can never block the rest of the queue.
-let checking = false;
-async function checkAll(){
-  if(checking) return;
-  checking = true;
-  const bar = document.getElementById('progressBar');
-  const queue = sites.slice(); // snapshot — add/remove during a sweep can't corrupt indexing
-  const total = queue.length;
-  let done = 0;
-  const POOL = 10;
-  let i = 0;
-  async function worker(){
-    while(i < queue.length){
-      const site = queue[i++];
-      await checkSite(site);
-      done++;
-      bar.style.width = Math.round(done / total * 100) + '%';
+function snapshot(){
+  var c=document.createElement('canvas');c.width=canvas.width;c.height=canvas.height;
+  c.getContext('2d').drawImage(canvas,0,0);
+  return c;
+}
+function commit(){
+  baseImg=snapshot();
+  history.push(baseImg);
+  if(history.length>15)history.shift();
+  redoStack=[];
+}
+function restore(c){
+  canvas.width=c.width;canvas.height=c.height;
+  ctx.filter='none';ctx.drawImage(c,0,0);
+  baseImg=snapshot();
+}
+document.getElementById('undoBtn').addEventListener('click',function(){
+  if(history.length>1){redoStack.push(history.pop());restore(history[history.length-1]);}
+});
+document.getElementById('redoBtn').addEventListener('click',function(){
+  if(redoStack.length){var c=redoStack.pop();history.push(c);restore(c);}
+});
+document.getElementById('resetBtn').addEventListener('click',function(){
+  ['brightness','contrast','saturation'].forEach(function(id){document.getElementById(id).value=100;});
+  document.getElementById('exposure').value=0;document.getElementById('vignette').value=0;
+  liveAdjust();
+});
+
+var sliders=['brightness','contrast','saturation','exposure','vignette','blur','temp','tint'];
+sliders.forEach(function(id){document.getElementById(id).addEventListener('input',liveAdjust);});
+function liveAdjust(){
+  if(!baseImg)return;
+  var b=document.getElementById('brightness').value,
+      c=document.getElementById('contrast').value,
+      s=document.getElementById('saturation').value,
+      e=parseInt(document.getElementById('exposure').value,10),
+      bl=parseInt(document.getElementById('blur').value,10);
+  var bAdj=parseInt(b,10)+e;
+  ctx.filter='brightness('+bAdj+'%) contrast('+c+'%) saturate('+s+'%)'+(bl>0?' blur('+bl+'px)':'');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(baseImg,0,0);
+  ctx.filter='none';
+  var temp=parseInt(document.getElementById('temp').value,10),tint=parseInt(document.getElementById('tint').value,10);
+  if(temp!==0||tint!==0)applyTempTint(temp,tint);
+  var v=parseInt(document.getElementById('vignette').value,10);
+  if(v>0)applyVignetteWebGL(v);
+}
+function applyTempTint(temp,tint){
+  var img=ctx.getImageData(0,0,canvas.width,canvas.height),d=img.data;
+  for(var i=0;i<d.length;i+=4){
+    d[i]+=temp*0.6;d[i+2]-=temp*0.6;
+    d[i+1]+=tint*0.5;
+  }
+  ctx.putImageData(img,0,0);
+}
+document.getElementById('applyBtn').addEventListener('click',function(){commit();});
+
+document.getElementById('sharpenBtn').addEventListener('click',function(){sharpen();});
+document.getElementById('sharpen') && document.getElementById('sharpen').addEventListener('change',function(){});
+function sharpen(){
+  if(!baseImg)return;
+  var amt=parseInt(document.getElementById('sharpen').value,10)/10;
+  var w=canvas.width,h=canvas.height,img=ctx.getImageData(0,0,w,h),d=img.data,src=new Uint8ClampedArray(d);
+  var k=[0,-1,0,-1,5,-1,0,-1,0];
+  for(var y=1;y<h-1;y++){
+    for(var x=1;x<w-1;x++){
+      for(var c=0;c<3;c++){
+        var sum=0,ki=0;
+        for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++){
+          sum+=src[((y+dy)*w+(x+dx))*4+c]*k[ki++];
+        }
+        var idx=(y*w+x)*4+c;
+        d[idx]=src[idx]*(1-amt)+sum*amt;
+      }
     }
   }
-  await Promise.all(Array.from({length: POOL}, worker));
-  checking = false;
-  setTimeout(() => bar.style.width = '0%', 600);
+  ctx.putImageData(img,0,0);
+  commit();
 }
 
-render();
-checkAll();
-setInterval(checkAll, REFRESH_MS);
+['fNone','fGray','fSepia','fDuo'].forEach(function(id){
+  document.getElementById(id).addEventListener('click',function(){applyPreset(id);});
+});
+function applyPreset(id){
+  if(!baseImg)return;
+  if(id==='fNone'){restore(baseImg);return;}
+  var w=canvas.width,h=canvas.height,img=ctx.getImageData(0,0,w,h),d=img.data;
+  for(var i=0;i<d.length;i+=4){
+    var lum=0.3*d[i]+0.59*d[i+1]+0.11*d[i+2];
+    if(id==='fGray'){d[i]=d[i+1]=d[i+2]=lum;}
+    else if(id==='fSepia'){d[i]=Math.min(255,lum*1.07+40);d[i+1]=Math.min(255,lum*0.86+20);d[i+2]=Math.min(255,lum*0.63);}
+    else if(id==='fDuo'){
+      var t=lum/255;
+      d[i]=20+t*(255-20);d[i+1]=10+t*(180-10);d[i+2]=60+t*(120-60);
+    }
+  }
+  ctx.putImageData(img,0,0);
+  commit();
+}
+
+function applyVignetteWebGL(amount){
+  if(!glCanvas){glCanvas=document.createElement('canvas');gl=glCanvas.getContext('webgl');}
+  if(!gl)return;
+  glCanvas.width=canvas.width;glCanvas.height=canvas.height;
+  gl.viewport(0,0,glCanvas.width,glCanvas.height);
+  var vs='attribute vec2 p;varying vec2 uv;void main(){uv=p*0.5+0.5;gl_Position=vec4(p,0.0,1.0);}';
+  var fs='precision mediump float;varying vec2 uv;uniform sampler2D tex;uniform float amt;'+
+    'void main(){vec4 c=texture2D(tex,vec2(uv.x,1.0-uv.y));float d=distance(uv,vec2(0.5));'+
+    'float v=smoothstep(0.35,0.9,d)*amt;gl_FragColor=vec4(c.rgb*(1.0-v),c.a);}';
+  var prog=buildProgram(vs,fs);
+  gl.useProgram(prog);
+  var buf=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  var loc=gl.getAttribLocation(prog,'p');
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  var tex=gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,tex);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,canvas);
+  gl.uniform1i(gl.getUniformLocation(prog,'tex'),0);
+  gl.uniform1f(gl.getUniformLocation(prog,'amt'),amount/100);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(glCanvas,0,0);
+}
+function buildProgram(vsSrc,fsSrc){
+  function sh(type,src){var s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return s;}
+  var p=gl.createProgram();
+  gl.attachShader(p,sh(gl.VERTEX_SHADER,vsSrc));
+  gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fsSrc));
+  gl.linkProgram(p);
+  return p;
+}
+
+var toolBtns={crop:document.getElementById('cropTool'),brush:document.getElementById('brushTool'),
+  clone:document.getElementById('cloneTool'),redeye:document.getElementById('redeyeTool'),text:document.getElementById('textTool')};
+var cloneSrc=null,cloneAnchor=null;
+function setMode(m){
+  mode=mode===m?'none':m;
+  Object.keys(toolBtns).forEach(function(k){toolBtns[k].classList.toggle('active',mode===k);});
+  cropBox.style.display='none';cropRect=null;cloneSrc=null;cloneAnchor=null;
+}
+toolBtns.crop.addEventListener('click',function(){setMode('crop');});
+toolBtns.brush.addEventListener('click',function(){setMode('brush');});
+toolBtns.clone.addEventListener('click',function(){setMode('clone');});
+toolBtns.redeye.addEventListener('click',function(){setMode('redeye');});
+toolBtns.text.addEventListener('click',function(){setMode('text');});
+
+function canvasPos(e){
+  var r=canvas.getBoundingClientRect();
+  var t=e.touches?e.touches[0]:e;
+  return {x:(t.clientX-r.left)*(canvas.width/r.width),y:(t.clientY-r.top)*(canvas.height/r.height),
+          cx:t.clientX-r.left,cy:t.clientY-r.top};
+}
+canvas.addEventListener('pointerdown',function(e){
+  if(!baseImg)return;
+  if(mode==='crop'){
+    cropStart=canvasPos(e);cropBox.style.display='block';
+    updateCropBox(cropStart,cropStart);
+  }else if(mode==='brush'){
+    canvas.setPointerCapture(e.pointerId);
+    retouchAt(canvasPos(e));
+    canvas._drawing=true;
+  }else if(mode==='clone'){
+    var p=canvasPos(e);
+    if(e.altKey||!cloneSrc){cloneSrc=p;cloneAnchor=null;}
+    else{canvas.setPointerCapture(e.pointerId);canvas._drawing=true;cloneAnchor=p;cloneAt(p);}
+  }else if(mode==='redeye'){
+    redeyeAt(canvasPos(e));commit();
+  }else if(mode==='text'){
+    var txt=document.getElementById('textContent').value;
+    if(txt){
+      var p2=canvasPos(e),size=parseInt(document.getElementById('textSize').value,10);
+      ctx.fillStyle=document.getElementById('textColor').value;
+      ctx.font=size+'px system-ui,sans-serif';
+      ctx.fillText(txt,p2.x,p2.y);
+      commit();
+    }
+  }
+});
+canvas.addEventListener('pointermove',function(e){
+  if(mode==='crop'&&cropStart){updateCropBox(cropStart,canvasPos(e));}
+  else if(mode==='brush'&&canvas._drawing){retouchAt(canvasPos(e));}
+  else if(mode==='clone'&&canvas._drawing&&cloneSrc){cloneAt(canvasPos(e));}
+});
+canvas.addEventListener('pointerup',function(){if(mode==='brush'||mode==='clone')commit();canvas._drawing=false;});
+function cloneAt(dst){
+  if(!cloneAnchor)cloneAnchor=dst;
+  var size=parseInt(document.getElementById('brushSize').value,10),half=size/2;
+  var srcX=cloneSrc.x+(dst.x-cloneAnchor.x),srcY=cloneSrc.y+(dst.y-cloneAnchor.y);
+  var sx=Math.round(srcX-half),sy=Math.round(srcY-half);
+  var dx=Math.round(dst.x-half),dy=Math.round(dst.y-half);
+  if(sx<0||sy<0||sx+size>canvas.width||sy+size>canvas.height)return;
+  if(dx<0||dy<0||dx+size>canvas.width||dy+size>canvas.height)return;
+  var img=ctx.getImageData(sx,sy,size,size);
+  ctx.putImageData(img,dx,dy);
+}
+function redeyeAt(pos){
+  var r=18,x0=Math.max(0,Math.round(pos.x-r)),y0=Math.max(0,Math.round(pos.y-r));
+  var w=Math.min(r*2,canvas.width-x0),h=Math.min(r*2,canvas.height-y0);
+  if(w<=0||h<=0)return;
+  var img=ctx.getImageData(x0,y0,w,h),d=img.data;
+  for(var i=0;i<d.length;i+=4){
+    if(d[i]>60&&d[i]>d[i+1]*1.3&&d[i]>d[i+2]*1.3){
+      var g=(d[i+1]+d[i+2])/2;d[i]=g*0.6;
+    }
+  }
+  ctx.putImageData(img,x0,y0);
+}
+function updateCropBox(a,b){
+  var r=canvas.getBoundingClientRect(),stageRect=stage.getBoundingClientRect();
+  var x1=Math.min(a.cx,b.cx),y1=Math.min(a.cy,b.cy),w=Math.abs(a.cx-b.cx),h=Math.abs(a.cy-b.cy);
+  cropBox.style.left=(r.left-stageRect.left+x1)+'px';
+  cropBox.style.top=(r.top-stageRect.top+y1)+'px';
+  cropBox.style.width=w+'px';cropBox.style.height=h+'px';
+  cropRect={x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w:Math.abs(a.x-b.x),h:Math.abs(a.y-b.y)};
+}
+document.addEventListener('dblclick',function(){
+  if(mode==='crop'&&cropRect&&cropRect.w>4&&cropRect.h>4){
+    var c=document.createElement('canvas');c.width=cropRect.w;c.height=cropRect.h;
+    c.getContext('2d').drawImage(canvas,cropRect.x,cropRect.y,cropRect.w,cropRect.h,0,0,cropRect.w,cropRect.h);
+    canvas.width=c.width;canvas.height=c.height;
+    ctx.drawImage(c,0,0);
+    commit();
+    cropBox.style.display='none';cropRect=null;mode='none';toolBtns.crop.classList.remove('active');
+  }
+});
+
+function retouchAt(pos){
+  var size=parseInt(document.getElementById('brushSize').value,10);
+  var soft=parseInt(document.getElementById('brushStrength').value,10);
+  var x=Math.max(0,Math.round(pos.x-size/2)),y=Math.max(0,Math.round(pos.y-size/2));
+  var w=Math.min(size,canvas.width-x),h=Math.min(size,canvas.height-y);
+  if(w<=0||h<=0)return;
+  var img=ctx.getImageData(x,y,w,h);
+  var d=img.data,orig=new Uint8ClampedArray(d),k=soft;
+  for(var i=0;i<h;i++){
+    for(var j=0;j<w;j++){
+      var r=0,g=0,bl=0,a=0,n=0;
+      for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++){
+        var yy=i+dy*k,xx=j+dx*k;
+        if(yy<0||yy>=h||xx<0||xx>=w)continue;
+        var idx=(yy*w+xx)*4;
+        r+=orig[idx];g+=orig[idx+1];bl+=orig[idx+2];a+=orig[idx+3];n++;
+      }
+      var idx2=(i*w+j)*4;
+      d[idx2]=r/n;d[idx2+1]=g/n;d[idx2+2]=bl/n;d[idx2+3]=a/n;
+    }
+  }
+  ctx.putImageData(img,x,y);
+}
+
+document.getElementById('rotL').addEventListener('click',function(){rotate(-90);});
+document.getElementById('rotR').addEventListener('click',function(){rotate(90);});
+function rotate(deg){
+  if(!baseImg)return;
+  var c=document.createElement('canvas');c.width=canvas.height;c.height=canvas.width;
+  var cx=c.getContext('2d');
+  cx.translate(c.width/2,c.height/2);cx.rotate(deg*Math.PI/180);
+  cx.drawImage(canvas,-canvas.width/2,-canvas.height/2);
+  canvas.width=c.width;canvas.height=c.height;
+  ctx.drawImage(c,0,0);
+  commit();
+}
+document.getElementById('flipH').addEventListener('click',function(){flip(-1,1);});
+document.getElementById('flipV').addEventListener('click',function(){flip(1,-1);});
+function flip(sx,sy){
+  if(!baseImg)return;
+  var c=document.createElement('canvas');c.width=canvas.width;c.height=canvas.height;
+  var cx=c.getContext('2d');
+  cx.translate(sx<0?c.width:0,sy<0?c.height:0);cx.scale(sx,sy);
+  cx.drawImage(canvas,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(c,0,0);
+  commit();
+}
+
+document.getElementById('downloadBtn').addEventListener('click',function(){
+  if(!baseImg)return;
+  var fmt=document.getElementById('fmt').value,q=parseInt(document.getElementById('quality').value,10)/100;
+  var a=document.createElement('a');
+  a.download='pixelretouch.'+(fmt==='jpeg'?'jpg':'png');
+  a.href=fmt==='jpeg'?canvas.toDataURL('image/jpeg',q):canvas.toDataURL('image/png');
+  a.click();
+});
+})();
 </script>
 </body>
 </html>
