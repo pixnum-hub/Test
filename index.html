@@ -91,7 +91,6 @@ footer{display:flex;flex-direction:column;align-items:center;justify-content:cen
     </div>
     <div class="row" style="margin-top:10px">
       <button class="primary" id="applyBtn" type="button">Apply Adjustments</button>
-      <button class="tool" id="sharpenBtn" type="button">Apply Sharpen</button>
       <button class="tool" id="resetBtn" type="button">Reset</button>
     </div>
   </div>
@@ -104,6 +103,7 @@ footer{display:flex;flex-direction:column;align-items:center;justify-content:cen
       <button class="tool" id="fSepia" type="button">Vintage</button>
       <button class="tool" id="fDuo" type="button">Duotone</button>
       <label class="sl">Sharpen amount <input type="range" id="sharpen" min="0" max="10" value="3"></label>
+      <button class="primary" id="sharpenBtn" type="button">Apply Sharpen</button>
     </div>
   </div>
 
@@ -213,7 +213,7 @@ document.getElementById('redoBtn').addEventListener('click',function(){
 });
 document.getElementById('resetBtn').addEventListener('click',function(){
   ['brightness','contrast','saturation'].forEach(function(id){document.getElementById(id).value=100;});
-  document.getElementById('exposure').value=0;document.getElementById('vignette').value=0;
+  ['exposure','vignette','blur','temp','tint'].forEach(function(id){document.getElementById(id).value=0;});
   liveAdjust();
 });
 
@@ -244,10 +244,22 @@ function applyTempTint(temp,tint){
   }
   ctx.putImageData(img,0,0);
 }
-document.getElementById('applyBtn').addEventListener('click',function(){commit();});
+document.getElementById('applyBtn').addEventListener('click',function(){
+  if(!baseImg)return;
+  commit();
+  ['brightness','contrast','saturation'].forEach(function(id){document.getElementById(id).value=100;});
+  ['exposure','vignette','blur','temp','tint'].forEach(function(id){document.getElementById(id).value=0;});
+  var b=document.getElementById('applyBtn'),old=b.textContent;
+  b.textContent='Applied ✓';
+  setTimeout(function(){b.textContent=old;},900);
+});
 
-document.getElementById('sharpenBtn').addEventListener('click',function(){sharpen();});
-document.getElementById('sharpen') && document.getElementById('sharpen').addEventListener('change',function(){});
+document.getElementById('sharpenBtn').addEventListener('click',function(){
+  sharpen();
+  var b=document.getElementById('sharpenBtn'),old=b.textContent;
+  b.textContent='Applied ✓';
+  setTimeout(function(){b.textContent=old;},900);
+});
 function sharpen(){
   if(!baseImg)return;
   var amt=parseInt(document.getElementById('sharpen').value,10)/10;
