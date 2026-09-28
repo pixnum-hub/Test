@@ -46,7 +46,7 @@ footer{width:100%;padding:16px 12px;border-top:var(--bw) solid var(--bd);text-al
 <main>
   <header>
     <h1>📶 WiFi Map</h1>
-    <p class="sub">Scan with the Windows Native Wi-Fi API · map with OpenStreetMap · no API key</p>
+    <p class="sub">Live scan via the Windows Native Wi-Fi API · OpenStreetMap · no API key</p>
   </header>
 
   <div class="seg" id="themes" role="group" aria-label="Theme">
@@ -55,22 +55,11 @@ footer{width:100%;padding:16px 12px;border-top:var(--bw) solid var(--bd);text-al
   </div>
 
   <section class="card">
-    <h2>1 · Scan your Windows PC</h2>
-    <ol>
-      <li>Copy or download the PowerShell script (it calls <code>wlanapi.dll</code>: WlanScan + WlanGetNetworkBssList).</li>
-      <li>Run it in PowerShell on the laptop — the JSON result is copied to the clipboard.</li>
-      <li>Paste it below (or load the file) and tap <b>Add to map</b>.</li>
-    </ol>
+    <h2>Scan Wi-Fi networks</h2>
     <div class="row">
-      <button id="cp" class="pri">Copy script</button>
-      <button id="dl">Download .ps1</button>
-      <button id="demo">Try demo data</button>
-    </div>
-    <textarea id="paste" placeholder='Paste scan JSON here…' aria-label="Scan JSON"></textarea>
-    <div class="row">
-      <button id="add" class="pri">Add to map</button>
+      <button id="scan" class="pri">📡 Scan now</button>
       <button id="loc">📍 My location</button>
-      <label class="row" style="flex:1 1 130px"><input type="file" id="file" accept=".json,.txt" style="width:100%"></label>
+      <label class="row" style="flex:1 1 130px;gap:6px"><input type="checkbox" id="auto" style="min-height:auto"> Auto-scan (15 s)</label>
     </div>
     <p id="msg" role="status"></p>
   </section>
@@ -92,44 +81,7 @@ footer{width:100%;padding:16px 12px;border-top:var(--bw) solid var(--bd);text-al
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-const $=s=>document.querySelector(s), KEY='wifimap.v1';
-const PS=[
-'$src=@"',
-'using System;using System.Runtime.InteropServices;',
-'public class W{',
-'[DllImport("wlanapi.dll")]public static extern int WlanOpenHandle(uint v,IntPtr r,out uint n,out IntPtr h);',
-'[DllImport("wlanapi.dll")]public static extern int WlanEnumInterfaces(IntPtr h,IntPtr r,out IntPtr l);',
-'[DllImport("wlanapi.dll")]public static extern int WlanScan(IntPtr h,ref Guid g,IntPtr a,IntPtr b,IntPtr c);',
-'[DllImport("wlanapi.dll")]public static extern int WlanGetNetworkBssList(IntPtr h,ref Guid g,IntPtr s,int t,bool sec,IntPtr r,out IntPtr l);',
-'[DllImport("wlanapi.dll")]public static extern void WlanFreeMemory(IntPtr p);',
-'[DllImport("wlanapi.dll")]public static extern int WlanCloseHandle(IntPtr h,IntPtr r);',
-'}',
-'"@',
-'Add-Type -TypeDefinition $src',
-'$M=[Runtime.InteropServices.Marshal];$n=0;$h=[IntPtr]::Zero',
-'[W]::WlanOpenHandle(2,[IntPtr]::Zero,[ref]$n,[ref]$h)|Out-Null',
-'$l=[IntPtr]::Zero;[W]::WlanEnumInterfaces($h,[IntPtr]::Zero,[ref]$l)|Out-Null',
-'$cnt=$M::ReadInt32($l);$out=@()',
-'for($i=0;$i -lt $cnt;$i++){',
-' $g=$M::PtrToStructure([IntPtr]($l.ToInt64()+8+532*$i),[Type][Guid])',
-' [W]::WlanScan($h,[ref]$g,[IntPtr]::Zero,[IntPtr]::Zero,[IntPtr]::Zero)|Out-Null',
-' Start-Sleep 4',
-' $b=[IntPtr]::Zero',
-' if([W]::WlanGetNetworkBssList($h,[ref]$g,[IntPtr]::Zero,3,$false,[IntPtr]::Zero,[ref]$b) -eq 0){',
-'  $c=$M::ReadInt32($b,4)',
-'  for($k=0;$k -lt $c;$k++){',
-'   $p=[IntPtr]($b.ToInt64()+8+360*$k);$sl=$M::ReadInt32($p);$ss=""',
-'   if($sl -gt 0){$ss=[Text.Encoding]::UTF8.GetString([byte[]](0..($sl-1)|%{$M::ReadByte($p,4+$_)}))}',
-'   $mac=(0..5|%{"{0:X2}" -f $M::ReadByte($p,40+$_)}) -join ":"',
-'   $out+=[pscustomobject]@{ssid=$ss;bssid=$mac;rssi=$M::ReadInt32($p,56);q=$M::ReadInt32($p,60);freq=[int]($M::ReadInt32($p,92)/1000);sec=(($M::ReadInt16($p,88) -band 16) -ne 0)}',
-'  }',
-'  [W]::WlanFreeMemory($b)',
-' }',
-'}',
-'[W]::WlanFreeMemory($l);[W]::WlanCloseHandle($h,[IntPtr]::Zero)|Out-Null',
-'ConvertTo-Json -InputObject @($out) -Compress|Set-Clipboard',
-'Write-Host "Copied $($out.Count) networks to clipboard"'
-].join('\r\n');
+const $=s=>document.querySelector(s), KEY='wifimap.v1', API=window.wifi;
 
 let db={aps:{},scans:0,user:null};
 try{Object.assign(db,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
@@ -157,35 +109,36 @@ const map=L.map('map',{zoomControl:true}).setView([22.5726,88.3639],12);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
 const layer=L.layerGroup().addTo(map);let me=null;
 function setMe(lat,lng){db.user=[lat,lng];if(me)me.setLatLng([lat,lng]);else me=L.circleMarker([lat,lng],{radius:8,color:'#fff',weight:3,fillColor:'#3794ff',fillOpacity:1}).addTo(map).bindTooltip('You');save()}
-function locate(cb){
-  if(!navigator.geolocation){say('Geolocation unavailable — using last known position.');return cb(db.user)}
-  say('Getting location…');
-  navigator.geolocation.getCurrentPosition(p=>{setMe(p.coords.latitude,p.coords.longitude);map.setView([p.coords.latitude,p.coords.longitude],17);cb(db.user)},
-    ()=>{say('Location denied — using last known/map centre.');cb(db.user||[map.getCenter().lat,map.getCenter().lng])},{enableHighAccuracy:true,timeout:12000});
-}
+async function locate(cb){say('Getting location…');let p=null;
+  try{p=API?await API.locate():await new Promise((ok,no)=>navigator.geolocation.getCurrentPosition(x=>ok([x.coords.latitude,x.coords.longitude]),no,{enableHighAccuracy:true,timeout:12000}))}catch(e){}
+  if(p){setMe(p[0],p[1]);map.setView(p,17)}else say('Location unavailable — using last known position.');
+  cb(p||db.user)}
 $('#loc').onclick=()=>locate(()=>say('Location updated.'));
 
-// ---- import
-function ingest(text){
-  let arr;try{arr=JSON.parse(text.replace(/^\uFEFF/,''))}catch(e){return say('Invalid JSON — run the script and paste its output.')}
-  if(!Array.isArray(arr))arr=[arr];
-  arr=arr.filter(x=>x&&x.bssid&&typeof x.rssi==='number');
-  if(!arr.length)return say('No networks found in that JSON.');
-  locate(pos=>{
-    const [lat,lng]=pos||[map.getCenter().lat,map.getCenter().lng];const t=Date.now();
-    arr.forEach(x=>{const id=String(x.bssid).toUpperCase();
-      const ap=db.aps[id]||(db.aps[id]={bssid:id,obs:[]});
-      Object.assign(ap,{ssid:x.ssid||'(hidden)',rssi:x.rssi,q:x.q,freq:x.freq||2437,sec:!!x.sec,t});
-      ap.obs.push({lat,lng,rssi:x.rssi,t});if(ap.obs.length>40)ap.obs.shift()});
-    db.scans++;save();render(true);say('Added '+arr.length+' networks at your position.');$('#paste').value='';
-  });
+// ---- scan
+if(!API){$('#scan').disabled=true;$('#auto').disabled=true;say('Browsers cannot read Wi-Fi. Run the Windows desktop app to enable scanning.')}
+let busy=false;
+async function scan(){
+  if(!API||busy)return;busy=true;const b=$('#scan');b.disabled=true;b.textContent='Scanning…';say('Scanning with wlanapi.dll…');
+  try{
+    const [nets,pos]=await Promise.all([API.scan(),API.locate().catch(()=>null)]);
+    const arr=(Array.isArray(nets)?nets:[nets]).filter(x=>x&&x.bssid&&typeof x.rssi==='number');
+    if(!arr.length)say('No networks found. Check that Wi-Fi is on and Location is enabled in Windows.');
+    else{
+      if(pos){setMe(pos[0],pos[1])}
+      const [lat,lng]=pos||db.user||[map.getCenter().lat,map.getCenter().lng];const t=Date.now();
+      arr.forEach(x=>{const id=String(x.bssid).toUpperCase();
+        const ap=db.aps[id]||(db.aps[id]={bssid:id,obs:[]});
+        Object.assign(ap,{ssid:x.ssid||'(hidden)',rssi:x.rssi,q:x.q,freq:x.freq||2437,sec:!!x.sec,t});
+        ap.obs.push({lat,lng,rssi:x.rssi,t});if(ap.obs.length>40)ap.obs.shift()});
+      db.scans++;save();render(!$('#auto').checked);
+      say('Found '+arr.length+' networks'+(pos?'.':' (no GPS fix — used last known position).'));
+    }
+  }catch(e){say('Scan failed: '+(e.message||e))}
+  b.disabled=false;b.textContent='📡 Scan now';busy=false;
 }
-$('#add').onclick=()=>ingest($('#paste').value.trim());
-$('#file').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(ingest)};
-$('#cp').onclick=()=>{navigator.clipboard.writeText(PS).then(()=>say('Script copied — paste into PowerShell.'),()=>say('Copy blocked — use Download .ps1.'))};
-$('#dl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([PS],{type:'text/plain'}));a.download='wifi-scan.ps1';a.click();say('Run: powershell -ExecutionPolicy Bypass -File wifi-scan.ps1')};
-$('#demo').onclick=()=>{const n=['HomeNet','Cafe_Guest','Office-5G','Neighbour','TP-Link_9A2C','Airtel_Zone'],fr=[2437,2412,5180,2462,5745,2447];
-  ingest(JSON.stringify(n.map((s,i)=>({ssid:s,bssid:'AA:BB:CC:00:0'+i+':1'+i,rssi:-38-i*8-Math.round(Math.random()*4),q:90-i*10,freq:fr[i],sec:i!==1}))))};
+$('#scan').onclick=scan;
+let timer=null;$('#auto').onchange=e=>{clearInterval(timer);if(e.target.checked){scan();timer=setInterval(scan,15000)}};
 $('#exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,1)],{type:'application/json'}));a.download='wifi-map-export.json';a.click()};
 $('#clr').onclick=()=>{if(confirm('Delete all saved networks?')){db.aps={};db.scans=0;save();render()}};
 
@@ -201,7 +154,7 @@ function render(fit){
      .bindPopup('<b>'+esc(ap.ssid)+'</b><br>'+esc(ap.bssid)+'<br>'+ap.rssi+' dBm · Ch '+chan(ap.freq)+' ('+ap.freq+' MHz)<br>'+(ap.sec?'🔒 Secured':'🔓 Open')+'<br>~'+Math.round(dist(ap.rssi,ap.freq))+' m est. · '+ap.obs.length+' sample(s)')});
   if(fit&&pts.length)map.fitBounds(L.latLngBounds(pts).pad(.4),{maxZoom:18});
   $('#s1').textContent=a.length+' networks';$('#s2').textContent=db.scans+' scans';
-  $('#list').innerHTML=a.length?a.map(ap=>'<div class="ap" tabindex="0" data-id="'+ap.bssid+'"><span class="dot" style="background:'+col(ap.rssi)+'"></span><div><b>'+esc(ap.ssid)+'</b><small>'+esc(ap.bssid)+' · Ch '+chan(ap.freq)+' · '+(ap.sec?'🔒':'🔓')+' · ~'+Math.round(dist(ap.rssi,ap.freq))+' m</small></div><span class="rs">'+ap.rssi+' dBm</span></div>').join(''):'<p class="sub">No networks yet — run the scan script, or try the demo data.</p>';
+  $('#list').innerHTML=a.length?a.map(ap=>'<div class="ap" tabindex="0" data-id="'+ap.bssid+'"><span class="dot" style="background:'+col(ap.rssi)+'"></span><div><b>'+esc(ap.ssid)+'</b><small>'+esc(ap.bssid)+' · Ch '+chan(ap.freq)+' · '+(ap.sec?'🔒':'🔓')+' · ~'+Math.round(dist(ap.rssi,ap.freq))+' m</small></div><span class="rs">'+ap.rssi+' dBm</span></div>').join(''):'<p class="sub">No networks yet — tap Scan now.</p>';
 }
 $('#list').onclick=e=>{const r=e.target.closest('.ap');if(!r)return;const ap=db.aps[r.dataset.id];map.flyTo(est(ap),18);$('#map').scrollIntoView({behavior:'smooth',block:'center'})};
 $('#list').onkeydown=e=>{if(e.key==='Enter')e.target.click()};
