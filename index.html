@@ -3,165 +3,651 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>WiFi Map</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#1e1e1e">
+<title>Wi-Fi Map</title>
 <style>
-:root{--bg:#1e1e1e;--card:#252526;--fg:#d4d4d4;--mut:#9da0a6;--acc:#3794ff;--bd:#3c3c3c;--on:#fff;--g:#4ec98a;--l:#a8d84e;--a:#f0b429;--r:#f25c5c;--bw:1px}
-[data-theme=light]{--bg:#f3f3f3;--card:#fff;--fg:#1f1f1f;--mut:#616161;--acc:#0066b8;--bd:#d4d4d4;--g:#178a4c;--l:#6b9a12;--a:#b7791f;--r:#c9302c}
-[data-theme=oled]{--bg:#000;--card:#000;--fg:#e6e6e6;--bd:#2a2a2a;--acc:#4da3ff}
-[data-theme=hc]{--bg:#000;--card:#000;--fg:#fff;--mut:#fff;--bd:#fff;--acc:#ffff00;--on:#000;--g:#00ff7f;--l:#7fff00;--a:#ffd700;--r:#ff5050;--bw:2px}
-*{box-sizing:border-box;margin:0}
-html,body{background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-body{min-height:100%;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);display:flex;flex-direction:column;align-items:center}
-main{width:100%;max-width:760px;padding:12px;display:flex;flex-direction:column;gap:12px;flex:1;text-align:center}
-h1{font-size:1.4rem}h2{font-size:1rem;margin-bottom:6px}
-.sub{color:var(--mut);font-size:.85rem}
-.card{background:var(--card);border:var(--bw) solid var(--bd);border-radius:14px;padding:12px}
-.seg{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
-button,select,input,textarea{font:inherit;color:var(--fg);background:var(--bg);border:var(--bw) solid var(--bd);border-radius:10px;padding:9px 12px;min-height:40px}
-button{cursor:pointer}
-button.on,button.pri{background:var(--acc);color:var(--on);border-color:var(--acc);font-weight:600}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
-textarea{width:100%;height:80px;font:12px ui-monospace,Consolas,monospace;resize:vertical;margin:8px 0}
-ol{text-align:left;padding-left:20px;font-size:.9rem;color:var(--mut);margin-bottom:8px}
-.row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
-.row>*{flex:1 1 130px}
-#map{height:50vh;min-height:300px;border-radius:12px;border:var(--bw) solid var(--bd);z-index:0}
-[data-theme=dark] .leaflet-tile-pane,[data-theme=oled] .leaflet-tile-pane,[data-theme=hc] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)}
-[data-theme=oled] #map,[data-theme=hc] #map{background:#000}
-[data-theme=oled] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.65) contrast(1.1)}
-.leaflet-container{color:#222}
-#list{display:flex;flex-direction:column;gap:8px;text-align:left}
-.ap{display:flex;gap:10px;align-items:center;padding:10px;border:var(--bw) solid var(--bd);border-radius:12px;cursor:pointer;background:var(--card)}
-.ap:hover,.ap:focus-visible{border-color:var(--acc)}
-.dot{width:14px;height:14px;border-radius:50%;flex:none;border:2px solid var(--fg)}
-.ap b{display:block;word-break:break-word}.ap small{color:var(--mut)}
-.rs{margin-left:auto;font-weight:700;white-space:nowrap}
-.stat{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--mut)}
-#msg{min-height:1.3em;font-size:.85rem;color:var(--acc)}
-footer{width:100%;padding:16px 12px;border-top:var(--bw) solid var(--bd);text-align:center;color:var(--mut);font-size:.85rem;display:flex;align-items:center;justify-content:center;min-height:64px}
+/* ---------- Themes: Dark+, Light+, OLED True Black, High Contrast ---------- */
+:root,[data-theme=dark]{
+  --bg:#1e1e1e;--surface:#252526;--raised:#2d2d30;--text:#d4d4d4;--muted:#9da0a6;--border:#3c3c3c;
+  --accent:#3794ff;--on-accent:#0b0b0b;--good:#4ec9b0;--fair:#dcdcaa;--weak:#f48771;--mapbg:#191a1a;--danger:#f48771}
+[data-theme=light]{
+  --bg:#ffffff;--surface:#f3f3f3;--raised:#e8e8e8;--text:#1f1f1f;--muted:#5b5f66;--border:#cfcfcf;
+  --accent:#005fb8;--on-accent:#ffffff;--good:#107c41;--fair:#8a6100;--weak:#c72e0f;--mapbg:#e5e3df;--danger:#c72e0f}
+[data-theme=oled]{
+  --bg:#000000;--surface:#000000;--raised:#0d0d0d;--text:#e6e6e6;--muted:#8f9399;--border:#2a2a2a;
+  --accent:#4aa8ff;--on-accent:#000000;--good:#4ec9b0;--fair:#dcdcaa;--weak:#f48771;--mapbg:#000000;--danger:#f48771}
+[data-theme=hc]{
+  --bg:#000000;--surface:#000000;--raised:#000000;--text:#ffffff;--muted:#ffffff;--border:#ffffff;
+  --accent:#ffd700;--on-accent:#000000;--good:#00ff9c;--fair:#ffff00;--weak:#ff6b6b;--mapbg:#000000;--danger:#ff6b6b}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:16px/1.5 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+h1,h2{margin:0;font-weight:600;line-height:1.2}
+h2{font-size:1.05rem;margin-bottom:.75rem}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- Header ---------- */
+.top{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.6rem;padding:1.25rem 1rem .75rem}
+.top h1{font-size:1.75rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.6rem}
+.top svg{width:34px;height:34px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round}
+.top svg circle{fill:var(--accent);stroke:none}
+.sub{color:var(--muted);max-width:34rem}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{min-height:44px;min-width:66px;padding:0 .9rem;background:none;border:0;border-right:1px solid var(--border);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--on-accent);font-weight:600}
+.seg button:focus-visible{outline-offset:-3px}
+
+/* ---------- Layout (mobile first) ---------- */
+.app{width:100%;max-width:1200px;margin:0 auto;padding:.5rem .75rem 1.5rem;display:grid;gap:1rem;flex:1}
+.stage{min-width:0}
+.side{display:grid;gap:1rem;align-content:start;min-width:0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem}
+@media (min-width:960px){
+  .app{grid-template-columns:minmax(0,1.5fr) minmax(340px,1fr);align-items:start}
+  .stage{position:sticky;top:.75rem}
+  #map{height:min(72vh,680px)}
+}
+
+/* ---------- Map ---------- */
+.search{display:flex;gap:.5rem;margin-bottom:.6rem}
+.search input{flex:1;min-width:0}
+#map{position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;
+  height:min(60vh,520px);min-height:300px;background:var(--mapbg);border:1px solid var(--border);border-radius:10px;cursor:grab}
+#map:active{cursor:grabbing}
+#tiles,#markers{position:absolute;inset:0}
+#markers{pointer-events:none}
+.tile{position:absolute;left:0;top:0;width:256px;height:256px;opacity:0;transition:opacity .2s;
+  -webkit-user-drag:none;pointer-events:none}
+.tile.on{opacity:1}
+[data-theme=hc] .tile{filter:contrast(1.35) brightness(1.25)}
+@media (prefers-reduced-motion:reduce){.tile{transition:none}}
+.ctl{position:absolute;top:.6rem;right:.6rem;display:grid;gap:.4rem}
+.ctl button{width:44px;height:44px;font-size:1.3rem;line-height:1;cursor:pointer;background:var(--surface);
+  border:1px solid var(--border);border-radius:10px}
+.ctl button:hover{background:var(--raised)}
+.attr{position:absolute;left:0;bottom:0;padding:1px 6px;font-size:11px;color:var(--text);
+  background:color-mix(in srgb,var(--bg) 82%,transparent);border-top-right-radius:6px;pointer-events:none}
+.mk{position:absolute;left:0;top:0;width:28px;height:28px;margin:-14px 0 0 -14px;padding:0;border-radius:50%;
+  border:3px solid var(--mk);background:var(--mk);cursor:pointer;pointer-events:auto}
+.mk::before{content:"";position:absolute;inset:-9px}
+.mk.open{background:var(--bg);border-style:dashed}
+.mk.good{--mk:var(--good)}.mk.fair{--mk:var(--fair)}.mk.weak{--mk:var(--weak)}
+.mk.sel{outline:3px solid var(--text);outline-offset:3px}
+.mk span{position:absolute;top:31px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:12px;
+  padding:0 6px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--text);pointer-events:none}
+.pin{position:absolute;left:-11px;top:-27px;width:22px;height:22px;border-radius:50% 50% 50% 0;
+  background:var(--accent);border:2px solid var(--bg);pointer-events:none}
+.pin::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--bg)}
+.me{position:absolute;left:-9px;top:-9px;width:18px;height:18px;border-radius:50%;background:var(--accent);
+  border:3px solid #fff;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 35%,transparent);pointer-events:none}
+.legend{list-style:none;margin:.7rem 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem 1.1rem;
+  font-size:.85rem;color:var(--muted)}
+.legend li{display:flex;align-items:center;gap:.4rem}
+.sw{width:14px;height:14px;border-radius:50%;border:3px solid var(--c);background:var(--c);display:inline-block}
+.sw.ring{background:transparent;border-style:dashed}
+#status{min-height:1.5rem;margin-top:.6rem;text-align:center;font-size:.95rem}
+#status.bad{color:var(--danger)}
+
+/* ---------- Forms ---------- */
+form.stack{display:grid;gap:.8rem}
+label{display:grid;gap:.25rem;font-size:.9rem;color:var(--muted)}
+input,select,textarea{width:100%;min-height:44px;padding:.5rem .7rem;background:var(--bg);color:var(--text);
+  border:1px solid var(--border);border-radius:8px}
+textarea{min-height:72px;resize:vertical}
+input[type=range]{padding:0;accent-color:var(--accent)}
+.hint{font-size:.82rem;color:var(--muted)}
+.btn{min-height:44px;padding:0 1rem;border-radius:8px;border:1px solid var(--border);background:var(--raised);cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
+.btn.danger{color:var(--danger);border-color:var(--danger);background:transparent}
+.row2{display:flex;flex-wrap:wrap;gap:.5rem}
+.row2 .btn{flex:1 1 140px}
+#pinout{font-size:.9rem}
+
+/* ---------- Lists ---------- */
+#list{list-style:none;margin:.75rem 0 0;padding:0;display:grid;gap:.5rem;max-height:460px;overflow:auto}
+#list li{border:1px solid var(--border);border-radius:8px;background:var(--bg)}
+#list li.empty{padding:.8rem;color:var(--muted);text-align:center}
+.item{width:100%;min-height:54px;display:flex;align-items:center;gap:.7rem;padding:.5rem .7rem;text-align:left;
+  background:none;border:0;cursor:pointer}
+.item b{display:block;overflow-wrap:anywhere}
+.item small{color:var(--muted)}
+.dot{flex:none;width:14px;height:14px;border-radius:50%;border:3px solid var(--c);background:var(--c)}
+.dot.ring{background:transparent;border-style:dashed}
+.good{--c:var(--good)}.fair{--c:var(--fair)}.weak{--c:var(--weak)}
+.detail{padding:0 .8rem .8rem;display:grid;gap:.5rem;font-size:.9rem;border-top:1px solid var(--border);padding-top:.7rem}
+.detail p{overflow-wrap:anywhere}
+.detail span{color:var(--muted)}
+#conn{margin:0;display:grid;grid-template-columns:auto 1fr;gap:.35rem 1rem;font-size:.92rem}
+#conn dt{color:var(--muted)}#conn dd{margin:0;text-align:right}
+.note{margin-top:.8rem;font-size:.85rem;color:var(--muted)}
+
+/* ---------- Footer ---------- */
+footer{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;text-align:center;
+  padding:1.25rem 1rem;border-top:1px solid var(--border);color:var(--muted);font-size:.9rem}
+footer .copy{color:var(--text)}
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <h1>📶 WiFi Map</h1>
-    <p class="sub">Live scan via the Windows Native Wi-Fi API · OpenStreetMap · no API key</p>
-  </header>
 
-  <div class="seg" id="themes" role="group" aria-label="Theme">
-    <button data-t="light">Light+</button><button data-t="dark">Dark+</button>
-    <button data-t="oled">OLED</button><button data-t="hc">HC</button>
+<header class="top">
+  <h1>
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 12a18 18 0 0 1 26 0"/><path d="M8 17a11 11 0 0 1 16 0"/><path d="M12.500 22a5 5 0 0 1 7 0"/><circle cx="16" cy="26.500" r="2.300"/></svg>
+    Wi-Fi Map
+  </h1>
+  <p class="sub">Pin networks where you find them, rate the signal, and see what is open, strong or weak around you.</p>
+  <div id="themes" class="seg" role="group" aria-label="Theme">
+    <button type="button" data-t="dark">Dark+</button>
+    <button type="button" data-t="light">Light+</button>
+    <button type="button" data-t="oled">OLED</button>
+    <button type="button" data-t="hc">HC</button>
   </div>
+</header>
 
-  <section class="card">
-    <h2>Scan Wi-Fi networks</h2>
-    <div class="row">
-      <button id="scan" class="pri">📡 Scan now</button>
-      <button id="loc">📍 My location</button>
-      <label class="row" style="flex:1 1 130px;gap:6px"><input type="checkbox" id="auto" style="min-height:auto"> Auto-scan (15 s)</label>
+<main class="app">
+  <section class="stage" aria-label="Map">
+    <form id="sform" class="search" role="search">
+      <label class="sr" for="sq">Search a place or coordinates</label>
+      <input id="sq" type="search" placeholder="Place, address or lat, lng" autocomplete="off">
+      <button class="btn" type="submit">Search</button>
+    </form>
+
+    <div id="map" tabindex="0" role="application"
+         aria-label="Map. Drag to pan, tap to drop a pin. Arrow keys pan, plus and minus zoom.">
+      <div id="tiles"></div>
+      <div id="markers"></div>
+      <div class="ctl">
+        <button type="button" id="zin" aria-label="Zoom in">+</button>
+        <button type="button" id="zout" aria-label="Zoom out">&minus;</button>
+        <button type="button" id="loc" aria-label="Find my location">&#9678;</button>
+      </div>
+      <div class="attr">&copy; OpenStreetMap contributors &copy; CARTO</div>
     </div>
-    <p id="msg" role="status"></p>
+
+    <ul class="legend" aria-label="Map key">
+      <li><i class="sw" style="--c:var(--good)"></i>Strong</li>
+      <li><i class="sw" style="--c:var(--fair)"></i>Fair</li>
+      <li><i class="sw" style="--c:var(--weak)"></i>Weak</li>
+      <li><i class="sw ring" style="--c:var(--text)"></i>Open (no password)</li>
+    </ul>
+    <p id="status" role="status" aria-live="polite">Tap the map to drop a pin, or use the locate button.</p>
   </section>
 
-  <div id="map" aria-label="Wi-Fi map"></div>
-  <div class="stat"><span id="s1">0 networks</span><span id="s2">0 scans</span><span>● ≥-55 ● ≥-67 ● ≥-75 ● weaker dBm</span></div>
+  <div class="side">
+    <section class="card" aria-labelledby="h-add">
+      <h2 id="h-add">Add a network</h2>
+      <form id="add" class="stack">
+        <label>Network name (SSID)
+          <input id="ssid" maxlength="32" required autocomplete="off" placeholder="Café Guest">
+        </label>
+        <label>Access point address (BSSID), optional
+          <input id="bssid" maxlength="17" autocomplete="off" placeholder="AA:BB:CC:DD:EE:FF"
+                 pattern="([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}">
+        </label>
+        <label>Security
+          <select id="sec">
+            <option>Open</option><option>WEP</option><option selected>WPA2</option><option>WPA3</option><option>Enterprise</option>
+          </select>
+        </label>
+        <label>Signal quality: <output id="sigout">70 (about &minus;65 dBm)</output>
+          <input id="sig" type="range" min="0" max="100" value="70">
+          <span class="hint">Same 0&ndash;100 scale Windows reports as signal quality.</span>
+        </label>
+        <label>Note, optional
+          <textarea id="note" maxlength="200" placeholder="Password on the receipt, works on the patio"></textarea>
+        </label>
+        <p id="pinout">No pin yet. Tap the map to place one.</p>
+        <div class="row2">
+          <button type="button" class="btn" id="centre">Pin at map centre</button>
+          <button type="submit" class="btn primary">Save network</button>
+        </div>
+      </form>
+    </section>
 
-  <section class="card">
-    <div class="row">
-      <input id="q" type="search" placeholder="Search SSID or BSSID" aria-label="Search">
-      <select id="band" aria-label="Band"><option value="">All bands</option><option value="2">2.4 GHz</option><option value="5">5 GHz</option><option value="6">6 GHz</option></select>
-      <select id="sort" aria-label="Sort"><option value="rssi">Strongest</option><option value="ssid">Name</option><option value="ch">Channel</option></select>
-    </div>
-    <div class="row" style="margin-top:8px"><button id="exp">Export JSON</button><button id="clr">Clear all</button></div>
-  </section>
-  <div id="list"></div>
+    <section class="card" aria-labelledby="h-list">
+      <h2 id="h-list">Saved networks <span id="count" class="hint"></span></h2>
+      <label class="sr" for="filter">Filter saved networks</label>
+      <input id="filter" type="search" placeholder="Filter by name, security or note" autocomplete="off">
+      <ul id="list"></ul>
+    </section>
+
+    <section class="card" aria-labelledby="h-conn">
+      <h2 id="h-conn">This connection</h2>
+      <dl id="conn"></dl>
+    </section>
+
+    <section class="card" aria-labelledby="h-data">
+      <h2 id="h-data">Your data</h2>
+      <div class="row2">
+        <button type="button" class="btn" id="expJson">Export JSON</button>
+        <button type="button" class="btn" id="expCsv">Export CSV</button>
+        <button type="button" class="btn" id="impBtn">Import file</button>
+        <button type="button" class="btn danger" id="clear">Delete all</button>
+      </div>
+      <input id="impFile" type="file" accept=".json,.csv,application/json,text/csv" class="sr" tabindex="-1" aria-label="Import file">
+      <p class="note">Networks are saved only in this browser. Browsers cannot call the Windows Native Wi-Fi API directly, so bring scan results in with Import: a CSV or JSON with ssid, bssid, security, signal (0&ndash;100), lat and lng.</p>
+    </section>
+  </div>
 </main>
-<footer><span>© Manik Roy <span id="yr">2026</span>. All Rights Reserved.</span></footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<footer>
+  <p class="copy">&copy; Manik Roy <span id="yr">2026</span>. All Rights Reserved.</p>
+  <p>Your saved networks stay on this device.</p>
+</footer>
+
 <script>
-const $=s=>document.querySelector(s), KEY='wifimap.v1', API=window.wifi;
+"use strict";
+const $ = s => document.querySelector(s);
+const SEC = ["Open", "WEP", "WPA2", "WPA3", "Enterprise"];
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage unavailable */ } }
+};
+function h(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [n, v] of Object.entries(attrs)) {
+    if (n === "class") e.className = v;
+    else if (n.startsWith("on")) e.addEventListener(n.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(n, v === true ? "" : v);
+  }
+  e.append(...kids);
+  return e;
+}
+const statusEl = $("#status");
+function status(msg, bad) { statusEl.textContent = msg; statusEl.classList.toggle("bad", !!bad); }
 
-let db={aps:{},scans:0,user:null};
-try{Object.assign(db,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}};
-const say=t=>$('#msg').textContent=t;
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* ---------- Footer year ---------- */
+$("#yr").textContent = Math.max(2026, new Date().getFullYear());
 
-// ---- theme
-function theme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem('wifimap.theme',t)}catch(e){}
-  document.querySelectorAll('#themes button').forEach(b=>b.classList.toggle('on',b.dataset.t===t))}
-let st='dark';try{st=localStorage.getItem('wifimap.theme')||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark')}catch(e){}
-theme(st);
-$('#themes').onclick=e=>e.target.dataset.t&&theme(e.target.dataset.t);
-$('#yr').textContent=new Date().getFullYear();
+/* ---------- Themes ---------- */
+const DARK_TILES = t => t !== "light";
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  store.set("wm-theme", t);
+  document.querySelectorAll("#themes button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === t));
+  $('meta[name=theme-color]').content = getComputedStyle(document.body).backgroundColor;
+  clearTiles();
+  draw();
+}
+$("#themes").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setTheme(b.dataset.t); });
 
-// ---- helpers
-const band=f=>f<3000?'2':f<5900?'5':'6';
-const chan=f=>f<3000?Math.round((f-2407)/5):f<5900?Math.round((f-5000)/5):Math.round((f-5950)/5);
-const col=r=>getComputedStyle(document.documentElement).getPropertyValue(r>=-55?'--g':r>=-67?'--l':r>=-75?'--a':'--r').trim();
-const dist=(r,f)=>Math.min(300,Math.max(1,Math.pow(10,((15-r)-20*Math.log10(f)+27.55)/20)));
-function est(ap){let w=0,la=0,ln=0;ap.obs.forEach(o=>{const k=Math.pow(10,o.rssi/10);w+=k;la+=o.lat*k;ln+=o.lng*k});return[la/w,ln/w]}
+/* ---------- Geometry (Web Mercator) ---------- */
+const TS = 256;
+const proj = (lat, lng, z) => {
+  const s = TS * 2 ** z, r = lat * Math.PI / 180;
+  return { x: (lng + 180) / 360 * s, y: (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * s };
+};
+const unproj = (x, y, z) => {
+  const s = TS * 2 ** z, n = Math.PI * (1 - 2 * y / s);
+  return { lat: Math.atan(Math.sinh(n)) * 180 / Math.PI, lng: x / s * 360 - 180 };
+};
+const wrapLng = l => ((l + 180) % 360 + 360) % 360 - 180;
+function km(a, b, c, d) {
+  const R = 6371, r = Math.PI / 180, dLat = (c - a) * r, dLng = (d - b) * r;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+const fmtDist = k => k < 1 ? Math.round(k * 1000) + " m" : k < 100 ? k.toFixed(1) + " km" : Math.round(k) + " km";
 
-// ---- map
-const map=L.map('map',{zoomControl:true}).setView([22.5726,88.3639],12);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
-const layer=L.layerGroup().addTo(map);let me=null;
-function setMe(lat,lng){db.user=[lat,lng];if(me)me.setLatLng([lat,lng]);else me=L.circleMarker([lat,lng],{radius:8,color:'#fff',weight:3,fillColor:'#3794ff',fillOpacity:1}).addTo(map).bindTooltip('You');save()}
-async function locate(cb){say('Getting location…');let p=null;
-  try{p=API?await API.locate():await new Promise((ok,no)=>navigator.geolocation.getCurrentPosition(x=>ok([x.coords.latitude,x.coords.longitude]),no,{enableHighAccuracy:true,timeout:12000}))}catch(e){}
-  if(p){setMe(p[0],p[1]);map.setView(p,17)}else say('Location unavailable — using last known position.');
-  cb(p||db.user)}
-$('#loc').onclick=()=>locate(()=>say('Location updated.'));
+/* ---------- Map state ---------- */
+const view = store.get("wm-view", null);
+const map = (view && isFinite(view.lat) && isFinite(view.lng) && isFinite(view.z))
+  ? { lat: clamp(view.lat, -85, 85), lng: wrapLng(view.lng), z: clamp(Math.round(view.z), 2, 19) }
+  : { lat: 20, lng: 0, z: 2 };
+let spots = store.get("wm-spots", []);
+let sel = null, pin = null, me = null, term = "";
 
-// ---- scan
-if(!API){$('#scan').disabled=true;$('#auto').disabled=true;say('Browsers cannot read Wi-Fi. Run the Windows desktop app to enable scanning.')}
-let busy=false;
-async function scan(){
-  if(!API||busy)return;busy=true;const b=$('#scan');b.disabled=true;b.textContent='Scanning…';say('Scanning with wlanapi.dll…');
-  try{
-    const [nets,pos]=await Promise.all([API.scan(),API.locate().catch(()=>null)]);
-    const arr=(Array.isArray(nets)?nets:[nets]).filter(x=>x&&x.bssid&&typeof x.rssi==='number');
-    if(!arr.length)say('No networks found. Check that Wi-Fi is on and Location is enabled in Windows.');
-    else{
-      if(pos){setMe(pos[0],pos[1])}
-      const [lat,lng]=pos||db.user||[map.getCenter().lat,map.getCenter().lng];const t=Date.now();
-      arr.forEach(x=>{const id=String(x.bssid).toUpperCase();
-        const ap=db.aps[id]||(db.aps[id]={bssid:id,obs:[]});
-        Object.assign(ap,{ssid:x.ssid||'(hidden)',rssi:x.rssi,q:x.q,freq:x.freq||2437,sec:!!x.sec,t});
-        ap.obs.push({lat,lng,rssi:x.rssi,t});if(ap.obs.length>40)ap.obs.shift()});
-      db.scans++;save();render(!$('#auto').checked);
-      say('Found '+arr.length+' networks'+(pos?'.':' (no GPS fix — used last known position).'));
+const el = $("#map"), tilesEl = $("#tiles"), mkEl = $("#markers");
+const tileCache = new Map();
+const size = () => ({ w: el.clientWidth, h: el.clientHeight });
+const toScreen = (lat, lng) => {
+  const { w, h } = size(), c = proj(map.lat, map.lng, map.z), p = proj(lat, lng, map.z);
+  let x = p.x - c.x;
+  const world = TS * 2 ** map.z;
+  if (x > world / 2) x -= world; else if (x < -world / 2) x += world;
+  return { x: x + w / 2, y: p.y - c.y + h / 2 };
+};
+const fromScreen = (x, y) => {
+  const { w, h } = size(), c = proj(map.lat, map.lng, map.z);
+  const u = unproj(c.x - w / 2 + x, c.y - h / 2 + y, map.z);
+  return { lat: clamp(u.lat, -85, 85), lng: wrapLng(u.lng) };
+};
+
+function clearTiles() { tileCache.forEach(im => im.remove()); tileCache.clear(); }
+
+function renderTiles() {
+  const { w, h } = size(), c = proj(map.lat, map.lng, map.z), n = 2 ** map.z;
+  const ox = c.x - w / 2, oy = c.y - h / 2;
+  const x0 = Math.floor(ox / TS), x1 = Math.floor((ox + w) / TS);
+  const y0 = Math.max(0, Math.floor(oy / TS)), y1 = Math.min(n - 1, Math.floor((oy + h) / TS));
+  const theme = document.documentElement.dataset.theme;
+  const style = DARK_TILES(theme) ? "dark_all" : "light_all";
+  const retina = window.devicePixelRatio > 1 ? "@2x" : "";
+  const need = new Set();
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const wx = ((x % n) + n) % n, key = `${style}/${map.z}/${x}/${y}`;
+    need.add(key);
+    let im = tileCache.get(key);
+    if (!im) {
+      im = new Image();
+      im.className = "tile"; im.alt = ""; im.draggable = false; im.decoding = "async";
+      im.onload = () => im.classList.add("on");
+      im.src = `https://${"abcd"[(wx + y) & 3]}.basemaps.cartocdn.com/${style}/${map.z}/${wx}/${y}${retina}.png`;
+      tilesEl.appendChild(im);
+      tileCache.set(key, im);
     }
-  }catch(e){say('Scan failed: '+(e.message||e))}
-  b.disabled=false;b.textContent='📡 Scan now';busy=false;
+    im.style.transform = `translate(${x * TS - ox}px,${y * TS - oy}px)`;
+  }
+  for (const [k, im] of tileCache) if (!need.has(k)) { im.remove(); tileCache.delete(k); }
 }
-$('#scan').onclick=scan;
-let timer=null;$('#auto').onchange=e=>{clearInterval(timer);if(e.target.checked){scan();timer=setInterval(scan,15000)}};
-$('#exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,1)],{type:'application/json'}));a.download='wifi-map-export.json';a.click()};
-$('#clr').onclick=()=>{if(confirm('Delete all saved networks?')){db.aps={};db.scans=0;save();render()}};
 
-// ---- render
-function view(){const q=$('#q').value.toLowerCase(),b=$('#band').value,s=$('#sort').value;
-  const a=Object.values(db.aps).filter(x=>(!q||x.ssid.toLowerCase().includes(q)||x.bssid.toLowerCase().includes(q))&&(!b||band(x.freq)===b));
-  a.sort((x,y)=>s==='rssi'?y.rssi-x.rssi:s==='ssid'?x.ssid.localeCompare(y.ssid):chan(x.freq)-chan(y.freq));return a}
-function render(fit){
-  const a=view();layer.clearLayers();const pts=[];
-  a.forEach(ap=>{const p=est(ap),c=col(ap.rssi);pts.push(p);
-    L.circle(p,{radius:dist(ap.rssi,ap.freq),color:c,weight:1,fillColor:c,fillOpacity:.08}).addTo(layer);
-    L.circleMarker(p,{radius:Math.max(6,14+ap.rssi/6),color:'#fff',weight:2,fillColor:c,fillOpacity:.95}).addTo(layer)
-     .bindPopup('<b>'+esc(ap.ssid)+'</b><br>'+esc(ap.bssid)+'<br>'+ap.rssi+' dBm · Ch '+chan(ap.freq)+' ('+ap.freq+' MHz)<br>'+(ap.sec?'🔒 Secured':'🔓 Open')+'<br>~'+Math.round(dist(ap.rssi,ap.freq))+' m est. · '+ap.obs.length+' sample(s)')});
-  if(fit&&pts.length)map.fitBounds(L.latLngBounds(pts).pad(.4),{maxZoom:18});
-  $('#s1').textContent=a.length+' networks';$('#s2').textContent=db.scans+' scans';
-  $('#list').innerHTML=a.length?a.map(ap=>'<div class="ap" tabindex="0" data-id="'+ap.bssid+'"><span class="dot" style="background:'+col(ap.rssi)+'"></span><div><b>'+esc(ap.ssid)+'</b><small>'+esc(ap.bssid)+' · Ch '+chan(ap.freq)+' · '+(ap.sec?'🔒':'🔓')+' · ~'+Math.round(dist(ap.rssi,ap.freq))+' m</small></div><span class="rs">'+ap.rssi+' dBm</span></div>').join(''):'<p class="sub">No networks yet — tap Scan now.</p>';
+const bucket = q => q >= 67 ? "good" : q >= 34 ? "fair" : "weak";
+const dbm = q => Math.round(q / 2 - 100);
+
+function renderMarkers() {
+  const { w, h } = size(), frag = document.createDocumentFragment();
+  for (const s of spots) {
+    if (term && !matches(s)) continue;
+    const p = toScreen(s.lat, s.lng);
+    if (p.x < -60 || p.x > w + 60 || p.y < -40 || p.y > h + 60) continue;
+    const b = h("button", {
+      type: "button",
+      class: `mk ${bucket(s.sig)}${s.sec === "Open" ? " open" : ""}${sel === s.id ? " sel" : ""}`,
+      style: `transform:translate(${p.x}px,${p.y}px)`,
+      "aria-label": `${s.ssid || "Hidden network"}, ${s.sec}, signal quality ${s.sig}`,
+      onpointerdown: e => e.stopPropagation(),
+      onclick: () => selectSpot(s.id, true)
+    });
+    if (map.z >= 15 && s.ssid) b.append(h("span", {}, s.ssid));
+    frag.append(b);
+  }
+  if (pin) { const p = toScreen(pin.lat, pin.lng); frag.append(h("div", { class: "pin", style: `transform:translate(${p.x}px,${p.y}px) rotate(-45deg)` })); }
+  if (me) { const p = toScreen(me.lat, me.lng); frag.append(h("div", { class: "me", style: `transform:translate(${p.x}px,${p.y}px)` })); }
+  mkEl.replaceChildren(frag);
 }
-$('#list').onclick=e=>{const r=e.target.closest('.ap');if(!r)return;const ap=db.aps[r.dataset.id];map.flyTo(est(ap),18);$('#map').scrollIntoView({behavior:'smooth',block:'center'})};
-$('#list').onkeydown=e=>{if(e.key==='Enter')e.target.click()};
-['q','band','sort'].forEach(i=>$('#'+i).addEventListener('input',()=>render()));
-new MutationObserver(()=>render()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-if(db.user)setMe(...db.user);
-render(true);
+
+let raf = 0, tmr = 0;
+function draw() {
+  if (raf) return;
+  raf = requestAnimationFrame(() => { raf = 0; renderTiles(); renderMarkers(); });
+  clearTimeout(tmr);
+  tmr = setTimeout(() => { store.set("wm-view", map); renderList(); }, 350);
+}
+
+function panBy(dx, dy) {
+  const c = proj(map.lat, map.lng, map.z), u = unproj(c.x - dx, c.y - dy, map.z);
+  map.lat = clamp(u.lat, -85, 85); map.lng = wrapLng(u.lng);
+  draw();
+}
+function zoomAt(dz, px, py) {
+  const nz = clamp(map.z + dz, 2, 19);
+  if (nz === map.z) return;
+  const ll = fromScreen(px, py), { w, h } = size(), p = proj(ll.lat, ll.lng, nz);
+  const u = unproj(p.x - px + w / 2, p.y - py + h / 2, nz);
+  map.z = nz; map.lat = clamp(u.lat, -85, 85); map.lng = wrapLng(u.lng);
+  draw();
+}
+function flyTo(lat, lng, z) { map.lat = clamp(lat, -85, 85); map.lng = wrapLng(lng); map.z = clamp(z || map.z, 2, 19); draw(); }
+
+/* ---------- Gestures: drag, pinch, wheel, keyboard ---------- */
+const ptrs = new Map();
+let pinch = 0, moved = 0, t0 = 0;
+const two = () => { const [a, b] = [...ptrs.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
+
+el.addEventListener("pointerdown", e => {
+  if (e.target.closest(".ctl")) return;
+  el.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  moved = 0; t0 = Date.now();
+  if (ptrs.size === 2) pinch = two().d;
+});
+el.addEventListener("pointermove", e => {
+  const p = ptrs.get(e.pointerId);
+  if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y;
+  p.x = e.clientX; p.y = e.clientY;
+  moved += Math.abs(dx) + Math.abs(dy);
+  if (ptrs.size === 1) panBy(dx, dy);
+  else if (ptrs.size === 2) {
+    const t = two();
+    if (pinch && (t.d / pinch > 1.4 || t.d / pinch < 0.71)) {
+      const r = el.getBoundingClientRect();
+      zoomAt(t.d > pinch ? 1 : -1, t.x - r.left, t.y - r.top);
+      pinch = t.d;
+    }
+  }
+});
+const endPtr = e => {
+  const was = ptrs.size;
+  if (!ptrs.delete(e.pointerId)) return;
+  if (was === 1 && e.type === "pointerup" && moved < 8 && Date.now() - t0 < 600) {
+    const r = el.getBoundingClientRect();
+    dropPin(fromScreen(e.clientX - r.left, e.clientY - r.top));
+  }
+  pinch = 0;
+};
+el.addEventListener("pointerup", endPtr);
+el.addEventListener("pointercancel", endPtr);
+
+let wheelAt = 0;
+el.addEventListener("wheel", e => {
+  e.preventDefault();
+  if (Date.now() - wheelAt < 220) return;
+  wheelAt = Date.now();
+  const r = el.getBoundingClientRect();
+  zoomAt(e.deltaY < 0 ? 1 : -1, e.clientX - r.left, e.clientY - r.top);
+}, { passive: false });
+
+el.addEventListener("keydown", e => {
+  if (e.target !== el) return;
+  const { w, h } = size(), k = e.key, st = 80;
+  if (k === "+" || k === "=") zoomAt(1, w / 2, h / 2);
+  else if (k === "-" || k === "_") zoomAt(-1, w / 2, h / 2);
+  else if (k === "ArrowLeft") panBy(st, 0);
+  else if (k === "ArrowRight") panBy(-st, 0);
+  else if (k === "ArrowUp") panBy(0, st);
+  else if (k === "ArrowDown") panBy(0, -st);
+  else return;
+  e.preventDefault();
+});
+$("#zin").onclick = () => { const s = size(); zoomAt(1, s.w / 2, s.h / 2); };
+$("#zout").onclick = () => { const s = size(); zoomAt(-1, s.w / 2, s.h / 2); };
+new ResizeObserver(draw).observe(el);
+
+/* ---------- Pin and form ---------- */
+function dropPin(ll, quiet) {
+  pin = { lat: +ll.lat.toFixed(6), lng: +ll.lng.toFixed(6) };
+  $("#pinout").textContent = `Pin at ${pin.lat}, ${pin.lng}`;
+  if (!quiet) status("Pin placed. Fill in the network details, then save.");
+  draw();
+}
+$("#centre").onclick = () => dropPin({ lat: map.lat, lng: map.lng });
+$("#sig").oninput = e => { const v = +e.target.value; $("#sigout").textContent = `${v} (about ${dbm(v) < 0 ? "\u2212" + Math.abs(dbm(v)) : dbm(v)} dBm)`; };
+
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+function persist() { store.set("wm-spots", spots); }
+
+$("#add").addEventListener("submit", e => {
+  e.preventDefault();
+  if (!pin) { status("Place a pin first: tap the map or use Pin at map centre.", true); return; }
+  const s = {
+    id: uid(), ssid: $("#ssid").value.trim(), bssid: $("#bssid").value.trim().toUpperCase().replace(/-/g, ":"),
+    sec: $("#sec").value, sig: +$("#sig").value, note: $("#note").value.trim(),
+    lat: pin.lat, lng: pin.lng, ts: Date.now()
+  };
+  spots.push(s); persist();
+  sel = s.id; pin = null;
+  $("#pinout").textContent = "No pin yet. Tap the map to place one.";
+  $("#ssid").value = ""; $("#bssid").value = ""; $("#note").value = "";
+  status(`Saved ${s.ssid}.`);
+  renderList(); draw();
+});
+
+/* ---------- Saved list ---------- */
+const matches = s => (`${s.ssid} ${s.bssid} ${s.sec} ${s.note}`).toLowerCase().includes(term);
+function selectSpot(id, fromMap) {
+  sel = sel === id && !fromMap ? null : id;
+  const s = spots.find(x => x.id === sel);
+  if (s) {
+    if (!fromMap) flyTo(s.lat, s.lng, Math.max(map.z, 16));
+    status(`${s.ssid || "Hidden network"}: ${s.sec}, signal quality ${s.sig}.`);
+  }
+  renderList(); draw();
+  if (fromMap) $(".item[aria-expanded=true]")?.scrollIntoView({ block: "nearest" });
+}
+function renderList() {
+  const rows = spots.filter(s => !term || matches(s))
+    .map(s => ({ s, d: km(map.lat, map.lng, s.lat, s.lng) })).sort((a, b) => a.d - b.d);
+  $("#count").textContent = spots.length ? `(${rows.length} of ${spots.length})` : "";
+  const items = rows.map(({ s, d }) => {
+    const open = sel === s.id;
+    const li = h("li", {},
+      h("button", { type: "button", class: "item", "aria-expanded": open, onclick: () => selectSpot(s.id) },
+        h("i", { class: `dot ${bucket(s.sig)}${s.sec === "Open" ? " ring" : ""}` }),
+        h("span", {}, h("b", {}, s.ssid || "Hidden network"), h("small", {}, `${s.sec}, quality ${s.sig}, ${fmtDist(d)} from map centre`))));
+    if (open) li.append(h("div", { class: "detail" },
+      h("p", {}, h("span", {}, "Signal: "), `about ${dbm(s.sig)} dBm`),
+      s.bssid ? h("p", {}, h("span", {}, "BSSID: "), s.bssid) : "",
+      s.note ? h("p", {}, h("span", {}, "Note: "), s.note) : "",
+      h("p", {}, h("span", {}, "Position: "), `${s.lat}, ${s.lng}`),
+      h("p", {}, h("span", {}, "Saved: "), new Date(s.ts).toLocaleString()),
+      h("button", { type: "button", class: "btn danger", onclick: () => {
+        spots = spots.filter(x => x.id !== s.id); sel = null; persist(); status(`Deleted ${s.ssid || "network"}.`); renderList(); draw();
+      } }, "Delete network")));
+    return li;
+  });
+  if (!items.length) items.push(h("li", { class: "empty" }, spots.length ? "No networks match that filter." : "Nothing saved yet. Tap the map to drop a pin, then save a network."));
+  $("#list").replaceChildren(...items);
+}
+$("#filter").oninput = e => { term = e.target.value.trim().toLowerCase(); renderList(); draw(); };
+
+/* ---------- Search (Nominatim, no key) and locate ---------- */
+$("#sform").addEventListener("submit", async e => {
+  e.preventDefault();
+  const v = $("#sq").value.trim();
+  if (!v) return;
+  const m = v.match(/^(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)$/);
+  if (m && Math.abs(+m[1]) <= 85 && Math.abs(+m[2]) <= 180) { flyTo(+m[1], +m[2], 16); status(`Showing ${m[1]}, ${m[2]}.`); return; }
+  status("Searching\u2026");
+  try {
+    const r = await fetch("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" + encodeURIComponent(v), { headers: { Accept: "application/json" } });
+    if (!r.ok) throw new Error("bad status");
+    const j = await r.json();
+    if (!j.length) { status("No place found. Try a city, street or landmark.", true); return; }
+    flyTo(+j[0].lat, +j[0].lon, 15);
+    status("Showing " + j[0].display_name);
+  } catch { status("Search is unavailable right now. Check your connection and try again.", true); }
+});
+
+$("#loc").onclick = () => {
+  if (!navigator.geolocation) { status("This browser cannot share your location. Search for a place instead.", true); return; }
+  status("Finding your location\u2026");
+  navigator.geolocation.getCurrentPosition(p => {
+    me = { lat: p.coords.latitude, lng: p.coords.longitude };
+    flyTo(me.lat, me.lng, Math.max(map.z, 17));
+    dropPin(me, true);
+    status(`Located within ${Math.round(p.coords.accuracy)} m. A pin is set here, ready to save a network.`);
+  }, () => status("Location is blocked or unavailable. Allow location for this page, or search for a place.", true),
+  { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+};
+
+/* ---------- Connection info ---------- */
+function renderConn() {
+  const c = navigator.connection, rows = [["Browser online", navigator.onLine ? "Yes" : "No"]];
+  if (c) {
+    [["Connection type", c.type], ["Speed class", c.effectiveType],
+     ["Downlink", c.downlink != null ? c.downlink + " Mbps" : null], ["Round trip", c.rtt != null ? c.rtt + " ms" : null],
+     ["Data saver", c.saveData == null ? null : c.saveData ? "On" : "Off"]].forEach(r => r[1] && rows.push(r));
+  } else rows.push(["Details", "Not reported by this browser"]);
+  $("#conn").replaceChildren(...rows.flatMap(([k, v]) => [h("dt", {}, k), h("dd", {}, String(v))]));
+}
+navigator.connection?.addEventListener?.("change", renderConn);
+addEventListener("online", renderConn); addEventListener("offline", renderConn);
+
+/* ---------- Import / export ---------- */
+function download(name, type, text) {
+  const a = h("a", { href: URL.createObjectURL(new Blob([text], { type })), download: name });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const guard = v => /^[=+\-@]/.test(v) ? "'" + v : v;
+const csvCell = v => `"${guard(String(v ?? "")).replace(/"/g, '""')}"`;
+$("#expJson").onclick = () => { download("wifi-map.json", "application/json", JSON.stringify(spots, null, 2)); status(`Exported ${spots.length} networks.`); };
+$("#expCsv").onclick = () => {
+  const head = "ssid,bssid,security,signal,lat,lng,note";
+  const body = spots.map(s => [s.ssid, s.bssid, s.sec, s.sig, s.lat, s.lng, s.note].map(csvCell).join(","));
+  download("wifi-map.csv", "text/csv", [head, ...body].join("\r\n"));
+  status(spots.length ? `Exported ${spots.length} networks.` : "Saved an empty CSV you can use as a template.");
+};
+function parseCSV(t) {
+  const rows = []; let r = [], c = "", q = false;
+  t = t.replace(/^\uFEFF/, "");
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (q) { if (ch === '"') { if (t[i + 1] === '"') { c += '"'; i++; } else q = false; } else c += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ",") { r.push(c); c = ""; }
+    else if (ch === "\n" || ch === "\r") { if (ch === "\r" && t[i + 1] === "\n") i++; r.push(c); c = ""; if (r.some(x => x !== "")) rows.push(r); r = []; }
+    else c += ch;
+  }
+  r.push(c); if (r.some(x => x !== "")) rows.push(r);
+  return rows;
+}
+const ALIAS = { ssid: "ssid", name: "ssid", bssid: "bssid", mac: "bssid", security: "sec", auth: "sec", sec: "sec",
+  signal: "sig", quality: "sig", sig: "sig", lat: "lat", latitude: "lat", lng: "lng", lon: "lng", long: "lng", longitude: "lng", note: "note", notes: "note" };
+function fromCSV(text) {
+  const rows = parseCSV(text); if (rows.length < 2) return [];
+  const cols = rows[0].map(x => ALIAS[x.trim().toLowerCase()]);
+  return rows.slice(1).map(r => { const o = {}; cols.forEach((k, i) => { if (k) o[k] = (r[i] ?? "").replace(/^'(?=[=+\-@])/, ""); }); return o; });
+}
+function normalise(o) {
+  const lat = +o.lat, lng = +o.lng;
+  if (!o || typeof o !== "object" || !isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 85.06 || Math.abs(lng) > 180 || o.lat === "" || o.lng === "") return null;
+  const sec = SEC.find(x => x.toLowerCase() === String(o.sec ?? "").trim().toLowerCase()) || "WPA2";
+  const sig = isFinite(+o.sig) && o.sig !== "" ? clamp(Math.round(+o.sig), 0, 100) : 50;
+  return { id: uid(), ssid: String(o.ssid ?? "").slice(0, 32), bssid: String(o.bssid ?? "").toUpperCase().slice(0, 17),
+    sec, sig, note: String(o.note ?? "").slice(0, 200), lat: +lat.toFixed(6), lng: +lng.toFixed(6), ts: +o.ts || Date.now() };
+}
+$("#impBtn").onclick = () => $("#impFile").click();
+$("#impFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  try {
+    if (f.size > 5e6) throw new Error("size");
+    const text = await f.text();
+    let raw;
+    if (/\.csv$/i.test(f.name)) raw = fromCSV(text);
+    else { const j = JSON.parse(text); raw = Array.isArray(j) ? j : j.spots; }
+    if (!Array.isArray(raw)) throw new Error("shape");
+    const key = s => `${s.ssid}|${s.bssid}|${s.lat}|${s.lng}`, seen = new Set(spots.map(key));
+    let added = 0;
+    for (const o of raw) { const s = normalise(o); if (s && !seen.has(key(s))) { spots.push(s); seen.add(key(s)); added++; } }
+    persist(); renderList(); draw();
+    if (added) { const l = spots[spots.length - 1]; flyTo(l.lat, l.lng, Math.max(map.z, 14)); }
+    status(`Imported ${added} of ${raw.length} rows. Rows without valid lat and lng, or already saved, were skipped.`, !added);
+  } catch { status("That file could not be read. Use a JSON list or a CSV with ssid, bssid, security, signal, lat, lng columns (up to 5 MB).", true); }
+};
+$("#clear").onclick = () => {
+  if (!spots.length) { status("There is nothing to delete."); return; }
+  if (confirm(`Delete all ${spots.length} saved networks from this browser? Export first if you want a backup.`)) {
+    spots = []; sel = null; persist(); renderList(); draw(); status("All saved networks deleted.");
+  }
+};
+
+/* ---------- Start ---------- */
+setTheme(store.get("wm-theme", null) || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
+$("#sig").oninput({ target: $("#sig") });
+renderConn(); renderList();
 </script>
 </body>
 </html>
