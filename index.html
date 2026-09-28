@@ -2,378 +2,213 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#14171c">
-<meta name="description" content="IDSHOT - private, on-device ID, passport and visa photo maker. No API key, no sign-up.">
-<title>IDSHOT - ID Photo Maker</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235b8cff'/%3E%3Ccircle cx='32' cy='26' r='10' fill='%23fff'/%3E%3Cpath d='M12 56c2-14 10-18 20-18s18 4 20 18z' fill='%23fff'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WiFi Map</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
-:root{--bg:#14171c;--pn:#1d2128;--fg:#eef1f5;--mu:#9aa4b2;--ac:#5b8cff;--ab:#0a1330;--bd:#2f3642;--bw:1px}
-[data-theme=light]{--bg:#f4f5f7;--pn:#fff;--fg:#15181d;--mu:#566070;--ac:#1f56e0;--ab:#fff;--bd:#d0d5dd}
-[data-theme=oled]{--bg:#000;--pn:#000;--fg:#f2f2f2;--mu:#8d96a3;--ac:#6b9bff;--ab:#000;--bd:#262b33}
-[data-theme=hc]{--bg:#000;--pn:#000;--fg:#fff;--mu:#fff;--ac:#ffe600;--ab:#000;--bd:#fff;--bw:2px}
+:root{--bg:#1e1e1e;--card:#252526;--fg:#d4d4d4;--mut:#9da0a6;--acc:#3794ff;--bd:#3c3c3c;--on:#fff;--g:#4ec98a;--l:#a8d84e;--a:#f0b429;--r:#f25c5c;--bw:1px}
+[data-theme=light]{--bg:#f3f3f3;--card:#fff;--fg:#1f1f1f;--mut:#616161;--acc:#0066b8;--bd:#d4d4d4;--g:#178a4c;--l:#6b9a12;--a:#b7791f;--r:#c9302c}
+[data-theme=oled]{--bg:#000;--card:#000;--fg:#e6e6e6;--bd:#2a2a2a;--acc:#4da3ff}
+[data-theme=hc]{--bg:#000;--card:#000;--fg:#fff;--mut:#fff;--bd:#fff;--acc:#ffff00;--on:#000;--g:#00ff7f;--l:#7fff00;--a:#ffd700;--r:#ff5050;--bw:2px}
 *{box-sizing:border-box;margin:0}
-[hidden]{display:none!important}
-html{-webkit-text-size-adjust:100%}
-body{min-height:100dvh;display:flex;flex-direction:column;align-items:center;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-header,main,footer{width:100%;max-width:560px;padding:0 16px}
-header{padding-top:20px;display:flex;flex-direction:column;align-items:center;gap:10px}
-h1{font-size:2rem;font-weight:800;letter-spacing:.08em}
-h2{font-size:1.05rem;font-weight:700}
-.sub{color:var(--mu);font-size:.92rem;max-width:42ch}
-main{flex:1;display:flex;flex-direction:column;align-items:center;padding-top:14px}
-section{width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px 0;border-top:var(--bw) solid var(--bd)}
-.row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;width:100%}
-.themes{display:flex;gap:2px;padding:3px;border:var(--bw) solid var(--bd);border-radius:999px;background:var(--pn)}
-.themes button{min-height:40px;min-width:64px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:var(--fg);font:inherit;font-size:.88rem;font-weight:600;cursor:pointer}
-.themes button[aria-pressed=true]{background:var(--ac);color:var(--ab)}
-.btn{min-height:48px;padding:0 20px;border-radius:12px;border:var(--bw) solid var(--bd);background:var(--pn);color:var(--fg);font:inherit;font-weight:600;cursor:pointer}
-.btn.pri{background:var(--ac);border-color:var(--ac);color:var(--ab)}
-.btn:disabled{opacity:.5}
-select,input[type=number]{min-height:48px;width:100%;padding:0 12px;border-radius:12px;border:var(--bw) solid var(--bd);background:var(--pn);color:var(--fg);font:inherit;text-align:center}
-:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
-.sw{width:44px;height:44px;border-radius:50%;border:var(--bw) solid var(--bd);cursor:pointer;padding:0}
-.sw[aria-pressed=true]{outline:3px solid var(--ac);outline-offset:2px}
-input[type=color]{width:44px;height:44px;padding:0;border:var(--bw) solid var(--bd);border-radius:50%;background:none;cursor:pointer}
-.stage{position:relative;line-height:0;width:min(100%,calc(62vh * var(--ar,.78)));border:var(--bw) solid var(--bd);border-radius:6px;overflow:hidden;touch-action:none;cursor:grab}
-.stage canvas{width:100%;height:auto;display:block}
-#gd{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-#gd *{vector-effect:non-scaling-stroke}
-.sl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;width:100%;text-align:left;font-size:.92rem}
-.sl output{color:var(--mu)}
-.sl input{grid-column:1/-1;width:100%;height:32px;accent-color:var(--ac)}
-.chk{display:flex;align-items:center;gap:8px;min-height:40px;font-size:.95rem}
-.chk input{width:22px;height:22px;accent-color:var(--ac)}
-.f{display:flex;flex-direction:column;gap:4px;width:100%;font-size:.9rem;color:var(--mu)}
-#st{color:var(--mu);font-size:.92rem;min-height:1.5em}
-footer{padding-top:18px;padding-bottom:22px;border-top:var(--bw) solid var(--bd);color:var(--mu);font-size:.88rem}
-@media(min-width:480px){.f.h{width:calc(50% - 5px)}}
-@media(prefers-reduced-motion:no-preference){.btn{transition:transform .1s}.btn:active{transform:scale(.97)}}
+html,body{background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100%;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);display:flex;flex-direction:column;align-items:center}
+main{width:100%;max-width:760px;padding:12px;display:flex;flex-direction:column;gap:12px;flex:1;text-align:center}
+h1{font-size:1.4rem}h2{font-size:1rem;margin-bottom:6px}
+.sub{color:var(--mut);font-size:.85rem}
+.card{background:var(--card);border:var(--bw) solid var(--bd);border-radius:14px;padding:12px}
+.seg{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+button,select,input,textarea{font:inherit;color:var(--fg);background:var(--bg);border:var(--bw) solid var(--bd);border-radius:10px;padding:9px 12px;min-height:40px}
+button{cursor:pointer}
+button.on,button.pri{background:var(--acc);color:var(--on);border-color:var(--acc);font-weight:600}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+textarea{width:100%;height:80px;font:12px ui-monospace,Consolas,monospace;resize:vertical;margin:8px 0}
+ol{text-align:left;padding-left:20px;font-size:.9rem;color:var(--mut);margin-bottom:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
+.row>*{flex:1 1 130px}
+#map{height:50vh;min-height:300px;border-radius:12px;border:var(--bw) solid var(--bd);z-index:0}
+[data-theme=dark] .leaflet-tile-pane,[data-theme=oled] .leaflet-tile-pane,[data-theme=hc] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)}
+[data-theme=oled] #map,[data-theme=hc] #map{background:#000}
+[data-theme=oled] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.65) contrast(1.1)}
+.leaflet-container{color:#222}
+#list{display:flex;flex-direction:column;gap:8px;text-align:left}
+.ap{display:flex;gap:10px;align-items:center;padding:10px;border:var(--bw) solid var(--bd);border-radius:12px;cursor:pointer;background:var(--card)}
+.ap:hover,.ap:focus-visible{border-color:var(--acc)}
+.dot{width:14px;height:14px;border-radius:50%;flex:none;border:2px solid var(--fg)}
+.ap b{display:block;word-break:break-word}.ap small{color:var(--mut)}
+.rs{margin-left:auto;font-weight:700;white-space:nowrap}
+.stat{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--mut)}
+#msg{min-height:1.3em;font-size:.85rem;color:var(--acc)}
+footer{width:100%;padding:16px 12px;border-top:var(--bw) solid var(--bd);text-align:center;color:var(--mut);font-size:.85rem;display:flex;align-items:center;justify-content:center;min-height:64px}
 </style>
 </head>
 <body>
-<header>
-  <h1>IDSHOT</h1>
-  <p class="sub">Passport, visa and ID photos made on your device. No sign-up, no API key.</p>
-  <div class="themes" role="group" aria-label="Theme">
-    <button data-t="dark" title="Dark+">Dark</button>
-    <button data-t="light" title="Light+">Light</button>
-    <button data-t="oled" title="OLED true black">OLED</button>
-    <button data-t="hc" title="High contrast">HC</button>
-  </div>
-</header>
-
 <main>
-  <section>
-    <h2>1. Add your photo</h2>
-    <p class="sub">Face the camera, even light, plain expression. Your photo never leaves this device.</p>
+  <header>
+    <h1>📶 WiFi Map</h1>
+    <p class="sub">Scan with the Windows Native Wi-Fi API · map with OpenStreetMap · no API key</p>
+  </header>
+
+  <div class="seg" id="themes" role="group" aria-label="Theme">
+    <button data-t="light">Light+</button><button data-t="dark">Dark+</button>
+    <button data-t="oled">OLED</button><button data-t="hc">HC</button>
+  </div>
+
+  <section class="card">
+    <h2>1 · Scan your Windows PC</h2>
+    <ol>
+      <li>Copy or download the PowerShell script (it calls <code>wlanapi.dll</code>: WlanScan + WlanGetNetworkBssList).</li>
+      <li>Run it in PowerShell on the laptop — the JSON result is copied to the clipboard.</li>
+      <li>Paste it below (or load the file) and tap <b>Add to map</b>.</li>
+    </ol>
     <div class="row">
-      <button class="btn pri" id="bUp">Choose photo</button>
-      <button class="btn" id="bCam">Take selfie</button>
+      <button id="cp" class="pri">Copy script</button>
+      <button id="dl">Download .ps1</button>
+      <button id="demo">Try demo data</button>
     </div>
-    <input id="f1" type="file" accept="image/*" hidden>
-    <input id="f2" type="file" accept="image/*" capture="user" hidden>
-    <p id="st" role="status" aria-live="polite"></p>
+    <textarea id="paste" placeholder='Paste scan JSON here…' aria-label="Scan JSON"></textarea>
+    <div class="row">
+      <button id="add" class="pri">Add to map</button>
+      <button id="loc">📍 My location</button>
+      <label class="row" style="flex:1 1 130px"><input type="file" id="file" accept=".json,.txt" style="width:100%"></label>
+    </div>
+    <p id="msg" role="status"></p>
   </section>
 
-  <section>
-    <h2>2. Pick size and background</h2>
-    <label class="f">Photo size
-      <select id="pre"></select>
-    </label>
-    <div class="row" id="cust" hidden>
-      <label class="f h">Width (mm)<input type="number" id="cw" min="10" max="200" value="35"></label>
-      <label class="f h">Height (mm)<input type="number" id="ch" min="10" max="200" value="45"></label>
-    </div>
-    <div class="row" id="sws" role="group" aria-label="Background colour"></div>
-  </section>
+  <div id="map" aria-label="Wi-Fi map"></div>
+  <div class="stat"><span id="s1">0 networks</span><span id="s2">0 scans</span><span>● ≥-55 ● ≥-67 ● ≥-75 ● weaker dBm</span></div>
 
-  <section id="sec" hidden>
-    <h2>3. Fine-tune</h2>
-    <div class="stage" id="stg">
-      <canvas id="cv" width="413" height="531" aria-label="ID photo preview"></canvas>
-      <svg id="gd" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
-    </div>
-    <p class="sub" id="info"></p>
+  <section class="card">
     <div class="row">
-      <label class="chk"><input type="checkbox" id="gu" checked> Show guides</label>
-      <label class="chk"><input type="checkbox" id="au" checked> Auto light fix</label>
+      <input id="q" type="search" placeholder="Search SSID or BSSID" aria-label="Search">
+      <select id="band" aria-label="Band"><option value="">All bands</option><option value="2">2.4 GHz</option><option value="5">5 GHz</option><option value="6">6 GHz</option></select>
+      <select id="sort" aria-label="Sort"><option value="rssi">Strongest</option><option value="ssid">Name</option><option value="ch">Channel</option></select>
     </div>
-    <div id="sl" style="width:100%;display:flex;flex-direction:column;gap:6px"></div>
-    <button class="btn" id="bRs">Reset adjustments</button>
+    <div class="row" style="margin-top:8px"><button id="exp">Export JSON</button><button id="clr">Clear all</button></div>
   </section>
-
-  <section id="sec2" hidden>
-    <h2>4. Save</h2>
-    <div class="row">
-      <label class="f h">Format
-        <select id="fmt"><option value="jpg">JPG</option><option value="png">PNG (lossless)</option></select>
-      </label>
-      <label class="f h">Max file size (KB, JPG)
-        <input type="number" id="kb" min="0" placeholder="No limit" inputmode="numeric">
-      </label>
-    </div>
-    <button class="btn pri" id="bSave" style="width:100%">Download photo</button>
-    <label class="f">Print sheet paper
-      <select id="sh"></select>
-    </label>
-    <button class="btn" id="bSheet" style="width:100%">Download print sheet</button>
-    <p class="sub">Print sheets are 300 dpi. Print at 100% / actual size.</p>
-  </section>
+  <div id="list"></div>
 </main>
+<footer><span>© Manik Roy <span id="yr">2026</span>. All Rights Reserved.</span></footer>
 
-<footer>
-  <p>&copy; Manik Roy <span id="yr">2026</span>. All Rights Reserved.</p>
-</footer>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-"use strict";
-const $=id=>document.getElementById(id),cx2=c=>c.getContext("2d"),mk=(w,h)=>{const c=document.createElement("canvas");c.width=w;c.height=h;return c};
-const ORT="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/";
-const TV="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/";
-const FLM="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
-const MODEL="https://huggingface.co/Xenova/modnet/resolve/main/onnx/model_quantized.onnx";
-const CVU="https://docs.opencv.org/4.10.0/opencv.js";
-/* name, width mm, height mm, head height / photo height, top margin / photo height */
-const PRE=[["India passport / visa - 35x45 mm",35,45,.72,.08],["India / US - 2x2 in",50.8,50.8,.62,.11],["UK - 35x45 mm",35,45,.7,.08],["EU / Schengen - 35x45 mm",35,45,.76,.07],["China - 33x48 mm",33,48,.63,.09],["Canada - 50x70 mm",50,70,.5,.12],["PAN / small - 25x35 mm",25,35,.7,.1],["Custom size",35,45,.7,.09]];
-const BG=[["White","#ffffff"],["Blue","#438edb"],["Light blue","#a8cff0"],["Red","#d62d2d"],["Grey","#dcdcdc"]];
-const SH=[["4 x 6 in",1200,1800],["5 x 7 in",1500,2100],["A4",2480,3508]];
-const CT=[["zoom","Zoom",70,150,100,1,"%"],["ox","Move left / right",-30,30,0,1,"%"],["oy","Move up / down",-30,30,0,1,"%"],["rot","Tilt",-15,15,0,.5," deg"],["bri","Brightness",-40,40,0,1,""],["con","Contrast",70,140,100,1,"%"],["edge","Trim edge",0,6,1,1," px"],["soft","Soften edge",0,8,2,1," px"]];
-const S={bg:"#ffffff",dpi:300},V={};
-let sess,FL,cvOk=false,raf=0,pend=0;
+const $=s=>document.querySelector(s), KEY='wifimap.v1';
+const PS=[
+'$src=@"',
+'using System;using System.Runtime.InteropServices;',
+'public class W{',
+'[DllImport("wlanapi.dll")]public static extern int WlanOpenHandle(uint v,IntPtr r,out uint n,out IntPtr h);',
+'[DllImport("wlanapi.dll")]public static extern int WlanEnumInterfaces(IntPtr h,IntPtr r,out IntPtr l);',
+'[DllImport("wlanapi.dll")]public static extern int WlanScan(IntPtr h,ref Guid g,IntPtr a,IntPtr b,IntPtr c);',
+'[DllImport("wlanapi.dll")]public static extern int WlanGetNetworkBssList(IntPtr h,ref Guid g,IntPtr s,int t,bool sec,IntPtr r,out IntPtr l);',
+'[DllImport("wlanapi.dll")]public static extern void WlanFreeMemory(IntPtr p);',
+'[DllImport("wlanapi.dll")]public static extern int WlanCloseHandle(IntPtr h,IntPtr r);',
+'}',
+'"@',
+'Add-Type -TypeDefinition $src',
+'$M=[Runtime.InteropServices.Marshal];$n=0;$h=[IntPtr]::Zero',
+'[W]::WlanOpenHandle(2,[IntPtr]::Zero,[ref]$n,[ref]$h)|Out-Null',
+'$l=[IntPtr]::Zero;[W]::WlanEnumInterfaces($h,[IntPtr]::Zero,[ref]$l)|Out-Null',
+'$cnt=$M::ReadInt32($l);$out=@()',
+'for($i=0;$i -lt $cnt;$i++){',
+' $g=$M::PtrToStructure([IntPtr]($l.ToInt64()+8+532*$i),[Type][Guid])',
+' [W]::WlanScan($h,[ref]$g,[IntPtr]::Zero,[IntPtr]::Zero,[IntPtr]::Zero)|Out-Null',
+' Start-Sleep 4',
+' $b=[IntPtr]::Zero',
+' if([W]::WlanGetNetworkBssList($h,[ref]$g,[IntPtr]::Zero,3,$false,[IntPtr]::Zero,[ref]$b) -eq 0){',
+'  $c=$M::ReadInt32($b,4)',
+'  for($k=0;$k -lt $c;$k++){',
+'   $p=[IntPtr]($b.ToInt64()+8+360*$k);$sl=$M::ReadInt32($p);$ss=""',
+'   if($sl -gt 0){$ss=[Text.Encoding]::UTF8.GetString([byte[]](0..($sl-1)|%{$M::ReadByte($p,4+$_)}))}',
+'   $mac=(0..5|%{"{0:X2}" -f $M::ReadByte($p,40+$_)}) -join ":"',
+'   $out+=[pscustomobject]@{ssid=$ss;bssid=$mac;rssi=$M::ReadInt32($p,56);q=$M::ReadInt32($p,60);freq=[int]($M::ReadInt32($p,92)/1000);sec=(($M::ReadInt16($p,88) -band 16) -ne 0)}',
+'  }',
+'  [W]::WlanFreeMemory($b)',
+' }',
+'}',
+'[W]::WlanFreeMemory($l);[W]::WlanCloseHandle($h,[IntPtr]::Zero)|Out-Null',
+'ConvertTo-Json -InputObject @($out) -Compress|Set-Clipboard',
+'Write-Host "Copied $($out.Count) networks to clipboard"'
+].join('\r\n');
 
-/* ---------- theme ---------- */
-function theme(t){
-  document.documentElement.dataset.theme=t;
-  try{localStorage.setItem("idshot-theme",t)}catch(e){}
-  document.querySelectorAll(".themes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.t===t));
-  document.querySelector("meta[name=theme-color]").content={dark:"#14171c",light:"#f4f5f7",oled:"#000000",hc:"#000000"}[t];
-}
-document.querySelectorAll(".themes button").forEach(b=>b.onclick=()=>theme(b.dataset.t));
-let t0=null;try{t0=localStorage.getItem("idshot-theme")}catch(e){}
-theme(t0||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"));
-$("yr").textContent=new Date().getFullYear();
+let db={aps:{},scans:0,user:null};
+try{Object.assign(db,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}};
+const say=t=>$('#msg').textContent=t;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-/* ---------- inline web manifest (installable PWA) ---------- */
-try{
-  const m={name:"IDSHOT ID Photo Maker",short_name:"IDSHOT",start_url:location.href.split("#")[0],display:"standalone",background_color:"#14171c",theme_color:"#14171c"};
-  const l=document.createElement("link");l.rel="manifest";l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/manifest+json"}));document.head.appendChild(l);
-}catch(e){}
+// ---- theme
+function theme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem('wifimap.theme',t)}catch(e){}
+  document.querySelectorAll('#themes button').forEach(b=>b.classList.toggle('on',b.dataset.t===t))}
+let st='dark';try{st=localStorage.getItem('wifimap.theme')||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark')}catch(e){}
+theme(st);
+$('#themes').onclick=e=>e.target.dataset.t&&theme(e.target.dataset.t);
+$('#yr').textContent=new Date().getFullYear();
 
-/* ---------- UI setup ---------- */
-$("pre").innerHTML=PRE.map((p,i)=>`<option value="${i}">${p[0]}</option>`).join("");
-$("sh").innerHTML=SH.map((p,i)=>`<option value="${i}">${p[0]}</option>`).join("");
-$("sws").innerHTML=BG.map((b,i)=>`<button class="sw" style="background:${b[1]}" data-c="${b[1]}" aria-label="${b[0]}" aria-pressed="${i==0}"></button>`).join("")+`<input type="color" id="bc" value="#ffffff" aria-label="Custom colour">`;
-$("sl").innerHTML=CT.map(c=>`<div class="sl"><label for="s_${c[0]}">${c[1]}</label><output id="o_${c[0]}">${c[4]}${c[6]}</output><input type="range" id="s_${c[0]}" min="${c[2]}" max="${c[3]}" step="${c[5]}" value="${c[4]}"></div>`).join("");
-const st=s=>{$("st").textContent=s};
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function setV(id,v){const c=CT.find(x=>x[0]==id);V[id]=v;$("s_"+id).value=v;$("o_"+id).textContent=v+c[6]}
-CT.forEach(c=>{V[c[0]]=c[4];$("s_"+c[0]).oninput=e=>{setV(c[0],+e.target.value);sched(c[0]=="edge"||c[0]=="soft"?2:c[0]=="bri"||c[0]=="con"?1:0)}});
-function sched(k){
-  pend=Math.max(pend,k);
-  if(raf)return;
-  raf=requestAnimationFrame(()=>{raf=0;const p=pend;pend=0;if(!S.alpha)return;if(p>=2)refine();if(p>=1)buildCut();render()});
-}
-$("bRs").onclick=()=>{CT.forEach(c=>setV(c[0],c[4]));sched(2)};
-$("pre").onchange=()=>{$("cust").hidden=+$("pre").value!=PRE.length-1;sched(0)};
-$("cw").oninput=$("ch").oninput=()=>sched(0);
-$("gu").onchange=()=>sched(0);
-$("au").onchange=()=>{if(S.alpha)buildAll()};
-document.querySelectorAll(".sw").forEach(b=>b.onclick=()=>pickBg(b.dataset.c,b));
-$("bc").oninput=e=>pickBg(e.target.value,null);
-function pickBg(c,btn){S.bg=c;document.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-pressed",x===btn));sched(0)}
-$("bUp").onclick=()=>$("f1").click();
-$("bCam").onclick=()=>$("f2").click();
-[$("f1"),$("f2")].forEach(f=>f.onchange=()=>{if(f.files[0])go(f.files[0]);f.value=""});
+// ---- helpers
+const band=f=>f<3000?'2':f<5900?'5':'6';
+const chan=f=>f<3000?Math.round((f-2407)/5):f<5900?Math.round((f-5000)/5):Math.round((f-5950)/5);
+const col=r=>getComputedStyle(document.documentElement).getPropertyValue(r>=-55?'--g':r>=-67?'--l':r>=-75?'--a':'--r').trim();
+const dist=(r,f)=>Math.min(300,Math.max(1,Math.pow(10,((15-r)-20*Math.log10(f)+27.55)/20)));
+function est(ap){let w=0,la=0,ln=0;ap.obs.forEach(o=>{const k=Math.pow(10,o.rssi/10);w+=k;la+=o.lat*k;ln+=o.lng*k});return[la/w,ln/w]}
 
-/* drag the photo inside the frame */
-let dr=0;const stg=$("stg");
-stg.onpointerdown=e=>{dr={x:e.clientX,y:e.clientY,ox:V.ox,oy:V.oy};stg.setPointerCapture(e.pointerId);stg.style.cursor="grabbing"};
-stg.onpointermove=e=>{
-  if(!dr)return;const r=stg.getBoundingClientRect();
-  setV("ox",Math.round(clamp(dr.ox+(e.clientX-dr.x)/r.width*100,-30,30)));
-  setV("oy",Math.round(clamp(dr.oy+(e.clientY-dr.y)/r.height*100,-30,30)));sched(0);
-};
-stg.onpointerup=stg.onpointercancel=()=>{dr=0;stg.style.cursor="grab"};
+// ---- map
+const map=L.map('map',{zoomControl:true}).setView([22.5726,88.3639],12);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
+const layer=L.layerGroup().addTo(map);let me=null;
+function setMe(lat,lng){db.user=[lat,lng];if(me)me.setLatLng([lat,lng]);else me=L.circleMarker([lat,lng],{radius:8,color:'#fff',weight:3,fillColor:'#3794ff',fillOpacity:1}).addTo(map).bindTooltip('You');save()}
+function locate(cb){
+  if(!navigator.geolocation){say('Geolocation unavailable — using last known position.');return cb(db.user)}
+  say('Getting location…');
+  navigator.geolocation.getCurrentPosition(p=>{setMe(p.coords.latitude,p.coords.longitude);map.setView([p.coords.latitude,p.coords.longitude],17);cb(db.user)},
+    ()=>{say('Location denied — using last known/map centre.');cb(db.user||[map.getCenter().lat,map.getCenter().lng])},{enableHighAccuracy:true,timeout:12000});
+}
+$('#loc').onclick=()=>locate(()=>say('Location updated.'));
 
-/* ---------- library loaders ---------- */
-const load=u=>new Promise((ok,no)=>{const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=()=>no(new Error("Could not load "+u));document.head.appendChild(s)});
-async function loadCV(){
-  try{
-    await load(CVU);
-    if(typeof cv.then==="function")window.cv=await cv;
-    else if(!cv.Mat)await new Promise(r=>{cv.onRuntimeInitialized=r});
-    cvOk=true;if(S.alpha)buildAll();
-  }catch(e){console.warn(e)}
+// ---- import
+function ingest(text){
+  let arr;try{arr=JSON.parse(text.replace(/^\uFEFF/,''))}catch(e){return say('Invalid JSON — run the script and paste its output.')}
+  if(!Array.isArray(arr))arr=[arr];
+  arr=arr.filter(x=>x&&x.bssid&&typeof x.rssi==='number');
+  if(!arr.length)return say('No networks found in that JSON.');
+  locate(pos=>{
+    const [lat,lng]=pos||[map.getCenter().lat,map.getCenter().lng];const t=Date.now();
+    arr.forEach(x=>{const id=String(x.bssid).toUpperCase();
+      const ap=db.aps[id]||(db.aps[id]={bssid:id,obs:[]});
+      Object.assign(ap,{ssid:x.ssid||'(hidden)',rssi:x.rssi,q:x.q,freq:x.freq||2437,sec:!!x.sec,t});
+      ap.obs.push({lat,lng,rssi:x.rssi,t});if(ap.obs.length>40)ap.obs.shift()});
+    db.scans++;save();render(true);say('Added '+arr.length+' networks at your position.');$('#paste').value='';
+  });
 }
+$('#add').onclick=()=>ingest($('#paste').value.trim());
+$('#file').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(ingest)};
+$('#cp').onclick=()=>{navigator.clipboard.writeText(PS).then(()=>say('Script copied — paste into PowerShell.'),()=>say('Copy blocked — use Download .ps1.'))};
+$('#dl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([PS],{type:'text/plain'}));a.download='wifi-scan.ps1';a.click();say('Run: powershell -ExecutionPolicy Bypass -File wifi-scan.ps1')};
+$('#demo').onclick=()=>{const n=['HomeNet','Cafe_Guest','Office-5G','Neighbour','TP-Link_9A2C','Airtel_Zone'],fr=[2437,2412,5180,2462,5745,2447];
+  ingest(JSON.stringify(n.map((s,i)=>({ssid:s,bssid:'AA:BB:CC:00:0'+i+':1'+i,rssi:-38-i*8-Math.round(Math.random()*4),q:90-i*10,freq:fr[i],sec:i!==1}))))};
+$('#exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,1)],{type:'application/json'}));a.download='wifi-map-export.json';a.click()};
+$('#clr').onclick=()=>{if(confirm('Delete all saved networks?')){db.aps={};db.scans=0;save();render()}};
 
-/* ---------- pipeline ---------- */
-async function go(file){
-  if(S.busy)return;S.busy=1;$("bUp").disabled=$("bCam").disabled=true;
-  try{
-    st("Reading photo...");
-    let bm;try{bm=await createImageBitmap(file,{imageOrientation:"from-image"})}catch(e){bm=await createImageBitmap(file)}
-    const k=Math.min(1,1400/Math.max(bm.width,bm.height));
-    S.w=Math.round(bm.width*k);S.h=Math.round(bm.height*k);
-    S.src=mk(S.w,S.h);cx2(S.src).drawImage(bm,0,0,S.w,S.h);S.enh=null;S.cut=null;S.alpha=null;
-    if(!S.cvl){S.cvl=1;loadCV()}
-    const okM=await matte(),okF=await locate();
-    buildAll();$("sec").hidden=$("sec2").hidden=false;
-    st(!okM?"Background removal is unavailable (model did not load). Original background kept.":!okF?"Face not found. Fitted from the outline; please fine-tune.":"Done. Drag the photo or use the sliders to fine-tune.");
-    $("stg").scrollIntoView({behavior:"smooth",block:"center"});
-  }catch(e){console.warn(e);st("Something went wrong: "+e.message)}
-  S.busy=0;$("bUp").disabled=$("bCam").disabled=false;
+// ---- render
+function view(){const q=$('#q').value.toLowerCase(),b=$('#band').value,s=$('#sort').value;
+  const a=Object.values(db.aps).filter(x=>(!q||x.ssid.toLowerCase().includes(q)||x.bssid.toLowerCase().includes(q))&&(!b||band(x.freq)===b));
+  a.sort((x,y)=>s==='rssi'?y.rssi-x.rssi:s==='ssid'?x.ssid.localeCompare(y.ssid):chan(x.freq)-chan(y.freq));return a}
+function render(fit){
+  const a=view();layer.clearLayers();const pts=[];
+  a.forEach(ap=>{const p=est(ap),c=col(ap.rssi);pts.push(p);
+    L.circle(p,{radius:dist(ap.rssi,ap.freq),color:c,weight:1,fillColor:c,fillOpacity:.08}).addTo(layer);
+    L.circleMarker(p,{radius:Math.max(6,14+ap.rssi/6),color:'#fff',weight:2,fillColor:c,fillOpacity:.95}).addTo(layer)
+     .bindPopup('<b>'+esc(ap.ssid)+'</b><br>'+esc(ap.bssid)+'<br>'+ap.rssi+' dBm · Ch '+chan(ap.freq)+' ('+ap.freq+' MHz)<br>'+(ap.sec?'🔒 Secured':'🔓 Open')+'<br>~'+Math.round(dist(ap.rssi,ap.freq))+' m est. · '+ap.obs.length+' sample(s)')});
+  if(fit&&pts.length)map.fitBounds(L.latLngBounds(pts).pad(.4),{maxZoom:18});
+  $('#s1').textContent=a.length+' networks';$('#s2').textContent=db.scans+' scans';
+  $('#list').innerHTML=a.length?a.map(ap=>'<div class="ap" tabindex="0" data-id="'+ap.bssid+'"><span class="dot" style="background:'+col(ap.rssi)+'"></span><div><b>'+esc(ap.ssid)+'</b><small>'+esc(ap.bssid)+' · Ch '+chan(ap.freq)+' · '+(ap.sec?'🔒':'🔓')+' · ~'+Math.round(dist(ap.rssi,ap.freq))+' m</small></div><span class="rs">'+ap.rssi+' dBm</span></div>').join(''):'<p class="sub">No networks yet — run the scan script, or try the demo data.</p>';
 }
-
-/* ONNX Runtime Web + MODNet portrait matting -> alpha canvas */
-async function matte(){
-  const w=S.w,h=S.h;S.alpha=mk(w,h);
-  try{
-    if(!sess){
-      await load(ORT+"ort.min.js");ort.env.wasm.wasmPaths=ORT;ort.env.wasm.numThreads=1;
-      st("Downloading cutout model (first time only)...");
-      sess=await ort.InferenceSession.create(MODEL,{executionProviders:["wasm"]});
-    }
-    st("Removing background...");
-    const run=async(nw,nh)=>{
-      const t=mk(nw,nh),tx=cx2(t);tx.drawImage(S.src,0,0,nw,nh);
-      const d=tx.getImageData(0,0,nw,nh).data,n=nw*nh,f=new Float32Array(3*n);
-      for(let i=0;i<n;i++){f[i]=(d[i*4]-127.5)/127.5;f[n+i]=(d[i*4+1]-127.5)/127.5;f[2*n+i]=(d[i*4+2]-127.5)/127.5}
-      const o=await sess.run({[sess.inputNames[0]]:new ort.Tensor("float32",f,[1,3,nh,nw])});
-      const a=o[sess.outputNames[0]].data,m=mk(nw,nh),mx=cx2(m),id=mx.createImageData(nw,nh);
-      for(let i=0;i<n;i++){const v=clamp(a[i]*255,0,255);id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=v;id.data[i*4+3]=255}
-      mx.putImageData(id,0,0);
-      const ax=cx2(S.alpha);ax.imageSmoothingQuality="high";ax.drawImage(m,0,0,w,h);
-    };
-    const s=512/Math.max(w,h),q=v=>Math.max(32,Math.round(v*s/32)*32);
-    try{await run(q(w),q(h))}catch(e){await run(512,512)}
-    return true;
-  }catch(e){
-    console.warn(e);const ax=cx2(S.alpha);ax.fillStyle="#fff";ax.fillRect(0,0,w,h);return false;
-  }
-}
-
-/* MediaPipe Face Landmarker -> crown, chin, centre line, eye tilt */
-async function locate(){
-  const w=S.w,h=S.h,ad=cx2(S.alpha).getImageData(0,0,w,h).data;
-  const top=(x0,x1)=>{for(let y=0;y<h;y++)for(let x=Math.max(0,Math.round(x0));x<Math.min(w,x1);x+=2)if(ad[(y*w+x)*4]>128)return y;return -1};
-  try{
-    if(!FL){
-      st("Loading face detector...");
-      const M=await import(TV+"vision_bundle.mjs"),fs=await M.FilesetResolver.forVisionTasks(TV+"wasm");
-      FL=await M.FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:FLM},runningMode:"IMAGE",numFaces:1});
-    }
-    const r=FL.detect(S.src).faceLandmarks[0];if(!r)throw new Error("no face");
-    const P=i=>({x:r[i].x*w,y:r[i].y*h}),e1=P(33),e2=P(263),ch=P(152),fo=P(10),a=P(234),b=P(454);
-    const fl=Math.hypot(ch.x-fo.x,ch.y-fo.y),fw=Math.abs(b.x-a.x),mid=(a.x+b.x)/2;
-    let cr=fo.y-.25*fl;const t=top(mid-fw*.3,mid+fw*.3);
-    if(t>=0&&t>fo.y-.7*fl&&t<fo.y)cr=t;
-    S.f={cx:mid,crown:cr,chin:ch.y,ang:Math.atan2(e2.y-e1.y,e2.x-e1.x)};
-    return true;
-  }catch(e){
-    console.warn(e);
-    const y0=Math.max(0,top(0,w));let sx=0,n=0;
-    for(let y=y0;y<Math.min(h,y0+h*.12);y+=2)for(let x=0;x<w;x+=2)if(ad[(y*w+x)*4]>128){sx+=x;n++}
-    S.f={cx:n?sx/n:w/2,crown:y0,chin:y0+h*.3,ang:0};
-    return false;
-  }
-}
-
-/* OpenCV.js: edge trim + soften on the matte, CLAHE light fix */
-function refine(){
-  const w=S.w,h=S.h,n=w*h,ad=cx2(S.alpha).getImageData(0,0,w,h).data,g=new Uint8Array(n);
-  for(let i=0;i<n;i++)g[i]=ad[i*4];
-  if(cvOk&&(V.edge||V.soft)){
-    try{
-      const m=cv.matFromArray(h,w,cv.CV_8UC1,g);
-      if(V.edge>0){
-        const k=cv.getStructuringElement(cv.MORPH_ELLIPSE,new cv.Size(V.edge*2+1,V.edge*2+1));
-        cv.erode(m,m,k,new cv.Point(-1,-1),1,cv.BORDER_CONSTANT,cv.morphologyDefaultBorderValue());k.delete();
-      }
-      if(V.soft>0)cv.GaussianBlur(m,m,new cv.Size(V.soft*2+1,V.soft*2+1),0);
-      g.set(m.data);m.delete();
-    }catch(e){console.warn(e)}
-  }
-  const x=cx2(S.mask||(S.mask=mk(w,h))),d=x.createImageData(w,h);
-  for(let i=0;i<n;i++)d.data[i*4+3]=g[i];
-  x.putImageData(d,0,0);
-}
-function enhance(){
-  const m=cv.imread(S.src),ch=new cv.MatVector(),cl=new cv.CLAHE(1.6,new cv.Size(8,8)),o=mk(S.w,S.h);
-  cv.cvtColor(m,m,cv.COLOR_RGBA2RGB);cv.cvtColor(m,m,cv.COLOR_RGB2Lab);
-  cv.split(m,ch);const l=ch.get(0),l2=new cv.Mat();cl.apply(l,l2);ch.set(0,l2);cv.merge(ch,m);
-  cv.cvtColor(m,m,cv.COLOR_Lab2RGB);cv.cvtColor(m,m,cv.COLOR_RGB2RGBA);cv.imshow(o,m);
-  m.delete();ch.delete();cl.delete();l.delete();l2.delete();
-  return o;
-}
-function buildAll(){
-  if(!S.alpha)return;
-  try{S.enh=$("au").checked&&cvOk?enhance():null}catch(e){S.enh=null;console.warn(e)}
-  refine();buildCut();render();
-}
-/* person cut-out with brightness / contrast (background colour is applied later, untouched) */
-function buildCut(){
-  const w=S.w,h=S.h,c=S.cut||(S.cut=mk(w,h)),x=cx2(c);
-  x.globalCompositeOperation="source-over";x.clearRect(0,0,w,h);x.drawImage(S.enh||S.src,0,0);
-  if(V.bri||V.con!=100){
-    const d=x.getImageData(0,0,w,h),a=d.data,k=V.con/100;
-    for(let i=0;i<a.length;i+=4)for(let j=0;j<3;j++)a[i+j]=(a[i+j]-128)*k+128+V.bri;
-    x.putImageData(d,0,0);
-  }
-  x.globalCompositeOperation="destination-in";x.drawImage(S.mask,0,0);x.globalCompositeOperation="source-over";
-}
-
-/* ---------- render ---------- */
-function spec(){
-  const i=+$("pre").value,p=PRE[i],cu=i==PRE.length-1;
-  const mw=cu?clamp(+$("cw").value||35,10,200):p[1],mh=cu?clamp(+$("ch").value||45,10,200):p[2];
-  return{mw,mh,W:Math.round(mw/25.4*S.dpi),H:Math.round(mh/25.4*S.dpi),hf:p[3],tm:p[4]};
-}
-function render(){
-  if(!S.cut)return;
-  const p=spec(),W=p.W,H=p.H,c=$("cv"),f=S.f;
-  c.width=W;c.height=H;$("stg").style.setProperty("--ar",W/H);
-  const x=cx2(c);x.fillStyle=S.bg;x.fillRect(0,0,W,H);
-  const sc=(p.hf*H)/Math.max(1,f.chin-f.crown)*V.zoom/100;
-  x.save();
-  x.translate(W/2+V.ox/100*W,p.tm*H+V.oy/100*H);
-  x.rotate(-f.ang+V.rot*Math.PI/180);x.scale(sc,sc);x.translate(-f.cx,-f.crown);
-  x.imageSmoothingQuality="high";x.drawImage(S.cut,0,0);x.restore();
-  const y1=p.tm*100,y2=(p.tm+p.hf)*100;
-  $("gd").innerHTML=`<g fill="none" stroke="#ff3b6b" stroke-width="1.5" stroke-dasharray="6 5"><ellipse cx="50" cy="${(y1+y2)/2}" rx="${p.hf*H/W*36}" ry="${(y2-y1)/2}"/><line x1="50" x2="50" y1="0" y2="100"/><line x1="0" x2="100" y1="${y1}" y2="${y1}"/><line x1="0" x2="100" y1="${y2}" y2="${y2}"/></g>`;
-  $("gd").style.display=$("gu").checked?"":"none";
-  $("info").textContent=`${+p.mw.toFixed(1)} x ${+p.mh.toFixed(1)} mm  |  ${W} x ${H} px at ${S.dpi} dpi`;
-}
-
-/* ---------- export ---------- */
-const blobOf=(c,t,q)=>new Promise(r=>c.toBlob(r,t,q));
-function dl(b,name){const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
-$("bSave").onclick=async()=>{
-  const c=$("cv"),p=spec(),png=$("fmt").value=="png",kb=+$("kb").value;let b;
-  if(png)b=await blobOf(c,"image/png");
-  else{
-    b=await blobOf(c,"image/jpeg",.95);
-    if(kb>0&&b.size>kb*1024){
-      let lo=.1,hi=.95,best=null;
-      for(let i=0;i<8;i++){const m=(lo+hi)/2,t=await blobOf(c,"image/jpeg",m);if(t.size<=kb*1024){best=t;lo=m}else hi=m}
-      b=best||await blobOf(c,"image/jpeg",.1);
-    }
-  }
-  dl(b,`idshot-${+p.mw.toFixed(0)}x${+p.mh.toFixed(0)}mm.${png?"png":"jpg"}`);
-  st(`Saved ${Math.round(b.size/1024)} KB.`);
-};
-$("bSheet").onclick=async()=>{
-  const c=$("cv"),W=c.width,H=c.height,g=30,m=50,s=SH[+$("sh").value];
-  const fit=(sw,sh)=>({sw,sh,n:Math.floor((sw-2*m+g)/(W+g)),r:Math.floor((sh-2*m+g)/(H+g))});
-  let a=fit(s[1],s[2]);const b=fit(s[2],s[1]);if(b.n*b.r>a.n*a.r)a=b;
-  if(a.n*a.r<1){st("This photo is too large for that paper size.");return}
-  const o=mk(a.sw,a.sh),x=cx2(o);x.fillStyle="#fff";x.fillRect(0,0,a.sw,a.sh);
-  const ox=(a.sw-(a.n*W+(a.n-1)*g))/2,oy=(a.sh-(a.r*H+(a.r-1)*g))/2;
-  x.strokeStyle="#999";x.lineWidth=1;
-  for(let j=0;j<a.r;j++)for(let i=0;i<a.n;i++){const px=ox+i*(W+g),py=oy+j*(H+g);x.drawImage(c,px,py);x.strokeRect(px+.5,py+.5,W-1,H-1)}
-  dl(await blobOf(o,"image/jpeg",.95),`idshot-sheet-${s[0].replace(/ /g,"")}.jpg`);
-  st(`Sheet saved with ${a.n*a.r} photos.`);
-};
+$('#list').onclick=e=>{const r=e.target.closest('.ap');if(!r)return;const ap=db.aps[r.dataset.id];map.flyTo(est(ap),18);$('#map').scrollIntoView({behavior:'smooth',block:'center'})};
+$('#list').onkeydown=e=>{if(e.key==='Enter')e.target.click()};
+['q','band','sort'].forEach(i=>$('#'+i).addEventListener('input',()=>render()));
+new MutationObserver(()=>render()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+if(db.user)setMe(...db.user);
+render(true);
 </script>
 </body>
 </html>
