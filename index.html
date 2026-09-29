@@ -95,7 +95,7 @@ input[type=range]{width:100%; height:32px; background:transparent; accent-color:
 
 /* ---------- Tabs ---------- */
 .tabs{display:flex; width:100%; background:var(--panel); border:var(--bw) solid var(--border); border-radius:999px; padding:4px; gap:4px}
-.tabs button{flex:1; min-height:44px; border:0; border-radius:999px; background:transparent; font-weight:600}
+.tabs button{flex:1; font-size:.9rem; padding:0 4px; min-height:44px; border:0; border-radius:999px; background:transparent; font-weight:600}
 .tabs button[aria-selected="true"]{background:var(--accent); color:var(--accent-ink)}
 .panel{width:100%; display:flex; flex-direction:column; align-items:center; gap:14px}
 
@@ -130,6 +130,13 @@ input::placeholder{color:var(--muted)}
 .btn.ghost{background:var(--panel); color:var(--text); border-color:var(--border)}
 .btn:disabled{opacity:.5; cursor:progress}
 .empty{color:var(--muted); padding:22px 0}
+
+/* ---------- Slideshow ---------- */
+select{min-height:48px; padding:0 14px; border-radius:999px; background:var(--panel); border:var(--bw) solid var(--border); text-align:center; flex:1}
+.chk{display:flex; align-items:center; justify-content:center; gap:8px; flex:1; min-height:48px}
+.chk input{width:22px; height:22px; accent-color:var(--accent)}
+.remote.photo .seek,.remote.photo #back,.remote.photo #fwd,.remote.photo #play{display:none}
+.msg{color:var(--muted); font-size:.9rem; min-height:1.4em}
 
 /* ---------- Toast ---------- */
 .toast{
@@ -189,9 +196,10 @@ footer{width:100%; padding:18px 14px 20px; color:var(--muted); font-size:.85rem;
 
     <!-- Tabs -->
     <div class="tabs" role="tablist" aria-label="Video source">
-      <button type="button" role="tab" id="tab-lib" aria-selected="true" aria-controls="p-lib">Sample films</button>
-      <button type="button" role="tab" id="tab-arc" aria-selected="false" aria-controls="p-arc">Internet Archive</button>
-      <button type="button" role="tab" id="tab-url" aria-selected="false" aria-controls="p-url">Your link</button>
+      <button type="button" role="tab" id="tab-lib" aria-selected="true" aria-controls="p-lib">Films</button>
+      <button type="button" role="tab" id="tab-arc" aria-selected="false" aria-controls="p-arc">Archive</button>
+      <button type="button" role="tab" id="tab-show" aria-selected="false" aria-controls="p-show">Slideshow</button>
+      <button type="button" role="tab" id="tab-url" aria-selected="false" aria-controls="p-url">Link</button>
     </div>
 
     <section class="panel" id="p-lib" role="tabpanel" aria-labelledby="tab-lib">
@@ -208,6 +216,30 @@ footer{width:100%; padding:18px 14px 20px; color:var(--muted); font-size:.85rem;
       <div class="grid" id="arcGrid"></div>
       <p class="empty" id="arcMsg"></p>
       <button class="btn ghost" type="button" id="arcMore" hidden>Show more</button>
+    </section>
+
+    <section class="panel" id="p-show" role="tabpanel" aria-labelledby="tab-show" hidden>
+      <form class="form" id="showForm">
+        <div class="row">
+          <input type="search" id="showQ" value="mountain landscape" placeholder="Photo theme, e.g. city at night" aria-label="Photo theme" autocomplete="off">
+          <button class="btn" type="submit">Find photos</button>
+        </div>
+        <div class="row">
+          <select id="showSec" aria-label="Seconds per photo">
+            <option value="5">5 seconds</option><option value="10" selected>10 seconds</option>
+            <option value="30">30 seconds</option><option value="60">1 minute</option><option value="300">5 minutes</option>
+          </select>
+          <label class="chk"><input type="checkbox" id="showShuffle" checked> Shuffle</label>
+        </div>
+      </form>
+      <div class="pad" id="showCtl" hidden>
+        <button type="button" id="shPrev" aria-label="Previous photo">Prev</button>
+        <button type="button" id="shPause">Pause</button>
+        <button type="button" id="shNext" aria-label="Next photo">Next</button>
+        <button type="button" id="shEnd" class="stop">End</button>
+      </div>
+      <p class="msg" id="showMsg" aria-live="polite"></p>
+      <div class="grid" id="showGrid"></div>
     </section>
 
     <section class="panel" id="p-url" role="tabpanel" aria-labelledby="tab-url" hidden>
@@ -403,6 +435,7 @@ function initCast() {
   cjs.on("available", ready);
   if (cjs.available()) ready();
 
+  try { cjs.on("disconnect", showEnd); } catch (e) {}
   ["connect", "disconnect", "statechange", "playing", "pause", "buffering", "mute", "unmute", "volumechange", "session"]
     .forEach(ev => { try { cjs.on(ev, render); } catch (e) {} });
   try { cjs.on("timeupdate", renderTime); } catch (e) {}
@@ -474,6 +507,87 @@ async function arcLoad(reset) {
 $("#arcForm").addEventListener("submit", e => { e.preventDefault(); arc.q = $("#arcQ").value.trim().replace(/[()"]/g, " "); arcLoad(true); });
 $("#arcMore").addEventListener("click", () => { arc.page++; arcLoad(false); });
 
+/* ---------- Photo slideshow (Wikimedia Commons API, no key; SDK loadMedia for images) ---------- */
+const show = { items:[], queue:[], i:0, timer:null, run:false, paused:false, lock:null };
+async function commonsSearch(term) {
+  const p = new URLSearchParams({ action:"query", format:"json", origin:"*", generator:"search", gsrnamespace:"6",
+    gsrlimit:"40", gsrsearch:`${term} filetype:bitmap`, prop:"imageinfo", iiprop:"url|mime|size", iiurlwidth:"1920" });
+  const r = await fetch(`https://commons.wikimedia.org/w/api.php?${p}`);
+  if (!r.ok) throw new Error("Search failed");
+  const pages = Object.values(((await r.json()).query || {}).pages || {}).sort((a, b) => a.index - b.index);
+  return pages.map(pg => {
+    const ii = (pg.imageinfo || [])[0];
+    if (!ii || !/^image\/(jpeg|png)$/.test(ii.mime) || !ii.thumburl || ii.width < 1000) return null;
+    return { title: clean(pg.title.replace(/^File:/, "").replace(/\.\w+$/, "").replace(/_/g, " ")),
+      meta: "Wikimedia Commons", url: ii.thumburl, type: ii.mime, poster: ii.thumburl.replace("/1920px-", "/500px-") };
+  }).filter(Boolean);
+}
+function castPhoto(it) {
+  if (!cjs || !castReady) return toast("Cast is not available in this browser. Use Chrome or Edge over HTTPS.");
+  current = it;
+  if (cjs.connected() && window.cast && cast.framework) {
+    const sess = cast.framework.CastContext.getInstance().getCurrentSession();
+    if (sess) {
+      const mi = new chrome.cast.media.MediaInfo(it.url, it.type);
+      mi.metadata = new chrome.cast.media.PhotoMediaMetadata();
+      mi.metadata.title = it.title;
+      Promise.resolve(sess.loadMedia(new chrome.cast.media.LoadRequest(mi)))
+        .then(r => { if (r) toast("The TV could not show this photo"); }, () => toast("The TV could not show this photo"));
+      return render();
+    }
+  }
+  cjs.cast(it.url, { title: it.title, description: it.meta, poster: it.poster });
+}
+function showArm() {
+  clearTimeout(show.timer);
+  if (!show.run || show.paused) return;
+  show.timer = setTimeout(() => (cjs && cjs.connected()) ? showGo(1) : showArm(), +$("#showSec").value * 1000);
+}
+function showGo(step) {
+  if (!show.run) return;
+  show.i = (show.i + step + show.queue.length) % show.queue.length;
+  const it = show.queue[show.i];
+  $("#showMsg").textContent = `Photo ${show.i + 1} of ${show.queue.length}: ${it.title}`;
+  castPhoto(it); showArm();
+}
+async function wake(on) {
+  try {
+    if (on && "wakeLock" in navigator) show.lock = await navigator.wakeLock.request("screen");
+    else if (show.lock) { await show.lock.release(); show.lock = null; }
+  } catch (e) {}
+}
+function showStart(idx) {
+  const rest = show.items.slice(), first = rest.splice(idx, 1)[0];
+  if ($("#showShuffle").checked) for (let i = rest.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [rest[i], rest[j]] = [rest[j], rest[i]]; }
+  show.queue = [first, ...rest]; show.i = 0; show.run = true; show.paused = false;
+  $("#shPause").textContent = "Pause"; $("#showCtl").hidden = false; $("#remote").classList.add("photo");
+  wake(true); showGo(0);
+}
+function showEnd() {
+  if (!show.run) return;
+  show.run = false; clearTimeout(show.timer); wake(false);
+  $("#showCtl").hidden = true; $("#remote").classList.remove("photo"); $("#showMsg").textContent = "Slideshow ended";
+}
+async function showLoad() {
+  const msg = $("#showMsg"), grid = $("#showGrid");
+  const term = $("#showQ").value.trim().replace(/["()]/g, " ") || "landscape";
+  grid.textContent = ""; msg.textContent = "Searching";
+  try {
+    show.items = await commonsSearch(term);
+    show.items.forEach((it, i) => grid.append(tile(it, () => showStart(i))));
+    msg.textContent = show.items.length ? "Tap a photo to start the slideshow on your TV." : "No large photos found. Try another theme.";
+  } catch (e) { msg.textContent = "Could not reach Wikimedia Commons. Check your connection and try again."; }
+}
+$("#showForm").addEventListener("submit", e => { e.preventDefault(); showLoad(); });
+$("#shPrev").addEventListener("click", () => showGo(-1));
+$("#shNext").addEventListener("click", () => showGo(1));
+$("#shPause").addEventListener("click", () => {
+  show.paused = !show.paused; $("#shPause").textContent = show.paused ? "Resume" : "Pause"; showArm();
+});
+$("#shEnd").addEventListener("click", showEnd);
+$("#showSec").addEventListener("change", showArm);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && show.run) wake(true); });
+
 /* ---------- Custom link tab ---------- */
 $("#urlForm").addEventListener("submit", e => {
   e.preventDefault();
@@ -492,6 +606,7 @@ function openTab(tab) {
     t.tabIndex = on ? 0 : -1;
     $("#" + t.getAttribute("aria-controls")).hidden = !on;
   });
+  if (tab.id === "tab-show" && !$("#showGrid").children.length) showLoad();
   if (tab.id === "tab-arc" && !$("#arcGrid").children.length && !arc.busy) arcLoad(true);
 }
 tabs.forEach((t, i) => {
