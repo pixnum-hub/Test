@@ -1,624 +1,678 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1e1e1e">
-<meta name="color-scheme" content="dark light">
-<title>CastDeck - Cast videos to your TV</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>WiFi Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* ---------- Theme tokens ---------- */
-:root{
-  --bg:#1e1e1e; --panel:#252526; --panel2:#2d2d30; --text:#d4d4d4; --muted:#a0a0a0;
-  --accent:#569cd6; --accent-ink:#0f1720; --border:#3c3c3c; --ok:#4ec9b0; --err:#f48771;
-  --focus:#007fd4; --bw:1px; --r:14px;
-  --font:ui-rounded,"SF Pro Rounded","Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
-}
-[data-theme="light"]{
-  --bg:#ffffff; --panel:#f3f3f3; --panel2:#e8e8e8; --text:#1f1f1f; --muted:#5f5f5f;
-  --accent:#005fb8; --accent-ink:#ffffff; --border:#cfcfcf; --ok:#107c41; --err:#c62828; --focus:#005fb8;
-}
-[data-theme="oled"]{
-  --bg:#000000; --panel:#0b0b0b; --panel2:#151515; --text:#e8e8e8; --muted:#8c8c8c;
-  --accent:#4fc1ff; --accent-ink:#000000; --border:#232323; --ok:#4ec9b0; --err:#ff8a75; --focus:#4fc1ff;
-}
-[data-theme="hc"]{
-  --bg:#000000; --panel:#000000; --panel2:#000000; --text:#ffffff; --muted:#ffffff;
-  --accent:#ffff00; --accent-ink:#000000; --border:#6fc3df; --ok:#00ff66; --err:#ff7b7b; --focus:#f38518; --bw:2px;
-}
+/* ============ Leaflet core (inlined, no external stylesheet) ============ */
+.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane>svg,.leaflet-pane>canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}
+.leaflet-container{overflow:hidden}
+.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow{-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-user-drag:none}
+.leaflet-tile::selection{background:transparent}
+.leaflet-safari .leaflet-tile{image-rendering:-webkit-optimize-contrast}
+.leaflet-safari .leaflet-tile-container{width:1600px;height:1600px;-webkit-transform-origin:0 0}
+.leaflet-marker-icon,.leaflet-marker-shadow{display:block}
+.leaflet-container .leaflet-overlay-pane svg{max-width:none!important;max-height:none!important}
+.leaflet-container .leaflet-marker-pane img,.leaflet-container .leaflet-shadow-pane img,.leaflet-container .leaflet-tile-pane img,.leaflet-container img.leaflet-image-layer,.leaflet-container .leaflet-tile{max-width:none!important;max-height:none!important;width:auto;padding:0}
+.leaflet-container img.leaflet-tile{mix-blend-mode:plus-lighter}
+.leaflet-container.leaflet-touch-zoom{-ms-touch-action:pan-x pan-y;touch-action:pan-x pan-y}
+.leaflet-container.leaflet-touch-drag{-ms-touch-action:pinch-zoom;touch-action:none;touch-action:pinch-zoom}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom{-ms-touch-action:none;touch-action:none}
+.leaflet-container{-webkit-tap-highlight-color:transparent}
+.leaflet-container a{-webkit-tap-highlight-color:rgba(51,181,229,.4)}
+.leaflet-tile{filter:inherit;visibility:hidden}
+.leaflet-tile-loaded{visibility:inherit}
+.leaflet-zoom-box{width:0;height:0;box-sizing:border-box;z-index:800}
+.leaflet-overlay-pane svg{-moz-user-select:none}
+.leaflet-pane{z-index:400}
+.leaflet-tile-pane{z-index:200}
+.leaflet-overlay-pane{z-index:400}
+.leaflet-shadow-pane{z-index:500}
+.leaflet-marker-pane{z-index:600}
+.leaflet-tooltip-pane{z-index:650}
+.leaflet-popup-pane{z-index:700}
+.leaflet-map-pane canvas{z-index:100}
+.leaflet-map-pane svg{z-index:200}
+.leaflet-control{position:relative;z-index:800;pointer-events:auto}
+.leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}
+.leaflet-top{top:0}.leaflet-right{right:0}.leaflet-bottom{bottom:0}.leaflet-left{left:0}
+.leaflet-control{float:left;clear:both}
+.leaflet-right .leaflet-control{float:right}
+.leaflet-top .leaflet-control{margin-top:10px}
+.leaflet-bottom .leaflet-control{margin-bottom:10px}
+.leaflet-left .leaflet-control{margin-left:10px}
+.leaflet-right .leaflet-control{margin-right:10px}
+.leaflet-fade-anim .leaflet-popup{opacity:0;transition:opacity .2s linear}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup{opacity:1}
+.leaflet-zoom-animated{transform-origin:0 0}
+svg.leaflet-zoom-animated{will-change:transform}
+.leaflet-zoom-anim .leaflet-zoom-animated{transition:transform .25s cubic-bezier(0,0,.25,1)}
+.leaflet-zoom-anim .leaflet-tile,.leaflet-pan-anim .leaflet-tile{transition:none}
+.leaflet-zoom-anim .leaflet-zoom-hide{visibility:hidden}
+.leaflet-interactive{cursor:pointer}
+.leaflet-grab{cursor:grab}
+.leaflet-crosshair,.leaflet-crosshair .leaflet-interactive{cursor:crosshair}
+.leaflet-popup-pane,.leaflet-control{cursor:auto}
+.leaflet-dragging .leaflet-grab,.leaflet-dragging .leaflet-grab .leaflet-interactive,.leaflet-dragging .leaflet-marker-draggable{cursor:grabbing}
+.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-image-layer,.leaflet-pane>svg path,.leaflet-tile-container{pointer-events:none}
+.leaflet-marker-icon.leaflet-interactive,.leaflet-image-layer.leaflet-interactive,.leaflet-pane>svg path.leaflet-interactive{pointer-events:auto}
+.leaflet-container{background:#ddd;outline-offset:1px}
+.leaflet-container a{color:#0078A8}
+.leaflet-zoom-box{border:2px dotted #38f;background:rgba(255,255,255,.5)}
+.leaflet-container{font-family:inherit;font-size:12px;line-height:1.5}
+.leaflet-bar{box-shadow:0 1px 5px rgba(0,0,0,.4);border-radius:8px;overflow:hidden}
+.leaflet-bar a{background:var(--surface);border-bottom:1px solid var(--border);width:32px;height:32px;line-height:32px;display:block;text-align:center;text-decoration:none;color:var(--text);font:bold 16px monospace}
+.leaflet-bar a:hover{background:var(--surface2)}
+.leaflet-bar a.leaflet-disabled{cursor:default;color:var(--muted)}
+.leaflet-popup{position:absolute;text-align:center;margin-bottom:20px}
+.leaflet-popup-content-wrapper{padding:1px;text-align:left;border-radius:10px}
+.leaflet-popup-content{margin:12px 16px;line-height:1.4;font-size:13px;min-height:1px}
+.leaflet-popup-tip-container{width:40px;height:20px;position:absolute;left:50%;margin-top:-1px;margin-left:-20px;overflow:hidden;pointer-events:none}
+.leaflet-popup-tip{width:17px;height:17px;padding:1px;margin:-10px auto 0;transform:rotate(45deg)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--text);box-shadow:0 3px 14px rgba(0,0,0,.4);border:1px solid var(--border)}
+.leaflet-container a.leaflet-popup-close-button{position:absolute;top:2px;right:2px;border:none;text-align:center;width:22px;height:22px;font:16px/22px sans-serif;color:var(--muted);text-decoration:none;background:transparent}
+.leaflet-container a.leaflet-popup-close-button:hover{color:var(--text)}
+.leaflet-div-icon{background:transparent;border:none}
 
-/* ---------- Base layout: centred column, sticky footer ---------- */
-*{box-sizing:border-box;margin:0}
-html{-webkit-text-size-adjust:100%}
+/* ============ Theme tokens ============ */
+:root, :root[data-theme="dark"]{
+  --bg:#0B0F14; --surface:#131920; --surface2:#1B232C; --text:#E4E9F0; --muted:#8B97A5;
+  --accent:#E8A33D; --accent-text:#1A1206; --border:#232C36;
+  --sig-lo:#E5484D; --sig-mid:#E8A33D; --sig-hi:#3DD68C; --shadow:0 8px 24px rgba(0,0,0,.45);
+}
+:root[data-theme="light"]{
+  --bg:#EEF1F5; --surface:#FFFFFF; --surface2:#F4F6F9; --text:#1A2027; --muted:#5B6570;
+  --accent:#C97A1A; --accent-text:#FFFFFF; --border:#D7DCE2;
+  --sig-lo:#D6304A; --sig-mid:#C97A1A; --sig-hi:#1E9E62; --shadow:0 6px 18px rgba(30,40,55,.14);
+}
+:root[data-theme="oled"]{
+  --bg:#000000; --surface:#050505; --surface2:#0D0D0D; --text:#EDEDED; --muted:#8A8A8A;
+  --accent:#E8A33D; --accent-text:#1A1206; --border:#1A1A1A;
+  --sig-lo:#E5484D; --sig-mid:#E8A33D; --sig-hi:#3DD68C; --shadow:none;
+}
+:root[data-theme="hc"]{
+  --bg:#000000; --surface:#000000; --surface2:#000000; --text:#FFFFFF; --muted:#FFFFFF;
+  --accent:#FFD400; --accent-text:#000000; --border:#FFFFFF;
+  --sig-lo:#FF5C5C; --sig-mid:#FFD400; --sig-hi:#5CFF9E; --shadow:none;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="oled"]):not([data-theme="hc"]){ } }
+
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
 body{
-  min-height:100dvh; display:flex; flex-direction:column; align-items:center;
-  background:var(--bg); color:var(--text); font:16px/1.5 var(--font); text-align:center;
-  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  transition:background .2s,color .2s;
+  background:var(--bg); color:var(--text);
+  font-family:'Space Grotesk',system-ui,sans-serif;
+  padding-top:env(safe-area-inset-top,0); padding-bottom:env(safe-area-inset-bottom,0);
+  overscroll-behavior:none;
 }
-.app{width:100%; max-width:760px; flex:1; display:flex; flex-direction:column; align-items:center; gap:18px; padding:20px 14px 12px}
-main{width:100%; flex:1; display:flex; flex-direction:column; align-items:center; gap:18px}
-[hidden]{display:none!important}
-button,input{font:inherit; color:inherit}
-button{cursor:pointer; -webkit-tap-highlight-color:transparent}
-:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
-h1{font-size:clamp(1.9rem,7vw,2.6rem); font-weight:800; letter-spacing:-.03em; line-height:1.1}
-h1 span{color:var(--accent)}
-.sub{color:var(--muted); max-width:34ch; margin:6px auto 0}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+button{font-family:inherit}
+::selection{background:var(--accent);color:var(--accent-text)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 
-/* ---------- Theme switch ---------- */
-.themes{display:inline-flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:14px}
-.themes button{
-  min-height:40px; padding:6px 14px; border-radius:999px; background:var(--panel);
-  border:var(--bw) solid var(--border); font-size:.86rem; font-weight:600;
+/* ============ Shell layout ============ */
+#app{height:100%; display:flex; flex-direction:column}
+header{
+  display:flex; align-items:center; gap:.6rem; justify-content:space-between;
+  padding:.7rem .9rem; padding-top:calc(.7rem + env(safe-area-inset-top,0));
+  background:var(--surface); border-bottom:1px solid var(--border); position:relative; z-index:20;
 }
-.themes button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
-
-/* ---------- Status ---------- */
-.status{
-  display:inline-flex; align-items:center; gap:10px; padding:8px 16px; border-radius:999px;
-  background:var(--panel); border:var(--bw) solid var(--border); font-size:.92rem; max-width:100%;
+.brand{display:flex; align-items:center; gap:.55rem; min-width:0}
+.brand svg{flex:none}
+.brand-text{display:flex; flex-direction:column; line-height:1.1; min-width:0}
+.brand-text strong{font-size:1rem; font-weight:700; letter-spacing:.01em; white-space:nowrap}
+.brand-text span{font-size:.68rem; color:var(--muted)}
+.hdr-actions{display:flex; gap:.4rem}
+.icon-btn{
+  width:38px; height:38px; border-radius:10px; border:1px solid var(--border);
+  background:var(--surface2); color:var(--text); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:background .15s;
 }
-.dot{width:10px; height:10px; border-radius:50%; background:var(--muted); flex:none}
-.status[data-s="ready"] .dot,.status[data-s="on"] .dot{background:var(--ok)}
-.status[data-s="err"] .dot{background:var(--err)}
-.status[data-s="wait"] .dot{background:var(--accent); animation:pulse 1.2s ease-in-out infinite}
-@keyframes pulse{50%{opacity:.25}}
-.hint{color:var(--muted); font-size:.85rem; max-width:52ch}
+.icon-btn:hover{background:var(--border)}
+.icon-btn svg{width:18px; height:18px}
 
-/* ---------- Remote (the memorable element) ---------- */
-.remote{
-  position:sticky; bottom:10px; z-index:5; width:100%; padding:18px 16px 16px;
-  background:var(--panel); border:var(--bw) solid var(--border); border-radius:26px;
-  display:flex; flex-direction:column; align-items:center; gap:12px;
-  box-shadow:0 10px 30px rgba(0,0,0,.35);
+main{flex:1; position:relative; min-height:0}
+#map{position:absolute; inset:0; background:var(--surface2)}
+
+.fab-col{position:absolute; right:.8rem; bottom:.8rem; display:flex; flex-direction:column; gap:.55rem; z-index:15}
+.fab{
+  width:48px; height:48px; border-radius:50%; border:1px solid var(--border);
+  background:var(--surface); color:var(--text); box-shadow:var(--shadow);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
 }
-[data-theme="light"] .remote{box-shadow:0 10px 30px rgba(0,0,0,.15)}
-[data-theme="hc"] .remote,[data-theme="oled"] .remote{box-shadow:none}
-.now{display:flex; align-items:center; gap:12px; width:100%; text-align:left}
-.now img{width:64px; height:64px; border-radius:12px; object-fit:cover; background:var(--panel2); flex:none}
-.now div{min-width:0}
-.now strong{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.now small{color:var(--muted)}
-.seek{width:100%; display:flex; flex-direction:column; gap:4px}
-.times{display:flex; justify-content:space-between; font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums}
-input[type=range]{width:100%; height:32px; background:transparent; accent-color:var(--accent); cursor:pointer}
-.pad{display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap}
-.pad button{
-  min-width:56px; min-height:48px; border-radius:999px; background:var(--panel2);
-  border:var(--bw) solid var(--border); font-weight:700; padding:0 14px;
+.fab.primary{background:var(--accent); color:var(--accent-text); border-color:var(--accent)}
+.fab svg{width:20px; height:20px}
+.fab.active{outline:2px solid var(--accent); outline-offset:2px}
+
+.place-banner{
+  position:absolute; top:.7rem; left:50%; transform:translateX(-50%);
+  background:var(--accent); color:var(--accent-text); padding:.45rem .9rem; border-radius:999px;
+  font-size:.8rem; font-weight:600; box-shadow:var(--shadow); z-index:16; display:none;
+  white-space:nowrap;
 }
-.pad button.play{width:72px; height:72px; font-size:1.6rem; background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
-.pad button.stop{color:var(--err); border-color:var(--err)}
-.vol{display:flex; align-items:center; gap:8px; width:100%; max-width:340px}
-.vol button{min-width:48px; min-height:44px; border-radius:999px; background:var(--panel2); border:var(--bw) solid var(--border); font-size:.85rem; font-weight:600}
+.place-banner.show{display:block}
 
-/* ---------- Tabs ---------- */
-.tabs{display:flex; width:100%; background:var(--panel); border:var(--bw) solid var(--border); border-radius:999px; padding:4px; gap:4px}
-.tabs button{flex:1; font-size:.9rem; padding:0 4px; min-height:44px; border:0; border-radius:999px; background:transparent; font-weight:600}
-.tabs button[aria-selected="true"]{background:var(--accent); color:var(--accent-ink)}
-.panel{width:100%; display:flex; flex-direction:column; align-items:center; gap:14px}
-
-/* ---------- Media grid ---------- */
-.grid{width:100%; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px}
-.tile{background:transparent; border:0; padding:0; display:flex; flex-direction:column; gap:8px; text-align:center; border-radius:var(--r)}
-.tile .art{
-  position:relative; aspect-ratio:16/10; width:100%; overflow:hidden; border-radius:var(--r);
-  background:var(--panel2); border:var(--bw) solid var(--border);
+/* ============ Drawer (mobile bottom sheet / desktop sidebar) ============ */
+#drawer{
+  background:var(--surface); border-top:1px solid var(--border);
+  z-index:25; display:flex; flex-direction:column;
+  max-height:68vh; transition:max-height .22s ease;
 }
-.tile img{width:100%; height:100%; object-fit:cover; display:block}
-.tile .go{
-  position:absolute; inset:auto 8px 8px auto; width:38px; height:38px; border-radius:50%;
-  display:grid; place-items:center; background:var(--accent); color:var(--accent-ink); font-size:.9rem;
-  transform:scale(.9); transition:transform .15s;
+#drawer.collapsed{max-height:52px}
+.drawer-handle{
+  display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+  padding:.7rem .9rem; cursor:pointer; user-select:none; flex:none;
 }
-.tile:hover .go,.tile:focus-visible .go{transform:scale(1.08)}
-.tile b{font-size:.92rem; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
-.tile small{color:var(--muted); font-size:.78rem}
-.tile[aria-busy="true"]{opacity:.55; pointer-events:none}
+.drawer-grip{width:36px; height:4px; border-radius:2px; background:var(--border); position:absolute; left:50%; top:6px; transform:translateX(-50%)}
+.drawer-title{font-weight:600; font-size:.9rem; display:flex; align-items:center; gap:.5rem}
+.count-pill{background:var(--surface2); border:1px solid var(--border); border-radius:999px; padding:.1rem .55rem; font-size:.72rem; color:var(--muted)}
+.chevron{transition:transform .2s}
+#drawer.collapsed .chevron{transform:rotate(180deg)}
+.drawer-body{overflow-y:auto; padding:0 .9rem .9rem; flex:1; min-height:0}
 
-/* ---------- Forms ---------- */
-.form{width:100%; display:flex; flex-direction:column; gap:10px}
-.row{display:flex; gap:8px; width:100%}
-.row input{flex:1; min-width:0}
-input[type=text],input[type=url],input[type=search]{
-  min-height:48px; padding:0 16px; border-radius:999px; background:var(--panel);
-  border:var(--bw) solid var(--border); text-align:center; width:100%;
+.searchbar{display:flex; gap:.5rem; margin-bottom:.7rem}
+.searchbar input{flex:1}
+input,select,textarea{
+  background:var(--surface2); border:1px solid var(--border); color:var(--text);
+  border-radius:8px; padding:.55rem .65rem; font-size:.85rem; font-family:inherit; width:100%;
 }
-input::placeholder{color:var(--muted)}
-.btn{min-height:48px; padding:0 22px; border-radius:999px; font-weight:700; background:var(--accent); color:var(--accent-ink); border:var(--bw) solid var(--accent)}
-.btn.ghost{background:var(--panel); color:var(--text); border-color:var(--border)}
-.btn:disabled{opacity:.5; cursor:progress}
-.empty{color:var(--muted); padding:22px 0}
+[data-theme="hc"] input,[data-theme="hc"] select,[data-theme="hc"] textarea{border-width:2px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 
-/* ---------- Slideshow ---------- */
-select{min-height:48px; padding:0 14px; border-radius:999px; background:var(--panel); border:var(--bw) solid var(--border); text-align:center; flex:1}
-.chk{display:flex; align-items:center; justify-content:center; gap:8px; flex:1; min-height:48px}
-.chk input{width:22px; height:22px; accent-color:var(--accent)}
-.remote.photo .seek,.remote.photo #back,.remote.photo #fwd,.remote.photo #play{display:none}
-.msg{color:var(--muted); font-size:.9rem; min-height:1.4em}
-
-/* ---------- Toast ---------- */
-.toast{
-  position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translate(-50%,20px);
-  max-width:min(92vw,460px); padding:12px 18px; border-radius:16px; background:var(--text); color:var(--bg);
-  font-size:.92rem; font-weight:600; opacity:0; pointer-events:none; transition:.25s; z-index:20;
+.info-note{
+  background:var(--surface2); border:1px solid var(--border); border-left:3px solid var(--accent);
+  border-radius:8px; padding:.6rem .7rem; font-size:.76rem; color:var(--muted); margin-bottom:.7rem; line-height:1.45;
+  display:flex; gap:.5rem; align-items:flex-start;
 }
-[data-theme="hc"] .toast{outline:2px solid var(--accent)}
-.toast.show{opacity:1; transform:translate(-50%,0)}
+.info-note button{background:none; border:none; color:var(--muted); cursor:pointer; margin-left:auto; font-size:.9rem; line-height:1; flex:none}
 
-/* ---------- Footer ---------- */
-footer{width:100%; padding:18px 14px 20px; color:var(--muted); font-size:.85rem; border-top:var(--bw) solid var(--border); margin-top:auto}
-@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
-@media (min-width:640px){.grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}}
+.net-list{display:flex; flex-direction:column; gap:.5rem}
+.net-item{
+  background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:.6rem .7rem;
+  display:flex; align-items:center; gap:.6rem; cursor:pointer;
+}
+.sig-dot{width:11px; height:11px; border-radius:50%; flex:none; box-shadow:0 0 0 3px color-mix(in srgb, currentColor 18%, transparent)}
+.net-item .meta{min-width:0; flex:1}
+.net-item .ssid{font-weight:600; font-size:.86rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.net-item .sub{font-size:.72rem; color:var(--muted); display:flex; gap:.5rem; flex-wrap:wrap}
+.net-item .sig-val{font-size:.75rem; color:var(--muted); flex:none}
+.empty-state{color:var(--muted); font-size:.82rem; text-align:center; padding:1.6rem .5rem}
+
+.tools-row{display:flex; gap:.5rem; margin-top:.7rem}
+.btn{
+  flex:1; padding:.55rem .7rem; border-radius:8px; border:1px solid var(--border); background:var(--surface2);
+  color:var(--text); font-size:.78rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:.4rem;
+}
+.btn:hover{background:var(--border)}
+.btn.primary{background:var(--accent); color:var(--accent-text); border-color:var(--accent)}
+[data-theme="hc"] .btn, [data-theme="hc"] .icon-btn, [data-theme="hc"] .fab{border-width:2px}
+
+/* ============ Form sheet ============ */
+#form-overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; display:none;
+  align-items:flex-end; justify-content:center;
+}
+#form-overlay.show{display:flex}
+#form-sheet{
+  background:var(--surface); border:1px solid var(--border); border-bottom:none;
+  border-radius:16px 16px 0 0; width:100%; max-width:480px; max-height:88vh; overflow-y:auto;
+  padding:1rem 1rem calc(1rem + env(safe-area-inset-bottom,0));
+}
+.form-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:.8rem}
+.form-head h2{font-size:1rem; margin:0}
+.field{margin-bottom:.65rem}
+.field label{display:block; font-size:.72rem; color:var(--muted); margin-bottom:.3rem; font-weight:600; letter-spacing:.01em}
+.field-row{display:flex; gap:.5rem}
+.field-row .field{flex:1}
+.coord-line{font-size:.72rem; color:var(--muted); margin-bottom:.7rem}
+.range-row{display:flex; align-items:center; gap:.6rem}
+.range-row input[type=range]{flex:1; accent-color:var(--accent)}
+.range-row .sig-readout{width:3.4rem; text-align:right; font-size:.8rem}
+.form-actions{display:flex; gap:.5rem; margin-top:.9rem}
+.form-actions .btn.danger{background:transparent; color:var(--sig-lo); border-color:var(--sig-lo)}
+
+.popup-card{font-family:'Space Grotesk',sans-serif; min-width:180px}
+.popup-card .p-ssid{font-weight:700; font-size:.9rem; margin-bottom:.15rem}
+.popup-card .p-sub{font-size:.72rem; color:var(--muted); margin-bottom:.5rem}
+.popup-card .p-row{display:flex; gap:.4rem}
+.popup-card .p-btn{flex:1; padding:.35rem; border-radius:6px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:.72rem; cursor:pointer; font-weight:600}
+
+footer{
+  background:var(--surface); border-top:1px solid var(--border); flex:none;
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  padding:.5rem .8rem calc(.5rem + env(safe-area-inset-bottom,0));
+}
+footer p{margin:0; font-size:.7rem; color:var(--muted); line-height:1.4}
+
+/* Desktop layout */
+@media (min-width:860px){
+  main{display:flex}
+  #map{position:relative; flex:1; inset:auto}
+  #drawer{width:360px; max-height:none!important; border-top:none; border-left:1px solid var(--border); flex:none; height:100%}
+  .drawer-handle{cursor:default}
+  .drawer-grip{display:none}
+  .chevron{display:none}
+  .drawer-body{padding:.9rem}
+}
+@media (max-width:859px){
+  .brand-text span{display:none}
+}
 </style>
 </head>
-<body>
-<div class="app">
+<body data-theme="dark">
+<div id="app">
   <header>
-    <h1>Cast<span>Deck</span></h1>
-    <p class="sub">Pick a video, choose your TV, and control playback from your phone.</p>
-    <div class="themes" role="group" aria-label="Colour theme">
-      <button type="button" data-theme-btn="dark">Dark+</button>
-      <button type="button" data-theme-btn="light">Light+</button>
-      <button type="button" data-theme-btn="oled">OLED black</button>
-      <button type="button" data-theme-btn="hc">High contrast</button>
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+        <path d="M12 20.2c.66 0 1.2-.54 1.2-1.2s-.54-1.2-1.2-1.2-1.2.54-1.2 1.2.54 1.2 1.2 1.2Z" fill="var(--accent)"/>
+        <path d="M8.3 15.6a5.2 5.2 0 0 1 7.4 0" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M5 12.3a9.4 9.4 0 0 1 14 0" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" opacity=".65"/>
+        <path d="M1.8 9a13.6 13.6 0 0 1 20.4 0" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" opacity=".35"/>
+      </svg>
+      <div class="brand-text">
+        <strong>WiFi Map</strong>
+        <span>Local BSSID cartography</span>
+      </div>
+    </div>
+    <div class="hdr-actions">
+      <button class="icon-btn" id="theme-btn" title="Change theme" aria-label="Change theme">
+        <svg id="theme-icon" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="4.4" stroke="currentColor" stroke-width="1.8"/></svg>
+      </button>
     </div>
   </header>
 
   <main>
-    <div class="status" id="status" data-s="wait" role="status" aria-live="polite">
-      <span class="dot"></span><span id="statusText">Loading Cast support</span>
+    <div id="map" role="application" aria-label="Wi-Fi network map"></div>
+    <div class="place-banner" id="place-banner">Tap the map to place this network</div>
+    <div class="fab-col">
+      <button class="fab" id="locate-btn" title="Find my location" aria-label="Find my location">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="2.6" fill="currentColor"/><path stroke="currentColor" stroke-width="1.8" d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" stroke-linecap="round"/></svg>
+      </button>
+      <button class="fab primary" id="add-btn" title="Add network" aria-label="Add network">
+        <svg viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
+      </button>
     </div>
-    <p class="hint" id="hint">Use Chrome or Edge (desktop or Android) on HTTPS or localhost, on the same Wi-Fi as your Chromecast or Google TV.</p>
-
-    <!-- Remote -->
-    <section class="remote" id="remote" aria-label="TV remote" hidden>
-      <div class="now">
-        <img id="nowArt" alt="" hidden>
-        <div><strong id="nowTitle">Nothing playing</strong><small id="nowDevice"></small></div>
-      </div>
-      <div class="seek">
-        <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Seek">
-        <div class="times"><span id="tNow">0:00</span><span id="tEnd">0:00</span></div>
-      </div>
-      <div class="pad">
-        <button type="button" id="back" aria-label="Back 10 seconds">-10s</button>
-        <button type="button" id="play" class="play" aria-label="Play or pause">&#9654;</button>
-        <button type="button" id="fwd" aria-label="Forward 10 seconds">+10s</button>
-        <button type="button" id="stop" class="stop">Stop</button>
-      </div>
-      <div class="vol">
-        <button type="button" id="mute" aria-label="Mute or unmute">Mute</button>
-        <input type="range" id="vol" min="0" max="100" value="50" aria-label="TV volume">
-      </div>
-    </section>
-
-    <!-- Tabs -->
-    <div class="tabs" role="tablist" aria-label="Video source">
-      <button type="button" role="tab" id="tab-lib" aria-selected="true" aria-controls="p-lib">Films</button>
-      <button type="button" role="tab" id="tab-arc" aria-selected="false" aria-controls="p-arc">Archive</button>
-      <button type="button" role="tab" id="tab-show" aria-selected="false" aria-controls="p-show">Slideshow</button>
-      <button type="button" role="tab" id="tab-url" aria-selected="false" aria-controls="p-url">Link</button>
-    </div>
-
-    <section class="panel" id="p-lib" role="tabpanel" aria-labelledby="tab-lib">
-      <div class="grid" id="libGrid"></div>
-    </section>
-
-    <section class="panel" id="p-arc" role="tabpanel" aria-labelledby="tab-arc" hidden>
-      <form class="form" id="arcForm">
-        <div class="row">
-          <input type="search" id="arcQ" placeholder="Search public films and clips" aria-label="Search the Internet Archive" autocomplete="off">
-          <button class="btn" type="submit">Search</button>
-        </div>
-      </form>
-      <div class="grid" id="arcGrid"></div>
-      <p class="empty" id="arcMsg"></p>
-      <button class="btn ghost" type="button" id="arcMore" hidden>Show more</button>
-    </section>
-
-    <section class="panel" id="p-show" role="tabpanel" aria-labelledby="tab-show" hidden>
-      <form class="form" id="showForm">
-        <div class="row">
-          <input type="search" id="showQ" value="mountain landscape" placeholder="Photo theme, e.g. city at night" aria-label="Photo theme" autocomplete="off">
-          <button class="btn" type="submit">Find photos</button>
-        </div>
-        <div class="row">
-          <select id="showSec" aria-label="Seconds per photo">
-            <option value="5">5 seconds</option><option value="10" selected>10 seconds</option>
-            <option value="30">30 seconds</option><option value="60">1 minute</option><option value="300">5 minutes</option>
-          </select>
-          <label class="chk"><input type="checkbox" id="showShuffle" checked> Shuffle</label>
-        </div>
-      </form>
-      <div class="pad" id="showCtl" hidden>
-        <button type="button" id="shPrev" aria-label="Previous photo">Prev</button>
-        <button type="button" id="shPause">Pause</button>
-        <button type="button" id="shNext" aria-label="Next photo">Next</button>
-        <button type="button" id="shEnd" class="stop">End</button>
-      </div>
-      <p class="msg" id="showMsg" aria-live="polite"></p>
-      <div class="grid" id="showGrid"></div>
-    </section>
-
-    <section class="panel" id="p-url" role="tabpanel" aria-labelledby="tab-url" hidden>
-      <form class="form" id="urlForm">
-        <input type="url" id="urlIn" placeholder="https://example.com/video.mp4" aria-label="Direct video link" required inputmode="url" autocomplete="off">
-        <input type="text" id="urlTitle" placeholder="Title (optional)" aria-label="Title" autocomplete="off">
-        <button class="btn" type="submit">Cast to TV</button>
-        <p class="hint">Works with MP4, WebM, MP3 and HLS (.m3u8) links. The server must allow cross-origin (CORS) requests for HLS and DASH.</p>
-      </form>
-    </section>
   </main>
 
-  <footer>&copy; Manik Roy <span id="year">2026</span>. All Rights Reserved.</footer>
+  <section id="drawer" class="collapsed">
+    <div class="drawer-handle" id="drawer-handle">
+      <div class="drawer-grip"></div>
+      <div class="drawer-title">Networks <span class="count-pill" id="net-count">0</span></div>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="m6 9 6 6 6-6"/></svg>
+    </div>
+    <div class="drawer-body">
+      <div class="info-note" id="info-note">
+        <span>Browsers can't call native Windows APIs like <span class="mono">wlanapi.dll</span> directly&nbsp;— so scans are logged here manually or via JSON import from a scanner's export, then mapped and stored locally on this device.</span>
+        <button id="note-close" aria-label="Dismiss">✕</button>
+      </div>
+      <div class="searchbar">
+        <input type="text" id="search" placeholder="Search SSID or BSSID…" />
+      </div>
+      <div class="net-list" id="net-list"></div>
+      <div class="tools-row">
+        <button class="btn" id="export-btn">Export JSON</button>
+        <button class="btn" id="import-btn">Import JSON</button>
+      </div>
+      <input type="file" id="import-file" accept="application/json" hidden />
+    </div>
+  </section>
+
+  <footer>
+    <p id="footer-text"></p>
+  </footer>
 </div>
-<div class="toast" id="toast" role="alert"></div>
 
-<!-- Castjs wraps the Google Cast Web Sender SDK (it loads cast_sender.js itself) and targets the Default Media Receiver -->
-<script src="https://cdn.jsdelivr.net/gh/castjs/castjs@v7.0.0/cast.min.js"></script>
+<div id="form-overlay">
+  <div id="form-sheet">
+    <div class="form-head">
+      <h2 id="form-title">Add network</h2>
+      <button class="icon-btn" id="form-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="coord-line mono" id="coord-line">lat 0.00000, lng 0.00000</div>
+    <div class="field">
+      <label for="f-ssid">SSID (network name)</label>
+      <input id="f-ssid" type="text" maxlength="40" placeholder="e.g. CoffeeHouse_5G" />
+    </div>
+    <div class="field">
+      <label for="f-bssid">BSSID (access point MAC)</label>
+      <input id="f-bssid" class="mono" type="text" maxlength="17" placeholder="AA:BB:CC:DD:EE:FF" />
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="f-band">Band</label>
+        <select id="f-band">
+          <option>2.4 GHz</option>
+          <option selected>5 GHz</option>
+          <option>6 GHz</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-security">Security</label>
+        <select id="f-security">
+          <option>Open</option>
+          <option>WEP</option>
+          <option>WPA</option>
+          <option selected>WPA2</option>
+          <option>WPA3</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="f-signal">Signal strength</label>
+      <div class="range-row">
+        <input id="f-signal" type="range" min="0" max="100" value="70" />
+        <span class="sig-readout mono" id="f-signal-val">70%</span>
+      </div>
+    </div>
+    <div class="field">
+      <label for="f-notes">Notes (optional)</label>
+      <textarea id="f-notes" rows="2" placeholder="Floor, room, landmark…"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn danger" id="f-delete" style="display:none">Delete</button>
+      <button class="btn primary" id="f-save">Save network</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
-(() => {
+(function(){
 "use strict";
-const $ = s => document.querySelector(s);
-const $$ = s => [...document.querySelectorAll(s)];
 
-/* ---------- Footer year (auto-updating) ---------- */
-const setYear = () => { $("#year").textContent = new Date().getFullYear(); };
-setYear();
-document.addEventListener("visibilitychange", () => { if (!document.hidden) setYear(); });
-setInterval(setYear, 3600000);
+/* ---------- Theme ---------- */
+var THEMES = ["dark","light","oled","hc"];
+var THEME_LABEL = {dark:"Dark+", light:"Light+", oled:"OLED True Black", hc:"High Contrast"};
+function loadTheme(){ return localStorage.getItem("wifimap.theme") || "dark"; }
+function applyTheme(t, skipRedraw){
+  document.body.setAttribute("data-theme", t);
+  localStorage.setItem("wifimap.theme", t);
+  document.getElementById("theme-btn").title = "Theme: " + THEME_LABEL[t] + " (tap to change)";
+  if(!skipRedraw) redrawMarkers();
+}
+applyTheme(loadTheme(), true); // skip redraw: map/db aren't initialized yet at this point
+document.getElementById("theme-btn").addEventListener("click", function(){
+  var cur = document.body.getAttribute("data-theme");
+  var next = THEMES[(THEMES.indexOf(cur)+1) % THEMES.length];
+  applyTheme(next);
+});
 
-/* ---------- Theme: Dark+, Light+, OLED, High contrast ---------- */
-const META = { dark:"#1e1e1e", light:"#ffffff", oled:"#000000", hc:"#000000" };
-function setTheme(t, save) {
-  if (!META[t]) t = "dark";
-  document.documentElement.dataset.theme = t;
-  $('meta[name="theme-color"]').content = META[t];
-  $$("[data-theme-btn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.themeBtn === t));
-  if (save) try { localStorage.setItem("castdeck-theme", t); } catch (e) {}
+/* ---------- Footer year ---------- */
+function stampFooter(){
+  document.getElementById("footer-text").textContent =
+    "© Manik Roy " + new Date().getFullYear() + ". All Rights Reserved.";
 }
-(function initTheme() {
-  let t = null;
-  try { t = localStorage.getItem("castdeck-theme"); } catch (e) {}
-  if (!t) {
-    const mq = q => window.matchMedia && matchMedia(q).matches;
-    t = mq("(prefers-contrast: more)") ? "hc" : mq("(prefers-color-scheme: light)") ? "light" : "dark";
-  }
-  setTheme(t, false);
-  $$("[data-theme-btn]").forEach(b => b.addEventListener("click", () => setTheme(b.dataset.themeBtn, true)));
-})();
+stampFooter();
 
-/* ---------- Helpers ---------- */
-let toastTimer;
-function toast(msg) {
-  const t = $("#toast");
-  t.textContent = msg; t.classList.add("show");
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3600);
+/* ---------- Local BSSID database (localStorage) ---------- */
+var DB_KEY = "wifimap.db.v1";
+function loadDB(){ try{ return JSON.parse(localStorage.getItem(DB_KEY)) || []; }catch(e){ return []; } }
+function saveDB(list){ localStorage.setItem(DB_KEY, JSON.stringify(list)); }
+var networks = loadDB();
+function upsert(rec){
+  var i = networks.findIndex(function(n){ return n.id === rec.id; });
+  if(i > -1) networks[i] = rec; else networks.push(rec);
+  saveDB(networks);
 }
-function setStatus(state, text) {
-  $("#status").dataset.s = state; $("#statusText").textContent = text;
+function removeById(id){
+  networks = networks.filter(function(n){ return n.id !== id; });
+  saveDB(networks);
 }
-function mimeFor(url) {
-  const ext = (url.split(/[?#]/)[0].match(/\.([a-z0-9]+)$/i) || [])[1];
-  return ({ mp4:"video/mp4", m4v:"video/mp4", webm:"video/webm", mkv:"video/x-matroska", mp3:"audio/mpeg",
-    m4a:"audio/mp4", aac:"audio/aac", ogg:"audio/ogg", wav:"audio/wav", m3u8:"application/x-mpegURL",
-    mpd:"application/dash+xml", jpg:"image/jpeg", jpeg:"image/jpeg", png:"image/png", gif:"image/gif" }[(ext || "").toLowerCase()]) || "video/mp4";
-}
-const clean = v => String([].concat(v || "")[0] || "").replace(/\s+/g, " ").trim();
+function uid(){ return "n" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
-/* ---------- Free, keyless catalogues ---------- */
-// 1) Google's public sample bucket (used in the official Cast samples)
-const G = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/";
-const SAMPLES = [
-  ["BigBuckBunny","Big Buck Bunny","Animated short, 10 min"],
-  ["ElephantsDream","Elephants Dream","Animated short, 11 min"],
-  ["Sintel","Sintel","Animated short, 15 min"],
-  ["TearsOfSteel","Tears of Steel","Sci-fi short, 12 min"],
-  ["ForBiggerBlazes","For Bigger Blazes","Quick clip, 15 sec"],
-  ["ForBiggerEscapes","For Bigger Escapes","Quick clip, 15 sec"],
-  ["ForBiggerFun","For Bigger Fun","Quick clip, 1 min"],
-  ["ForBiggerJoyrides","For Bigger Joyrides","Quick clip, 15 sec"],
-  ["ForBiggerMeltdowns","For Bigger Meltdowns","Quick clip, 15 sec"],
-  ["SubaruOutbackOnStreetAndDirt","Subaru Outback On Street And Dirt","Car review, 10 min"],
-  ["VolkswagenGTIReview","Volkswagen GTI Review","Car review, 10 min"],
-  ["WeAreGoingOnBullrun","We Are Going On Bullrun","Road rally, 5 min"],
-  ["WhatCarCanYouGetForAGrand","What Car Can You Get For A Grand","Car feature, 5 min"]
-].map(([id, title, meta]) => ({ title, meta, url: `${G}${id}.mp4`, poster: `${G}images/${id}.jpg` }));
+/* ---------- Map ---------- */
+var map = L.map("map", { zoomControl:false, attributionControl:true }).setView([22.5726, 88.3639], 13);
+L.control.zoom({ position:"bottomleft" }).addTo(map);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
 
-// 2) Internet Archive advanced search + metadata (open CORS, no key, no signup)
-const IA = "https://archive.org";
-const arc = { q:"", page:1, busy:false };
-async function iaSearch(term, page) {
-  const q = (term ? `(${term}) AND ` : "collection:(feature_films) AND ") +
-    `mediatype:movies AND (format:"h.264" OR format:"MPEG4")`;
-  const p = new URLSearchParams({ q, rows:"24", page:String(page), output:"json" });
-  ["identifier", "title", "year"].forEach(f => p.append("fl[]", f));
-  p.append("sort[]", "downloads desc");
-  const r = await fetch(`${IA}/advancedsearch.php?${p}`);
-  if (!r.ok) throw new Error("Internet Archive search failed");
-  const j = await r.json();
-  return { docs: j.response.docs || [], total: j.response.numFound || 0 };
+var markers = {}; // id -> L.marker
+var youAreHere = null;
+
+function sigColor(pct){
+  if(pct >= 65) return getCss("--sig-hi");
+  if(pct >= 35) return getCss("--sig-mid");
+  return getCss("--sig-lo");
 }
-async function iaResolve(id) {
-  const r = await fetch(`${IA}/metadata/${encodeURIComponent(id)}`);
-  if (!r.ok) throw new Error("Could not read this item");
-  const m = await r.json();
-  const mp4 = (m.files || []).filter(f => /\.mp4$/i.test(f.name))
-    .sort((a, b) => (a.format === "h.264" ? 0 : 1) - (b.format === "h.264" ? 0 : 1) || (+a.size || 9e12) - (+b.size || 9e12));
-  if (!mp4.length) throw new Error("This item has no MP4 stream");
-  const path = mp4[0].name.split("/").map(encodeURIComponent).join("/");
-  return `${IA}/download/${encodeURIComponent(id)}/${path}`;
+function getCss(name){ return getComputedStyle(document.body).getPropertyValue(name).trim(); }
+
+function markerIcon(pct){
+  var c = sigColor(pct);
+  var svg = '<svg width="26" height="26" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg">' +
+    '<circle cx="13" cy="13" r="10" fill="' + c + '" fill-opacity="0.22"/>' +
+    '<circle cx="13" cy="13" r="5.5" fill="' + c + '" stroke="var(--surface)" stroke-width="2"/>' +
+    '</svg>';
+  return L.divIcon({ className:"", html:svg, iconSize:[26,26], iconAnchor:[13,13], popupAnchor:[0,-12] });
 }
 
-/* ---------- Rendering ---------- */
-function tile(item, onPick) {
-  const b = document.createElement("button");
-  b.type = "button"; b.className = "tile";
-  b.setAttribute("aria-label", `Cast ${item.title}`);
-  const art = document.createElement("span"); art.className = "art";
-  const img = document.createElement("img");
-  img.loading = "lazy"; img.alt = ""; img.src = item.poster;
-  img.onerror = () => { img.remove(); };
-  const go = document.createElement("span"); go.className = "go"; go.textContent = "\u25B6";
-  art.append(img, go);
-  const t = document.createElement("b"); t.textContent = item.title;
-  const m = document.createElement("small"); m.textContent = item.meta || "";
-  b.append(art, t, m);
-  b.addEventListener("click", async () => {
-    b.setAttribute("aria-busy", "true");
-    try { await onPick(item); } finally { b.removeAttribute("aria-busy"); }
+function popupHtml(n){
+  return '<div class="popup-card">' +
+    '<div class="p-ssid">' + escapeHtml(n.ssid || "(hidden network)") + '</div>' +
+    '<div class="p-sub mono">' + escapeHtml(n.bssid || "—") + ' · ' + n.band + ' · ' + n.security + ' · ' + n.signal + '%</div>' +
+    '<div class="p-row">' +
+      '<button class="p-btn" data-edit="' + n.id + '">Edit</button>' +
+      '<button class="p-btn" data-del="' + n.id + '">Delete</button>' +
+    '</div></div>';
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+function addOrUpdateMarker(n){
+  if(markers[n.id]) map.removeLayer(markers[n.id]);
+  var m = L.marker([n.lat, n.lng], { icon: markerIcon(n.signal) }).addTo(map);
+  m.bindPopup(popupHtml(n));
+  m.on("popupopen", function(){
+    var root = m.getPopup().getElement();
+    var editBtn = root.querySelector("[data-edit]");
+    var delBtn = root.querySelector("[data-del]");
+    if(editBtn) editBtn.addEventListener("click", function(){ openForm(n); });
+    if(delBtn) delBtn.addEventListener("click", function(){ deleteNetwork(n.id); });
   });
-  return b;
+  markers[n.id] = m;
 }
+function redrawMarkers(){ if(typeof networks === "undefined" || !map) return; networks.forEach(addOrUpdateMarker); renderList(); }
+function removeMarker(id){ if(markers[id]){ map.removeLayer(markers[id]); delete markers[id]; } }
 
-/* ---------- Cast (Castjs + Google Cast Web Sender SDK, Default Media Receiver) ---------- */
-let cjs = null, current = null, seeking = false, castReady = false;
+/* ---------- Placement mode ---------- */
+var placing = false;
+var addBtn = document.getElementById("add-btn");
+var placeBanner = document.getElementById("place-banner");
+addBtn.addEventListener("click", function(){
+  placing = !placing;
+  addBtn.classList.toggle("active", placing);
+  placeBanner.classList.toggle("show", placing);
+});
+map.on("click", function(e){
+  if(!placing) return;
+  placing = false;
+  addBtn.classList.remove("active");
+  placeBanner.classList.remove("show");
+  openForm(null, e.latlng);
+});
 
-function castMedia(item) {
-  if (!cjs) return toast("Cast support did not load. Check your connection and reload.");
-  if (!castReady) return toast("Cast is not available in this browser. Use Chrome or Edge over HTTPS.");
-  current = item;
-  setStatus("wait", "Choose your TV in the Cast window");
-  cjs.cast(item.url, {
-    title: item.title, description: item.meta || "", poster: item.poster || "",
-    contentType: item.type || mimeFor(item.url)
-  });
+/* ---------- Locate ---------- */
+document.getElementById("locate-btn").addEventListener("click", function(){
+  if(!navigator.geolocation){ alert("Geolocation isn't available on this device/browser."); return; }
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var ll = [pos.coords.latitude, pos.coords.longitude];
+    map.setView(ll, 16);
+    if(youAreHere) map.removeLayer(youAreHere);
+    var svg = '<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="var(--accent)" fill-opacity="0.25"/><circle cx="11" cy="11" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/></svg>';
+    youAreHere = L.marker(ll, { icon:L.divIcon({className:"", html:svg, iconSize:[22,22], iconAnchor:[11,11]}) }).addTo(map);
+  }, function(){ alert("Couldn't get your location. Check location permissions."); }, { enableHighAccuracy:true, timeout:8000 });
+});
+
+/* ---------- Form sheet ---------- */
+var overlay = document.getElementById("form-overlay");
+var sheet = document.getElementById("form-sheet");
+var fSsid = document.getElementById("f-ssid"), fBssid = document.getElementById("f-bssid"),
+    fBand = document.getElementById("f-band"), fSecurity = document.getElementById("f-security"),
+    fSignal = document.getElementById("f-signal"), fSignalVal = document.getElementById("f-signal-val"),
+    fNotes = document.getElementById("f-notes"), fDelete = document.getElementById("f-delete"),
+    coordLine = document.getElementById("coord-line"), formTitle = document.getElementById("form-title");
+var editingId = null, pendingLatLng = null;
+
+fSignal.addEventListener("input", function(){ fSignalVal.textContent = fSignal.value + "%"; });
+
+function openForm(existing, latlng){
+  editingId = existing ? existing.id : null;
+  pendingLatLng = existing ? {lat:existing.lat, lng:existing.lng} : latlng;
+  formTitle.textContent = existing ? "Edit network" : "Add network";
+  fDelete.style.display = existing ? "flex" : "none";
+  fSsid.value = existing ? existing.ssid : "";
+  fBssid.value = existing ? existing.bssid : "";
+  fBand.value = existing ? existing.band : "5 GHz";
+  fSecurity.value = existing ? existing.security : "WPA2";
+  fSignal.value = existing ? existing.signal : 70;
+  fSignalVal.textContent = fSignal.value + "%";
+  fNotes.value = existing ? (existing.notes||"") : "";
+  coordLine.textContent = "lat " + pendingLatLng.lat.toFixed(5) + ", lng " + pendingLatLng.lng.toFixed(5);
+  overlay.classList.add("show");
+  setTimeout(function(){ fSsid.focus(); }, 50);
 }
+function closeForm(){ overlay.classList.remove("show"); editingId = null; pendingLatLng = null; }
+document.getElementById("form-close").addEventListener("click", closeForm);
+overlay.addEventListener("click", function(e){ if(e.target === overlay) closeForm(); });
 
-function fmt(s) {
-  s = Math.max(0, Math.floor(+s || 0));
-  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
-  return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0");
-}
-
-function renderTime() {
-  if (!cjs || seeking) return;
-  $("#seek").value = Math.round((+cjs.progress() || 0) * 10);
-  $("#tNow").textContent = fmt(cjs.time());
-  $("#tEnd").textContent = fmt(cjs.duration());
-}
-
-function render() {
-  if (!cjs) return;
-  const on = cjs.connected();
-  $("#remote").hidden = !on;
-  if (on) {
-    const st = cjs.state(), playing = st === "playing" || st === "buffering";
-    setStatus("on", `${playing ? "Casting" : "Connected"} to ${cjs.device() || "your TV"}`);
-    $("#nowTitle").textContent = (current && current.title) || cjs.title() || "Nothing playing";
-    $("#nowDevice").textContent = cjs.device() ? `on ${cjs.device()}` : "";
-    const art = $("#nowArt");
-    if (current && current.poster) { art.src = current.poster; art.hidden = false; art.onerror = () => { art.hidden = true; }; }
-    else art.hidden = true;
-    $("#play").innerHTML = playing ? "&#10074;&#10074;" : "&#9654;";
-    $("#mute").textContent = cjs.muted() ? "Unmute" : "Mute";
-    if (typeof cjs.volume() === "number") $("#vol").value = Math.round(cjs.volume() * 100);
-    renderTime();
-  } else if (castReady) {
-    setStatus("ready", "Ready. Pick a video to cast");
+document.getElementById("f-save").addEventListener("click", function(){
+  if(!pendingLatLng) return;
+  var mac = fBssid.value.trim();
+  if(mac && !/^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/.test(mac)){
+    alert("BSSID should look like AA:BB:CC:DD:EE:FF"); return;
   }
+  var rec = {
+    id: editingId || uid(),
+    ssid: fSsid.value.trim(),
+    bssid: mac.toUpperCase(),
+    band: fBand.value,
+    security: fSecurity.value,
+    signal: parseInt(fSignal.value, 10),
+    notes: fNotes.value.trim(),
+    lat: pendingLatLng.lat, lng: pendingLatLng.lng,
+    updated: new Date().toISOString()
+  };
+  upsert(rec);
+  addOrUpdateMarker(rec);
+  renderList();
+  closeForm();
+});
+fDelete.addEventListener("click", function(){
+  if(editingId) deleteNetwork(editingId);
+  closeForm();
+});
+function deleteNetwork(id){
+  removeById(id);
+  removeMarker(id);
+  renderList();
+  map.closePopup();
 }
 
-function initCast() {
-  if (typeof Castjs === "undefined") {
-    setStatus("err", "Cast library failed to load");
+/* ---------- List / search ---------- */
+var listEl = document.getElementById("net-list");
+var countEl = document.getElementById("net-count");
+var searchEl = document.getElementById("search");
+function renderList(){
+  var q = searchEl.value.trim().toLowerCase();
+  var items = networks.filter(function(n){
+    if(!q) return true;
+    return (n.ssid||"").toLowerCase().includes(q) || (n.bssid||"").toLowerCase().includes(q);
+  }).sort(function(a,b){ return b.signal - a.signal; });
+
+  countEl.textContent = networks.length;
+  listEl.innerHTML = "";
+  if(items.length === 0){
+    var empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = networks.length ? "No matches." : "No networks logged yet. Tap + on the map to add one.";
+    listEl.appendChild(empty);
     return;
   }
-  cjs = new Castjs();
-  const ready = () => {
-    castReady = true;
-    $("#hint").textContent = "Tap any video, choose your TV, and the Default Media Receiver plays it. Nothing is uploaded from your device.";
-    render();
+  items.forEach(function(n){
+    var row = document.createElement("div");
+    row.className = "net-item";
+    row.innerHTML =
+      '<span class="sig-dot" style="background:' + sigColor(n.signal) + '; color:' + sigColor(n.signal) + '"></span>' +
+      '<span class="meta"><div class="ssid">' + escapeHtml(n.ssid || "(hidden network)") + '</div>' +
+      '<div class="sub mono">' + escapeHtml(n.bssid || "—") + ' · ' + n.band + '</div></span>' +
+      '<span class="sig-val mono">' + n.signal + '%</span>';
+    row.addEventListener("click", function(){
+      map.setView([n.lat, n.lng], 17);
+      markers[n.id] && markers[n.id].openPopup();
+      collapseDrawer(true);
+    });
+    listEl.appendChild(row);
+  });
+}
+searchEl.addEventListener("input", renderList);
+
+/* ---------- Drawer ---------- */
+var drawer = document.getElementById("drawer");
+var handle = document.getElementById("drawer-handle");
+function collapseDrawer(v){ drawer.classList.toggle("collapsed", v); }
+handle.addEventListener("click", function(){
+  if(window.innerWidth < 860) collapseDrawer(!drawer.classList.contains("collapsed"));
+});
+if(window.innerWidth >= 860) drawer.classList.remove("collapsed");
+
+/* ---------- Info note ---------- */
+var noteEl = document.getElementById("info-note");
+if(localStorage.getItem("wifimap.note.dismissed") === "1") noteEl.style.display = "none";
+document.getElementById("note-close").addEventListener("click", function(){
+  noteEl.style.display = "none";
+  localStorage.setItem("wifimap.note.dismissed", "1");
+});
+
+/* ---------- Import / Export ---------- */
+document.getElementById("export-btn").addEventListener("click", function(){
+  var blob = new Blob([JSON.stringify(networks, null, 2)], { type:"application/json" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "wifi-map-bssid-db.json";
+  document.body.appendChild(a); a.click(); a.remove();
+});
+var importFile = document.getElementById("import-file");
+document.getElementById("import-btn").addEventListener("click", function(){ importFile.click(); });
+importFile.addEventListener("change", function(){
+  var file = importFile.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    try{
+      var data = JSON.parse(reader.result);
+      if(!Array.isArray(data)) throw new Error("bad format");
+      var added = 0;
+      data.forEach(function(n){
+        if(typeof n.lat !== "number" || typeof n.lng !== "number") return;
+        var rec = {
+          id: n.id || uid(), ssid: n.ssid || "", bssid: (n.bssid||"").toUpperCase(),
+          band: n.band || "5 GHz", security: n.security || "WPA2",
+          signal: typeof n.signal === "number" ? n.signal : 60,
+          notes: n.notes || "", lat: n.lat, lng: n.lng,
+          updated: n.updated || new Date().toISOString()
+        };
+        upsert(rec); addOrUpdateMarker(rec); added++;
+      });
+      renderList();
+      alert("Imported " + added + " network" + (added===1?"":"s") + ".");
+    }catch(err){ alert("Couldn't read that file — expecting a JSON array of network records."); }
+    importFile.value = "";
   };
-  cjs.on("available", ready);
-  if (cjs.available()) ready();
-
-  try { cjs.on("disconnect", showEnd); } catch (e) {}
-  ["connect", "disconnect", "statechange", "playing", "pause", "buffering", "mute", "unmute", "volumechange", "session"]
-    .forEach(ev => { try { cjs.on(ev, render); } catch (e) {} });
-  try { cjs.on("timeupdate", renderTime); } catch (e) {}
-  try { cjs.on("end", () => { toast("Finished playing"); render(); }); } catch (e) {}
-  try {
-    cjs.on("error", err => {
-      const msg = String((err && (err.message || err.description)) || err || "");
-      toast(/cancel/i.test(msg) ? "No TV selected" : `Cast error: ${msg || "something went wrong"}`);
-      render();
-    });
-  } catch (e) {}
-
-  // If the SDK never reports a receiver-capable browser, explain why.
-  setTimeout(() => {
-    if (!castReady) {
-      setStatus("err", "Cast not detected in this browser");
-      $("#hint").textContent = "Open this page in Chrome or Edge (desktop or Android) over HTTPS or localhost. iPhone and iPad browsers cannot start Cast sessions.";
-    }
-  }, 7000);
-}
-
-/* ---------- Remote controls ---------- */
-$("#play").addEventListener("click", () => { if (!cjs) return; cjs.state() === "paused" ? cjs.play() : cjs.pause(); });
-$("#back").addEventListener("click", () => cjs && cjs.time(Math.max(0, cjs.time() - 10)));
-$("#fwd").addEventListener("click", () => cjs && cjs.time(Math.min(cjs.duration() || 1e9, cjs.time() + 10)));
-$("#stop").addEventListener("click", () => { if (cjs) { cjs.disconnect(); current = null; toast("Stopped casting"); } });
-$("#mute").addEventListener("click", () => { if (cjs) { cjs.muted(!cjs.muted()); setTimeout(render, 150); } });
-$("#vol").addEventListener("input", e => cjs && cjs.volume(e.target.value / 100));
-const seekEl = $("#seek");
-seekEl.addEventListener("input", () => { seeking = true; $("#tNow").textContent = fmt((seekEl.value / 1000) * (cjs ? cjs.duration() : 0)); });
-seekEl.addEventListener("change", () => {
-  if (cjs && cjs.duration()) cjs.time(Math.floor((seekEl.value / 1000) * cjs.duration()));
-  setTimeout(() => { seeking = false; }, 400);
+  reader.readAsText(file);
 });
 
-/* ---------- Sample library ---------- */
-const libGrid = $("#libGrid");
-SAMPLES.forEach(s => libGrid.append(tile(s, castMedia)));
-
-/* ---------- Internet Archive tab ---------- */
-async function arcLoad(reset) {
-  if (arc.busy) return;
-  arc.busy = true;
-  const msg = $("#arcMsg"), grid = $("#arcGrid"), more = $("#arcMore");
-  if (reset) { grid.textContent = ""; arc.page = 1; }
-  msg.textContent = "Searching"; more.hidden = true;
-  try {
-    const { docs, total } = await iaSearch(arc.q, arc.page);
-    docs.forEach(d => {
-      const id = d.identifier;
-      grid.append(tile({
-        title: clean(d.title) || id, meta: d.year ? String(clean(d.year)) : "Internet Archive",
-        poster: `${IA}/services/img/${encodeURIComponent(id)}`
-      }, async item => {
-        try {
-          toast("Finding the video file");
-          item.url = await iaResolve(id);
-          item.type = "video/mp4";
-          castMedia(item);
-        } catch (e) { toast(e.message || "Could not load this item"); }
-      }));
-    });
-    msg.textContent = grid.children.length ? "" : "No videos found. Try a different word, such as noir, cartoon or news.";
-    more.hidden = arc.page * 24 >= total;
-  } catch (e) {
-    msg.textContent = "Could not reach the Internet Archive. Check your connection and try again.";
-  } finally { arc.busy = false; }
+/* ---------- Init ---------- */
+redrawMarkers();
+if(networks.length){
+  var group = new L.featureGroup(Object.values(markers));
+  map.fitBounds(group.getBounds().pad(0.3), { maxZoom: 15 });
 }
-$("#arcForm").addEventListener("submit", e => { e.preventDefault(); arc.q = $("#arcQ").value.trim().replace(/[()"]/g, " "); arcLoad(true); });
-$("#arcMore").addEventListener("click", () => { arc.page++; arcLoad(false); });
-
-/* ---------- Photo slideshow (Wikimedia Commons API, no key; SDK loadMedia for images) ---------- */
-const show = { items:[], queue:[], i:0, timer:null, run:false, paused:false, lock:null };
-async function commonsSearch(term) {
-  const p = new URLSearchParams({ action:"query", format:"json", origin:"*", generator:"search", gsrnamespace:"6",
-    gsrlimit:"40", gsrsearch:`${term} filetype:bitmap`, prop:"imageinfo", iiprop:"url|mime|size", iiurlwidth:"1920" });
-  const r = await fetch(`https://commons.wikimedia.org/w/api.php?${p}`);
-  if (!r.ok) throw new Error("Search failed");
-  const pages = Object.values(((await r.json()).query || {}).pages || {}).sort((a, b) => a.index - b.index);
-  return pages.map(pg => {
-    const ii = (pg.imageinfo || [])[0];
-    if (!ii || !/^image\/(jpeg|png)$/.test(ii.mime) || !ii.thumburl || ii.width < 1000) return null;
-    return { title: clean(pg.title.replace(/^File:/, "").replace(/\.\w+$/, "").replace(/_/g, " ")),
-      meta: "Wikimedia Commons", url: ii.thumburl, type: ii.mime, poster: ii.thumburl.replace("/1920px-", "/500px-") };
-  }).filter(Boolean);
-}
-function castPhoto(it) {
-  if (!cjs || !castReady) return toast("Cast is not available in this browser. Use Chrome or Edge over HTTPS.");
-  current = it;
-  if (cjs.connected() && window.cast && cast.framework) {
-    const sess = cast.framework.CastContext.getInstance().getCurrentSession();
-    if (sess) {
-      const mi = new chrome.cast.media.MediaInfo(it.url, it.type);
-      mi.metadata = new chrome.cast.media.PhotoMediaMetadata();
-      mi.metadata.title = it.title;
-      Promise.resolve(sess.loadMedia(new chrome.cast.media.LoadRequest(mi)))
-        .then(r => { if (r) toast("The TV could not show this photo"); }, () => toast("The TV could not show this photo"));
-      return render();
-    }
-  }
-  cjs.cast(it.url, { title: it.title, description: it.meta, poster: it.poster });
-}
-function showArm() {
-  clearTimeout(show.timer);
-  if (!show.run || show.paused) return;
-  show.timer = setTimeout(() => (cjs && cjs.connected()) ? showGo(1) : showArm(), +$("#showSec").value * 1000);
-}
-function showGo(step) {
-  if (!show.run) return;
-  show.i = (show.i + step + show.queue.length) % show.queue.length;
-  const it = show.queue[show.i];
-  $("#showMsg").textContent = `Photo ${show.i + 1} of ${show.queue.length}: ${it.title}`;
-  castPhoto(it); showArm();
-}
-async function wake(on) {
-  try {
-    if (on && "wakeLock" in navigator) show.lock = await navigator.wakeLock.request("screen");
-    else if (show.lock) { await show.lock.release(); show.lock = null; }
-  } catch (e) {}
-}
-function showStart(idx) {
-  const rest = show.items.slice(), first = rest.splice(idx, 1)[0];
-  if ($("#showShuffle").checked) for (let i = rest.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [rest[i], rest[j]] = [rest[j], rest[i]]; }
-  show.queue = [first, ...rest]; show.i = 0; show.run = true; show.paused = false;
-  $("#shPause").textContent = "Pause"; $("#showCtl").hidden = false; $("#remote").classList.add("photo");
-  wake(true); showGo(0);
-}
-function showEnd() {
-  if (!show.run) return;
-  show.run = false; clearTimeout(show.timer); wake(false);
-  $("#showCtl").hidden = true; $("#remote").classList.remove("photo"); $("#showMsg").textContent = "Slideshow ended";
-}
-async function showLoad() {
-  const msg = $("#showMsg"), grid = $("#showGrid");
-  const term = $("#showQ").value.trim().replace(/["()]/g, " ") || "landscape";
-  grid.textContent = ""; msg.textContent = "Searching";
-  try {
-    show.items = await commonsSearch(term);
-    show.items.forEach((it, i) => grid.append(tile(it, () => showStart(i))));
-    msg.textContent = show.items.length ? "Tap a photo to start the slideshow on your TV." : "No large photos found. Try another theme.";
-  } catch (e) { msg.textContent = "Could not reach Wikimedia Commons. Check your connection and try again."; }
-}
-$("#showForm").addEventListener("submit", e => { e.preventDefault(); showLoad(); });
-$("#shPrev").addEventListener("click", () => showGo(-1));
-$("#shNext").addEventListener("click", () => showGo(1));
-$("#shPause").addEventListener("click", () => {
-  show.paused = !show.paused; $("#shPause").textContent = show.paused ? "Resume" : "Pause"; showArm();
-});
-$("#shEnd").addEventListener("click", showEnd);
-$("#showSec").addEventListener("change", showArm);
-document.addEventListener("visibilitychange", () => { if (!document.hidden && show.run) wake(true); });
-
-/* ---------- Custom link tab ---------- */
-$("#urlForm").addEventListener("submit", e => {
-  e.preventDefault();
-  let u;
-  try { u = new URL($("#urlIn").value.trim()); } catch (x) { return toast("Enter a full link starting with https://"); }
-  if (!/^https?:$/.test(u.protocol)) return toast("Only http and https links can be cast");
-  castMedia({ title: $("#urlTitle").value.trim() || decodeURIComponent(u.pathname.split("/").pop() || u.hostname), meta: u.hostname, url: u.href, poster: "" });
-});
-
-/* ---------- Tabs (with arrow-key support) ---------- */
-const tabs = $$('[role="tab"]');
-function openTab(tab) {
-  tabs.forEach(t => {
-    const on = t === tab;
-    t.setAttribute("aria-selected", on);
-    t.tabIndex = on ? 0 : -1;
-    $("#" + t.getAttribute("aria-controls")).hidden = !on;
-  });
-  if (tab.id === "tab-show" && !$("#showGrid").children.length) showLoad();
-  if (tab.id === "tab-arc" && !$("#arcGrid").children.length && !arc.busy) arcLoad(true);
-}
-tabs.forEach((t, i) => {
-  t.addEventListener("click", () => openTab(t));
-  t.addEventListener("keydown", e => {
-    const d = { ArrowRight:1, ArrowLeft:-1 }[e.key];
-    if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; n.focus(); openTab(n); }
-  });
-});
-openTab(tabs[0]);
-
-initCast();
 })();
 </script>
 </body>
