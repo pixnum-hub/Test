@@ -1,679 +1,226 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>WiFi Map</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wi-Fi Map</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
-/* ============ Leaflet core (inlined, no external stylesheet) ============ */
-.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane>svg,.leaflet-pane>canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}
-.leaflet-container{overflow:hidden}
-.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow{-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-user-drag:none}
-.leaflet-tile::selection{background:transparent}
-.leaflet-safari .leaflet-tile{image-rendering:-webkit-optimize-contrast}
-.leaflet-safari .leaflet-tile-container{width:1600px;height:1600px;-webkit-transform-origin:0 0}
-.leaflet-marker-icon,.leaflet-marker-shadow{display:block}
-.leaflet-container .leaflet-overlay-pane svg{max-width:none!important;max-height:none!important}
-.leaflet-container .leaflet-marker-pane img,.leaflet-container .leaflet-shadow-pane img,.leaflet-container .leaflet-tile-pane img,.leaflet-container img.leaflet-image-layer,.leaflet-container .leaflet-tile{max-width:none!important;max-height:none!important;width:auto;padding:0}
-.leaflet-container img.leaflet-tile{mix-blend-mode:plus-lighter}
-.leaflet-container.leaflet-touch-zoom{-ms-touch-action:pan-x pan-y;touch-action:pan-x pan-y}
-.leaflet-container.leaflet-touch-drag{-ms-touch-action:pinch-zoom;touch-action:none;touch-action:pinch-zoom}
-.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom{-ms-touch-action:none;touch-action:none}
-.leaflet-container{-webkit-tap-highlight-color:transparent}
-.leaflet-container a{-webkit-tap-highlight-color:rgba(51,181,229,.4)}
-.leaflet-tile{filter:inherit;visibility:hidden}
-.leaflet-tile-loaded{visibility:inherit}
-.leaflet-zoom-box{width:0;height:0;box-sizing:border-box;z-index:800}
-.leaflet-overlay-pane svg{-moz-user-select:none}
-.leaflet-pane{z-index:400}
-.leaflet-tile-pane{z-index:200}
-.leaflet-overlay-pane{z-index:400}
-.leaflet-shadow-pane{z-index:500}
-.leaflet-marker-pane{z-index:600}
-.leaflet-tooltip-pane{z-index:650}
-.leaflet-popup-pane{z-index:700}
-.leaflet-map-pane canvas{z-index:100}
-.leaflet-map-pane svg{z-index:200}
-.leaflet-control{position:relative;z-index:800;pointer-events:auto}
-.leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}
-.leaflet-top{top:0}.leaflet-right{right:0}.leaflet-bottom{bottom:0}.leaflet-left{left:0}
-.leaflet-control{float:left;clear:both}
-.leaflet-right .leaflet-control{float:right}
-.leaflet-top .leaflet-control{margin-top:10px}
-.leaflet-bottom .leaflet-control{margin-bottom:10px}
-.leaflet-left .leaflet-control{margin-left:10px}
-.leaflet-right .leaflet-control{margin-right:10px}
-.leaflet-fade-anim .leaflet-popup{opacity:0;transition:opacity .2s linear}
-.leaflet-fade-anim .leaflet-map-pane .leaflet-popup{opacity:1}
-.leaflet-zoom-animated{transform-origin:0 0}
-svg.leaflet-zoom-animated{will-change:transform}
-.leaflet-zoom-anim .leaflet-zoom-animated{transition:transform .25s cubic-bezier(0,0,.25,1)}
-.leaflet-zoom-anim .leaflet-tile,.leaflet-pan-anim .leaflet-tile{transition:none}
-.leaflet-zoom-anim .leaflet-zoom-hide{visibility:hidden}
-.leaflet-interactive{cursor:pointer}
-.leaflet-grab{cursor:grab}
-.leaflet-crosshair,.leaflet-crosshair .leaflet-interactive{cursor:crosshair}
-.leaflet-popup-pane,.leaflet-control{cursor:auto}
-.leaflet-dragging .leaflet-grab,.leaflet-dragging .leaflet-grab .leaflet-interactive,.leaflet-dragging .leaflet-marker-draggable{cursor:grabbing}
-.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-image-layer,.leaflet-pane>svg path,.leaflet-tile-container{pointer-events:none}
-.leaflet-marker-icon.leaflet-interactive,.leaflet-image-layer.leaflet-interactive,.leaflet-pane>svg path.leaflet-interactive{pointer-events:auto}
-.leaflet-container{background:#ddd;outline-offset:1px}
-.leaflet-container a{color:#0078A8}
-.leaflet-zoom-box{border:2px dotted #38f;background:rgba(255,255,255,.5)}
-.leaflet-container{font-family:inherit;font-size:12px;line-height:1.5}
-.leaflet-bar{box-shadow:0 1px 5px rgba(0,0,0,.4);border-radius:8px;overflow:hidden}
-.leaflet-bar a{background:var(--surface);border-bottom:1px solid var(--border);width:32px;height:32px;line-height:32px;display:block;text-align:center;text-decoration:none;color:var(--text);font:bold 16px monospace}
-.leaflet-bar a:hover{background:var(--surface2)}
-.leaflet-bar a.leaflet-disabled{cursor:default;color:var(--muted)}
-.leaflet-popup{position:absolute;text-align:center;margin-bottom:20px}
-.leaflet-popup-content-wrapper{padding:1px;text-align:left;border-radius:10px}
-.leaflet-popup-content{margin:12px 16px;line-height:1.4;font-size:13px;min-height:1px}
-.leaflet-popup-tip-container{width:40px;height:20px;position:absolute;left:50%;margin-top:-1px;margin-left:-20px;overflow:hidden;pointer-events:none}
-.leaflet-popup-tip{width:17px;height:17px;padding:1px;margin:-10px auto 0;transform:rotate(45deg)}
-.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--text);box-shadow:0 3px 14px rgba(0,0,0,.4);border:1px solid var(--border)}
-.leaflet-container a.leaflet-popup-close-button{position:absolute;top:2px;right:2px;border:none;text-align:center;width:22px;height:22px;font:16px/22px sans-serif;color:var(--muted);text-decoration:none;background:transparent}
-.leaflet-container a.leaflet-popup-close-button:hover{color:var(--text)}
-.leaflet-div-icon{background:transparent;border:none}
-
-/* ============ Theme tokens ============ */
-:root, :root[data-theme="dark"]{
-  --bg:#0B0F14; --surface:#131920; --surface2:#1B232C; --text:#E4E9F0; --muted:#8B97A5;
-  --accent:#E8A33D; --accent-text:#1A1206; --border:#232C36;
-  --sig-lo:#E5484D; --sig-mid:#E8A33D; --sig-hi:#3DD68C; --shadow:0 8px 24px rgba(0,0,0,.45);
-}
-:root[data-theme="light"]{
-  --bg:#EEF1F5; --surface:#FFFFFF; --surface2:#F4F6F9; --text:#1A2027; --muted:#5B6570;
-  --accent:#C97A1A; --accent-text:#FFFFFF; --border:#D7DCE2;
-  --sig-lo:#D6304A; --sig-mid:#C97A1A; --sig-hi:#1E9E62; --shadow:0 6px 18px rgba(30,40,55,.14);
-}
-:root[data-theme="oled"]{
-  --bg:#000000; --surface:#050505; --surface2:#0D0D0D; --text:#EDEDED; --muted:#8A8A8A;
-  --accent:#E8A33D; --accent-text:#1A1206; --border:#1A1A1A;
-  --sig-lo:#E5484D; --sig-mid:#E8A33D; --sig-hi:#3DD68C; --shadow:none;
-}
-:root[data-theme="hc"]{
-  --bg:#000000; --surface:#000000; --surface2:#000000; --text:#FFFFFF; --muted:#FFFFFF;
-  --accent:#FFD400; --accent-text:#000000; --border:#FFFFFF;
-  --sig-lo:#FF5C5C; --sig-mid:#FFD400; --sig-hi:#5CFF9E; --shadow:none;
-}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="oled"]):not([data-theme="hc"]){ } }
-
-*{box-sizing:border-box}
-html,body{height:100%;margin:0}
-body{
-  background:var(--bg); color:var(--text);
-  font-family:'Space Grotesk',system-ui,sans-serif;
-  padding-top:env(safe-area-inset-top,0); padding-bottom:env(safe-area-inset-bottom,0);
-  overscroll-behavior:none;
-}
-.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
-button{font-family:inherit}
-::selection{background:var(--accent);color:var(--accent-text)}
-:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
-
-/* ============ Shell layout ============ */
-#app{height:100%; display:flex; flex-direction:column}
-header{
-  display:flex; align-items:center; gap:.6rem; justify-content:space-between;
-  padding:.7rem .9rem; padding-top:calc(.7rem + env(safe-area-inset-top,0));
-  background:var(--surface); border-bottom:1px solid var(--border); position:relative; z-index:20;
-}
-.brand{display:flex; align-items:center; gap:.55rem; min-width:0}
-.brand svg{flex:none}
-.brand-text{display:flex; flex-direction:column; line-height:1.1; min-width:0}
-.brand-text strong{font-size:1rem; font-weight:700; letter-spacing:.01em; white-space:nowrap}
-.brand-text span{font-size:.68rem; color:var(--muted)}
-.hdr-actions{display:flex; gap:.4rem}
-.icon-btn{
-  width:38px; height:38px; border-radius:10px; border:1px solid var(--border);
-  background:var(--surface2); color:var(--text); display:flex; align-items:center; justify-content:center;
-  cursor:pointer; transition:background .15s;
-}
-.icon-btn:hover{background:var(--border)}
-.icon-btn svg{width:18px; height:18px}
-
-main{flex:1; position:relative; min-height:0}
-#map{position:absolute; inset:0; background:var(--surface2)}
-
-.fab-col{position:absolute; right:.8rem; bottom:.8rem; display:flex; flex-direction:column; gap:.55rem; z-index:15}
-.fab{
-  width:48px; height:48px; border-radius:50%; border:1px solid var(--border);
-  background:var(--surface); color:var(--text); box-shadow:var(--shadow);
-  display:flex; align-items:center; justify-content:center; cursor:pointer;
-}
-.fab.primary{background:var(--accent); color:var(--accent-text); border-color:var(--accent)}
-.fab svg{width:20px; height:20px}
-.fab.active{outline:2px solid var(--accent); outline-offset:2px}
-
-.place-banner{
-  position:absolute; top:.7rem; left:50%; transform:translateX(-50%);
-  background:var(--accent); color:var(--accent-text); padding:.45rem .9rem; border-radius:999px;
-  font-size:.8rem; font-weight:600; box-shadow:var(--shadow); z-index:16; display:none;
-  white-space:nowrap;
-}
-.place-banner.show{display:block}
-
-/* ============ Drawer (mobile bottom sheet / desktop sidebar) ============ */
-#drawer{
-  background:var(--surface); border-top:1px solid var(--border);
-  z-index:25; display:flex; flex-direction:column;
-  max-height:68vh; transition:max-height .22s ease;
-}
-#drawer.collapsed{max-height:52px}
-.drawer-handle{
-  display:flex; align-items:center; justify-content:space-between; gap:.5rem;
-  padding:.7rem .9rem; cursor:pointer; user-select:none; flex:none;
-}
-.drawer-grip{width:36px; height:4px; border-radius:2px; background:var(--border); position:absolute; left:50%; top:6px; transform:translateX(-50%)}
-.drawer-title{font-weight:600; font-size:.9rem; display:flex; align-items:center; gap:.5rem}
-.count-pill{background:var(--surface2); border:1px solid var(--border); border-radius:999px; padding:.1rem .55rem; font-size:.72rem; color:var(--muted)}
-.chevron{transition:transform .2s}
-#drawer.collapsed .chevron{transform:rotate(180deg)}
-.drawer-body{overflow-y:auto; padding:0 .9rem .9rem; flex:1; min-height:0}
-
-.searchbar{display:flex; gap:.5rem; margin-bottom:.7rem}
-.searchbar input{flex:1}
-input,select,textarea{
-  background:var(--surface2); border:1px solid var(--border); color:var(--text);
-  border-radius:8px; padding:.55rem .65rem; font-size:.85rem; font-family:inherit; width:100%;
-}
-[data-theme="hc"] input,[data-theme="hc"] select,[data-theme="hc"] textarea{border-width:2px}
-input:focus,select:focus,textarea:focus{border-color:var(--accent)}
-
-.info-note{
-  background:var(--surface2); border:1px solid var(--border); border-left:3px solid var(--accent);
-  border-radius:8px; padding:.6rem .7rem; font-size:.76rem; color:var(--muted); margin-bottom:.7rem; line-height:1.45;
-  display:flex; gap:.5rem; align-items:flex-start;
-}
-.info-note button{background:none; border:none; color:var(--muted); cursor:pointer; margin-left:auto; font-size:.9rem; line-height:1; flex:none}
-
-.net-list{display:flex; flex-direction:column; gap:.5rem}
-.net-item{
-  background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:.6rem .7rem;
-  display:flex; align-items:center; gap:.6rem; cursor:pointer;
-}
-.sig-dot{width:11px; height:11px; border-radius:50%; flex:none; box-shadow:0 0 0 3px color-mix(in srgb, currentColor 18%, transparent)}
-.net-item .meta{min-width:0; flex:1}
-.net-item .ssid{font-weight:600; font-size:.86rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.net-item .sub{font-size:.72rem; color:var(--muted); display:flex; gap:.5rem; flex-wrap:wrap}
-.net-item .sig-val{font-size:.75rem; color:var(--muted); flex:none}
-.empty-state{color:var(--muted); font-size:.82rem; text-align:center; padding:1.6rem .5rem}
-
-.tools-row{display:flex; gap:.5rem; margin-top:.7rem}
-.btn{
-  flex:1; padding:.55rem .7rem; border-radius:8px; border:1px solid var(--border); background:var(--surface2);
-  color:var(--text); font-size:.78rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:.4rem;
-}
-.btn:hover{background:var(--border)}
-.btn.primary{background:var(--accent); color:var(--accent-text); border-color:var(--accent)}
-[data-theme="hc"] .btn, [data-theme="hc"] .icon-btn, [data-theme="hc"] .fab{border-width:2px}
-
-/* ============ Form sheet ============ */
-#form-overlay{
-  position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; display:none;
-  align-items:flex-end; justify-content:center;
-}
-#form-overlay.show{display:flex}
-#form-sheet{
-  background:var(--surface); border:1px solid var(--border); border-bottom:none;
-  border-radius:16px 16px 0 0; width:100%; max-width:480px; max-height:88vh; overflow-y:auto;
-  padding:1rem 1rem calc(1rem + env(safe-area-inset-bottom,0));
-}
-.form-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:.8rem}
-.form-head h2{font-size:1rem; margin:0}
-.field{margin-bottom:.65rem}
-.field label{display:block; font-size:.72rem; color:var(--muted); margin-bottom:.3rem; font-weight:600; letter-spacing:.01em}
-.field-row{display:flex; gap:.5rem}
-.field-row .field{flex:1}
-.coord-line{font-size:.72rem; color:var(--muted); margin-bottom:.7rem}
-.range-row{display:flex; align-items:center; gap:.6rem}
-.range-row input[type=range]{flex:1; accent-color:var(--accent)}
-.range-row .sig-readout{width:3.4rem; text-align:right; font-size:.8rem}
-.form-actions{display:flex; gap:.5rem; margin-top:.9rem}
-.form-actions .btn.danger{background:transparent; color:var(--sig-lo); border-color:var(--sig-lo)}
-
-.popup-card{font-family:'Space Grotesk',sans-serif; min-width:180px}
-.popup-card .p-ssid{font-weight:700; font-size:.9rem; margin-bottom:.15rem}
-.popup-card .p-sub{font-size:.72rem; color:var(--muted); margin-bottom:.5rem}
-.popup-card .p-row{display:flex; gap:.4rem}
-.popup-card .p-btn{flex:1; padding:.35rem; border-radius:6px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:.72rem; cursor:pointer; font-weight:600}
-
-footer{
-  background:var(--surface); border-top:1px solid var(--border); flex:none;
-  display:flex; align-items:center; justify-content:center; text-align:center;
-  padding:.5rem .8rem calc(.5rem + env(safe-area-inset-bottom,0));
-}
-footer p{margin:0; font-size:.7rem; color:var(--muted); line-height:1.4}
-
-/* Desktop layout */
-@media (min-width:860px){
-  main{display:flex}
-  #map{position:relative; flex:1; inset:auto}
-  #drawer{width:360px; max-height:none!important; border-top:none; border-left:1px solid var(--border); flex:none; height:100%}
-  .drawer-handle{cursor:default}
-  .drawer-grip{display:none}
-  .chevron{display:none}
-  .drawer-body{padding:.9rem}
-}
-@media (max-width:859px){
-  .brand-text span{display:none}
-}
+:root{--bg:#12141a;--panel:#1b1e27;--text:#e8eaf0;--mute:#9aa1b2;--line:#2c3040;--acc:#4da3ff;--onacc:#001528;--ok:#3ddc84;--bad:#ff6b6b;--tile:invert(1) hue-rotate(180deg) brightness(.92) contrast(.9)}
+[data-theme=light]{--bg:#f3f5f9;--panel:#fff;--text:#161a24;--mute:#5b6478;--line:#d9deea;--acc:#0b63ce;--onacc:#fff;--ok:#12813f;--bad:#c62828;--tile:none}
+[data-theme=oled]{--bg:#000;--panel:#000;--text:#f2f2f2;--mute:#8a8a8a;--line:#222;--acc:#4da3ff;--onacc:#000;--tile:invert(1) hue-rotate(180deg) brightness(.7) contrast(.95)}
+[data-theme=hc]{--bg:#000;--panel:#000;--text:#fff;--mute:#fff;--line:#fff;--acc:#ffe600;--onacc:#000;--ok:#00ff6a;--bad:#ff5c5c;--tile:grayscale(1) invert(1) contrast(1.6)}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;min-height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+header{padding:12px 14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+h1{font-size:1.25rem}
+.pill{font-size:.75rem;padding:2px 10px;border:1px solid var(--line);border-radius:99px;color:var(--mute)}
+.pill.on{color:var(--ok);border-color:var(--ok)}.pill.off{color:var(--bad);border-color:var(--bad)}
+.themes{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+button,select{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;min-height:44px;cursor:pointer}
+.themes button{border:0;border-radius:0;padding:8px 12px;min-height:40px}
+.themes button[aria-pressed=true],button.primary{background:var(--acc);color:var(--onacc);font-weight:600}
+button:focus-visible,select:focus-visible,.row:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+[data-theme=hc] *{border-width:2px}
+main{flex:1;display:grid;grid-template-rows:minmax(300px,48dvh) auto;gap:10px;padding:0 10px 10px;min-height:0}
+#map{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel);z-index:0}
+.leaflet-tile-pane{filter:var(--tile)}
+.heat{position:absolute;top:0;left:0;pointer-events:none}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
+.bar label{display:flex;align-items:center;gap:6px;color:var(--mute);font-size:.85rem}
+#list{display:flex;flex-direction:column;gap:6px;overflow:auto;max-height:42dvh}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.row[aria-selected=true]{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.row b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row small{color:var(--mute);font-size:.78rem}
+.sig{grid-row:span 2;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.meter{height:5px;border-radius:3px;background:var(--line);margin-top:4px;overflow:hidden;width:70px}
+.meter i{display:block;height:100%}
+.legend{height:8px;border-radius:4px;background:linear-gradient(90deg,#00f,#0ff,#0f0,#ff0,#f00);width:min(220px,70%);margin:0 auto}
+.lg{display:flex;justify-content:space-between;width:min(220px,70%);margin:0 auto;font-size:.72rem;color:var(--mute)}
+.msg{text-align:center;color:var(--mute);font-size:.85rem}
+footer{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;padding:14px;color:var(--mute);font-size:.82rem;border-top:1px solid var(--line)}
+@media(min-width:900px){main{grid-template-columns:1fr 380px;grid-template-rows:calc(100dvh - 190px)}#list{max-height:none;flex:1}aside{overflow:hidden}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
-<body data-theme="dark">
-<div id="app">
-  <header>
-    <div class="brand">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-        <path d="M12 20.2c.66 0 1.2-.54 1.2-1.2s-.54-1.2-1.2-1.2-1.2.54-1.2 1.2.54 1.2 1.2 1.2Z" fill="var(--accent)"/>
-        <path d="M8.3 15.6a5.2 5.2 0 0 1 7.4 0" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/>
-        <path d="M5 12.3a9.4 9.4 0 0 1 14 0" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" opacity=".65"/>
-        <path d="M1.8 9a13.6 13.6 0 0 1 20.4 0" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" opacity=".35"/>
-      </svg>
-      <div class="brand-text">
-        <strong>WiFi Map</strong>
-        <span>Local BSSID cartography</span>
-      </div>
-    </div>
-    <div class="hdr-actions">
-      <button class="icon-btn" id="theme-btn" title="Change theme" aria-label="Change theme">
-        <svg id="theme-icon" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="4.4" stroke="currentColor" stroke-width="1.8"/></svg>
-      </button>
-    </div>
-  </header>
-
-  <main>
-    <div id="map" role="application" aria-label="Wi-Fi network map"></div>
-    <div class="place-banner" id="place-banner">Tap the map to place this network</div>
-    <div class="fab-col">
-      <button class="fab" id="locate-btn" title="Find my location" aria-label="Find my location">
-        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="2.6" fill="currentColor"/><path stroke="currentColor" stroke-width="1.8" d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" stroke-linecap="round"/></svg>
-      </button>
-      <button class="fab primary" id="add-btn" title="Add network" aria-label="Add network">
-        <svg viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
-      </button>
-    </div>
-  </main>
-
-  <section id="drawer" class="collapsed">
-    <div class="drawer-handle" id="drawer-handle">
-      <div class="drawer-grip"></div>
-      <div class="drawer-title">Networks <span class="count-pill" id="net-count">0</span></div>
-      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="m6 9 6 6 6-6"/></svg>
-    </div>
-    <div class="drawer-body">
-      <div class="info-note" id="info-note">
-        <span>Browsers can't call native Windows APIs like <span class="mono">wlanapi.dll</span> directly&nbsp;— so scans are logged here manually or via JSON import from a scanner's export, then mapped and stored locally on this device.</span>
-        <button id="note-close" aria-label="Dismiss">✕</button>
-      </div>
-      <div class="searchbar">
-        <input type="text" id="search" placeholder="Search SSID or BSSID…" />
-      </div>
-      <div class="net-list" id="net-list"></div>
-      <div class="tools-row">
-        <button class="btn" id="export-btn">Export JSON</button>
-        <button class="btn" id="import-btn">Import JSON</button>
-      </div>
-      <input type="file" id="import-file" accept="application/json" hidden />
-    </div>
-  </section>
-
-  <footer>
-    <p id="footer-text"></p>
-  </footer>
-</div>
-
-<div id="form-overlay">
-  <div id="form-sheet">
-    <div class="form-head">
-      <h2 id="form-title">Add network</h2>
-      <button class="icon-btn" id="form-close" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </div>
-    <div class="coord-line mono" id="coord-line">lat 0.00000, lng 0.00000</div>
-    <div class="field">
-      <label for="f-ssid">SSID (network name)</label>
-      <input id="f-ssid" type="text" maxlength="40" placeholder="e.g. CoffeeHouse_5G" />
-    </div>
-    <div class="field">
-      <label for="f-bssid">BSSID (access point MAC)</label>
-      <input id="f-bssid" class="mono" type="text" maxlength="17" placeholder="AA:BB:CC:DD:EE:FF" />
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label for="f-band">Band</label>
-        <select id="f-band">
-          <option>2.4 GHz</option>
-          <option selected>5 GHz</option>
-          <option>6 GHz</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="f-security">Security</label>
-        <select id="f-security">
-          <option>Open</option>
-          <option>WEP</option>
-          <option>WPA</option>
-          <option selected>WPA2</option>
-          <option>WPA3</option>
-        </select>
-      </div>
-    </div>
-    <div class="field">
-      <label for="f-signal">Signal strength</label>
-      <div class="range-row">
-        <input id="f-signal" type="range" min="0" max="100" value="70" />
-        <span class="sig-readout mono" id="f-signal-val">70%</span>
-      </div>
-    </div>
-    <div class="field">
-      <label for="f-notes">Notes (optional)</label>
-      <textarea id="f-notes" rows="2" placeholder="Floor, room, landmark…"></textarea>
-    </div>
-    <div class="form-actions">
-      <button class="btn danger" id="f-delete" style="display:none">Delete</button>
-      <button class="btn primary" id="f-save">Save network</button>
-    </div>
+<body>
+<header>
+  <h1>📶 Wi-Fi Map</h1>
+  <span id="status" class="pill">checking bridge…</span>
+  <div class="themes" role="group" aria-label="Theme">
+    <button data-t="dark" aria-pressed="true">Dark</button>
+    <button data-t="light" aria-pressed="false">Light</button>
+    <button data-t="oled" aria-pressed="false">OLED</button>
+    <button data-t="hc" aria-pressed="false">HC</button>
   </div>
-</div>
+</header>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<main>
+  <div id="map" role="application" aria-label="Wi-Fi signal heatmap"></div>
+  <aside>
+    <div class="bar">
+      <button id="scan" class="primary">Scan now</button>
+      <label><input type="checkbox" id="auto"> Auto 10s</label>
+      <label><input type="checkbox" id="gps" checked> GPS</label>
+    </div>
+    <div class="bar">
+      <select id="band" aria-label="Band filter"><option value="0">All bands</option><option value="2">2.4 GHz</option><option value="5">5 GHz</option><option value="6">6 GHz</option></select>
+      <button id="export">Export</button>
+      <button id="clear">Clear</button>
+    </div>
+    <div><div class="legend"></div><div class="lg"><span>−95 dBm</span><span>−35 dBm</span></div></div>
+    <div id="msg" class="msg">Tap the map to set your position (turn GPS off for indoor mapping).</div>
+    <div id="list" role="listbox" aria-label="Access points"></div>
+  </aside>
+</main>
+
+<footer>
+  <span>© Manik Roy <span id="year">2026</span>. All Rights Reserved.</span>
+  <span>Map data © OpenStreetMap contributors</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-(function(){
-"use strict";
+const $ = s => document.querySelector(s);
+const BRIDGE = location.protocol === 'file:' ? 'http://127.0.0.1:8765' : '';
+$('#year').textContent = new Date().getFullYear();
 
-/* ---------- Theme ---------- */
-var THEMES = ["dark","light","oled","hc"];
-var THEME_LABEL = {dark:"Dark+", light:"Light+", oled:"OLED True Black", hc:"High Contrast"};
-function loadTheme(){ return localStorage.getItem("wifimap.theme") || "dark"; }
-function applyTheme(t, skipRedraw){
-  document.body.setAttribute("data-theme", t);
-  localStorage.setItem("wifimap.theme", t);
-  document.getElementById("theme-btn").title = "Theme: " + THEME_LABEL[t] + " (tap to change)";
-  if(!skipRedraw) redrawMarkers();
+/* ---------- theme ---------- */
+const store = { get(k, d){ try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } },
+                set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)) } catch {} } };
+function setTheme(t){
+  document.documentElement.dataset.theme = t; store.set('wm-theme', t);
+  document.querySelectorAll('.themes button').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === t));
 }
-applyTheme(loadTheme(), true); // skip redraw: map/db aren't initialized yet at this point
-document.getElementById("theme-btn").addEventListener("click", function(){
-  var cur = document.body.getAttribute("data-theme");
-  var next = THEMES[(THEMES.indexOf(cur)+1) % THEMES.length];
-  applyTheme(next);
-});
+document.querySelectorAll('.themes button').forEach(b => b.onclick = () => setTheme(b.dataset.t));
+setTheme(store.get('wm-theme', matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
 
-/* ---------- Footer year ---------- */
-function stampFooter(){
-  document.getElementById("footer-text").textContent =
-    "© Manik Roy " + new Date().getFullYear() + ". All Rights Reserved.";
-}
-stampFooter();
+/* ---------- state ---------- */
+let samples = store.get('wm-samples', []);   // {lat,lng,t,b:[[bssid,ssid,rssi,freq],...]}
+let last = [], sel = null, pin = null, demo = false, busy = false, timer = null, pinMarker = null;
 
-/* ---------- Local BSSID database (localStorage) ---------- */
-var DB_KEY = "wifimap.db.v1";
-function loadDB(){ try{ return JSON.parse(localStorage.getItem(DB_KEY)) || []; }catch(e){ return []; } }
-function saveDB(list){ localStorage.setItem(DB_KEY, JSON.stringify(list)); }
-var networks = loadDB();
-function upsert(rec){
-  var i = networks.findIndex(function(n){ return n.id === rec.id; });
-  if(i > -1) networks[i] = rec; else networks.push(rec);
-  saveDB(networks);
-}
-function removeById(id){
-  networks = networks.filter(function(n){ return n.id !== id; });
-  saveDB(networks);
-}
-function uid(){ return "n" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+/* ---------- map (OpenStreetMap tiles: free, no API key) ---------- */
+const map = L.map('map', { zoomControl: true }).setView(samples.length ? [samples.at(-1).lat, samples.at(-1).lng] : [22.5726, 88.3639], samples.length ? 18 : 15);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+map.on('click', e => { pin = e.latlng; setPin(); $('#gps').checked = false; msg('Position pinned. Scan to record signal here.'); });
+function setPin(){ if (pinMarker) pinMarker.remove(); if (pin) pinMarker = L.circleMarker(pin, { radius: 7, color: '#fff', weight: 2, fillColor: '#4da3ff', fillOpacity: 1 }).addTo(map); }
+const msg = t => $('#msg').textContent = t;
 
-/* ---------- Map ---------- */
-var map = L.map("map", { zoomControl:false, attributionControl:true }).setView([22.5726, 88.3639], 13);
-L.control.zoom({ position:"bottomleft" }).addTo(map);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19,
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
-
-var markers = {}; // id -> L.marker
-var youAreHere = null;
-
-function sigColor(pct){
-  if(pct >= 65) return getCss("--sig-hi");
-  if(pct >= 35) return getCss("--sig-mid");
-  return getCss("--sig-lo");
-}
-function getCss(name){ return getComputedStyle(document.body).getPropertyValue(name).trim(); }
-
-function markerIcon(pct){
-  var c = sigColor(pct);
-  var svg = '<svg width="26" height="26" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg">' +
-    '<circle cx="13" cy="13" r="10" fill="' + c + '" fill-opacity="0.22"/>' +
-    '<circle cx="13" cy="13" r="5.5" fill="' + c + '" stroke="var(--surface)" stroke-width="2"/>' +
-    '</svg>';
-  return L.divIcon({ className:"", html:svg, iconSize:[26,26], iconAnchor:[13,13], popupAnchor:[0,-12] });
-}
-
-function popupHtml(n){
-  return '<div class="popup-card">' +
-    '<div class="p-ssid">' + escapeHtml(n.ssid || "(hidden network)") + '</div>' +
-    '<div class="p-sub mono">' + escapeHtml(n.bssid || "—") + ' · ' + n.band + ' · ' + n.security + ' · ' + n.signal + '%</div>' +
-    '<div class="p-row">' +
-      '<button class="p-btn" data-edit="' + n.id + '">Edit</button>' +
-      '<button class="p-btn" data-del="' + n.id + '">Delete</button>' +
-    '</div></div>';
-}
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
-
-function addOrUpdateMarker(n){
-  if(markers[n.id]) map.removeLayer(markers[n.id]);
-  var m = L.marker([n.lat, n.lng], { icon: markerIcon(n.signal) }).addTo(map);
-  m.bindPopup(popupHtml(n));
-  m.on("popupopen", function(){
-    var root = m.getPopup().getElement();
-    var editBtn = root.querySelector("[data-edit]");
-    var delBtn = root.querySelector("[data-del]");
-    if(editBtn) editBtn.addEventListener("click", function(){ openForm(n); });
-    if(delBtn) delBtn.addEventListener("click", function(){ deleteNetwork(n.id); });
-  });
-  markers[n.id] = m;
-}
-function redrawMarkers(){ if(typeof networks === "undefined" || !map) return; networks.forEach(addOrUpdateMarker); renderList(); }
-function removeMarker(id){ if(markers[id]){ map.removeLayer(markers[id]); delete markers[id]; } }
-
-/* ---------- Placement mode ---------- */
-var placing = false;
-var addBtn = document.getElementById("add-btn");
-var placeBanner = document.getElementById("place-banner");
-addBtn.addEventListener("click", function(){
-  placing = !placing;
-  addBtn.classList.toggle("active", placing);
-  placeBanner.classList.toggle("show", placing);
-});
-map.on("click", function(e){
-  if(!placing) return;
-  placing = false;
-  addBtn.classList.remove("active");
-  placeBanner.classList.remove("show");
-  openForm(null, e.latlng);
-});
-
-/* ---------- Locate ---------- */
-document.getElementById("locate-btn").addEventListener("click", function(){
-  if(!navigator.geolocation){ alert("Geolocation isn't available on this device/browser."); return; }
-  navigator.geolocation.getCurrentPosition(function(pos){
-    var ll = [pos.coords.latitude, pos.coords.longitude];
-    map.setView(ll, 16);
-    if(youAreHere) map.removeLayer(youAreHere);
-    var svg = '<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="var(--accent)" fill-opacity="0.25"/><circle cx="11" cy="11" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/></svg>';
-    youAreHere = L.marker(ll, { icon:L.divIcon({className:"", html:svg, iconSize:[22,22], iconAnchor:[11,11]}) }).addTo(map);
-  }, function(){ alert("Couldn't get your location. Check location permissions."); }, { enableHighAccuracy:true, timeout:8000 });
-});
-
-/* ---------- Form sheet ---------- */
-var overlay = document.getElementById("form-overlay");
-var sheet = document.getElementById("form-sheet");
-var fSsid = document.getElementById("f-ssid"), fBssid = document.getElementById("f-bssid"),
-    fBand = document.getElementById("f-band"), fSecurity = document.getElementById("f-security"),
-    fSignal = document.getElementById("f-signal"), fSignalVal = document.getElementById("f-signal-val"),
-    fNotes = document.getElementById("f-notes"), fDelete = document.getElementById("f-delete"),
-    coordLine = document.getElementById("coord-line"), formTitle = document.getElementById("form-title");
-var editingId = null, pendingLatLng = null;
-
-fSignal.addEventListener("input", function(){ fSignalVal.textContent = fSignal.value + "%"; });
-
-function openForm(existing, latlng){
-  editingId = existing ? existing.id : null;
-  pendingLatLng = existing ? {lat:existing.lat, lng:existing.lng} : latlng;
-  formTitle.textContent = existing ? "Edit network" : "Add network";
-  fDelete.style.display = existing ? "flex" : "none";
-  fSsid.value = existing ? existing.ssid : "";
-  fBssid.value = existing ? existing.bssid : "";
-  fBand.value = existing ? existing.band : "5 GHz";
-  fSecurity.value = existing ? existing.security : "WPA2";
-  fSignal.value = existing ? existing.signal : 70;
-  fSignalVal.textContent = fSignal.value + "%";
-  fNotes.value = existing ? (existing.notes||"") : "";
-  coordLine.textContent = "lat " + pendingLatLng.lat.toFixed(5) + ", lng " + pendingLatLng.lng.toFixed(5);
-  overlay.classList.add("show");
-  setTimeout(function(){ fSsid.focus(); }, 50);
-}
-function closeForm(){ overlay.classList.remove("show"); editingId = null; pendingLatLng = null; }
-document.getElementById("form-close").addEventListener("click", closeForm);
-overlay.addEventListener("click", function(e){ if(e.target === overlay) closeForm(); });
-
-document.getElementById("f-save").addEventListener("click", function(){
-  if(!pendingLatLng) return;
-  var mac = fBssid.value.trim();
-  if(mac && !/^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/.test(mac)){
-    alert("BSSID should look like AA:BB:CC:DD:EE:FF"); return;
-  }
-  var rec = {
-    id: editingId || uid(),
-    ssid: fSsid.value.trim(),
-    bssid: mac.toUpperCase(),
-    band: fBand.value,
-    security: fSecurity.value,
-    signal: parseInt(fSignal.value, 10),
-    notes: fNotes.value.trim(),
-    lat: pendingLatLng.lat, lng: pendingLatLng.lng,
-    updated: new Date().toISOString()
-  };
-  upsert(rec);
-  addOrUpdateMarker(rec);
-  renderList();
-  closeForm();
-});
-fDelete.addEventListener("click", function(){
-  if(editingId) deleteNetwork(editingId);
-  closeForm();
-});
-function deleteNetwork(id){
-  removeById(id);
-  removeMarker(id);
-  renderList();
-  map.closePopup();
-}
-
-/* ---------- List / search ---------- */
-var listEl = document.getElementById("net-list");
-var countEl = document.getElementById("net-count");
-var searchEl = document.getElementById("search");
-function renderList(){
-  var q = searchEl.value.trim().toLowerCase();
-  var items = networks.filter(function(n){
-    if(!q) return true;
-    return (n.ssid||"").toLowerCase().includes(q) || (n.bssid||"").toLowerCase().includes(q);
-  }).sort(function(a,b){ return b.signal - a.signal; });
-
-  countEl.textContent = networks.length;
-  listEl.innerHTML = "";
-  if(items.length === 0){
-    var empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.textContent = networks.length ? "No matches." : "No networks logged yet. Tap + on the map to add one.";
-    listEl.appendChild(empty);
-    return;
-  }
-  items.forEach(function(n){
-    var row = document.createElement("div");
-    row.className = "net-item";
-    row.innerHTML =
-      '<span class="sig-dot" style="background:' + sigColor(n.signal) + '; color:' + sigColor(n.signal) + '"></span>' +
-      '<span class="meta"><div class="ssid">' + escapeHtml(n.ssid || "(hidden network)") + '</div>' +
-      '<div class="sub mono">' + escapeHtml(n.bssid || "—") + ' · ' + n.band + '</div></span>' +
-      '<span class="sig-val mono">' + n.signal + '%</span>';
-    row.addEventListener("click", function(){
-      map.setView([n.lat, n.lng], 17);
-      markers[n.id] && markers[n.id].openPopup();
-      collapseDrawer(true);
-    });
-    listEl.appendChild(row);
-  });
-}
-searchEl.addEventListener("input", renderList);
-
-/* ---------- Drawer ---------- */
-var drawer = document.getElementById("drawer");
-var handle = document.getElementById("drawer-handle");
-function collapseDrawer(v){ drawer.classList.toggle("collapsed", v); }
-handle.addEventListener("click", function(){
-  if(window.innerWidth < 860) collapseDrawer(!drawer.classList.contains("collapsed"));
-});
-if(window.innerWidth >= 860) drawer.classList.remove("collapsed");
-
-/* ---------- Info note ---------- */
-var noteEl = document.getElementById("info-note");
-if(localStorage.getItem("wifimap.note.dismissed") === "1") noteEl.style.display = "none";
-document.getElementById("note-close").addEventListener("click", function(){
-  noteEl.style.display = "none";
-  localStorage.setItem("wifimap.note.dismissed", "1");
-});
-
-/* ---------- Import / Export ---------- */
-document.getElementById("export-btn").addEventListener("click", function(){
-  var blob = new Blob([JSON.stringify(networks, null, 2)], { type:"application/json" });
-  var a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "wifi-map-bssid-db.json";
-  document.body.appendChild(a); a.click(); a.remove();
-});
-var importFile = document.getElementById("import-file");
-document.getElementById("import-btn").addEventListener("click", function(){ importFile.click(); });
-importFile.addEventListener("change", function(){
-  var file = importFile.files[0];
-  if(!file) return;
-  var reader = new FileReader();
-  reader.onload = function(){
-    try{
-      var data = JSON.parse(reader.result);
-      if(!Array.isArray(data)) throw new Error("bad format");
-      var added = 0;
-      data.forEach(function(n){
-        if(typeof n.lat !== "number" || typeof n.lng !== "number") return;
-        var rec = {
-          id: n.id || uid(), ssid: n.ssid || "", bssid: (n.bssid||"").toUpperCase(),
-          band: n.band || "5 GHz", security: n.security || "WPA2",
-          signal: typeof n.signal === "number" ? n.signal : 60,
-          notes: n.notes || "", lat: n.lat, lng: n.lng,
-          updated: n.updated || new Date().toISOString()
-        };
-        upsert(rec); addOrUpdateMarker(rec); added++;
-      });
-      renderList();
-      alert("Imported " + added + " network" + (added===1?"":"s") + ".");
-    }catch(err){ alert("Couldn't read that file — expecting a JSON array of network records."); }
-    importFile.value = "";
-  };
-  reader.readAsText(file);
-});
-
-/* ---------- Init ---------- */
-redrawMarkers();
-if(networks.length){
-  var group = new L.featureGroup(Object.values(markers));
-  map.fitBounds(group.getBounds().pad(0.3), { maxZoom: 15 });
-}
+/* ---------- canvas heatmap layer ---------- */
+const palette = (() => {
+  const c = document.createElement('canvas'); c.width = 1; c.height = 256;
+  const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256);
+  [[0,'#0000ff'],[.3,'#00ffff'],[.55,'#00ff00'],[.78,'#ffff00'],[1,'#ff0000']].forEach(s => gr.addColorStop(s[0], s[1]));
+  g.fillStyle = gr; g.fillRect(0, 0, 1, 256); return g.getImageData(0, 0, 1, 256).data;
 })();
+const Heat = L.Layer.extend({
+  onAdd(m){ this._c = L.DomUtil.create('canvas', 'heat'); m.getPane('overlayPane').appendChild(this._c);
+    m.on('moveend zoomend resize', this.draw, this); this.draw(); },
+  onRemove(m){ this._c.remove(); m.off('moveend zoomend resize', this.draw, this); },
+  draw(){
+    const m = this._map, s = m.getSize(), c = this._c;
+    L.DomUtil.setPosition(c, m.containerPointToLayerPoint([0, 0]));
+    c.width = s.x; c.height = s.y;
+    const g = c.getContext('2d'), z = m.getZoom(), pts = visiblePoints();
+    const mpp = 156543.03 * Math.cos(m.getCenter().lat * Math.PI / 180) / 2 ** z;
+    const r = Math.max(16, 30 / mpp), stamp = document.createElement('canvas');
+    stamp.width = stamp.height = r * 2;
+    const sg = stamp.getContext('2d'), rg = sg.createRadialGradient(r, r, 0, r, r, r);
+    rg.addColorStop(0, 'rgba(0,0,0,1)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    sg.fillStyle = rg; sg.fillRect(0, 0, r * 2, r * 2);
+    pts.forEach(p => { const q = m.latLngToContainerPoint([p.lat, p.lng]);
+      g.globalAlpha = Math.max(.08, p.v * .75); g.drawImage(stamp, q.x - r, q.y - r); });
+    g.globalAlpha = 1;
+    const img = g.getImageData(0, 0, c.width, c.height), d = img.data;
+    for (let i = 3; i < d.length; i += 4) { const a = d[i]; if (a) { const j = Math.min(255, a * 1.4 | 0) * 4;
+      d[i-3] = palette[j]; d[i-2] = palette[j+1]; d[i-1] = palette[j+2]; d[i] = Math.min(255, a * 1.6 + 40); } }
+    g.putImageData(img, 0, 0);
+  }
+});
+const heat = new Heat().addTo(map);
+
+const bandOf = f => f < 3000 ? 2 : f >= 5925 ? 6 : 5;
+const norm = r => Math.max(0, Math.min(1, (r + 95) / 60));
+function visiblePoints(){
+  const band = +$('#band').value, out = [];
+  for (const s of samples) {
+    let best = -200;
+    for (const [, ssid, rssi, f] of s.b) if ((!sel || ssid === sel) && (!band || bandOf(f) === band) && rssi > best) best = rssi;
+    if (best > -200) out.push({ lat: s.lat, lng: s.lng, v: norm(best) });
+  }
+  return out;
+}
+
+/* ---------- scanning ---------- */
+function demoScan(){
+  const names = ['HomeNet', 'Cafe Guest', 'Office-5G', 'JioFiber-4F', 'Neighbour', 'AirFiber'];
+  const bss = names.flatMap((n, i) => [0, 1].slice(0, i % 3 ? 1 : 2).map(k => {
+    const f = k ? 5180 + i * 20 : 2412 + i * 25;
+    return { ssid: n, bssid: `02:AA:${i}${k}:00:00:0${i}`.toUpperCase(), rssi: -Math.round(35 + Math.random() * 55), quality: 60, freq: f,
+      channel: f < 3000 ? (f - 2407) / 5 : (f - 5000) / 5, phy: k ? 'Wi-Fi 5 (ac)' : 'Wi-Fi 4 (n)', secure: i % 4 !== 1 }; }));
+  return { bss };
+}
+async function getScan(){
+  try {
+    const r = await fetch(BRIDGE + '/scan', { cache: 'no-store' }); const j = await r.json();
+    if (j.error) throw new Error(j.error);
+    demo = false; setStatus(true, `bridge · ${j.count} BSS`); return j;
+  } catch (e) {
+    demo = true; setStatus(false, 'demo data · bridge offline'); return demoScan();
+  }
+}
+function setStatus(ok, t){ const s = $('#status'); s.textContent = t; s.className = 'pill ' + (ok ? 'on' : 'off'); }
+function locate(){
+  return new Promise(res => {
+    const fallback = () => res(pin || map.getCenter());
+    if (!$('#gps').checked || !navigator.geolocation) return fallback();
+    navigator.geolocation.getCurrentPosition(p => res({ lat: p.coords.latitude, lng: p.coords.longitude }), fallback, { enableHighAccuracy: true, timeout: 5000 });
+  });
+}
+async function scan(){
+  if (busy) return; busy = true; const b = $('#scan'); b.disabled = true; b.textContent = 'Scanning…';
+  const data = await getScan(), p = await locate();
+  last = data.bss.sort((a, c) => c.rssi - a.rssi);
+  samples.push({ lat: p.lat, lng: p.lng, t: Date.now(), b: last.map(x => [x.bssid, x.ssid, x.rssi, x.freq]) });
+  if (samples.length > 1500) samples.shift();
+  store.set('wm-samples', samples);
+  if ($('#gps').checked && p.lat) map.setView([p.lat, p.lng], Math.max(map.getZoom(), 17));
+  msg(`${samples.length} sample points · ${last.length} access points${demo ? ' (demo)' : ''}`);
+  render(); heat.draw(); b.disabled = false; b.textContent = 'Scan now'; busy = false;
+}
+
+/* ---------- list ---------- */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function render(){
+  const band = +$('#band').value, el = $('#list');
+  const rows = last.filter(x => !band || bandOf(x.freq) === band);
+  el.innerHTML = rows.map(x => {
+    const v = norm(x.rssi), col = `hsl(${Math.round(v * 120)} 85% 50%)`, name = x.ssid || '(hidden network)';
+    return `<div class="row" role="option" tabindex="0" data-s="${esc(x.ssid)}" aria-selected="${sel === x.ssid}">
+      <b>${esc(name)} ${x.secure === false ? '🔓' : '🔒'}</b><span class="sig" style="color:${col}">${x.rssi} dBm<div class="meter"><i style="width:${v * 100}%;background:${col}"></i></div></span>
+      <small>${esc(x.bssid)} · ${(x.freq / 1000).toFixed(x.freq < 3000 ? 1 : 3).replace(/\.?0+$/, '')} GHz · ch ${x.channel} · ${esc(x.phy)}</small></div>`;
+  }).join('') || '<div class="msg">No networks yet — press Scan now.</div>';
+}
+$('#list').addEventListener('click', e => { const r = e.target.closest('.row'); if (!r) return; pick(r.dataset.s); });
+$('#list').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { const r = e.target.closest('.row'); if (r) pick(r.dataset.s); } });
+function pick(s){ sel = sel === s ? null : s; render(); heat.draw(); msg(sel ? `Heatmap filtered to "${sel || 'hidden'}" — tap again to clear` : 'Showing strongest signal at each point'); }
+
+/* ---------- controls ---------- */
+$('#scan').onclick = scan;
+$('#band').onchange = () => { render(); heat.draw(); };
+$('#auto').onchange = e => { clearInterval(timer); if (e.target.checked) { scan(); timer = setInterval(scan, 10000); } };
+$('#clear').onclick = () => { if (confirm('Delete all recorded samples?')) { samples = []; store.set('wm-samples', []); heat.draw(); msg('Samples cleared.'); } };
+$('#export').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(samples, null, 1)], { type: 'application/json' }));
+  a.download = 'wifi-samples.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+new ResizeObserver(() => map.invalidateSize()).observe($('#map'));
+fetch(BRIDGE + '/scan', { method: 'OPTIONS' }).then(() => setStatus(true, 'bridge ready'), () => setStatus(false, 'demo mode · bridge offline'));
+render(); if (samples.length) msg(`${samples.length} saved sample points loaded.`);
 </script>
 </body>
 </html>
