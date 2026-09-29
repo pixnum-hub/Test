@@ -40,6 +40,11 @@ aside{background:var(--panel);border:1px solid var(--line);border-radius:14px;pa
 .meter i{display:block;height:100%}
 .legend{height:8px;border-radius:4px;background:linear-gradient(90deg,#00f,#0ff,#0f0,#ff0,#f00);width:min(220px,70%);margin:0 auto}
 .lg{display:flex;justify-content:space-between;width:min(220px,70%);margin:0 auto;font-size:.72rem;color:var(--mute)}
+.badge{display:inline-block;font-size:.7rem;font-weight:700;line-height:1;padding:3px 7px;border-radius:99px;border:1px solid currentColor;margin-right:4px;white-space:nowrap}
+.b2{color:#ff9f43}.b5{color:#4da3ff}.b6{color:#b980ff}.bg{color:var(--mute)}
+[data-theme=light] .b2{color:#b45f06}[data-theme=light] .b5{color:#0b63ce}[data-theme=light] .b6{color:#7a2fd0}
+[data-theme=hc] .b2,[data-theme=hc] .b5,[data-theme=hc] .b6,[data-theme=hc] .bg{color:#fff;border-width:2px}
+#counts{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
 .msg{text-align:center;color:var(--mute);font-size:.85rem}
 footer{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;padding:14px;color:var(--mute);font-size:.82rem;border-top:1px solid var(--line)}
 @media(min-width:900px){main{grid-template-columns:1fr 380px;grid-template-rows:calc(100dvh - 190px)}#list{max-height:none;flex:1}aside{overflow:hidden}}
@@ -67,10 +72,11 @@ footer{display:flex;flex-direction:column;align-items:center;justify-content:cen
       <label><input type="checkbox" id="gps" checked> GPS</label>
     </div>
     <div class="bar">
-      <select id="band" aria-label="Band filter"><option value="0">All bands</option><option value="2">2.4 GHz</option><option value="5">5 GHz</option><option value="6">6 GHz</option></select>
+      <select id="band" aria-label="Band filter"><option value="0">All bands</option><option value="2">2.4G (2.4 GHz)</option><option value="5">5G (5 GHz)</option><option value="6">6G (6 GHz)</option></select>
       <button id="export">Export</button>
       <button id="clear">Clear</button>
     </div>
+    <div id="counts" aria-live="polite"></div>
     <div><div class="legend"></div><div class="lg"><span>−95 dBm</span><span>−35 dBm</span></div></div>
     <div id="msg" class="msg">Tap the map to set your position (turn GPS off for indoor mapping).</div>
     <div id="list" role="listbox" aria-label="Access points"></div>
@@ -99,8 +105,8 @@ document.querySelectorAll('.themes button').forEach(b => b.onclick = () => setTh
 setTheme(store.get('wm-theme', matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
 
 /* ---------- state ---------- */
-let samples = store.get('wm-samples', []);   // {lat,lng,t,b:[[bssid,ssid,rssi,freq],...]}
-let last = [], sel = null, pin = null, demo = false, busy = false, timer = null, pinMarker = null;
+let samples = store.get('wm-samples-live', []);   // {lat,lng,t,b:[[bssid,ssid,rssi,freq],...]}
+let last = [], sel = null, pin = null, busy = false, timer = null, pinMarker = null;
 
 /* ---------- map (OpenStreetMap tiles: free, no API key) ---------- */
 const map = L.map('map', { zoomControl: true }).setView(samples.length ? [samples.at(-1).lat, samples.at(-1).lng] : [22.5726, 88.3639], samples.length ? 18 : 15);
@@ -155,22 +161,12 @@ function visiblePoints(){
 }
 
 /* ---------- scanning ---------- */
-function demoScan(){
-  const names = ['HomeNet', 'Cafe Guest', 'Office-5G', 'JioFiber-4F', 'Neighbour', 'AirFiber'];
-  const bss = names.flatMap((n, i) => [0, 1].slice(0, i % 3 ? 1 : 2).map(k => {
-    const f = k ? 5180 + i * 20 : 2412 + i * 25;
-    return { ssid: n, bssid: `02:AA:${i}${k}:00:00:0${i}`.toUpperCase(), rssi: -Math.round(35 + Math.random() * 55), quality: 60, freq: f,
-      channel: f < 3000 ? (f - 2407) / 5 : (f - 5000) / 5, phy: k ? 'Wi-Fi 5 (ac)' : 'Wi-Fi 4 (n)', secure: i % 4 !== 1 }; }));
-  return { bss };
-}
 async function getScan(){
-  try {
-    const r = await fetch(BRIDGE + '/scan', { cache: 'no-store' }); const j = await r.json();
-    if (j.error) throw new Error(j.error);
-    demo = false; setStatus(true, `bridge · ${j.count} BSS`); return j;
-  } catch (e) {
-    demo = true; setStatus(false, 'demo data · bridge offline'); return demoScan();
-  }
+  const r = await fetch(BRIDGE + '/scan', { cache: 'no-store' });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error);
+  setStatus(true, `live · ${j.count} BSS`);
+  return j;
 }
 function setStatus(ok, t){ const s = $('#status'); s.textContent = t; s.className = 'pill ' + (ok ? 'on' : 'off'); }
 function locate(){
@@ -182,26 +178,38 @@ function locate(){
 }
 async function scan(){
   if (busy) return; busy = true; const b = $('#scan'); b.disabled = true; b.textContent = 'Scanning…';
-  const data = await getScan(), p = await locate();
+  let data;
+  try { data = await getScan(); }
+  catch (e) {
+    setStatus(false, 'bridge offline');
+    msg('Cannot reach the Wi-Fi bridge. Run "python wifi_bridge.py" on Windows, then open http://127.0.0.1:8765. (' + (e.message || e) + ')');
+    b.disabled = false; b.textContent = 'Scan now'; busy = false; return;
+  }
+  const p = await locate();
   last = data.bss.sort((a, c) => c.rssi - a.rssi);
   samples.push({ lat: p.lat, lng: p.lng, t: Date.now(), b: last.map(x => [x.bssid, x.ssid, x.rssi, x.freq]) });
   if (samples.length > 1500) samples.shift();
-  store.set('wm-samples', samples);
+  store.set('wm-samples-live', samples);
   if ($('#gps').checked && p.lat) map.setView([p.lat, p.lng], Math.max(map.getZoom(), 17));
-  msg(`${samples.length} sample points · ${last.length} access points${demo ? ' (demo)' : ''}`);
+  msg(`${samples.length} sample points · ${last.length} access points`);
   render(); heat.draw(); b.disabled = false; b.textContent = 'Scan now'; busy = false;
 }
 
 /* ---------- list ---------- */
+const BL = { 2: '2.4G', 5: '5G', 6: '6G' };
+const bBadge = f => { const b = bandOf(f); return `<span class="badge b${b}">${BL[b]}</span>`; };
+const gen = p => { const m = /Wi-Fi (\d)/.exec(p); return `<span class="badge bg">${m ? 'Wi-Fi ' + m[1] : esc(p)}</span>`; };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function render(){
   const band = +$('#band').value, el = $('#list');
   const rows = last.filter(x => !band || bandOf(x.freq) === band);
+  const n = { 2: 0, 5: 0, 6: 0 }; last.forEach(x => n[bandOf(x.freq)]++);
+  $('#counts').innerHTML = last.length ? [2, 5, 6].map(b => `<span class="badge b${b}">${BL[b]}: ${n[b]}</span>`).join('') : '';
   el.innerHTML = rows.map(x => {
     const v = norm(x.rssi), col = `hsl(${Math.round(v * 120)} 85% 50%)`, name = x.ssid || '(hidden network)';
     return `<div class="row" role="option" tabindex="0" data-s="${esc(x.ssid)}" aria-selected="${sel === x.ssid}">
       <b>${esc(name)} ${x.secure === false ? '🔓' : '🔒'}</b><span class="sig" style="color:${col}">${x.rssi} dBm<div class="meter"><i style="width:${v * 100}%;background:${col}"></i></div></span>
-      <small>${esc(x.bssid)} · ${(x.freq / 1000).toFixed(x.freq < 3000 ? 1 : 3).replace(/\.?0+$/, '')} GHz · ch ${x.channel} · ${esc(x.phy)}</small></div>`;
+      <small>${bBadge(x.freq)}${gen(x.phy)}ch ${x.channel} · ${x.freq} MHz · ${esc(x.bssid)}</small></div>`;
   }).join('') || '<div class="msg">No networks yet — press Scan now.</div>';
 }
 $('#list').addEventListener('click', e => { const r = e.target.closest('.row'); if (!r) return; pick(r.dataset.s); });
@@ -212,14 +220,14 @@ function pick(s){ sel = sel === s ? null : s; render(); heat.draw(); msg(sel ? `
 $('#scan').onclick = scan;
 $('#band').onchange = () => { render(); heat.draw(); };
 $('#auto').onchange = e => { clearInterval(timer); if (e.target.checked) { scan(); timer = setInterval(scan, 10000); } };
-$('#clear').onclick = () => { if (confirm('Delete all recorded samples?')) { samples = []; store.set('wm-samples', []); heat.draw(); msg('Samples cleared.'); } };
+$('#clear').onclick = () => { if (confirm('Delete all recorded samples?')) { samples = []; store.set('wm-samples-live', []); heat.draw(); msg('Samples cleared.'); } };
 $('#export').onclick = () => {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(samples, null, 1)], { type: 'application/json' }));
   a.download = 'wifi-samples.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 };
 new ResizeObserver(() => map.invalidateSize()).observe($('#map'));
-fetch(BRIDGE + '/scan', { method: 'OPTIONS' }).then(() => setStatus(true, 'bridge ready'), () => setStatus(false, 'demo mode · bridge offline'));
+fetch(BRIDGE + '/scan', { method: 'OPTIONS' }).then(() => setStatus(true, 'bridge ready'), () => setStatus(false, 'bridge offline'));
 render(); if (samples.length) msg(`${samples.length} saved sample points loaded.`);
 </script>
 </body>
