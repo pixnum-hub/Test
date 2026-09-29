@@ -3,651 +3,508 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark light">
 <meta name="theme-color" content="#1e1e1e">
-<title>Wi-Fi Map</title>
+<meta name="color-scheme" content="dark light">
+<title>CastDeck - Cast videos to your TV</title>
 <style>
-/* ---------- Themes: Dark+, Light+, OLED True Black, High Contrast ---------- */
-:root,[data-theme=dark]{
-  --bg:#1e1e1e;--surface:#252526;--raised:#2d2d30;--text:#d4d4d4;--muted:#9da0a6;--border:#3c3c3c;
-  --accent:#3794ff;--on-accent:#0b0b0b;--good:#4ec9b0;--fair:#dcdcaa;--weak:#f48771;--mapbg:#191a1a;--danger:#f48771}
-[data-theme=light]{
-  --bg:#ffffff;--surface:#f3f3f3;--raised:#e8e8e8;--text:#1f1f1f;--muted:#5b5f66;--border:#cfcfcf;
-  --accent:#005fb8;--on-accent:#ffffff;--good:#107c41;--fair:#8a6100;--weak:#c72e0f;--mapbg:#e5e3df;--danger:#c72e0f}
-[data-theme=oled]{
-  --bg:#000000;--surface:#000000;--raised:#0d0d0d;--text:#e6e6e6;--muted:#8f9399;--border:#2a2a2a;
-  --accent:#4aa8ff;--on-accent:#000000;--good:#4ec9b0;--fair:#dcdcaa;--weak:#f48771;--mapbg:#000000;--danger:#f48771}
-[data-theme=hc]{
-  --bg:#000000;--surface:#000000;--raised:#000000;--text:#ffffff;--muted:#ffffff;--border:#ffffff;
-  --accent:#ffd700;--on-accent:#000000;--good:#00ff9c;--fair:#ffff00;--weak:#ff6b6b;--mapbg:#000000;--danger:#ff6b6b}
-
-*{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--text);
-  font:16px/1.5 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
-  min-height:100vh;display:flex;flex-direction:column;
-  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-h1,h2{margin:0;font-weight:600;line-height:1.2}
-h2{font-size:1.05rem;margin-bottom:.75rem}
-p{margin:0}
-button,input,select,textarea{font:inherit;color:inherit}
-:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-
-/* ---------- Header ---------- */
-.top{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.6rem;padding:1.25rem 1rem .75rem}
-.top h1{font-size:1.75rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.6rem}
-.top svg{width:34px;height:34px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round}
-.top svg circle{fill:var(--accent);stroke:none}
-.sub{color:var(--muted);max-width:34rem}
-.seg{display:inline-flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface)}
-.seg button{min-height:44px;min-width:66px;padding:0 .9rem;background:none;border:0;border-right:1px solid var(--border);cursor:pointer}
-.seg button:last-child{border-right:0}
-.seg button[aria-pressed=true]{background:var(--accent);color:var(--on-accent);font-weight:600}
-.seg button:focus-visible{outline-offset:-3px}
-
-/* ---------- Layout (mobile first) ---------- */
-.app{width:100%;max-width:1200px;margin:0 auto;padding:.5rem .75rem 1.5rem;display:grid;gap:1rem;flex:1}
-.stage{min-width:0}
-.side{display:grid;gap:1rem;align-content:start;min-width:0}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem}
-@media (min-width:960px){
-  .app{grid-template-columns:minmax(0,1.5fr) minmax(340px,1fr);align-items:start}
-  .stage{position:sticky;top:.75rem}
-  #map{height:min(72vh,680px)}
+/* ---------- Theme tokens ---------- */
+:root{
+  --bg:#1e1e1e; --panel:#252526; --panel2:#2d2d30; --text:#d4d4d4; --muted:#a0a0a0;
+  --accent:#569cd6; --accent-ink:#0f1720; --border:#3c3c3c; --ok:#4ec9b0; --err:#f48771;
+  --focus:#007fd4; --bw:1px; --r:14px;
+  --font:ui-rounded,"SF Pro Rounded","Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+}
+[data-theme="light"]{
+  --bg:#ffffff; --panel:#f3f3f3; --panel2:#e8e8e8; --text:#1f1f1f; --muted:#5f5f5f;
+  --accent:#005fb8; --accent-ink:#ffffff; --border:#cfcfcf; --ok:#107c41; --err:#c62828; --focus:#005fb8;
+}
+[data-theme="oled"]{
+  --bg:#000000; --panel:#0b0b0b; --panel2:#151515; --text:#e8e8e8; --muted:#8c8c8c;
+  --accent:#4fc1ff; --accent-ink:#000000; --border:#232323; --ok:#4ec9b0; --err:#ff8a75; --focus:#4fc1ff;
+}
+[data-theme="hc"]{
+  --bg:#000000; --panel:#000000; --panel2:#000000; --text:#ffffff; --muted:#ffffff;
+  --accent:#ffff00; --accent-ink:#000000; --border:#6fc3df; --ok:#00ff66; --err:#ff7b7b; --focus:#f38518; --bw:2px;
 }
 
-/* ---------- Map ---------- */
-.search{display:flex;gap:.5rem;margin-bottom:.6rem}
-.search input{flex:1;min-width:0}
-#map{position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;
-  height:min(60vh,520px);min-height:300px;background:var(--mapbg);border:1px solid var(--border);border-radius:10px;cursor:grab}
-#map:active{cursor:grabbing}
-#tiles,#markers{position:absolute;inset:0}
-#markers{pointer-events:none}
-.tile{position:absolute;left:0;top:0;width:256px;height:256px;opacity:0;transition:opacity .2s;
-  -webkit-user-drag:none;pointer-events:none}
-.tile.on{opacity:1}
-[data-theme=hc] .tile{filter:contrast(1.35) brightness(1.25)}
-@media (prefers-reduced-motion:reduce){.tile{transition:none}}
-.ctl{position:absolute;top:.6rem;right:.6rem;display:grid;gap:.4rem}
-.ctl button{width:44px;height:44px;font-size:1.3rem;line-height:1;cursor:pointer;background:var(--surface);
-  border:1px solid var(--border);border-radius:10px}
-.ctl button:hover{background:var(--raised)}
-.attr{position:absolute;left:0;bottom:0;padding:1px 6px;font-size:11px;color:var(--text);
-  background:color-mix(in srgb,var(--bg) 82%,transparent);border-top-right-radius:6px;pointer-events:none}
-.mk{position:absolute;left:0;top:0;width:28px;height:28px;margin:-14px 0 0 -14px;padding:0;border-radius:50%;
-  border:3px solid var(--mk);background:var(--mk);cursor:pointer;pointer-events:auto}
-.mk::before{content:"";position:absolute;inset:-9px}
-.mk.open{background:var(--bg);border-style:dashed}
-.mk.good{--mk:var(--good)}.mk.fair{--mk:var(--fair)}.mk.weak{--mk:var(--weak)}
-.mk.sel{outline:3px solid var(--text);outline-offset:3px}
-.mk span{position:absolute;top:31px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:12px;
-  padding:0 6px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--text);pointer-events:none}
-.pin{position:absolute;left:-11px;top:-27px;width:22px;height:22px;border-radius:50% 50% 50% 0;
-  background:var(--accent);border:2px solid var(--bg);pointer-events:none}
-.pin::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--bg)}
-.me{position:absolute;left:-9px;top:-9px;width:18px;height:18px;border-radius:50%;background:var(--accent);
-  border:3px solid #fff;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 35%,transparent);pointer-events:none}
-.legend{list-style:none;margin:.7rem 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem 1.1rem;
-  font-size:.85rem;color:var(--muted)}
-.legend li{display:flex;align-items:center;gap:.4rem}
-.sw{width:14px;height:14px;border-radius:50%;border:3px solid var(--c);background:var(--c);display:inline-block}
-.sw.ring{background:transparent;border-style:dashed}
-#status{min-height:1.5rem;margin-top:.6rem;text-align:center;font-size:.95rem}
-#status.bad{color:var(--danger)}
+/* ---------- Base layout: centred column, sticky footer ---------- */
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  min-height:100dvh; display:flex; flex-direction:column; align-items:center;
+  background:var(--bg); color:var(--text); font:16px/1.5 var(--font); text-align:center;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  transition:background .2s,color .2s;
+}
+.app{width:100%; max-width:760px; flex:1; display:flex; flex-direction:column; align-items:center; gap:18px; padding:20px 14px 12px}
+main{width:100%; flex:1; display:flex; flex-direction:column; align-items:center; gap:18px}
+[hidden]{display:none!important}
+button,input{font:inherit; color:inherit}
+button{cursor:pointer; -webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
+h1{font-size:clamp(1.9rem,7vw,2.6rem); font-weight:800; letter-spacing:-.03em; line-height:1.1}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted); max-width:34ch; margin:6px auto 0}
+
+/* ---------- Theme switch ---------- */
+.themes{display:inline-flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:14px}
+.themes button{
+  min-height:40px; padding:6px 14px; border-radius:999px; background:var(--panel);
+  border:var(--bw) solid var(--border); font-size:.86rem; font-weight:600;
+}
+.themes button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+
+/* ---------- Status ---------- */
+.status{
+  display:inline-flex; align-items:center; gap:10px; padding:8px 16px; border-radius:999px;
+  background:var(--panel); border:var(--bw) solid var(--border); font-size:.92rem; max-width:100%;
+}
+.dot{width:10px; height:10px; border-radius:50%; background:var(--muted); flex:none}
+.status[data-s="ready"] .dot,.status[data-s="on"] .dot{background:var(--ok)}
+.status[data-s="err"] .dot{background:var(--err)}
+.status[data-s="wait"] .dot{background:var(--accent); animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.hint{color:var(--muted); font-size:.85rem; max-width:52ch}
+
+/* ---------- Remote (the memorable element) ---------- */
+.remote{
+  position:sticky; bottom:10px; z-index:5; width:100%; padding:18px 16px 16px;
+  background:var(--panel); border:var(--bw) solid var(--border); border-radius:26px;
+  display:flex; flex-direction:column; align-items:center; gap:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+[data-theme="light"] .remote{box-shadow:0 10px 30px rgba(0,0,0,.15)}
+[data-theme="hc"] .remote,[data-theme="oled"] .remote{box-shadow:none}
+.now{display:flex; align-items:center; gap:12px; width:100%; text-align:left}
+.now img{width:64px; height:64px; border-radius:12px; object-fit:cover; background:var(--panel2); flex:none}
+.now div{min-width:0}
+.now strong{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.now small{color:var(--muted)}
+.seek{width:100%; display:flex; flex-direction:column; gap:4px}
+.times{display:flex; justify-content:space-between; font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums}
+input[type=range]{width:100%; height:32px; background:transparent; accent-color:var(--accent); cursor:pointer}
+.pad{display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap}
+.pad button{
+  min-width:56px; min-height:48px; border-radius:999px; background:var(--panel2);
+  border:var(--bw) solid var(--border); font-weight:700; padding:0 14px;
+}
+.pad button.play{width:72px; height:72px; font-size:1.6rem; background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.pad button.stop{color:var(--err); border-color:var(--err)}
+.vol{display:flex; align-items:center; gap:8px; width:100%; max-width:340px}
+.vol button{min-width:48px; min-height:44px; border-radius:999px; background:var(--panel2); border:var(--bw) solid var(--border); font-size:.85rem; font-weight:600}
+
+/* ---------- Tabs ---------- */
+.tabs{display:flex; width:100%; background:var(--panel); border:var(--bw) solid var(--border); border-radius:999px; padding:4px; gap:4px}
+.tabs button{flex:1; min-height:44px; border:0; border-radius:999px; background:transparent; font-weight:600}
+.tabs button[aria-selected="true"]{background:var(--accent); color:var(--accent-ink)}
+.panel{width:100%; display:flex; flex-direction:column; align-items:center; gap:14px}
+
+/* ---------- Media grid ---------- */
+.grid{width:100%; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px}
+.tile{background:transparent; border:0; padding:0; display:flex; flex-direction:column; gap:8px; text-align:center; border-radius:var(--r)}
+.tile .art{
+  position:relative; aspect-ratio:16/10; width:100%; overflow:hidden; border-radius:var(--r);
+  background:var(--panel2); border:var(--bw) solid var(--border);
+}
+.tile img{width:100%; height:100%; object-fit:cover; display:block}
+.tile .go{
+  position:absolute; inset:auto 8px 8px auto; width:38px; height:38px; border-radius:50%;
+  display:grid; place-items:center; background:var(--accent); color:var(--accent-ink); font-size:.9rem;
+  transform:scale(.9); transition:transform .15s;
+}
+.tile:hover .go,.tile:focus-visible .go{transform:scale(1.08)}
+.tile b{font-size:.92rem; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.tile small{color:var(--muted); font-size:.78rem}
+.tile[aria-busy="true"]{opacity:.55; pointer-events:none}
 
 /* ---------- Forms ---------- */
-form.stack{display:grid;gap:.8rem}
-label{display:grid;gap:.25rem;font-size:.9rem;color:var(--muted)}
-input,select,textarea{width:100%;min-height:44px;padding:.5rem .7rem;background:var(--bg);color:var(--text);
-  border:1px solid var(--border);border-radius:8px}
-textarea{min-height:72px;resize:vertical}
-input[type=range]{padding:0;accent-color:var(--accent)}
-.hint{font-size:.82rem;color:var(--muted)}
-.btn{min-height:44px;padding:0 1rem;border-radius:8px;border:1px solid var(--border);background:var(--raised);cursor:pointer}
-.btn:hover{border-color:var(--accent)}
-.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
-.btn.danger{color:var(--danger);border-color:var(--danger);background:transparent}
-.row2{display:flex;flex-wrap:wrap;gap:.5rem}
-.row2 .btn{flex:1 1 140px}
-#pinout{font-size:.9rem}
+.form{width:100%; display:flex; flex-direction:column; gap:10px}
+.row{display:flex; gap:8px; width:100%}
+.row input{flex:1; min-width:0}
+input[type=text],input[type=url],input[type=search]{
+  min-height:48px; padding:0 16px; border-radius:999px; background:var(--panel);
+  border:var(--bw) solid var(--border); text-align:center; width:100%;
+}
+input::placeholder{color:var(--muted)}
+.btn{min-height:48px; padding:0 22px; border-radius:999px; font-weight:700; background:var(--accent); color:var(--accent-ink); border:var(--bw) solid var(--accent)}
+.btn.ghost{background:var(--panel); color:var(--text); border-color:var(--border)}
+.btn:disabled{opacity:.5; cursor:progress}
+.empty{color:var(--muted); padding:22px 0}
 
-/* ---------- Lists ---------- */
-#list{list-style:none;margin:.75rem 0 0;padding:0;display:grid;gap:.5rem;max-height:460px;overflow:auto}
-#list li{border:1px solid var(--border);border-radius:8px;background:var(--bg)}
-#list li.empty{padding:.8rem;color:var(--muted);text-align:center}
-.item{width:100%;min-height:54px;display:flex;align-items:center;gap:.7rem;padding:.5rem .7rem;text-align:left;
-  background:none;border:0;cursor:pointer}
-.item b{display:block;overflow-wrap:anywhere}
-.item small{color:var(--muted)}
-.dot{flex:none;width:14px;height:14px;border-radius:50%;border:3px solid var(--c);background:var(--c)}
-.dot.ring{background:transparent;border-style:dashed}
-.good{--c:var(--good)}.fair{--c:var(--fair)}.weak{--c:var(--weak)}
-.detail{padding:0 .8rem .8rem;display:grid;gap:.5rem;font-size:.9rem;border-top:1px solid var(--border);padding-top:.7rem}
-.detail p{overflow-wrap:anywhere}
-.detail span{color:var(--muted)}
-#conn{margin:0;display:grid;grid-template-columns:auto 1fr;gap:.35rem 1rem;font-size:.92rem}
-#conn dt{color:var(--muted)}#conn dd{margin:0;text-align:right}
-.note{margin-top:.8rem;font-size:.85rem;color:var(--muted)}
+/* ---------- Toast ---------- */
+.toast{
+  position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translate(-50%,20px);
+  max-width:min(92vw,460px); padding:12px 18px; border-radius:16px; background:var(--text); color:var(--bg);
+  font-size:.92rem; font-weight:600; opacity:0; pointer-events:none; transition:.25s; z-index:20;
+}
+[data-theme="hc"] .toast{outline:2px solid var(--accent)}
+.toast.show{opacity:1; transform:translate(-50%,0)}
 
 /* ---------- Footer ---------- */
-footer{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;text-align:center;
-  padding:1.25rem 1rem;border-top:1px solid var(--border);color:var(--muted);font-size:.9rem}
-footer .copy{color:var(--text)}
+footer{width:100%; padding:18px 14px 20px; color:var(--muted); font-size:.85rem; border-top:var(--bw) solid var(--border); margin-top:auto}
+@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+@media (min-width:640px){.grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}}
 </style>
 </head>
 <body>
+<div class="app">
+  <header>
+    <h1>Cast<span>Deck</span></h1>
+    <p class="sub">Pick a video, choose your TV, and control playback from your phone.</p>
+    <div class="themes" role="group" aria-label="Colour theme">
+      <button type="button" data-theme-btn="dark">Dark+</button>
+      <button type="button" data-theme-btn="light">Light+</button>
+      <button type="button" data-theme-btn="oled">OLED black</button>
+      <button type="button" data-theme-btn="hc">High contrast</button>
+    </div>
+  </header>
 
-<header class="top">
-  <h1>
-    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 12a18 18 0 0 1 26 0"/><path d="M8 17a11 11 0 0 1 16 0"/><path d="M12.500 22a5 5 0 0 1 7 0"/><circle cx="16" cy="26.500" r="2.300"/></svg>
-    Wi-Fi Map
-  </h1>
-  <p class="sub">Pin networks where you find them, rate the signal, and see what is open, strong or weak around you.</p>
-  <div id="themes" class="seg" role="group" aria-label="Theme">
-    <button type="button" data-t="dark">Dark+</button>
-    <button type="button" data-t="light">Light+</button>
-    <button type="button" data-t="oled">OLED</button>
-    <button type="button" data-t="hc">HC</button>
-  </div>
-</header>
+  <main>
+    <div class="status" id="status" data-s="wait" role="status" aria-live="polite">
+      <span class="dot"></span><span id="statusText">Loading Cast support</span>
+    </div>
+    <p class="hint" id="hint">Use Chrome or Edge (desktop or Android) on HTTPS or localhost, on the same Wi-Fi as your Chromecast or Google TV.</p>
 
-<main class="app">
-  <section class="stage" aria-label="Map">
-    <form id="sform" class="search" role="search">
-      <label class="sr" for="sq">Search a place or coordinates</label>
-      <input id="sq" type="search" placeholder="Place, address or lat, lng" autocomplete="off">
-      <button class="btn" type="submit">Search</button>
-    </form>
-
-    <div id="map" tabindex="0" role="application"
-         aria-label="Map. Drag to pan, tap to drop a pin. Arrow keys pan, plus and minus zoom.">
-      <div id="tiles"></div>
-      <div id="markers"></div>
-      <div class="ctl">
-        <button type="button" id="zin" aria-label="Zoom in">+</button>
-        <button type="button" id="zout" aria-label="Zoom out">&minus;</button>
-        <button type="button" id="loc" aria-label="Find my location">&#9678;</button>
+    <!-- Remote -->
+    <section class="remote" id="remote" aria-label="TV remote" hidden>
+      <div class="now">
+        <img id="nowArt" alt="" hidden>
+        <div><strong id="nowTitle">Nothing playing</strong><small id="nowDevice"></small></div>
       </div>
-      <div class="attr">&copy; OpenStreetMap contributors &copy; CARTO</div>
+      <div class="seek">
+        <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Seek">
+        <div class="times"><span id="tNow">0:00</span><span id="tEnd">0:00</span></div>
+      </div>
+      <div class="pad">
+        <button type="button" id="back" aria-label="Back 10 seconds">-10s</button>
+        <button type="button" id="play" class="play" aria-label="Play or pause">&#9654;</button>
+        <button type="button" id="fwd" aria-label="Forward 10 seconds">+10s</button>
+        <button type="button" id="stop" class="stop">Stop</button>
+      </div>
+      <div class="vol">
+        <button type="button" id="mute" aria-label="Mute or unmute">Mute</button>
+        <input type="range" id="vol" min="0" max="100" value="50" aria-label="TV volume">
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <div class="tabs" role="tablist" aria-label="Video source">
+      <button type="button" role="tab" id="tab-lib" aria-selected="true" aria-controls="p-lib">Sample films</button>
+      <button type="button" role="tab" id="tab-arc" aria-selected="false" aria-controls="p-arc">Internet Archive</button>
+      <button type="button" role="tab" id="tab-url" aria-selected="false" aria-controls="p-url">Your link</button>
     </div>
 
-    <ul class="legend" aria-label="Map key">
-      <li><i class="sw" style="--c:var(--good)"></i>Strong</li>
-      <li><i class="sw" style="--c:var(--fair)"></i>Fair</li>
-      <li><i class="sw" style="--c:var(--weak)"></i>Weak</li>
-      <li><i class="sw ring" style="--c:var(--text)"></i>Open (no password)</li>
-    </ul>
-    <p id="status" role="status" aria-live="polite">Tap the map to drop a pin, or use the locate button.</p>
-  </section>
+    <section class="panel" id="p-lib" role="tabpanel" aria-labelledby="tab-lib">
+      <div class="grid" id="libGrid"></div>
+    </section>
 
-  <div class="side">
-    <section class="card" aria-labelledby="h-add">
-      <h2 id="h-add">Add a network</h2>
-      <form id="add" class="stack">
-        <label>Network name (SSID)
-          <input id="ssid" maxlength="32" required autocomplete="off" placeholder="Café Guest">
-        </label>
-        <label>Access point address (BSSID), optional
-          <input id="bssid" maxlength="17" autocomplete="off" placeholder="AA:BB:CC:DD:EE:FF"
-                 pattern="([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}">
-        </label>
-        <label>Security
-          <select id="sec">
-            <option>Open</option><option>WEP</option><option selected>WPA2</option><option>WPA3</option><option>Enterprise</option>
-          </select>
-        </label>
-        <label>Signal quality: <output id="sigout">70 (about &minus;65 dBm)</output>
-          <input id="sig" type="range" min="0" max="100" value="70">
-          <span class="hint">Same 0&ndash;100 scale Windows reports as signal quality.</span>
-        </label>
-        <label>Note, optional
-          <textarea id="note" maxlength="200" placeholder="Password on the receipt, works on the patio"></textarea>
-        </label>
-        <p id="pinout">No pin yet. Tap the map to place one.</p>
-        <div class="row2">
-          <button type="button" class="btn" id="centre">Pin at map centre</button>
-          <button type="submit" class="btn primary">Save network</button>
+    <section class="panel" id="p-arc" role="tabpanel" aria-labelledby="tab-arc" hidden>
+      <form class="form" id="arcForm">
+        <div class="row">
+          <input type="search" id="arcQ" placeholder="Search public films and clips" aria-label="Search the Internet Archive" autocomplete="off">
+          <button class="btn" type="submit">Search</button>
         </div>
       </form>
+      <div class="grid" id="arcGrid"></div>
+      <p class="empty" id="arcMsg"></p>
+      <button class="btn ghost" type="button" id="arcMore" hidden>Show more</button>
     </section>
 
-    <section class="card" aria-labelledby="h-list">
-      <h2 id="h-list">Saved networks <span id="count" class="hint"></span></h2>
-      <label class="sr" for="filter">Filter saved networks</label>
-      <input id="filter" type="search" placeholder="Filter by name, security or note" autocomplete="off">
-      <ul id="list"></ul>
+    <section class="panel" id="p-url" role="tabpanel" aria-labelledby="tab-url" hidden>
+      <form class="form" id="urlForm">
+        <input type="url" id="urlIn" placeholder="https://example.com/video.mp4" aria-label="Direct video link" required inputmode="url" autocomplete="off">
+        <input type="text" id="urlTitle" placeholder="Title (optional)" aria-label="Title" autocomplete="off">
+        <button class="btn" type="submit">Cast to TV</button>
+        <p class="hint">Works with MP4, WebM, MP3 and HLS (.m3u8) links. The server must allow cross-origin (CORS) requests for HLS and DASH.</p>
+      </form>
     </section>
+  </main>
 
-    <section class="card" aria-labelledby="h-conn">
-      <h2 id="h-conn">This connection</h2>
-      <dl id="conn"></dl>
-    </section>
+  <footer>&copy; Manik Roy <span id="year">2026</span>. All Rights Reserved.</footer>
+</div>
+<div class="toast" id="toast" role="alert"></div>
 
-    <section class="card" aria-labelledby="h-data">
-      <h2 id="h-data">Your data</h2>
-      <div class="row2">
-        <button type="button" class="btn" id="expJson">Export JSON</button>
-        <button type="button" class="btn" id="expCsv">Export CSV</button>
-        <button type="button" class="btn" id="impBtn">Import file</button>
-        <button type="button" class="btn danger" id="clear">Delete all</button>
-      </div>
-      <input id="impFile" type="file" accept=".json,.csv,application/json,text/csv" class="sr" tabindex="-1" aria-label="Import file">
-      <p class="note">Networks are saved only in this browser. Browsers cannot call the Windows Native Wi-Fi API directly, so bring scan results in with Import: a CSV or JSON with ssid, bssid, security, signal (0&ndash;100), lat and lng.</p>
-    </section>
-  </div>
-</main>
-
-<footer>
-  <p class="copy">&copy; Manik Roy <span id="yr">2026</span>. All Rights Reserved.</p>
-  <p>Your saved networks stay on this device.</p>
-</footer>
-
+<!-- Castjs wraps the Google Cast Web Sender SDK (it loads cast_sender.js itself) and targets the Default Media Receiver -->
+<script src="https://cdn.jsdelivr.net/gh/castjs/castjs@v7.0.0/cast.min.js"></script>
 <script>
+(() => {
 "use strict";
 const $ = s => document.querySelector(s);
-const SEC = ["Open", "WEP", "WPA2", "WPA3", "Enterprise"];
-const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const store = {
-  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage unavailable */ } }
-};
-function h(tag, attrs = {}, ...kids) {
-  const e = document.createElement(tag);
-  for (const [n, v] of Object.entries(attrs)) {
-    if (n === "class") e.className = v;
-    else if (n.startsWith("on")) e.addEventListener(n.slice(2), v);
-    else if (v !== false && v != null) e.setAttribute(n, v === true ? "" : v);
-  }
-  e.append(...kids);
-  return e;
-}
-const statusEl = $("#status");
-function status(msg, bad) { statusEl.textContent = msg; statusEl.classList.toggle("bad", !!bad); }
+const $$ = s => [...document.querySelectorAll(s)];
 
-/* ---------- Footer year ---------- */
-$("#yr").textContent = Math.max(2026, new Date().getFullYear());
+/* ---------- Footer year (auto-updating) ---------- */
+const setYear = () => { $("#year").textContent = new Date().getFullYear(); };
+setYear();
+document.addEventListener("visibilitychange", () => { if (!document.hidden) setYear(); });
+setInterval(setYear, 3600000);
 
-/* ---------- Themes ---------- */
-const DARK_TILES = t => t !== "light";
-function setTheme(t) {
+/* ---------- Theme: Dark+, Light+, OLED, High contrast ---------- */
+const META = { dark:"#1e1e1e", light:"#ffffff", oled:"#000000", hc:"#000000" };
+function setTheme(t, save) {
+  if (!META[t]) t = "dark";
   document.documentElement.dataset.theme = t;
-  store.set("wm-theme", t);
-  document.querySelectorAll("#themes button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === t));
-  $('meta[name=theme-color]').content = getComputedStyle(document.body).backgroundColor;
-  clearTiles();
-  draw();
+  $('meta[name="theme-color"]').content = META[t];
+  $$("[data-theme-btn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.themeBtn === t));
+  if (save) try { localStorage.setItem("castdeck-theme", t); } catch (e) {}
 }
-$("#themes").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setTheme(b.dataset.t); });
-
-/* ---------- Geometry (Web Mercator) ---------- */
-const TS = 256;
-const proj = (lat, lng, z) => {
-  const s = TS * 2 ** z, r = lat * Math.PI / 180;
-  return { x: (lng + 180) / 360 * s, y: (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * s };
-};
-const unproj = (x, y, z) => {
-  const s = TS * 2 ** z, n = Math.PI * (1 - 2 * y / s);
-  return { lat: Math.atan(Math.sinh(n)) * 180 / Math.PI, lng: x / s * 360 - 180 };
-};
-const wrapLng = l => ((l + 180) % 360 + 360) % 360 - 180;
-function km(a, b, c, d) {
-  const R = 6371, r = Math.PI / 180, dLat = (c - a) * r, dLng = (d - b) * r;
-  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(x));
-}
-const fmtDist = k => k < 1 ? Math.round(k * 1000) + " m" : k < 100 ? k.toFixed(1) + " km" : Math.round(k) + " km";
-
-/* ---------- Map state ---------- */
-const view = store.get("wm-view", null);
-const map = (view && isFinite(view.lat) && isFinite(view.lng) && isFinite(view.z))
-  ? { lat: clamp(view.lat, -85, 85), lng: wrapLng(view.lng), z: clamp(Math.round(view.z), 2, 19) }
-  : { lat: 20, lng: 0, z: 2 };
-let spots = store.get("wm-spots", []);
-let sel = null, pin = null, me = null, term = "";
-
-const el = $("#map"), tilesEl = $("#tiles"), mkEl = $("#markers");
-const tileCache = new Map();
-const size = () => ({ w: el.clientWidth, h: el.clientHeight });
-const toScreen = (lat, lng) => {
-  const { w, h } = size(), c = proj(map.lat, map.lng, map.z), p = proj(lat, lng, map.z);
-  let x = p.x - c.x;
-  const world = TS * 2 ** map.z;
-  if (x > world / 2) x -= world; else if (x < -world / 2) x += world;
-  return { x: x + w / 2, y: p.y - c.y + h / 2 };
-};
-const fromScreen = (x, y) => {
-  const { w, h } = size(), c = proj(map.lat, map.lng, map.z);
-  const u = unproj(c.x - w / 2 + x, c.y - h / 2 + y, map.z);
-  return { lat: clamp(u.lat, -85, 85), lng: wrapLng(u.lng) };
-};
-
-function clearTiles() { tileCache.forEach(im => im.remove()); tileCache.clear(); }
-
-function renderTiles() {
-  const { w, h } = size(), c = proj(map.lat, map.lng, map.z), n = 2 ** map.z;
-  const ox = c.x - w / 2, oy = c.y - h / 2;
-  const x0 = Math.floor(ox / TS), x1 = Math.floor((ox + w) / TS);
-  const y0 = Math.max(0, Math.floor(oy / TS)), y1 = Math.min(n - 1, Math.floor((oy + h) / TS));
-  const theme = document.documentElement.dataset.theme;
-  const style = DARK_TILES(theme) ? "dark_all" : "light_all";
-  const retina = window.devicePixelRatio > 1 ? "@2x" : "";
-  const need = new Set();
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-    const wx = ((x % n) + n) % n, key = `${style}/${map.z}/${x}/${y}`;
-    need.add(key);
-    let im = tileCache.get(key);
-    if (!im) {
-      im = new Image();
-      im.className = "tile"; im.alt = ""; im.draggable = false; im.decoding = "async";
-      im.onload = () => im.classList.add("on");
-      im.src = `https://${"abcd"[(wx + y) & 3]}.basemaps.cartocdn.com/${style}/${map.z}/${wx}/${y}${retina}.png`;
-      tilesEl.appendChild(im);
-      tileCache.set(key, im);
-    }
-    im.style.transform = `translate(${x * TS - ox}px,${y * TS - oy}px)`;
+(function initTheme() {
+  let t = null;
+  try { t = localStorage.getItem("castdeck-theme"); } catch (e) {}
+  if (!t) {
+    const mq = q => window.matchMedia && matchMedia(q).matches;
+    t = mq("(prefers-contrast: more)") ? "hc" : mq("(prefers-color-scheme: light)") ? "light" : "dark";
   }
-  for (const [k, im] of tileCache) if (!need.has(k)) { im.remove(); tileCache.delete(k); }
+  setTheme(t, false);
+  $$("[data-theme-btn]").forEach(b => b.addEventListener("click", () => setTheme(b.dataset.themeBtn, true)));
+})();
+
+/* ---------- Helpers ---------- */
+let toastTimer;
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3600);
+}
+function setStatus(state, text) {
+  $("#status").dataset.s = state; $("#statusText").textContent = text;
+}
+function mimeFor(url) {
+  const ext = (url.split(/[?#]/)[0].match(/\.([a-z0-9]+)$/i) || [])[1];
+  return ({ mp4:"video/mp4", m4v:"video/mp4", webm:"video/webm", mkv:"video/x-matroska", mp3:"audio/mpeg",
+    m4a:"audio/mp4", aac:"audio/aac", ogg:"audio/ogg", wav:"audio/wav", m3u8:"application/x-mpegURL",
+    mpd:"application/dash+xml", jpg:"image/jpeg", jpeg:"image/jpeg", png:"image/png", gif:"image/gif" }[(ext || "").toLowerCase()]) || "video/mp4";
+}
+const clean = v => String([].concat(v || "")[0] || "").replace(/\s+/g, " ").trim();
+
+/* ---------- Free, keyless catalogues ---------- */
+// 1) Google's public sample bucket (used in the official Cast samples)
+const G = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/";
+const SAMPLES = [
+  ["BigBuckBunny","Big Buck Bunny","Animated short, 10 min"],
+  ["ElephantsDream","Elephants Dream","Animated short, 11 min"],
+  ["Sintel","Sintel","Animated short, 15 min"],
+  ["TearsOfSteel","Tears of Steel","Sci-fi short, 12 min"],
+  ["ForBiggerBlazes","For Bigger Blazes","Quick clip, 15 sec"],
+  ["ForBiggerEscapes","For Bigger Escapes","Quick clip, 15 sec"],
+  ["ForBiggerFun","For Bigger Fun","Quick clip, 1 min"],
+  ["ForBiggerJoyrides","For Bigger Joyrides","Quick clip, 15 sec"],
+  ["ForBiggerMeltdowns","For Bigger Meltdowns","Quick clip, 15 sec"],
+  ["SubaruOutbackOnStreetAndDirt","Subaru Outback On Street And Dirt","Car review, 10 min"],
+  ["VolkswagenGTIReview","Volkswagen GTI Review","Car review, 10 min"],
+  ["WeAreGoingOnBullrun","We Are Going On Bullrun","Road rally, 5 min"],
+  ["WhatCarCanYouGetForAGrand","What Car Can You Get For A Grand","Car feature, 5 min"]
+].map(([id, title, meta]) => ({ title, meta, url: `${G}${id}.mp4`, poster: `${G}images/${id}.jpg` }));
+
+// 2) Internet Archive advanced search + metadata (open CORS, no key, no signup)
+const IA = "https://archive.org";
+const arc = { q:"", page:1, busy:false };
+async function iaSearch(term, page) {
+  const q = (term ? `(${term}) AND ` : "collection:(feature_films) AND ") +
+    `mediatype:movies AND (format:"h.264" OR format:"MPEG4")`;
+  const p = new URLSearchParams({ q, rows:"24", page:String(page), output:"json" });
+  ["identifier", "title", "year"].forEach(f => p.append("fl[]", f));
+  p.append("sort[]", "downloads desc");
+  const r = await fetch(`${IA}/advancedsearch.php?${p}`);
+  if (!r.ok) throw new Error("Internet Archive search failed");
+  const j = await r.json();
+  return { docs: j.response.docs || [], total: j.response.numFound || 0 };
+}
+async function iaResolve(id) {
+  const r = await fetch(`${IA}/metadata/${encodeURIComponent(id)}`);
+  if (!r.ok) throw new Error("Could not read this item");
+  const m = await r.json();
+  const mp4 = (m.files || []).filter(f => /\.mp4$/i.test(f.name))
+    .sort((a, b) => (a.format === "h.264" ? 0 : 1) - (b.format === "h.264" ? 0 : 1) || (+a.size || 9e12) - (+b.size || 9e12));
+  if (!mp4.length) throw new Error("This item has no MP4 stream");
+  const path = mp4[0].name.split("/").map(encodeURIComponent).join("/");
+  return `${IA}/download/${encodeURIComponent(id)}/${path}`;
 }
 
-const bucket = q => q >= 67 ? "good" : q >= 34 ? "fair" : "weak";
-const dbm = q => Math.round(q / 2 - 100);
-
-function renderMarkers() {
-  const { w, h } = size(), frag = document.createDocumentFragment();
-  for (const s of spots) {
-    if (term && !matches(s)) continue;
-    const p = toScreen(s.lat, s.lng);
-    if (p.x < -60 || p.x > w + 60 || p.y < -40 || p.y > h + 60) continue;
-    const b = h("button", {
-      type: "button",
-      class: `mk ${bucket(s.sig)}${s.sec === "Open" ? " open" : ""}${sel === s.id ? " sel" : ""}`,
-      style: `transform:translate(${p.x}px,${p.y}px)`,
-      "aria-label": `${s.ssid || "Hidden network"}, ${s.sec}, signal quality ${s.sig}`,
-      onpointerdown: e => e.stopPropagation(),
-      onclick: () => selectSpot(s.id, true)
-    });
-    if (map.z >= 15 && s.ssid) b.append(h("span", {}, s.ssid));
-    frag.append(b);
-  }
-  if (pin) { const p = toScreen(pin.lat, pin.lng); frag.append(h("div", { class: "pin", style: `transform:translate(${p.x}px,${p.y}px) rotate(-45deg)` })); }
-  if (me) { const p = toScreen(me.lat, me.lng); frag.append(h("div", { class: "me", style: `transform:translate(${p.x}px,${p.y}px)` })); }
-  mkEl.replaceChildren(frag);
-}
-
-let raf = 0, tmr = 0;
-function draw() {
-  if (raf) return;
-  raf = requestAnimationFrame(() => { raf = 0; renderTiles(); renderMarkers(); });
-  clearTimeout(tmr);
-  tmr = setTimeout(() => { store.set("wm-view", map); renderList(); }, 350);
-}
-
-function panBy(dx, dy) {
-  const c = proj(map.lat, map.lng, map.z), u = unproj(c.x - dx, c.y - dy, map.z);
-  map.lat = clamp(u.lat, -85, 85); map.lng = wrapLng(u.lng);
-  draw();
-}
-function zoomAt(dz, px, py) {
-  const nz = clamp(map.z + dz, 2, 19);
-  if (nz === map.z) return;
-  const ll = fromScreen(px, py), { w, h } = size(), p = proj(ll.lat, ll.lng, nz);
-  const u = unproj(p.x - px + w / 2, p.y - py + h / 2, nz);
-  map.z = nz; map.lat = clamp(u.lat, -85, 85); map.lng = wrapLng(u.lng);
-  draw();
-}
-function flyTo(lat, lng, z) { map.lat = clamp(lat, -85, 85); map.lng = wrapLng(lng); map.z = clamp(z || map.z, 2, 19); draw(); }
-
-/* ---------- Gestures: drag, pinch, wheel, keyboard ---------- */
-const ptrs = new Map();
-let pinch = 0, moved = 0, t0 = 0;
-const two = () => { const [a, b] = [...ptrs.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
-
-el.addEventListener("pointerdown", e => {
-  if (e.target.closest(".ctl")) return;
-  el.setPointerCapture(e.pointerId);
-  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  moved = 0; t0 = Date.now();
-  if (ptrs.size === 2) pinch = two().d;
-});
-el.addEventListener("pointermove", e => {
-  const p = ptrs.get(e.pointerId);
-  if (!p) return;
-  const dx = e.clientX - p.x, dy = e.clientY - p.y;
-  p.x = e.clientX; p.y = e.clientY;
-  moved += Math.abs(dx) + Math.abs(dy);
-  if (ptrs.size === 1) panBy(dx, dy);
-  else if (ptrs.size === 2) {
-    const t = two();
-    if (pinch && (t.d / pinch > 1.4 || t.d / pinch < 0.71)) {
-      const r = el.getBoundingClientRect();
-      zoomAt(t.d > pinch ? 1 : -1, t.x - r.left, t.y - r.top);
-      pinch = t.d;
-    }
-  }
-});
-const endPtr = e => {
-  const was = ptrs.size;
-  if (!ptrs.delete(e.pointerId)) return;
-  if (was === 1 && e.type === "pointerup" && moved < 8 && Date.now() - t0 < 600) {
-    const r = el.getBoundingClientRect();
-    dropPin(fromScreen(e.clientX - r.left, e.clientY - r.top));
-  }
-  pinch = 0;
-};
-el.addEventListener("pointerup", endPtr);
-el.addEventListener("pointercancel", endPtr);
-
-let wheelAt = 0;
-el.addEventListener("wheel", e => {
-  e.preventDefault();
-  if (Date.now() - wheelAt < 220) return;
-  wheelAt = Date.now();
-  const r = el.getBoundingClientRect();
-  zoomAt(e.deltaY < 0 ? 1 : -1, e.clientX - r.left, e.clientY - r.top);
-}, { passive: false });
-
-el.addEventListener("keydown", e => {
-  if (e.target !== el) return;
-  const { w, h } = size(), k = e.key, st = 80;
-  if (k === "+" || k === "=") zoomAt(1, w / 2, h / 2);
-  else if (k === "-" || k === "_") zoomAt(-1, w / 2, h / 2);
-  else if (k === "ArrowLeft") panBy(st, 0);
-  else if (k === "ArrowRight") panBy(-st, 0);
-  else if (k === "ArrowUp") panBy(0, st);
-  else if (k === "ArrowDown") panBy(0, -st);
-  else return;
-  e.preventDefault();
-});
-$("#zin").onclick = () => { const s = size(); zoomAt(1, s.w / 2, s.h / 2); };
-$("#zout").onclick = () => { const s = size(); zoomAt(-1, s.w / 2, s.h / 2); };
-new ResizeObserver(draw).observe(el);
-
-/* ---------- Pin and form ---------- */
-function dropPin(ll, quiet) {
-  pin = { lat: +ll.lat.toFixed(6), lng: +ll.lng.toFixed(6) };
-  $("#pinout").textContent = `Pin at ${pin.lat}, ${pin.lng}`;
-  if (!quiet) status("Pin placed. Fill in the network details, then save.");
-  draw();
-}
-$("#centre").onclick = () => dropPin({ lat: map.lat, lng: map.lng });
-$("#sig").oninput = e => { const v = +e.target.value; $("#sigout").textContent = `${v} (about ${dbm(v) < 0 ? "\u2212" + Math.abs(dbm(v)) : dbm(v)} dBm)`; };
-
-const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
-function persist() { store.set("wm-spots", spots); }
-
-$("#add").addEventListener("submit", e => {
-  e.preventDefault();
-  if (!pin) { status("Place a pin first: tap the map or use Pin at map centre.", true); return; }
-  const s = {
-    id: uid(), ssid: $("#ssid").value.trim(), bssid: $("#bssid").value.trim().toUpperCase().replace(/-/g, ":"),
-    sec: $("#sec").value, sig: +$("#sig").value, note: $("#note").value.trim(),
-    lat: pin.lat, lng: pin.lng, ts: Date.now()
-  };
-  spots.push(s); persist();
-  sel = s.id; pin = null;
-  $("#pinout").textContent = "No pin yet. Tap the map to place one.";
-  $("#ssid").value = ""; $("#bssid").value = ""; $("#note").value = "";
-  status(`Saved ${s.ssid}.`);
-  renderList(); draw();
-});
-
-/* ---------- Saved list ---------- */
-const matches = s => (`${s.ssid} ${s.bssid} ${s.sec} ${s.note}`).toLowerCase().includes(term);
-function selectSpot(id, fromMap) {
-  sel = sel === id && !fromMap ? null : id;
-  const s = spots.find(x => x.id === sel);
-  if (s) {
-    if (!fromMap) flyTo(s.lat, s.lng, Math.max(map.z, 16));
-    status(`${s.ssid || "Hidden network"}: ${s.sec}, signal quality ${s.sig}.`);
-  }
-  renderList(); draw();
-  if (fromMap) $(".item[aria-expanded=true]")?.scrollIntoView({ block: "nearest" });
-}
-function renderList() {
-  const rows = spots.filter(s => !term || matches(s))
-    .map(s => ({ s, d: km(map.lat, map.lng, s.lat, s.lng) })).sort((a, b) => a.d - b.d);
-  $("#count").textContent = spots.length ? `(${rows.length} of ${spots.length})` : "";
-  const items = rows.map(({ s, d }) => {
-    const open = sel === s.id;
-    const li = h("li", {},
-      h("button", { type: "button", class: "item", "aria-expanded": open, onclick: () => selectSpot(s.id) },
-        h("i", { class: `dot ${bucket(s.sig)}${s.sec === "Open" ? " ring" : ""}` }),
-        h("span", {}, h("b", {}, s.ssid || "Hidden network"), h("small", {}, `${s.sec}, quality ${s.sig}, ${fmtDist(d)} from map centre`))));
-    if (open) li.append(h("div", { class: "detail" },
-      h("p", {}, h("span", {}, "Signal: "), `about ${dbm(s.sig)} dBm`),
-      s.bssid ? h("p", {}, h("span", {}, "BSSID: "), s.bssid) : "",
-      s.note ? h("p", {}, h("span", {}, "Note: "), s.note) : "",
-      h("p", {}, h("span", {}, "Position: "), `${s.lat}, ${s.lng}`),
-      h("p", {}, h("span", {}, "Saved: "), new Date(s.ts).toLocaleString()),
-      h("button", { type: "button", class: "btn danger", onclick: () => {
-        spots = spots.filter(x => x.id !== s.id); sel = null; persist(); status(`Deleted ${s.ssid || "network"}.`); renderList(); draw();
-      } }, "Delete network")));
-    return li;
+/* ---------- Rendering ---------- */
+function tile(item, onPick) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "tile";
+  b.setAttribute("aria-label", `Cast ${item.title}`);
+  const art = document.createElement("span"); art.className = "art";
+  const img = document.createElement("img");
+  img.loading = "lazy"; img.alt = ""; img.src = item.poster;
+  img.onerror = () => { img.remove(); };
+  const go = document.createElement("span"); go.className = "go"; go.textContent = "\u25B6";
+  art.append(img, go);
+  const t = document.createElement("b"); t.textContent = item.title;
+  const m = document.createElement("small"); m.textContent = item.meta || "";
+  b.append(art, t, m);
+  b.addEventListener("click", async () => {
+    b.setAttribute("aria-busy", "true");
+    try { await onPick(item); } finally { b.removeAttribute("aria-busy"); }
   });
-  if (!items.length) items.push(h("li", { class: "empty" }, spots.length ? "No networks match that filter." : "Nothing saved yet. Tap the map to drop a pin, then save a network."));
-  $("#list").replaceChildren(...items);
+  return b;
 }
-$("#filter").oninput = e => { term = e.target.value.trim().toLowerCase(); renderList(); draw(); };
 
-/* ---------- Search (Nominatim, no key) and locate ---------- */
-$("#sform").addEventListener("submit", async e => {
-  e.preventDefault();
-  const v = $("#sq").value.trim();
-  if (!v) return;
-  const m = v.match(/^(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)$/);
-  if (m && Math.abs(+m[1]) <= 85 && Math.abs(+m[2]) <= 180) { flyTo(+m[1], +m[2], 16); status(`Showing ${m[1]}, ${m[2]}.`); return; }
-  status("Searching\u2026");
+/* ---------- Cast (Castjs + Google Cast Web Sender SDK, Default Media Receiver) ---------- */
+let cjs = null, current = null, seeking = false, castReady = false;
+
+function castMedia(item) {
+  if (!cjs) return toast("Cast support did not load. Check your connection and reload.");
+  if (!castReady) return toast("Cast is not available in this browser. Use Chrome or Edge over HTTPS.");
+  current = item;
+  setStatus("wait", "Choose your TV in the Cast window");
+  cjs.cast(item.url, {
+    title: item.title, description: item.meta || "", poster: item.poster || "",
+    contentType: item.type || mimeFor(item.url)
+  });
+}
+
+function fmt(s) {
+  s = Math.max(0, Math.floor(+s || 0));
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+  return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0");
+}
+
+function renderTime() {
+  if (!cjs || seeking) return;
+  $("#seek").value = Math.round((+cjs.progress() || 0) * 10);
+  $("#tNow").textContent = fmt(cjs.time());
+  $("#tEnd").textContent = fmt(cjs.duration());
+}
+
+function render() {
+  if (!cjs) return;
+  const on = cjs.connected();
+  $("#remote").hidden = !on;
+  if (on) {
+    const st = cjs.state(), playing = st === "playing" || st === "buffering";
+    setStatus("on", `${playing ? "Casting" : "Connected"} to ${cjs.device() || "your TV"}`);
+    $("#nowTitle").textContent = (current && current.title) || cjs.title() || "Nothing playing";
+    $("#nowDevice").textContent = cjs.device() ? `on ${cjs.device()}` : "";
+    const art = $("#nowArt");
+    if (current && current.poster) { art.src = current.poster; art.hidden = false; art.onerror = () => { art.hidden = true; }; }
+    else art.hidden = true;
+    $("#play").innerHTML = playing ? "&#10074;&#10074;" : "&#9654;";
+    $("#mute").textContent = cjs.muted() ? "Unmute" : "Mute";
+    if (typeof cjs.volume() === "number") $("#vol").value = Math.round(cjs.volume() * 100);
+    renderTime();
+  } else if (castReady) {
+    setStatus("ready", "Ready. Pick a video to cast");
+  }
+}
+
+function initCast() {
+  if (typeof Castjs === "undefined") {
+    setStatus("err", "Cast library failed to load");
+    return;
+  }
+  cjs = new Castjs();
+  const ready = () => {
+    castReady = true;
+    $("#hint").textContent = "Tap any video, choose your TV, and the Default Media Receiver plays it. Nothing is uploaded from your device.";
+    render();
+  };
+  cjs.on("available", ready);
+  if (cjs.available()) ready();
+
+  ["connect", "disconnect", "statechange", "playing", "pause", "buffering", "mute", "unmute", "volumechange", "session"]
+    .forEach(ev => { try { cjs.on(ev, render); } catch (e) {} });
+  try { cjs.on("timeupdate", renderTime); } catch (e) {}
+  try { cjs.on("end", () => { toast("Finished playing"); render(); }); } catch (e) {}
   try {
-    const r = await fetch("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" + encodeURIComponent(v), { headers: { Accept: "application/json" } });
-    if (!r.ok) throw new Error("bad status");
-    const j = await r.json();
-    if (!j.length) { status("No place found. Try a city, street or landmark.", true); return; }
-    flyTo(+j[0].lat, +j[0].lon, 15);
-    status("Showing " + j[0].display_name);
-  } catch { status("Search is unavailable right now. Check your connection and try again.", true); }
+    cjs.on("error", err => {
+      const msg = String((err && (err.message || err.description)) || err || "");
+      toast(/cancel/i.test(msg) ? "No TV selected" : `Cast error: ${msg || "something went wrong"}`);
+      render();
+    });
+  } catch (e) {}
+
+  // If the SDK never reports a receiver-capable browser, explain why.
+  setTimeout(() => {
+    if (!castReady) {
+      setStatus("err", "Cast not detected in this browser");
+      $("#hint").textContent = "Open this page in Chrome or Edge (desktop or Android) over HTTPS or localhost. iPhone and iPad browsers cannot start Cast sessions.";
+    }
+  }, 7000);
+}
+
+/* ---------- Remote controls ---------- */
+$("#play").addEventListener("click", () => { if (!cjs) return; cjs.state() === "paused" ? cjs.play() : cjs.pause(); });
+$("#back").addEventListener("click", () => cjs && cjs.time(Math.max(0, cjs.time() - 10)));
+$("#fwd").addEventListener("click", () => cjs && cjs.time(Math.min(cjs.duration() || 1e9, cjs.time() + 10)));
+$("#stop").addEventListener("click", () => { if (cjs) { cjs.disconnect(); current = null; toast("Stopped casting"); } });
+$("#mute").addEventListener("click", () => { if (cjs) { cjs.muted(!cjs.muted()); setTimeout(render, 150); } });
+$("#vol").addEventListener("input", e => cjs && cjs.volume(e.target.value / 100));
+const seekEl = $("#seek");
+seekEl.addEventListener("input", () => { seeking = true; $("#tNow").textContent = fmt((seekEl.value / 1000) * (cjs ? cjs.duration() : 0)); });
+seekEl.addEventListener("change", () => {
+  if (cjs && cjs.duration()) cjs.time(Math.floor((seekEl.value / 1000) * cjs.duration()));
+  setTimeout(() => { seeking = false; }, 400);
 });
 
-$("#loc").onclick = () => {
-  if (!navigator.geolocation) { status("This browser cannot share your location. Search for a place instead.", true); return; }
-  status("Finding your location\u2026");
-  navigator.geolocation.getCurrentPosition(p => {
-    me = { lat: p.coords.latitude, lng: p.coords.longitude };
-    flyTo(me.lat, me.lng, Math.max(map.z, 17));
-    dropPin(me, true);
-    status(`Located within ${Math.round(p.coords.accuracy)} m. A pin is set here, ready to save a network.`);
-  }, () => status("Location is blocked or unavailable. Allow location for this page, or search for a place.", true),
-  { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
-};
+/* ---------- Sample library ---------- */
+const libGrid = $("#libGrid");
+SAMPLES.forEach(s => libGrid.append(tile(s, castMedia)));
 
-/* ---------- Connection info ---------- */
-function renderConn() {
-  const c = navigator.connection, rows = [["Browser online", navigator.onLine ? "Yes" : "No"]];
-  if (c) {
-    [["Connection type", c.type], ["Speed class", c.effectiveType],
-     ["Downlink", c.downlink != null ? c.downlink + " Mbps" : null], ["Round trip", c.rtt != null ? c.rtt + " ms" : null],
-     ["Data saver", c.saveData == null ? null : c.saveData ? "On" : "Off"]].forEach(r => r[1] && rows.push(r));
-  } else rows.push(["Details", "Not reported by this browser"]);
-  $("#conn").replaceChildren(...rows.flatMap(([k, v]) => [h("dt", {}, k), h("dd", {}, String(v))]));
-}
-navigator.connection?.addEventListener?.("change", renderConn);
-addEventListener("online", renderConn); addEventListener("offline", renderConn);
-
-/* ---------- Import / export ---------- */
-function download(name, type, text) {
-  const a = h("a", { href: URL.createObjectURL(new Blob([text], { type })), download: name });
-  document.body.append(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
-const guard = v => /^[=+\-@]/.test(v) ? "'" + v : v;
-const csvCell = v => `"${guard(String(v ?? "")).replace(/"/g, '""')}"`;
-$("#expJson").onclick = () => { download("wifi-map.json", "application/json", JSON.stringify(spots, null, 2)); status(`Exported ${spots.length} networks.`); };
-$("#expCsv").onclick = () => {
-  const head = "ssid,bssid,security,signal,lat,lng,note";
-  const body = spots.map(s => [s.ssid, s.bssid, s.sec, s.sig, s.lat, s.lng, s.note].map(csvCell).join(","));
-  download("wifi-map.csv", "text/csv", [head, ...body].join("\r\n"));
-  status(spots.length ? `Exported ${spots.length} networks.` : "Saved an empty CSV you can use as a template.");
-};
-function parseCSV(t) {
-  const rows = []; let r = [], c = "", q = false;
-  t = t.replace(/^\uFEFF/, "");
-  for (let i = 0; i < t.length; i++) {
-    const ch = t[i];
-    if (q) { if (ch === '"') { if (t[i + 1] === '"') { c += '"'; i++; } else q = false; } else c += ch; }
-    else if (ch === '"') q = true;
-    else if (ch === ",") { r.push(c); c = ""; }
-    else if (ch === "\n" || ch === "\r") { if (ch === "\r" && t[i + 1] === "\n") i++; r.push(c); c = ""; if (r.some(x => x !== "")) rows.push(r); r = []; }
-    else c += ch;
-  }
-  r.push(c); if (r.some(x => x !== "")) rows.push(r);
-  return rows;
-}
-const ALIAS = { ssid: "ssid", name: "ssid", bssid: "bssid", mac: "bssid", security: "sec", auth: "sec", sec: "sec",
-  signal: "sig", quality: "sig", sig: "sig", lat: "lat", latitude: "lat", lng: "lng", lon: "lng", long: "lng", longitude: "lng", note: "note", notes: "note" };
-function fromCSV(text) {
-  const rows = parseCSV(text); if (rows.length < 2) return [];
-  const cols = rows[0].map(x => ALIAS[x.trim().toLowerCase()]);
-  return rows.slice(1).map(r => { const o = {}; cols.forEach((k, i) => { if (k) o[k] = (r[i] ?? "").replace(/^'(?=[=+\-@])/, ""); }); return o; });
-}
-function normalise(o) {
-  const lat = +o.lat, lng = +o.lng;
-  if (!o || typeof o !== "object" || !isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 85.06 || Math.abs(lng) > 180 || o.lat === "" || o.lng === "") return null;
-  const sec = SEC.find(x => x.toLowerCase() === String(o.sec ?? "").trim().toLowerCase()) || "WPA2";
-  const sig = isFinite(+o.sig) && o.sig !== "" ? clamp(Math.round(+o.sig), 0, 100) : 50;
-  return { id: uid(), ssid: String(o.ssid ?? "").slice(0, 32), bssid: String(o.bssid ?? "").toUpperCase().slice(0, 17),
-    sec, sig, note: String(o.note ?? "").slice(0, 200), lat: +lat.toFixed(6), lng: +lng.toFixed(6), ts: +o.ts || Date.now() };
-}
-$("#impBtn").onclick = () => $("#impFile").click();
-$("#impFile").onchange = async e => {
-  const f = e.target.files[0]; e.target.value = "";
-  if (!f) return;
+/* ---------- Internet Archive tab ---------- */
+async function arcLoad(reset) {
+  if (arc.busy) return;
+  arc.busy = true;
+  const msg = $("#arcMsg"), grid = $("#arcGrid"), more = $("#arcMore");
+  if (reset) { grid.textContent = ""; arc.page = 1; }
+  msg.textContent = "Searching"; more.hidden = true;
   try {
-    if (f.size > 5e6) throw new Error("size");
-    const text = await f.text();
-    let raw;
-    if (/\.csv$/i.test(f.name)) raw = fromCSV(text);
-    else { const j = JSON.parse(text); raw = Array.isArray(j) ? j : j.spots; }
-    if (!Array.isArray(raw)) throw new Error("shape");
-    const key = s => `${s.ssid}|${s.bssid}|${s.lat}|${s.lng}`, seen = new Set(spots.map(key));
-    let added = 0;
-    for (const o of raw) { const s = normalise(o); if (s && !seen.has(key(s))) { spots.push(s); seen.add(key(s)); added++; } }
-    persist(); renderList(); draw();
-    if (added) { const l = spots[spots.length - 1]; flyTo(l.lat, l.lng, Math.max(map.z, 14)); }
-    status(`Imported ${added} of ${raw.length} rows. Rows without valid lat and lng, or already saved, were skipped.`, !added);
-  } catch { status("That file could not be read. Use a JSON list or a CSV with ssid, bssid, security, signal, lat, lng columns (up to 5 MB).", true); }
-};
-$("#clear").onclick = () => {
-  if (!spots.length) { status("There is nothing to delete."); return; }
-  if (confirm(`Delete all ${spots.length} saved networks from this browser? Export first if you want a backup.`)) {
-    spots = []; sel = null; persist(); renderList(); draw(); status("All saved networks deleted.");
-  }
-};
+    const { docs, total } = await iaSearch(arc.q, arc.page);
+    docs.forEach(d => {
+      const id = d.identifier;
+      grid.append(tile({
+        title: clean(d.title) || id, meta: d.year ? String(clean(d.year)) : "Internet Archive",
+        poster: `${IA}/services/img/${encodeURIComponent(id)}`
+      }, async item => {
+        try {
+          toast("Finding the video file");
+          item.url = await iaResolve(id);
+          item.type = "video/mp4";
+          castMedia(item);
+        } catch (e) { toast(e.message || "Could not load this item"); }
+      }));
+    });
+    msg.textContent = grid.children.length ? "" : "No videos found. Try a different word, such as noir, cartoon or news.";
+    more.hidden = arc.page * 24 >= total;
+  } catch (e) {
+    msg.textContent = "Could not reach the Internet Archive. Check your connection and try again.";
+  } finally { arc.busy = false; }
+}
+$("#arcForm").addEventListener("submit", e => { e.preventDefault(); arc.q = $("#arcQ").value.trim().replace(/[()"]/g, " "); arcLoad(true); });
+$("#arcMore").addEventListener("click", () => { arc.page++; arcLoad(false); });
 
-/* ---------- Start ---------- */
-setTheme(store.get("wm-theme", null) || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
-$("#sig").oninput({ target: $("#sig") });
-renderConn(); renderList();
+/* ---------- Custom link tab ---------- */
+$("#urlForm").addEventListener("submit", e => {
+  e.preventDefault();
+  let u;
+  try { u = new URL($("#urlIn").value.trim()); } catch (x) { return toast("Enter a full link starting with https://"); }
+  if (!/^https?:$/.test(u.protocol)) return toast("Only http and https links can be cast");
+  castMedia({ title: $("#urlTitle").value.trim() || decodeURIComponent(u.pathname.split("/").pop() || u.hostname), meta: u.hostname, url: u.href, poster: "" });
+});
+
+/* ---------- Tabs (with arrow-key support) ---------- */
+const tabs = $$('[role="tab"]');
+function openTab(tab) {
+  tabs.forEach(t => {
+    const on = t === tab;
+    t.setAttribute("aria-selected", on);
+    t.tabIndex = on ? 0 : -1;
+    $("#" + t.getAttribute("aria-controls")).hidden = !on;
+  });
+  if (tab.id === "tab-arc" && !$("#arcGrid").children.length && !arc.busy) arcLoad(true);
+}
+tabs.forEach((t, i) => {
+  t.addEventListener("click", () => openTab(t));
+  t.addEventListener("keydown", e => {
+    const d = { ArrowRight:1, ArrowLeft:-1 }[e.key];
+    if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; n.focus(); openTab(n); }
+  });
+});
+openTab(tabs[0]);
+
+initCast();
+})();
 </script>
 </body>
 </html>
