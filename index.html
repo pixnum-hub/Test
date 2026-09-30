@@ -1,234 +1,87 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Wi-Fi Map</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050505"><title>Photo Repair AI — Automatic Restoration</title>
+<script async src="https://docs.opencv.org/4.x/opencv.js"></script>
 <style>
-:root{--bg:#12141a;--panel:#1b1e27;--text:#e8eaf0;--mute:#9aa1b2;--line:#2c3040;--acc:#4da3ff;--onacc:#001528;--ok:#3ddc84;--bad:#ff6b6b;--tile:invert(1) hue-rotate(180deg) brightness(.92) contrast(.9)}
-[data-theme=light]{--bg:#f3f5f9;--panel:#fff;--text:#161a24;--mute:#5b6478;--line:#d9deea;--acc:#0b63ce;--onacc:#fff;--ok:#12813f;--bad:#c62828;--tile:none}
-[data-theme=oled]{--bg:#000;--panel:#000;--text:#f2f2f2;--mute:#8a8a8a;--line:#222;--acc:#4da3ff;--onacc:#000;--tile:invert(1) hue-rotate(180deg) brightness(.7) contrast(.95)}
-[data-theme=hc]{--bg:#000;--panel:#000;--text:#fff;--mute:#fff;--line:#fff;--acc:#ffe600;--onacc:#000;--ok:#00ff6a;--bad:#ff5c5c;--tile:grayscale(1) invert(1) contrast(1.6)}
-*{box-sizing:border-box;margin:0}
-html,body{height:100%}
-body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;min-height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-header{padding:12px 14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
-h1{font-size:1.25rem}
-.pill{font-size:.75rem;padding:2px 10px;border:1px solid var(--line);border-radius:99px;color:var(--mute)}
-.pill.on{color:var(--ok);border-color:var(--ok)}.pill.off{color:var(--bad);border-color:var(--bad)}
-.themes{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-button,select{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;min-height:44px;cursor:pointer}
-.themes button{border:0;border-radius:0;padding:8px 12px;min-height:40px}
-.themes button[aria-pressed=true],button.primary{background:var(--acc);color:var(--onacc);font-weight:600}
-button:focus-visible,select:focus-visible,.row:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
-[data-theme=hc] *{border-width:2px}
-main{flex:1;display:grid;grid-template-rows:minmax(300px,48dvh) auto;gap:10px;padding:0 10px 10px;min-height:0}
-#map{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel);z-index:0}
-.leaflet-tile-pane{filter:var(--tile)}
-.heat{position:absolute;top:0;left:0;pointer-events:none}
-aside{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px;min-height:0}
-.bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
-.bar label{display:flex;align-items:center;gap:6px;color:var(--mute);font-size:.85rem}
-#list{display:flex;flex-direction:column;gap:6px;overflow:auto;max-height:42dvh}
-.row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
-.row[aria-selected=true]{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
-.row b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.row small{color:var(--mute);font-size:.78rem}
-.sig{grid-row:span 2;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
-.meter{height:5px;border-radius:3px;background:var(--line);margin-top:4px;overflow:hidden;width:70px}
-.meter i{display:block;height:100%}
-.legend{height:8px;border-radius:4px;background:linear-gradient(90deg,#00f,#0ff,#0f0,#ff0,#f00);width:min(220px,70%);margin:0 auto}
-.lg{display:flex;justify-content:space-between;width:min(220px,70%);margin:0 auto;font-size:.72rem;color:var(--mute)}
-.badge{display:inline-block;font-size:.7rem;font-weight:700;line-height:1;padding:3px 7px;border-radius:99px;border:1px solid currentColor;margin-right:4px;white-space:nowrap}
-.b2{color:#ff9f43}.b5{color:#4da3ff}.b6{color:#b980ff}.bg{color:var(--mute)}
-[data-theme=light] .b2{color:#b45f06}[data-theme=light] .b5{color:#0b63ce}[data-theme=light] .b6{color:#7a2fd0}
-[data-theme=hc] .b2,[data-theme=hc] .b5,[data-theme=hc] .b6,[data-theme=hc] .bg{color:#fff;border-width:2px}
-#counts{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
-.msg{text-align:center;color:var(--mute);font-size:.85rem}
-footer{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;padding:14px;color:var(--mute);font-size:.82rem;border-top:1px solid var(--line)}
-@media(min-width:900px){main{grid-template-columns:1fr 380px;grid-template-rows:calc(100dvh - 190px)}#list{max-height:none;flex:1}aside{overflow:hidden}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+:root{--bg:#f3f5f7;--p:#fff;--t:#14171a;--m:#68717c;--l:#dce1e6;--a:#2563eb}
+:root.dark{--bg:#111315;--p:#1b1e22;--t:#f7f8fa;--m:#aab1ba;--l:#343940}
+:root.oled{--bg:#000;--p:#050505;--t:#fff;--m:#aaa;--l:#292929}
+:root.hc{--bg:#000;--p:#000;--t:#fff;--m:#fff;--l:#fff;--a:#ff0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+.app{max-width:1180px;margin:auto;min-height:100vh;display:flex;flex-direction:column}header{padding:12px;border-bottom:1px solid var(--l);background:var(--p)}
+.top{display:flex;gap:12px;align-items:center;justify-content:space-between}.brand{display:flex;gap:10px;align-items:center}.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:grid;place-items:center;color:#fff;font-weight:900;font-size:22px}h1{font-size:18px;margin:0}.sub{font-size:11px;color:var(--m)}
+main{padding:14px;flex:1}.grid{display:grid;gap:14px}.viewer{background:#17191c;border:1px solid var(--l);border-radius:16px;min-height:330px;display:grid;place-items:center;overflow:hidden}.viewer canvas{max-width:100%;max-height:72vh;width:auto;height:auto}.empty{text-align:center;color:#d7dbe0;padding:40px}.empty h2{margin:0 0 7px}.empty p{color:#abb2ba}
+.panel{display:grid;gap:12px}.card{background:var(--p);border:1px solid var(--l);border-radius:16px;padding:12px}.card h2{font-size:14px;margin:0 0 10px}
+button,.file,select,input[type=range]{font:inherit}.buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}button,.file{border:1px solid var(--l);background:var(--p);color:var(--t);border-radius:10px;padding:10px;min-height:42px;font-weight:700;cursor:pointer;text-align:center}button.primary,.file.primary{background:var(--a);color:#fff;border-color:var(--a)}button:disabled{opacity:.45;cursor:not-allowed}.file input{display:none}.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.mode.active{outline:2px solid var(--a)}
+.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.status{color:var(--m);font-size:12px;line-height:1.45}.progress{height:5px;background:var(--l);border-radius:10px;overflow:hidden}.progress i{display:block;width:0;height:100%;background:linear-gradient(90deg,#2563eb,#7c3aed);transition:.2s}
+select{width:100%;padding:9px;background:var(--p);color:var(--t);border:1px solid var(--l);border-radius:9px}.themes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.themes button{font-size:11px;padding:8px 3px}
+footer{text-align:center;padding:16px;color:var(--m);border-top:1px solid var(--l);font-size:12px}
+@media(min-width:780px){main{padding:20px}.grid{grid-template-columns:minmax(0,1fr) 330px;align-items:start}.panel{position:sticky;top:12px}.viewer{min-height:600px}.buttons{grid-template-columns:1fr 1fr}}
 </style>
 </head>
-<body>
-<header>
-  <h1>📶 Wi-Fi Map</h1>
-  <span id="status" class="pill">checking bridge…</span>
-  <div class="themes" role="group" aria-label="Theme">
-    <button data-t="dark" aria-pressed="true">Dark</button>
-    <button data-t="light" aria-pressed="false">Light</button>
-    <button data-t="oled" aria-pressed="false">OLED</button>
-    <button data-t="hc" aria-pressed="false">HC</button>
-  </div>
-</header>
-
-<main>
-  <div id="map" role="application" aria-label="Wi-Fi signal heatmap"></div>
-  <aside>
-    <div class="bar">
-      <button id="scan" class="primary">Scan now</button>
-      <label><input type="checkbox" id="auto"> Auto 10s</label>
-      <label><input type="checkbox" id="gps" checked> GPS</label>
-    </div>
-    <div class="bar">
-      <select id="band" aria-label="Band filter"><option value="0">All bands</option><option value="2">2.4G (2.4 GHz)</option><option value="5">5G (5 GHz)</option><option value="6">6G (6 GHz)</option></select>
-      <button id="export">Export</button>
-      <button id="clear">Clear</button>
-    </div>
-    <div id="counts" aria-live="polite"></div>
-    <div><div class="legend"></div><div class="lg"><span>−95 dBm</span><span>−35 dBm</span></div></div>
-    <div id="msg" class="msg">Tap the map to set your position (turn GPS off for indoor mapping).</div>
-    <div id="list" role="listbox" aria-label="Access points"></div>
-  </aside>
-</main>
-
-<footer>
-  <span>© Manik Roy <span id="year">2026</span>. All Rights Reserved.</span>
-  <span>Map data © OpenStreetMap contributors</span>
-</footer>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<body><div class="app">
+<header><div class="top"><div class="brand"><div class="logo">✦</div><div><h1>Photo Repair AI</h1><div class="sub">Automatic scratches • tears • splashes • spots</div></div></div><label class="file primary">📂 Open Photo<input id="file" type="file" accept="image/*"></label></div></header>
+<main><div class="grid">
+<section class="viewer"><div class="empty" id="empty"><h2>Automatic Photo Repair</h2><p>Open a damaged photograph. The app detects damage and reconstructs the affected pixels automatically.</p></div><canvas id="cv" hidden></canvas></section>
+<aside class="panel">
+<div class="card"><h2>Automatic Repair</h2><div class="modes">
+<button class="mode active" data-mode="auto">✨ Auto Repair</button><button class="mode" data-mode="scratch">〰 Scratches</button>
+<button class="mode" data-mode="tear">✂ Tears</button><button class="mode" data-mode="splash">💦 Splashes</button>
+<button class="mode" data-mode="spots">● Spots/Dust</button><button class="mode" data-mode="old">🖼 Old Photo</button>
+</div></div>
+<div class="card"><h2>Detection strength</h2><select id="strength"><option value="1">Gentle — preserve details</option><option value="2" selected>Balanced</option><option value="3">Strong — heavier damage</option></select><p class="status">The detector builds a damage mask first, then OpenCV's inpainting reconstructs the damaged regions from surrounding image information.</p></div>
+<div class="card"><h2>Repair controls</h2><div class="buttons"><button id="repair" class="primary" disabled>✨ Detect & Repair</button><button id="detect" disabled>🔎 Show Damage Mask</button><button id="undo" disabled>↶ Undo</button><button id="before" disabled>◐ Before</button><button id="save" disabled>⬇ Save PNG</button><button id="reset" disabled>↻ Reset</button></div><div class="progress"><i id="bar"></i></div><p class="status" id="status">Waiting for a photo.</p></div>
+<div class="card"><h2>Display</h2><div class="themes"><button data-theme="light">☀ Light</button><button data-theme="dark">☾ Dark</button><button data-theme="oled">● OLED</button><button data-theme="hc">HC</button></div></div>
+<div class="card"><p class="status">Core processing runs in your browser with OpenCV.js. No account or API key is required. Very large images are automatically limited to a practical processing size.</p></div>
+</aside></div></main>
+<footer>© Manik Roy <span id="year"></span>. All Rights Reserved.</footer>
+</div>
 <script>
-const $ = s => document.querySelector(s);
-const BRIDGE = location.protocol === 'file:' ? 'http://127.0.0.1:8765' : '';
-$('#year').textContent = new Date().getFullYear();
-
-/* ---------- theme ---------- */
-const store = { get(k, d){ try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } },
-                set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)) } catch {} } };
-function setTheme(t){
-  document.documentElement.dataset.theme = t; store.set('wm-theme', t);
-  document.querySelectorAll('.themes button').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === t));
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const cvx=$("#cv"),ctx=cvx.getContext("2d"),bar=$("#bar"),statusEl=$("#status");
+let source=null,history=null,showMask=false,mode="auto",ready=false,before=false;
+function st(x){statusEl.textContent=x}
+function prog(x){bar.style.width=x+"%"}
+function buttons(){["repair","detect","save","reset","before"].forEach(id=>$("#"+id).disabled=!source);$("#undo").disabled=!history}
+function load(f){if(!f)return;let r=new FileReader();r.onload=e=>{let im=new Image();im.onload=()=>{let scale=Math.min(1,2200/im.naturalWidth,2200/im.naturalHeight);cvx.width=Math.round(im.naturalWidth*scale);cvx.height=Math.round(im.naturalHeight*scale);ctx.drawImage(im,0,0,cvx.width,cvx.height);source=ctx.getImageData(0,0,cvx.width,cvx.height);history=null;before=false;cvx.hidden=false;$("#empty").hidden=true;ready=false;buttons();st("Photo loaded. Choose a repair mode and press Detect & Repair.");};im.src=e.target.result};r.readAsDataURL(f)}
+$("#file").onchange=e=>load(e.target.files[0]);
+$$(".mode").forEach(b=>b.onclick=()=>{$$(".mode").forEach(x=>x.classList.remove("active"));b.classList.add("active");mode=b.dataset.mode});
+function mat(){return cvx}
+function gray(src){let g=new cv.Mat();cv.cvtColor(src,g,cv.COLOR_RGBA2GRAY);return g}
+function cleanMask(m,close=3,open=1){let k=cv.getStructuringElement(cv.MORPH_RECT,new cv.Size(close,close));cv.morphologyEx(m,m,cv.MORPH_CLOSE,k);if(open>1){let q=cv.getStructuringElement(cv.MORPH_ELLIPSE,new cv.Size(open,open));cv.morphologyEx(m,m,cv.MORPH_OPEN,q);q.delete()}k.delete();return m}
+function makeMask(src,type,level){
+ let g=gray(src),mask=new cv.Mat.zeros(src.rows,src.cols,cv.CV_8UC1),a=new cv.Mat(),b=new cv.Mat(),k;
+ if(type==="scratch"||type==="tear"||type==="auto"||type==="old"){
+   k=cv.getStructuringElement(cv.MORPH_RECT,new cv.Size(1,level===3?31:level===2?21:13));cv.morphologyEx(g,a,cv.MORPH_TOPHAT,k);k.delete();
+   k=cv.getStructuringElement(cv.MORPH_RECT,new cv.Size(level===3?25:level===2?17:11,1));cv.morphologyEx(g,b,cv.MORPH_TOPHAT,k);k.delete();
+   cv.max(a,b,a);cv.threshold(a,a,level===3?24:level===2?31:39,255,cv.THRESH_BINARY);cv.bitwise_or(mask,a,mask);
+   k=cv.getStructuringElement(cv.MORPH_RECT,new cv.Size(1,level===3?41:27));cv.morphologyEx(g,a,cv.MORPH_BLACKHAT,k);k.delete();
+   k=cv.getStructuringElement(cv.MORPH_RECT,new cv.Size(level===3?31:21,1));cv.morphologyEx(g,b,cv.MORPH_BLACKHAT,k);k.delete();cv.max(a,b,a);cv.threshold(a,a,level===3?28:level===2?36:45,255,cv.THRESH_BINARY);cv.bitwise_or(mask,a,mask);
+ }
+ if(type==="splash"||type==="spots"||type==="auto"){
+   cv.GaussianBlur(g,a,new cv.Size(0,0),3);cv.absdiff(g,a,b);cv.threshold(b,b,level===3?17:level===2?25:34,255,cv.THRESH_BINARY);cv.bitwise_or(mask,b,mask);
+   let c=new cv.Mat();cv.Laplacian(g,c,cv.CV_8U,3);cv.threshold(c,c,level===3?75:level===2?105:135,255,cv.THRESH_BINARY);cv.bitwise_or(mask,c,mask);c.delete();
+ }
+ if(type==="tear"){let edges=new cv.Mat();cv.Canny(g,edges,55,150);k=cv.getStructuringElement(cv.MORPH_RECT,new cv.Size(3,15));cv.morphologyEx(edges,edges,cv.MORPH_CLOSE,k);k.delete();cv.dilate(edges,edges,cv.getStructuringElement(cv.MORPH_ELLIPSE,new cv.Size(3,3)));cv.bitwise_or(mask,edges,mask);edges.delete()}
+ cleanMask(mask,level===3?5:3,level===1?1:2);g.delete();a.delete();b.delete();return mask
 }
-document.querySelectorAll('.themes button').forEach(b => b.onclick = () => setTheme(b.dataset.t));
-setTheme(store.get('wm-theme', matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
-
-/* ---------- state ---------- */
-let samples = store.get('wm-samples-live', []);   // {lat,lng,t,b:[[bssid,ssid,rssi,freq],...]}
-let last = [], sel = null, pin = null, busy = false, timer = null, pinMarker = null;
-
-/* ---------- map (OpenStreetMap tiles: free, no API key) ---------- */
-const map = L.map('map', { zoomControl: true }).setView(samples.length ? [samples.at(-1).lat, samples.at(-1).lng] : [22.5726, 88.3639], samples.length ? 18 : 15);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
-map.on('click', e => { pin = e.latlng; setPin(); $('#gps').checked = false; msg('Position pinned. Scan to record signal here.'); });
-function setPin(){ if (pinMarker) pinMarker.remove(); if (pin) pinMarker = L.circleMarker(pin, { radius: 7, color: '#fff', weight: 2, fillColor: '#4da3ff', fillOpacity: 1 }).addTo(map); }
-const msg = t => $('#msg').textContent = t;
-
-/* ---------- canvas heatmap layer ---------- */
-const palette = (() => {
-  const c = document.createElement('canvas'); c.width = 1; c.height = 256;
-  const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256);
-  [[0,'#0000ff'],[.3,'#00ffff'],[.55,'#00ff00'],[.78,'#ffff00'],[1,'#ff0000']].forEach(s => gr.addColorStop(s[0], s[1]));
-  g.fillStyle = gr; g.fillRect(0, 0, 1, 256); return g.getImageData(0, 0, 1, 256).data;
-})();
-const Heat = L.Layer.extend({
-  onAdd(m){ this._c = L.DomUtil.create('canvas', 'heat'); m.getPane('overlayPane').appendChild(this._c);
-    m.on('moveend zoomend resize', this.draw, this); this.draw(); },
-  onRemove(m){ this._c.remove(); m.off('moveend zoomend resize', this.draw, this); },
-  draw(){
-    const m = this._map, s = m.getSize(), c = this._c;
-    L.DomUtil.setPosition(c, m.containerPointToLayerPoint([0, 0]));
-    c.width = s.x; c.height = s.y;
-    const g = c.getContext('2d'), z = m.getZoom(), pts = visiblePoints();
-    const mpp = 156543.03 * Math.cos(m.getCenter().lat * Math.PI / 180) / 2 ** z;
-    const r = Math.max(16, 30 / mpp), stamp = document.createElement('canvas');
-    stamp.width = stamp.height = r * 2;
-    const sg = stamp.getContext('2d'), rg = sg.createRadialGradient(r, r, 0, r, r, r);
-    rg.addColorStop(0, 'rgba(0,0,0,1)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
-    sg.fillStyle = rg; sg.fillRect(0, 0, r * 2, r * 2);
-    pts.forEach(p => { const q = m.latLngToContainerPoint([p.lat, p.lng]);
-      g.globalAlpha = Math.max(.08, p.v * .75); g.drawImage(stamp, q.x - r, q.y - r); });
-    g.globalAlpha = 1;
-    const img = g.getImageData(0, 0, c.width, c.height), d = img.data;
-    for (let i = 3; i < d.length; i += 4) { const a = d[i]; if (a) { const j = Math.min(255, a * 1.4 | 0) * 4;
-      d[i-3] = palette[j]; d[i-2] = palette[j+1]; d[i-1] = palette[j+2]; d[i] = Math.min(255, a * 1.6 + 40); } }
-    g.putImageData(img, 0, 0);
-  }
-});
-const heat = new Heat().addTo(map);
-
-const bandOf = f => f < 3000 ? 2 : f >= 5925 ? 6 : 5;
-const norm = r => Math.max(0, Math.min(1, (r + 95) / 60));
-function visiblePoints(){
-  const band = +$('#band').value, out = [];
-  for (const s of samples) {
-    let best = -200;
-    for (const [, ssid, rssi, f] of s.b) if ((!sel || ssid === sel) && (!band || bandOf(f) === band) && rssi > best) best = rssi;
-    if (best > -200) out.push({ lat: s.lat, lng: s.lng, v: norm(best) });
-  }
-  return out;
+function process(showOnly=false){
+ if(!source||!window.cv||!cv.Mat)return;
+ prog(8);st("Analysing photo and building damage map…");
+ setTimeout(()=>{let src=new cv.Mat();cv.matFromImageData(source).copyTo(src);let lvl=+$("#strength").value,m=makeMask(src,mode,lvl);prog(42);
+ if(showOnly){let rgba=new cv.Mat();cv.cvtColor(m,rgba,cv.COLOR_GRAY2RGBA);let d=new ImageData(new Uint8ClampedArray(rgba.data),rgba.cols,rgba.rows);ctx.putImageData(d,0,0);rgba.delete();src.delete();m.delete();showMask=true;prog(100);st("Damage mask shown. Yellow/white areas indicate pixels selected for repair.");return}
+ history=ctx.getImageData(0,0,cvx.width,cvx.height);let dst=new cv.Mat();
+ let radius=lvl===3?5:lvl===2?3:2;cv.inpaint(src,m,dst,radius,cv.INPAINT_TELEA);dst.copyTo(src);
+ let d=new ImageData(new Uint8ClampedArray(src.data),src.cols,src.rows);ctx.putImageData(d,0,0);src.delete();dst.delete();m.delete();showMask=false;ready=true;prog(100);setTimeout(()=>prog(0),500);st("Automatic repair complete. Detected damage was reconstructed.");buttons()},80)
 }
-
-/* ---------- scanning ---------- */
-async function getScan(){
-  const r = await fetch(BRIDGE + '/scan', { cache: 'no-store' });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error);
-  setStatus(true, `live · ${j.count} BSS`);
-  return j;
-}
-function setStatus(ok, t){ const s = $('#status'); s.textContent = t; s.className = 'pill ' + (ok ? 'on' : 'off'); }
-function locate(){
-  return new Promise(res => {
-    const fallback = () => res(pin || map.getCenter());
-    if (!$('#gps').checked || !navigator.geolocation) return fallback();
-    navigator.geolocation.getCurrentPosition(p => res({ lat: p.coords.latitude, lng: p.coords.longitude }), fallback, { enableHighAccuracy: true, timeout: 5000 });
-  });
-}
-async function scan(){
-  if (busy) return; busy = true; const b = $('#scan'); b.disabled = true; b.textContent = 'Scanning…';
-  let data;
-  try { data = await getScan(); }
-  catch (e) {
-    setStatus(false, 'bridge offline');
-    msg('Cannot reach the Wi-Fi bridge. Run "python wifi_bridge.py" on Windows, then open http://127.0.0.1:8765. (' + (e.message || e) + ')');
-    b.disabled = false; b.textContent = 'Scan now'; busy = false; return;
-  }
-  const p = await locate();
-  last = data.bss.sort((a, c) => c.rssi - a.rssi);
-  samples.push({ lat: p.lat, lng: p.lng, t: Date.now(), b: last.map(x => [x.bssid, x.ssid, x.rssi, x.freq]) });
-  if (samples.length > 1500) samples.shift();
-  store.set('wm-samples-live', samples);
-  if ($('#gps').checked && p.lat) map.setView([p.lat, p.lng], Math.max(map.getZoom(), 17));
-  msg(`${samples.length} sample points · ${last.length} access points`);
-  render(); heat.draw(); b.disabled = false; b.textContent = 'Scan now'; busy = false;
-}
-
-/* ---------- list ---------- */
-const BL = { 2: '2.4G', 5: '5G', 6: '6G' };
-const bBadge = f => { const b = bandOf(f); return `<span class="badge b${b}">${BL[b]}</span>`; };
-const gen = p => { const m = /Wi-Fi (\d)/.exec(p); return `<span class="badge bg">${m ? 'Wi-Fi ' + m[1] : esc(p)}</span>`; };
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-function render(){
-  const band = +$('#band').value, el = $('#list');
-  const rows = last.filter(x => !band || bandOf(x.freq) === band);
-  const n = { 2: 0, 5: 0, 6: 0 }; last.forEach(x => n[bandOf(x.freq)]++);
-  $('#counts').innerHTML = last.length ? [2, 5, 6].map(b => `<span class="badge b${b}">${BL[b]}: ${n[b]}</span>`).join('') : '';
-  el.innerHTML = rows.map(x => {
-    const v = norm(x.rssi), col = `hsl(${Math.round(v * 120)} 85% 50%)`, name = x.ssid || '(hidden network)';
-    return `<div class="row" role="option" tabindex="0" data-s="${esc(x.ssid)}" aria-selected="${sel === x.ssid}">
-      <b>${esc(name)} ${x.secure === false ? '🔓' : '🔒'}</b><span class="sig" style="color:${col}">${x.rssi} dBm<div class="meter"><i style="width:${v * 100}%;background:${col}"></i></div></span>
-      <small>${bBadge(x.freq)}${gen(x.phy)}ch ${x.channel} · ${x.freq} MHz · ${esc(x.bssid)}</small></div>`;
-  }).join('') || '<div class="msg">No networks yet — press Scan now.</div>';
-}
-$('#list').addEventListener('click', e => { const r = e.target.closest('.row'); if (!r) return; pick(r.dataset.s); });
-$('#list').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { const r = e.target.closest('.row'); if (r) pick(r.dataset.s); } });
-function pick(s){ sel = sel === s ? null : s; render(); heat.draw(); msg(sel ? `Heatmap filtered to "${sel || 'hidden'}" — tap again to clear` : 'Showing strongest signal at each point'); }
-
-/* ---------- controls ---------- */
-$('#scan').onclick = scan;
-$('#band').onchange = () => { render(); heat.draw(); };
-$('#auto').onchange = e => { clearInterval(timer); if (e.target.checked) { scan(); timer = setInterval(scan, 10000); } };
-$('#clear').onclick = () => { if (confirm('Delete all recorded samples?')) { samples = []; store.set('wm-samples-live', []); heat.draw(); msg('Samples cleared.'); } };
-$('#export').onclick = () => {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(samples, null, 1)], { type: 'application/json' }));
-  a.download = 'wifi-samples.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-};
-new ResizeObserver(() => map.invalidateSize()).observe($('#map'));
-fetch(BRIDGE + '/scan', { method: 'OPTIONS' }).then(() => setStatus(true, 'bridge ready'), () => setStatus(false, 'bridge offline'));
-render(); if (samples.length) msg(`${samples.length} saved sample points loaded.`);
-</script>
-</body>
-</html>
+$("#repair").onclick=()=>process(false);$("#detect").onclick=()=>process(true);
+$("#undo").onclick=()=>{if(history){ctx.putImageData(history,0,0);history=null;buttons();st("Repair undone.")}};
+$("#before").onclick=()=>{if(!source)return;if(!before){history=ctx.getImageData(0,0,cvx.width,cvx.height);ctx.putImageData(source,0,0);before=true;$("#before").textContent="▶ Result"}else{ctx.putImageData(history,0,0);history=null;before=false;$("#before").textContent="◐ Before"}};
+$("#reset").onclick=()=>{if(source){history=ctx.getImageData(0,0,cvx.width,cvx.height);ctx.putImageData(source,0,0);buttons();st("Original restored.")}};
+$("#save").onclick=()=>cvx.toBlob(b=>{let a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="photo-repaired-"+Date.now()+".png";a.click();URL.revokeObjectURL(a.href)});
+$$("[data-theme]").forEach(b=>b.onclick=()=>{document.documentElement.className=b.dataset.theme==="light"?"":b.dataset.theme;localStorage.theme=b.dataset.theme});
+document.documentElement.className=(localStorage.theme||"light")==="light"?"":localStorage.theme;$("#year").textContent=new Date().getFullYear();
+function wait(){if(window.cv&&cv.Mat){ready=true;st(source?"OpenCV engine ready. Press Detect & Repair.":"Open a photo to begin.")}else setTimeout(wait,300)}wait();
+</script></body></html>
