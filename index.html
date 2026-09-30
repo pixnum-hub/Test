@@ -1,243 +1,27 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Photo Repair</title>
-<style>
-:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#1e1e1e;--card:#252526;--fg:#d4d4d4;--mut:#9da0a6;--ac:#0e99ff;--acf:#fff;--bd:#3c3c3c;--ok:#4ec9b0;--er:#f48771}
-:root[data-theme=light]{--bg:#f3f3f3;--card:#fff;--fg:#1f1f1f;--mut:#616161;--ac:#005fb8;--acf:#fff;--bd:#d0d0d0;--ok:#0f7b5f;--er:#c72e0f}
-:root[data-theme=oled]{--bg:#000;--card:#000;--fg:#e8e8e8;--mut:#8a8a8a;--ac:#3aa0ff;--acf:#000;--bd:#2a2a2a}
-:root[data-theme=hc]{--bg:#000;--card:#000;--fg:#fff;--mut:#fff;--ac:#ffff00;--acf:#000;--bd:#fff;--ok:#00ff88;--er:#ff6060}
-@media(prefers-color-scheme:light){:root:not([data-theme]){--bg:#f3f3f3;--card:#fff;--fg:#1f1f1f}}
-*{box-sizing:border-box}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;text-align:center}
-main{width:100%;max-width:640px;padding:14px;display:flex;flex-direction:column;gap:14px;align-items:center;flex:1}
-h1{margin:6px 0 0;font-size:1.6rem}
-.sub{margin:0;color:var(--mut);font-size:.9rem}
-.card{width:100%;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center}
-[data-theme=hc] .card{border-width:2px}
-button,.btn,textarea,select{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;min-height:44px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-button.p,.btn.p{background:var(--ac);color:var(--acf);border-color:var(--ac);font-weight:600}
-button:disabled{opacity:.5;cursor:not-allowed}
-button:focus-visible,.btn:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
-.row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;width:100%}
-.drop{width:100%;border:2px dashed var(--bd);border-radius:14px;padding:26px 12px;color:var(--mut)}
-.drop.on{border-color:var(--ac)}
-.stage{position:relative;width:100%;line-height:0;border-radius:10px;overflow:hidden;background:repeating-conic-gradient(#8883 0 25%,transparent 0 50%) 0 0/16px 16px}
-.stage canvas{width:100%;height:auto;display:block}
-#cb,#cm{position:absolute;inset:0}
-#cm{opacity:.6;touch-action:none;pointer-events:none}
-.paint #cm{pointer-events:auto;cursor:crosshair}
-input[type=range]{width:100%;accent-color:var(--ac)}
-label.chk{display:flex;align-items:center;gap:10px;text-align:left;width:100%;padding:6px 4px;min-height:44px}
-label.chk input{width:22px;height:22px;accent-color:var(--ac);flex:none}
-label.chk small{color:var(--mut);display:block;line-height:1.25}
-#log{width:100%;text-align:left;font:12px/1.5 ui-monospace,Consolas,monospace;max-height:150px;overflow:auto;color:var(--mut)}
-#log .ok{color:var(--ok)}#log .er{color:var(--er)}
-progress{width:100%;height:10px;accent-color:var(--ac)}
-details{width:100%}summary{cursor:pointer;min-height:44px;display:flex;align-items:center;justify-content:center}
-textarea{width:100%;min-height:200px;font:12px/1.4 ui-monospace,Consolas,monospace;text-align:left;cursor:text;display:block}
-.tg{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-.tg button[aria-pressed=true],#paint[aria-pressed=true]{background:var(--ac);color:var(--acf);border-color:var(--ac)}
-footer{width:100%;padding:16px 14px 22px;color:var(--mut);font-size:.85rem;border-top:1px solid var(--bd)}
-[hidden]{display:none!important}
-</style>
-</head>
-<body>
-<main>
-  <h1>🩹 Photo Repair</h1>
-  <p class="sub">Restore old &amp; damaged photos · free · no API key · no sign-up</p>
-  <div class="tg" role="group" aria-label="Theme" id="themes"></div>
-
-  <div class="card">
-    <div class="drop" id="drop">Drop a photo here, or choose one below</div>
-    <div class="row">
-      <label class="btn p" tabindex="0">📁 Choose photo<input id="file" type="file" accept="image/*" hidden></label>
-      <label class="btn" tabindex="0">📷 Camera<input id="cam" type="file" accept="image/*" capture="environment" hidden></label>
-    </div>
-  </div>
-
-  <div class="card" id="work" hidden>
-    <div class="stage" id="stage"><canvas id="ca"></canvas><canvas id="cb" hidden></canvas><canvas id="cm"></canvas></div>
-    <input type="range" id="cmp" min="0" max="100" value="50" aria-label="Before / after" hidden>
-    <div class="row">
-      <button id="paint" aria-pressed="false">🖌️ Mark tears / creases</button>
-      <button id="clr">Clear marks</button>
-    </div>
-    <div class="row" id="brushrow" hidden><span>Brush</span><input type="range" id="brush" min="4" max="60" value="18" style="max-width:220px"></div>
-  </div>
-
-  <div class="card" id="opts" hidden>
-    <strong>Repair steps</strong>
-    <div class="row"><label for="spd">Speed</label><select id="spd"><option value="512">Fast (512 px)</option><option value="768">Balanced (768 px)</option><option value="1024">Best (1024 px)</option></select></div>
-    <label class="chk"><input type="checkbox" id="o_clean" checked><span>Auto clean<small>Removes specks, dust &amp; scratches (on your device)</small></span></label>
-    <label class="chk"><input type="checkbox" id="o_fill" checked><span>Fill marked areas<small>Repairs tears, big creases &amp; missing parts you painted (on your device)</small></span></label>
-    <label class="chk"><input type="checkbox" id="o_col"><span>Colorize · DeOldify<small>For black &amp; white photos</small></span></label>
-    <label class="chk"><input type="checkbox" id="o_gf" checked><span>Face restore · GFPGAN</span></label>
-    <label class="chk"><input type="checkbox" id="o_cf"><span>Face restore · CodeFormer<small>Alternative for heavily damaged faces</small></span></label>
-    <label class="chk"><input type="checkbox" id="o_up"><span>Upscale · Real-ESRGAN<small>Slowest step — use only when needed</small></span></label>
-    <button class="p" id="run" style="width:100%">✨ Repair photo</button>
-    <progress id="pg" value="0" max="1" hidden></progress>
-    <div id="log" aria-live="polite"></div>
-    <div class="row"><button id="dl" hidden>⬇️ Download PNG</button><button id="use" hidden>↻ Use result as input</button></div>
-  </div>
-
-  <details class="card">
-    <summary>⚙️ Engines (advanced)</summary>
-    <p class="sub">Uses free public Hugging Face Spaces via their keyless Gradio API. Community Spaces can sleep, queue or change — edit host / api / args here if one stops working. <code>$IMG</code> marks the image slot.</p>
-    <textarea id="eng" spellcheck="false" aria-label="Engine config"></textarea>
-    <div class="row"><button id="engsave">Save</button><button id="engreset">Reset defaults</button></div>
-  </details>
-</main>
-<footer>© Manik Roy <span id="yr">2026</span>. All Rights Reserved.</footer>
-
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000"><title>Photo Repair Studio</title><style>
+:root{--bg:#f4f6f8;--p:#fff;--t:#15181b;--m:#68717c;--l:#dce1e6;--a:#2563eb}:root.dark{--bg:#111315;--p:#1b1e22;--t:#f7f8fa;--m:#aab1ba;--l:#343940}:root.oled{--bg:#000;--p:#050505;--t:#fff;--m:#aaa;--l:#292929}:root.hc{--bg:#000;--p:#000;--t:#fff;--m:#fff;--l:#fff;--a:#ff0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:15px system-ui,sans-serif}.app{max-width:1180px;min-height:100vh;margin:auto;display:flex;flex-direction:column}header{padding:12px;border-bottom:1px solid var(--l);background:var(--p)}.top{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand{display:flex;align-items:center;gap:10px}.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:grid;place-items:center;color:#fff;font-size:22px;font-weight:900}h1{font-size:18px;margin:0}.sub,.status{font-size:12px;color:var(--m)}
+main{padding:14px;flex:1}.grid{display:grid;gap:14px}.viewer{min-height:330px;border:1px solid var(--l);border-radius:16px;background:#17191c;display:grid;place-items:center;overflow:hidden}.viewer canvas{max-width:100%;max-height:74vh;width:auto;height:auto}.empty{text-align:center;color:#ddd;padding:40px}.empty h2{margin:0 0 8px}.empty p{color:#aaa}
+.panel{display:grid;gap:12px}.card{background:var(--p);border:1px solid var(--l);border-radius:16px;padding:12px}.card h2{font-size:14px;margin:0 0 10px}.modes,.buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}button,.file,select{font:inherit;border:1px solid var(--l);background:var(--p);color:var(--t);border-radius:10px;padding:10px;min-height:42px;font-weight:700;cursor:pointer;text-align:center}button.primary,.file.primary{background:var(--a);color:#fff;border-color:var(--a)}button.active{outline:2px solid var(--a)}button:disabled{opacity:.45;cursor:not-allowed}.file input{display:none}.progress{height:5px;background:var(--l);border-radius:9px;overflow:hidden;margin-top:10px}.progress i{display:block;width:0;height:100%;background:linear-gradient(90deg,#2563eb,#7c3aed);transition:.15s}.themes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.themes button{font-size:11px;padding:8px 3px}select{width:100%}footer{text-align:center;padding:16px;border-top:1px solid var(--l);color:var(--m);font-size:12px}@media(min-width:780px){main{padding:20px}.grid{grid-template-columns:minmax(0,1fr) 330px}.panel{position:sticky;top:10px}.viewer{min-height:600px}}
+</style></head><body><div class="app"><header><div class="top"><div class="brand"><div class="logo">✦</div><div><h1>Photo Repair Studio</h1><div class="sub">Automatic scratches • tears • splashes • spots</div></div></div><label class="file primary">📂 Open Photo<input id="file" type="file" accept="image/*"></label></div></header>
+<main><div class="grid"><section class="viewer"><div class="empty" id="empty"><h2>Automatic Photo Repair</h2><p>Choose a damaged photo. The app detects likely damaged pixels and reconstructs them automatically.</p></div><canvas id="c" hidden></canvas></section><aside class="panel">
+<div class="card"><h2>Automatic repair</h2><div class="modes"><button class="mode active" data-m="auto">✨ Auto Repair</button><button class="mode" data-m="scratch">〰 Scratches</button><button class="mode" data-m="tear">✂ Tears</button><button class="mode" data-m="splash">💦 Splashes</button><button class="mode" data-m="spot">● Spots / Dust</button><button class="mode" data-m="old">🖼 Old Photo</button></div></div>
+<div class="card"><h2>Damage strength</h2><select id="level"><option value="1">Gentle</option><option value="2" selected>Balanced</option><option value="3">Strong</option></select><p class="status">Automatic local detection is used; no API key, account, or external repair service is required.</p></div>
+<div class="card"><h2>Actions</h2><div class="buttons"><button id="repair" class="primary" disabled>✨ Detect & Repair</button><button id="mask" disabled>🔎 Show Damage</button><button id="undo" disabled>↶ Undo</button><button id="before" disabled>◐ Before</button><button id="save" disabled>⬇ Save PNG</button><button id="reset" disabled>↻ Reset</button></div><div class="progress"><i id="bar"></i></div><p id="msg" class="status">Open a photo to begin.</p></div>
+<div class="card"><h2>Display</h2><div class="themes"><button data-t="light">☀ Light</button><button data-t="dark">☾ Dark</button><button data-t="oled">● OLED</button><button data-t="hc">HC</button></div></div></aside></div></main><footer>© Manik Roy <span id="year"></span>. All Rights Reserved.</footer></div>
 <script>
-const $=s=>document.querySelector(s),LS={
-  g:k=>{try{return localStorage.getItem('photorepair_'+k)}catch(e){return null}},
-  s:(k,v)=>{try{localStorage.setItem('photorepair_'+k,v)}catch(e){}}};
-$('#yr').textContent=new Date().getFullYear();
-
-/* Themes */
-[['dark','Dark+'],['light','Light+'],['oled','OLED'],['hc','HC']].forEach(([k,n])=>{
-  const b=document.createElement('button');b.textContent=n;b.dataset.t=k;b.onclick=()=>setTheme(k);$('#themes').append(b)});
-function setTheme(t){document.documentElement.dataset.theme=t;LS.s('theme',t);
-  document.querySelectorAll('#themes button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===t))}
-setTheme(LS.g('theme')||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));
-
-/* Engines: free keyless Gradio Spaces */
-const DEF={
- colorize:{n:'DeOldify',host:'https://leonelhs-deoldify.hf.space',api:'predict',args:['$IMG']},
- gfpgan:{n:'GFPGAN',host:'https://xintao-gfpgan.hf.space',api:'inference',args:['$IMG','v1.4',2]},
- codeformer:{n:'CodeFormer',host:'https://sczhou-codeformer.hf.space',api:'inference',args:['$IMG',true,true,2,0.7]},
- esrgan:{n:'Real-ESRGAN',host:'https://akhaliq-real-esrgan.hf.space',api:'predict',args:['$IMG','RealESRGAN_x4plus']}};
-let ENG;try{ENG=JSON.parse(LS.g('engines'))||DEF}catch(e){ENG=DEF}
-const showEng=()=>$('#eng').value=JSON.stringify(ENG,null,1);showEng();
-$('#engsave').onclick=()=>{try{ENG=JSON.parse($('#eng').value);LS.s('engines',JSON.stringify(ENG));log('Engines saved','ok')}catch(e){log('Invalid JSON','er')}};
-$('#engreset').onclick=()=>{ENG=JSON.parse(JSON.stringify(DEF));LS.s('engines',JSON.stringify(ENG));showEng()};
-
-async function J(u,o={}){
-  let r,t;try{r=await fetch(u,{signal:AbortSignal.timeout(30000),...o});t=await r.text()}catch(e){throw new Error('cannot reach server')}
-  try{return JSON.parse(t)}catch(e){throw new Error(/^\s*Your space/i.test(t)?t.trim().slice(0,70)+' — it is asleep/stopped or the address is wrong; try again in a minute or edit it in Engines':(t.slice(0,80)||'HTTP '+r.status))}}
-async function gradio(e,blob){
-  const cfg=await J(e.host+'/config'),deps=(cfg.dependencies||[]).filter(d=>d.api_name),
-    dep=deps.find(d=>d.api_name===e.api)||deps[0];
-  if(!dep)throw new Error('no API found on this Space');
-  const fd=new FormData();fd.append('files',blob,'in.png');
-  const up=await J(e.host+'/gradio_api/upload',{method:'POST',body:fd});
-  const fp={path:up[0],meta:{_type:'gradio.FileData'}};
-  const args=e.args.slice(0,dep.inputs.length).map(a=>a==='$IMG'?fp:a);
-  const r=await J(`${e.host}/gradio_api/call/${dep.api_name}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:args})});
-  if(!r.event_id)throw new Error(r.detail||r.error||'busy or endpoint changed');
-  const t=await(await fetch(`${e.host}/gradio_api/call/${dep.api_name}/${r.event_id}`,{signal:AbortSignal.timeout(100000)})).text();
-  const m=t.match(/event: complete\s*\ndata: (.*)/);
-  if(!m)throw new Error((t.match(/data: (.*)/)||[])[1]||'no result');
-  const f=(function find(o){if(o&&typeof o==='object'){if(o.url||o.path)return o;for(const v of Object.values(o)){const x=find(v);if(x)return x}}})(JSON.parse(m[1]));
-  if(!f)throw new Error('no image in reply');
-  return (await fetch(f.url||`${e.host}/gradio_api/file=${f.path}`)).blob();
-}
-
-/* State & helpers */
-let src=null,res=null,paint=false,mx2=null;
-const ca=$('#ca'),cb=$('#cb'),cm=$('#cm'),mx=cm.getContext('2d');
-const toBlob=c=>new Promise(r=>c.toBlob(r,'image/png'));
-const fromBlob=async b=>{const i=await createImageBitmap(b),c=document.createElement('canvas');c.width=i.width;c.height=i.height;c.getContext('2d').drawImage(i,0,0);return c};
-function log(t,c=''){const d=document.createElement('div');d.className=c;d.textContent=t;$('#log').append(d);$('#log').scrollTop=1e9}
-
-function load(f){
-  if(!f||!f.type.startsWith('image/'))return;
-  const i=new Image();i.onload=()=>{
-    const k=Math.min(1,1024/Math.max(i.width,i.height)),w=Math.round(i.width*k),h=Math.round(i.height*k);
-    src=document.createElement('canvas');src.width=w;src.height=h;src.getContext('2d').drawImage(i,0,0,w,h);
-    ca.width=w;ca.height=h;ca.getContext('2d').drawImage(src,0,0);cm.width=w;cm.height=h;mx.clearRect(0,0,w,h);
-    cb.hidden=true;$('#cmp').hidden=true;$('#dl').hidden=$('#use').hidden=true;
-    $('#work').hidden=$('#opts').hidden=false;$('#log').textContent='';
-    log(`Loaded ${i.width}×${i.height}${k<1?` (working at ${w}×${h})`:''}`);URL.revokeObjectURL(i.src)};
-  i.src=URL.createObjectURL(f)}
-$('#file').onchange=e=>load(e.target.files[0]);$('#cam').onchange=e=>load(e.target.files[0]);
-const dz=$('#drop');
-['dragover','dragenter'].forEach(v=>dz.addEventListener(v,e=>{e.preventDefault();dz.classList.add('on')}));
-['dragleave','drop'].forEach(v=>dz.addEventListener(v,e=>{e.preventDefault();dz.classList.remove('on')}));
-dz.addEventListener('drop',e=>load(e.dataTransfer.files[0]));
-document.querySelectorAll('label.btn').forEach(l=>l.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();l.querySelector('input').click()}});
-
-/* Mask painting */
-$('#paint').onclick=()=>{paint=!paint;$('#paint').setAttribute('aria-pressed',paint);$('#stage').classList.toggle('paint',paint);$('#brushrow').hidden=!paint};
-$('#clr').onclick=()=>mx.clearRect(0,0,cm.width,cm.height);
-let dr=false,last=null;
-const pt=e=>{const r=cm.getBoundingClientRect(),s=cm.width/r.width;return[(e.clientX-r.left)*s,(e.clientY-r.top)*s]};
-cm.onpointerdown=e=>{dr=true;last=pt(e);cm.setPointerCapture(e.pointerId);stroke(last,last)};
-cm.onpointermove=e=>{if(!dr)return;const p=pt(e);stroke(last,p);last=p};
-cm.onpointerup=cm.onpointercancel=()=>dr=false;
-function stroke(a,b){mx.strokeStyle='#f00';mx.lineCap=mx.lineJoin='round';mx.lineWidth=$('#brush').value*cm.width/cm.getBoundingClientRect().width;
-  mx.beginPath();mx.moveTo(...a);mx.lineTo(...b);mx.stroke()}
-
-/* Local repair: speck cleaner + inpainting */
-function clean(c){
-  const x=c.getContext('2d'),w=c.width,h=c.height,im=x.getImageData(0,0,w,h),d=im.data,o=new Uint8ClampedArray(d),Lm=new Float32Array(w*h);
-  for(let i=0;i<w*h;i++)Lm[i]=d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11;
-  const v=new Float32Array(9),ix=new Int32Array(9);
-  for(let y=1;y<h-1;y++)for(let X=1;X<w-1;X++){
-    const p=y*w+X;let k=0;
-    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const q=p+dy*w+dx,l=Lm[q];let j=k++;while(j>0&&v[j-1]>l){v[j]=v[j-1];ix[j]=ix[j-1];j--}v[j]=l;ix[j]=q}
-    if(Math.abs(Lm[p]-v[4])>38){const q=ix[4]*4;o[p*4]=d[q];o[p*4+1]=d[q+1];o[p*4+2]=d[q+2]}}
-  im.data.set(o);x.putImageData(im,0,0);return c}
-
-function inpaint(c){
-  const w=c.width,h=c.height,x=c.getContext('2d'),im=x.getImageData(0,0,w,h),d=im.data,md=mx2.getContext?mx2.getContext('2d').getImageData(0,0,w,h).data:mx.getImageData(0,0,w,h).data;
-  const m=new Uint8Array(w*h),idx=[];
-  for(let i=0;i<w*h;i++)if(md[i*4+3]>30){m[i]=1;idx.push(i)}
-  if(!idx.length)return c;
-  let left=idx.length;const N=[[1,0],[-1,0],[0,1],[0,-1]];
-  while(left>0){                                   // onion-peel fill from known edges inward
-    const fill=[];
-    for(const p of idx){if(!m[p])continue;const X=p%w,y=(p/w)|0;let r=0,g=0,b=0,k=0;
-      for(const[dx,dy]of N){const nx=X+dx,ny=y+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;const q=ny*w+nx;
-        if(!m[q]){r+=d[q*4];g+=d[q*4+1];b+=d[q*4+2];k++}}
-      if(k)fill.push([p,r/k,g/k,b/k])}
-    if(!fill.length)break;
-    for(const[p,r,g,b]of fill){d[p*4]=r;d[p*4+1]=g;d[p*4+2]=b;m[p]=0;left--}}
-  for(let it=0;it<40;it++)for(const p of idx){     // smooth only inside repaired area
-    const X=p%w,y=(p/w)|0;if(X<1||y<1||X>=w-1||y>=h-1)continue;
-    for(let k=0;k<3;k++)d[p*4+k]=(d[(p-1)*4+k]+d[(p+1)*4+k]+d[(p-w)*4+k]+d[(p+w)*4+k])/4}
-  x.putImageData(im,0,0);return c}
-
-/* Pipeline */
-async function remote(key,c){
-  const e=ENG[key],t0=Date.now();log(`${e.n}: working… (free server, gives up after ~100s)`);
-  let b;try{b=await gradio(e,await toBlob(c))}catch(err){throw new Error(e.n+': '+(err.message||err))}log(`${e.n}: done in ${((Date.now()-t0)/1000).toFixed(0)}s`,'ok');return fromBlob(b)}
-
-$('#run').onclick=async()=>{
-  if(!src)return;
-  const steps=[];
-  if($('#o_clean').checked)steps.push(['Auto clean',async c=>clean(c)]);
-  if($('#o_fill').checked)steps.push(['Fill marked areas',async c=>inpaint(c)]);
-  if($('#o_col').checked)steps.push(['',c=>remote('colorize',c)]);
-  if($('#o_gf').checked)steps.push(['',c=>remote('gfpgan',c)]);
-  if($('#o_cf').checked)steps.push(['',c=>remote('codeformer',c)]);
-  if($('#o_up').checked)steps.push(['',c=>remote('esrgan',c)]);
-  if(!steps.length)return log('Pick at least one step','er');
-  $('#run').disabled=true;$('#dl').hidden=$('#use').hidden=true;$('#log').textContent='';
-  const pg=$('#pg');pg.hidden=false;pg.max=steps.length;pg.value=0;
-  const k=Math.min(1,+$('#spd').value/Math.max(src.width,src.height));
-  let c=document.createElement('canvas');c.width=Math.round(src.width*k);c.height=Math.round(src.height*k);c.getContext('2d').drawImage(src,0,0,c.width,c.height);
-  if(k<1){const m2=document.createElement('canvas');m2.width=c.width;m2.height=c.height;m2.getContext('2d').drawImage(cm,0,0,c.width,c.height);mx2=m2}else mx2=cm;
-  const t0=Date.now();
-  for(const[n,f]of steps){
-    try{if(n)log(n+'…');c=await f(c);if(n)log(n+': done','ok')}
-    catch(err){log((n||'Step')+' skipped — '+(err.message||err),'er')}
-    pg.value++}
-  res=c;pg.hidden=true;$('#run').disabled=false;
-  cb.width=c.width;cb.height=c.height;cb.getContext('2d').drawImage(c,0,0);cb.hidden=false;
-  mx.clearRect(0,0,cm.width,cm.height);
-  $('#cmp').hidden=false;$('#cmp').value=50;split();
-  $('#dl').hidden=$('#use').hidden=false;log(`Finished ✔ in ${((Date.now()-t0)/1000).toFixed(0)}s — drag the slider to compare`,'ok')};
-
-function split(){cb.style.clipPath=`inset(0 0 0 ${$('#cmp').value}%)`}
-$('#cmp').oninput=split;
-$('#dl').onclick=async()=>{const a=document.createElement('a');a.href=URL.createObjectURL(await toBlob(res));a.download='photo-repaired.png';a.click()};
-$('#use').onclick=async()=>load(new File([await toBlob(res)],'r.png',{type:'image/png'}));
-</script>
-</body>
-</html>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],can=$("#c"),x=can.getContext("2d",{willReadFrequently:true});let original=null,history=null,mode="auto",before=false;
+function msg(s){$("#msg").textContent=s}function progress(n){$("#bar").style.width=n+"%"}function enable(){["repair","mask","save","reset","before"].forEach(i=>$("#"+i).disabled=!original);$("#undo").disabled=!history}
+$("#file").onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let im=new Image();im.onload=()=>{let z=Math.min(1,2400/im.width,2400/im.height);can.width=Math.round(im.width*z);can.height=Math.round(im.height*z);x.drawImage(im,0,0,can.width,can.height);original=x.getImageData(0,0,can.width,can.height);history=null;before=false;can.hidden=false;$("#empty").hidden=true;enable();msg("Photo ready. Choose a repair type and press Detect & Repair.")};im.src=r.result};r.readAsDataURL(f)};
+$$(".mode").forEach(b=>b.onclick=()=>{$$(".mode").forEach(q=>q.classList.remove("active"));b.classList.add("active");mode=b.dataset.m});
+function gray(d,w,h){let g=new Float32Array(w*h);for(let i=0,p=0;i<g.length;i++,p+=4)g[i]=.299*d[p]+.587*d[p+1]+.114*d[p+2];return g}
+function makeMask(d,w,h,type,lv){let g=gray(d,w,h),m=new Uint8Array(w*h),rad=type==="scratch"||type==="tear"?2:3,threshold=lv===1?52:lv===2?38:27;
+for(let y=rad;y<h-rad;y++)for(let xx=rad;xx<w-rad;xx++){let i=y*w+xx,v=g[i],hor=0,ver=0,diag=0;for(let k=1;k<=rad;k++){hor+=Math.abs(v-g[i-k])+Math.abs(v-g[i+k]);ver+=Math.abs(v-g[i-k*w])+Math.abs(v-g[i+k*w]);diag+=Math.abs(v-g[i-k*w-k])+Math.abs(v-g[i+k*w+k])}let s=Math.max(hor,ver,diag)/(2*rad);let hit=s>threshold;if(type==="scratch")hit=ver>hor*1.2&&ver>diag&&s>threshold;if(type==="tear")hit=s>threshold*.75;if(type==="splash"||type==="spot")hit=s>threshold*.9;if(hit)m[i]=1}
+let out=m.slice(),ex=type==="scratch"||type==="tear"?2:1;for(let y=ex;y<h-ex;y++)for(let xx=ex;xx<w-ex;xx++)if(m[y*w+xx])for(let dy=-ex;dy<=ex;dy++)for(let dx=-ex;dx<=ex;dx++)out[(y+dy)*w+xx+dx]=1;return out}
+function repair(src,w,h,mask,lv){let out=new Uint8ClampedArray(src),rad=lv===3?8:lv===2?6:4;for(let y=rad;y<h-rad;y++)for(let xx=rad;xx<w-rad;xx++){let i=y*w+xx;if(!mask[i])continue;let R=G=B=n=0;for(let r=2;r<=rad;r+=2){for(let a=0;a<8;a++){let ang=a*Math.PI/4,dx=Math.round(Math.cos(ang)*r),dy=Math.round(Math.sin(ang)*r),j=(y+dy)*w+xx+dx;if(!mask[j]){R+=src[j*4];G+=src[j*4+1];B+=src[j*4+2];n++}}if(n>=6)break}if(n){out[i*4]=R/n;out[i*4+1]=G/n;out[i*4+2]=B/n}}return new ImageData(out,w,h)}
+function run(only){if(!original)return;let w=can.width,h=can.height,lv=+$("#level").value;progress(10);msg("Scanning the photograph for damaged pixels…");setTimeout(()=>{let m=makeMask(original.data,w,h,mode,lv);progress(50);if(only){let z=new ImageData(w,h);for(let i=0;i<m.length;i++){let q=m[i]?255:0;z.data[i*4]=255;z.data[i*4+1]=q;z.data[i*4+2]=0;z.data[i*4+3]=255}history=x.getImageData(0,0,w,h);x.putImageData(z,0,0);progress(100);msg("Damage map shown: yellow areas are selected for repair.");enable();return}history=x.getImageData(0,0,w,h);x.putImageData(repair(original.data,w,h,m,lv),0,0);before=false;progress(100);msg("Automatic repair finished. The detected damage was reconstructed.");enable();setTimeout(()=>progress(0),500)},30)}
+$("#repair").onclick=()=>run(false);$("#mask").onclick=()=>run(true);$("#undo").onclick=()=>{if(history){x.putImageData(history,0,0);history=null;enable();msg("Last operation undone.")}};$("#reset").onclick=()=>{history=x.getImageData(0,0,can.width,can.height);x.putImageData(original,0,0);enable();msg("Original photo restored.")};
+$("#before").onclick=()=>{if(!before){history=x.getImageData(0,0,can.width,can.height);x.putImageData(original,0,0);before=true;$("#before").textContent="▶ Result"}else{x.putImageData(history,0,0);history=null;before=false;$("#before").textContent="◐ Before"}};
+$("#save").onclick=()=>can.toBlob(b=>{let a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="photo-repaired-"+Date.now()+".png";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
+$$("[data-t]").forEach(b=>b.onclick=()=>{document.documentElement.className=b.dataset.t==="light"?"":b.dataset.t;localStorage.theme=b.dataset.t});document.documentElement.className=(localStorage.theme||"light")==="light"?"":localStorage.theme;$("#year").textContent=new Date().getFullYear();
+</script></body></html>
