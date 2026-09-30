@@ -117,18 +117,24 @@ const showEng=()=>$('#eng').value=JSON.stringify(ENG,null,1);showEng();
 $('#engsave').onclick=()=>{try{ENG=JSON.parse($('#eng').value);LS.s('engines',JSON.stringify(ENG));log('Engines saved','ok')}catch(e){log('Invalid JSON','er')}};
 $('#engreset').onclick=()=>{ENG=JSON.parse(JSON.stringify(DEF));LS.s('engines',JSON.stringify(ENG));showEng()};
 
+async function J(u,o={}){
+  let r,t;try{r=await fetch(u,{signal:AbortSignal.timeout(30000),...o});t=await r.text()}catch(e){throw new Error('cannot reach server')}
+  try{return JSON.parse(t)}catch(e){throw new Error(/^\s*Your space/i.test(t)?t.trim().slice(0,70)+' — it is asleep/stopped or the address is wrong; try again in a minute or edit it in Engines':(t.slice(0,80)||'HTTP '+r.status))}}
 async function gradio(e,blob){
+  const cfg=await J(e.host+'/config'),deps=(cfg.dependencies||[]).filter(d=>d.api_name),
+    dep=deps.find(d=>d.api_name===e.api)||deps[0];
+  if(!dep)throw new Error('no API found on this Space');
   const fd=new FormData();fd.append('files',blob,'in.png');
-  const up=await(await fetch(e.host+'/gradio_api/upload',{method:'POST',body:fd,signal:AbortSignal.timeout(30000)})).json();
+  const up=await J(e.host+'/gradio_api/upload',{method:'POST',body:fd});
   const fp={path:up[0],meta:{_type:'gradio.FileData'}};
-  const r=await(await fetch(`${e.host}/gradio_api/call/${e.api}`,{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({data:e.args.map(a=>a==='$IMG'?fp:a)})})).json();
-  if(!r.event_id)throw new Error('Engine busy or endpoint changed');
-  const t=await(await fetch(`${e.host}/gradio_api/call/${e.api}/${r.event_id}`,{signal:AbortSignal.timeout(100000)})).text();
+  const args=e.args.slice(0,dep.inputs.length).map(a=>a==='$IMG'?fp:a);
+  const r=await J(`${e.host}/gradio_api/call/${dep.api_name}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:args})});
+  if(!r.event_id)throw new Error(r.detail||r.error||'busy or endpoint changed');
+  const t=await(await fetch(`${e.host}/gradio_api/call/${dep.api_name}/${r.event_id}`,{signal:AbortSignal.timeout(100000)})).text();
   const m=t.match(/event: complete\s*\ndata: (.*)/);
-  if(!m)throw new Error((t.match(/data: (.*)/)||[])[1]||'Engine returned no result');
+  if(!m)throw new Error((t.match(/data: (.*)/)||[])[1]||'no result');
   const f=(function find(o){if(o&&typeof o==='object'){if(o.url||o.path)return o;for(const v of Object.values(o)){const x=find(v);if(x)return x}}})(JSON.parse(m[1]));
-  if(!f)throw new Error('No image in reply');
+  if(!f)throw new Error('no image in reply');
   return (await fetch(f.url||`${e.host}/gradio_api/file=${f.path}`)).blob();
 }
 
@@ -200,7 +206,7 @@ function inpaint(c){
 /* Pipeline */
 async function remote(key,c){
   const e=ENG[key],t0=Date.now();log(`${e.n}: working… (free server, gives up after ~100s)`);
-  const b=await gradio(e,await toBlob(c));log(`${e.n}: done in ${((Date.now()-t0)/1000).toFixed(0)}s`,'ok');return fromBlob(b)}
+  let b;try{b=await gradio(e,await toBlob(c))}catch(err){throw new Error(e.n+': '+(err.message||err))}log(`${e.n}: done in ${((Date.now()-t0)/1000).toFixed(0)}s`,'ok');return fromBlob(b)}
 
 $('#run').onclick=async()=>{
   if(!src)return;
@@ -220,7 +226,7 @@ $('#run').onclick=async()=>{
   const t0=Date.now();
   for(const[n,f]of steps){
     try{if(n)log(n+'…');c=await f(c);if(n)log(n+': done','ok')}
-    catch(err){log((n||'Engine')+' skipped: '+(err.message||err),'er')}
+    catch(err){log((n||'Step')+' skipped — '+(err.message||err),'er')}
     pg.value++}
   res=c;pg.hidden=true;$('#run').disabled=false;
   cb.width=c.width;cb.height=c.height;cb.getContext('2d').drawImage(c,0,0);cb.hidden=false;
