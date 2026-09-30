@@ -1,27 +1,198 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000"><title>Photo Repair Studio</title><style>
-:root{--bg:#f4f6f8;--p:#fff;--t:#15181b;--m:#68717c;--l:#dce1e6;--a:#2563eb}:root.dark{--bg:#111315;--p:#1b1e22;--t:#f7f8fa;--m:#aab1ba;--l:#343940}:root.oled{--bg:#000;--p:#050505;--t:#fff;--m:#aaa;--l:#292929}:root.hc{--bg:#000;--p:#000;--t:#fff;--m:#fff;--l:#fff;--a:#ff0}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:15px system-ui,sans-serif}.app{max-width:1180px;min-height:100vh;margin:auto;display:flex;flex-direction:column}header{padding:12px;border-bottom:1px solid var(--l);background:var(--p)}.top{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand{display:flex;align-items:center;gap:10px}.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:grid;place-items:center;color:#fff;font-size:22px;font-weight:900}h1{font-size:18px;margin:0}.sub,.status{font-size:12px;color:var(--m)}
-main{padding:14px;flex:1}.grid{display:grid;gap:14px}.viewer{min-height:330px;border:1px solid var(--l);border-radius:16px;background:#17191c;display:grid;place-items:center;overflow:hidden}.viewer canvas{max-width:100%;max-height:74vh;width:auto;height:auto}.empty{text-align:center;color:#ddd;padding:40px}.empty h2{margin:0 0 8px}.empty p{color:#aaa}
-.panel{display:grid;gap:12px}.card{background:var(--p);border:1px solid var(--l);border-radius:16px;padding:12px}.card h2{font-size:14px;margin:0 0 10px}.modes,.buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}button,.file,select{font:inherit;border:1px solid var(--l);background:var(--p);color:var(--t);border-radius:10px;padding:10px;min-height:42px;font-weight:700;cursor:pointer;text-align:center}button.primary,.file.primary{background:var(--a);color:#fff;border-color:var(--a)}button.active{outline:2px solid var(--a)}button:disabled{opacity:.45;cursor:not-allowed}.file input{display:none}.progress{height:5px;background:var(--l);border-radius:9px;overflow:hidden;margin-top:10px}.progress i{display:block;width:0;height:100%;background:linear-gradient(90deg,#2563eb,#7c3aed);transition:.15s}.themes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.themes button{font-size:11px;padding:8px 3px}select{width:100%}footer{text-align:center;padding:16px;border-top:1px solid var(--l);color:var(--m);font-size:12px}@media(min-width:780px){main{padding:20px}.grid{grid-template-columns:minmax(0,1fr) 330px}.panel{position:sticky;top:10px}.viewer{min-height:600px}}
-</style></head><body><div class="app"><header><div class="top"><div class="brand"><div class="logo">✦</div><div><h1>Photo Repair Studio</h1><div class="sub">Automatic scratches • tears • splashes • spots</div></div></div><label class="file primary">📂 Open Photo<input id="file" type="file" accept="image/*"></label></div></header>
-<main><div class="grid"><section class="viewer"><div class="empty" id="empty"><h2>Automatic Photo Repair</h2><p>Choose a damaged photo. The app detects likely damaged pixels and reconstructs them automatically.</p></div><canvas id="c" hidden></canvas></section><aside class="panel">
-<div class="card"><h2>Automatic repair</h2><div class="modes"><button class="mode active" data-m="auto">✨ Auto Repair</button><button class="mode" data-m="scratch">〰 Scratches</button><button class="mode" data-m="tear">✂ Tears</button><button class="mode" data-m="splash">💦 Splashes</button><button class="mode" data-m="spot">● Spots / Dust</button><button class="mode" data-m="old">🖼 Old Photo</button></div></div>
-<div class="card"><h2>Damage strength</h2><select id="level"><option value="1">Gentle</option><option value="2" selected>Balanced</option><option value="3">Strong</option></select><p class="status">Automatic local detection is used; no API key, account, or external repair service is required.</p></div>
-<div class="card"><h2>Actions</h2><div class="buttons"><button id="repair" class="primary" disabled>✨ Detect & Repair</button><button id="mask" disabled>🔎 Show Damage</button><button id="undo" disabled>↶ Undo</button><button id="before" disabled>◐ Before</button><button id="save" disabled>⬇ Save PNG</button><button id="reset" disabled>↻ Reset</button></div><div class="progress"><i id="bar"></i></div><p id="msg" class="status">Open a photo to begin.</p></div>
-<div class="card"><h2>Display</h2><div class="themes"><button data-t="light">☀ Light</button><button data-t="dark">☾ Dark</button><button data-t="oled">● OLED</button><button data-t="hc">HC</button></div></div></aside></div></main><footer>© Manik Roy <span id="year"></span>. All Rights Reserved.</footer></div>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111">
+<title>AI Photo Repair — Manik Roy</title>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<style>
+:root{--bg:#f4f5f7;--fg:#15171a;--card:#fff;--line:#d8dbe0;--accent:#1769ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+body.dark{--bg:#17181b;--fg:#eee;--card:#22252a;--line:#3b3f46}
+body.oled{--bg:#000;--fg:#fff;--card:#090909;--line:#292929}
+body.hc{--bg:#000;--fg:#fff;--card:#000;--line:#fff;--accent:#ff0}
+.app{max-width:900px;margin:auto;padding:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin:10px 0}
+h1{font-size:22px;margin:2px 0 4px}p{margin:6px 0;opacity:.82}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button,.file{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:11px;padding:10px 13px;cursor:pointer}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}button:disabled{opacity:.45;cursor:not-allowed}
+input[type=file]{display:none}label.file{display:inline-block}.stage{display:grid;place-items:center;min-height:220px;background:#111;border-radius:14px;overflow:hidden}
+canvas{max-width:100%;height:auto;display:block}.status{font-size:13px;min-height:20px}.small{font-size:12px}
+.progress{height:7px;background:#444;border-radius:9px;overflow:hidden}.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+select,input[type=range]{accent-color:var(--accent)}select{padding:8px;border-radius:9px;background:var(--card);color:var(--fg);border:1px solid var(--line)}
+footer{text-align:center;padding:18px 0;font-size:12px;opacity:.7}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="card">
+<h1>AI Photo Repair</h1>
+<p>Automatic repair of scratches, tears, spots, splashes and damaged areas using local LaMa AI in your browser.</p>
+<div class="row">
+<label class="file">Choose photo<input id="file" type="file" accept="image/*"></label>
+<button id="auto" class="primary" disabled>✨ Auto Repair</button>
+<button id="mask" disabled>Show Mask</button>
+<button id="save" disabled>Save PNG</button>
+<select id="theme" aria-label="Display">
+<option value="">Light</option><option value="dark">Dark</option><option value="oled">OLED True Black</option><option value="hc">HC</option>
+</select>
+</div>
+</header>
+<div class="card">
+<div class="stage"><canvas id="cv"></canvas></div>
+<div class="progress"><i id="bar"></i></div>
+<div id="status" class="status">Choose a damaged photo. The AI model is downloaded once and can be browser-cached.</div>
+</div>
+<div class="card">
+<b>Automatic damage detection</b>
+<p class="small">The detector targets thin scratches, isolated spots, splashes and abrupt damaged pixels. For large tears or missing areas, use Brush mask to mark the damaged region before running AI repair.</p>
+<div class="row">
+<label>Detection <input id="sens" type="range" min="1" max="10" value="6"></label>
+<label>Mask expansion <input id="dilate" type="range" min="1" max="9" step="2" value="3"></label>
+<button id="brush" disabled>Brush mask</button><button id="clear" disabled>Clear mask</button>
+</div>
+</div>
+<footer>© Manik Roy <span id="yr"></span>. All Rights Reserved.</footer>
+</div>
 <script>
-const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],can=$("#c"),x=can.getContext("2d",{willReadFrequently:true});let original=null,history=null,mode="auto",before=false;
-function msg(s){$("#msg").textContent=s}function progress(n){$("#bar").style.width=n+"%"}function enable(){["repair","mask","save","reset","before"].forEach(i=>$("#"+i).disabled=!original);$("#undo").disabled=!history}
-$("#file").onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let im=new Image();im.onload=()=>{let z=Math.min(1,2400/im.width,2400/im.height);can.width=Math.round(im.width*z);can.height=Math.round(im.height*z);x.drawImage(im,0,0,can.width,can.height);original=x.getImageData(0,0,can.width,can.height);history=null;before=false;can.hidden=false;$("#empty").hidden=true;enable();msg("Photo ready. Choose a repair type and press Detect & Repair.")};im.src=r.result};r.readAsDataURL(f)};
-$$(".mode").forEach(b=>b.onclick=()=>{$$(".mode").forEach(q=>q.classList.remove("active"));b.classList.add("active");mode=b.dataset.m});
-function gray(d,w,h){let g=new Float32Array(w*h);for(let i=0,p=0;i<g.length;i++,p+=4)g[i]=.299*d[p]+.587*d[p+1]+.114*d[p+2];return g}
-function makeMask(d,w,h,type,lv){let g=gray(d,w,h),m=new Uint8Array(w*h),rad=type==="scratch"||type==="tear"?2:3,threshold=lv===1?52:lv===2?38:27;
-for(let y=rad;y<h-rad;y++)for(let xx=rad;xx<w-rad;xx++){let i=y*w+xx,v=g[i],hor=0,ver=0,diag=0;for(let k=1;k<=rad;k++){hor+=Math.abs(v-g[i-k])+Math.abs(v-g[i+k]);ver+=Math.abs(v-g[i-k*w])+Math.abs(v-g[i+k*w]);diag+=Math.abs(v-g[i-k*w-k])+Math.abs(v-g[i+k*w+k])}let s=Math.max(hor,ver,diag)/(2*rad);let hit=s>threshold;if(type==="scratch")hit=ver>hor*1.2&&ver>diag&&s>threshold;if(type==="tear")hit=s>threshold*.75;if(type==="splash"||type==="spot")hit=s>threshold*.9;if(hit)m[i]=1}
-let out=m.slice(),ex=type==="scratch"||type==="tear"?2:1;for(let y=ex;y<h-ex;y++)for(let xx=ex;xx<w-ex;xx++)if(m[y*w+xx])for(let dy=-ex;dy<=ex;dy++)for(let dx=-ex;dx<=ex;dx++)out[(y+dy)*w+xx+dx]=1;return out}
-function repair(src,w,h,mask,lv){let out=new Uint8ClampedArray(src),rad=lv===3?8:lv===2?6:4;for(let y=rad;y<h-rad;y++)for(let xx=rad;xx<w-rad;xx++){let i=y*w+xx;if(!mask[i])continue;let R=G=B=n=0;for(let r=2;r<=rad;r+=2){for(let a=0;a<8;a++){let ang=a*Math.PI/4,dx=Math.round(Math.cos(ang)*r),dy=Math.round(Math.sin(ang)*r),j=(y+dy)*w+xx+dx;if(!mask[j]){R+=src[j*4];G+=src[j*4+1];B+=src[j*4+2];n++}}if(n>=6)break}if(n){out[i*4]=R/n;out[i*4+1]=G/n;out[i*4+2]=B/n}}return new ImageData(out,w,h)}
-function run(only){if(!original)return;let w=can.width,h=can.height,lv=+$("#level").value;progress(10);msg("Scanning the photograph for damaged pixels…");setTimeout(()=>{let m=makeMask(original.data,w,h,mode,lv);progress(50);if(only){let z=new ImageData(w,h);for(let i=0;i<m.length;i++){let q=m[i]?255:0;z.data[i*4]=255;z.data[i*4+1]=q;z.data[i*4+2]=0;z.data[i*4+3]=255}history=x.getImageData(0,0,w,h);x.putImageData(z,0,0);progress(100);msg("Damage map shown: yellow areas are selected for repair.");enable();return}history=x.getImageData(0,0,w,h);x.putImageData(repair(original.data,w,h,m,lv),0,0);before=false;progress(100);msg("Automatic repair finished. The detected damage was reconstructed.");enable();setTimeout(()=>progress(0),500)},30)}
-$("#repair").onclick=()=>run(false);$("#mask").onclick=()=>run(true);$("#undo").onclick=()=>{if(history){x.putImageData(history,0,0);history=null;enable();msg("Last operation undone.")}};$("#reset").onclick=()=>{history=x.getImageData(0,0,can.width,can.height);x.putImageData(original,0,0);enable();msg("Original photo restored.")};
-$("#before").onclick=()=>{if(!before){history=x.getImageData(0,0,can.width,can.height);x.putImageData(original,0,0);before=true;$("#before").textContent="▶ Result"}else{x.putImageData(history,0,0);history=null;before=false;$("#before").textContent="◐ Before"}};
-$("#save").onclick=()=>can.toBlob(b=>{let a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="photo-repaired-"+Date.now()+".png";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
-$$("[data-t]").forEach(b=>b.onclick=()=>{document.documentElement.className=b.dataset.t==="light"?"":b.dataset.t;localStorage.theme=b.dataset.t});document.documentElement.className=(localStorage.theme||"light")==="light"?"":localStorage.theme;$("#year").textContent=new Date().getFullYear();
-</script></body></html>
+const $=id=>document.getElementById(id),cv=$('cv'),cx=cv.getContext('2d',{willReadFrequently:true});
+let img=null,mask=null,result=null,painting=false,showMask=false;
+$('yr').textContent=new Date().getFullYear();
+
+$('theme').onchange=e=>{document.body.className=e.target.value};
+$('file').onchange=e=>load(e.target.files[0]);
+$('auto').onclick=()=>repair();
+$('mask').onclick=()=>{showMask=!showMask;draw()};
+$('save').onclick=()=>{if(result)download(result,'repaired-photo.png')};
+$('brush').onclick=()=>{painting=!painting;$('brush').textContent=painting?'Brush ON':'Brush mask'};
+$('clear').onclick=()=>{if(mask){mask.fill(0);draw()}};
+
+function load(f){
+ if(!f)return; let r=new FileReader();
+ r.onload=()=>{let im=new Image();im.onload=()=>{img=im;result=null;cv.width=im.naturalWidth;cv.height=im.naturalHeight;
+  cx.drawImage(im,0,0);mask=new Uint8Array(cv.width*cv.height);$('auto').disabled=false;$('mask').disabled=false;$('brush').disabled=false;$('clear').disabled=false;$('save').disabled=true;msg('Photo loaded. Auto Repair will detect likely damage and inpaint it with LaMa AI.')};im.src=r.result};r.readAsDataURL(f)
+}
+cv.onpointerdown=e=>{if(!painting||!mask)return;cv.setPointerCapture(e.pointerId);paint(e)}
+cv.onpointermove=e=>{if(painting&&(e.buttons&1))paint(e)}
+function paint(e){let q=pos(e),rad=Math.max(5,Math.round(Math.min(cv.width,cv.height)*.012));
+ for(let y=-rad;y<=rad;y++)for(let x=-rad;x<=rad;x++)if(x*x+y*y<rad*rad){let X=q.x+x,Y=q.y+y;if(X>=0&&Y>=0&&X<cv.width&&Y<cv.height)mask[Y*cv.width+X]=255}draw()}
+function pos(e){let r=cv.getBoundingClientRect();return{x:Math.floor((e.clientX-r.left)*cv.width/r.width),y:Math.floor((e.clientY-r.top)*cv.height/r.height)}}
+function draw(){if(!img)return;cx.drawImage(result||img,0,0);if(showMask&&mask){cx.save();cx.globalAlpha=.42;let m=cx.createImageData(cv.width,cv.height);for(let i=0;i<mask.length;i++){m.data[i*4]=255;m.data[i*4+3]=mask[i]}cx.putImageData(m,0,0);cx.restore()}}
+function msg(s){$('status').textContent=s}
+function download(c,n){let a=document.createElement('a');a.href=c.toDataURL('image/png');a.download=n;a.click()}
+
+function detect(){
+ let w=cv.width,h=cv.height,d=cx.getImageData(0,0,w,h).data,out=new Uint8Array(w*h);
+ let sens=+$('sens').value, k=18-sens;
+ for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+  let p=(y*w+x)*4, lum=.299*d[p]+.587*d[p+1]+.114*d[p+2], s=0;
+  for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(dx||dy){let q=((y+dy)*w+x+dx)*4,v=.299*d[q]+.587*d[q+1]+.114*d[q+2];s+=Math.abs(lum-v)}
+  if(s>k*10)out[y*w+x]=255;
+ }
+ // Emphasize thin connected defects and isolated high-contrast spots; avoid huge uniform regions.
+ let rad=+$('dilate').value;
+ for(let pass=0;pass<rad;pass+=2){
+  let z=out.slice();
+  for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++)if(z[y*w+x])for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)out[(y+dy)*w+x+dx]=255;
+ }
+ // Remove tiny noise and cap absurdly large masks.
+ let count=0;for(let v of out)count+=v>0;
+ if(count>w*h*.28){out.fill(0);msg('Automatic detector found too much ambiguous texture. Lower Detection or use Brush mask for the damaged areas.')}
+ for(let i=0;i<mask.length;i++)if(mask[i])out[i]=255;
+ return out
+}
+
+async function getModel(){
+ const urls=[
+  'https://huggingface.co/g-ronimo/lama/resolve/main/lama_fp16.onnx',
+  'https://huggingface.co/g-ronimo/lama/resolve/main/lama_int8.onnx'
+ ];
+ for(const u of urls)try{
+  msg('Loading LaMa AI model (first run downloads about 111 MB)…');
+  const r=await fetch(u); if(!r.ok)continue;
+  const b=await r.arrayBuffer();
+  for(const ep of [['webgpu'],['wasm']])try{
+   return await ort.InferenceSession.create(b,{executionProviders:ep});
+  }catch(e){}
+ }catch(e){}
+ throw Error('AI model could not be loaded. Check internet access and try again.');
+}
+
+function makeWorkCanvas(source, maxSide=1536){
+ const scale=Math.min(1,maxSide/Math.max(source.width,source.height));
+ let w=Math.max(32,Math.round(source.width*scale/32)*32);
+ let h=Math.max(32,Math.round(source.height*scale/32)*32);
+ const c=document.createElement('canvas'); c.width=w;c.height=h;
+ c.getContext('2d').drawImage(source,0,0,w,h);
+ return c;
+}
+
+function maskCanvas(sourceMask,w,h){
+ const c=document.createElement('canvas');c.width=w;c.height=h;
+ c.getContext('2d').drawImage(sourceMask,0,0,w,h);
+ return c;
+}
+
+async function repair(){
+ if(!img)return;
+ $('auto').disabled=true;$('save').disabled=true;$('bar').style.width='2%';
+ try{
+  msg('Detecting scratches, spots, splashes and other likely damage…');
+  const m=detect();
+  let fullMask=document.createElement('canvas');
+  fullMask.width=cv.width;fullMask.height=cv.height;
+  let mx=fullMask.getContext('2d');
+  let mi=mx.createImageData(cv.width,cv.height);
+  for(let i=0;i<m.length;i++){const a=m[i];mi.data[i*4]=a;mi.data[i*4+1]=a;mi.data[i*4+2]=a;mi.data[i*4+3]=255}
+  mx.putImageData(mi,0,0);
+
+  const src=makeWorkCanvas(cv,1536), sm=maskCanvas(fullMask,src.width,src.height);
+  const w=src.width,h=src.height,N=w*h;
+  const sd=src.getContext('2d').getImageData(0,0,w,h).data;
+  const md=sm.getContext('2d').getImageData(0,0,w,h).data;
+  const input=new Float32Array(4*N);
+
+  // LaMa browser ONNX contract:
+  // input [1,4,H,W], RGB channels are zeroed in the masked area,
+  // channel 3 is a binary mask; H/W are multiples of 32.
+  for(let i=0;i<N;i++){
+   const p=i*4, hole=md[p+3]>40?1:0;
+   input[i]=sd[p]/255*(1-hole);
+   input[N+i]=sd[p+1]/255*(1-hole);
+   input[2*N+i]=sd[p+2]/255*(1-hole);
+   input[3*N+i]=hole;
+  }
+
+  $('bar').style.width='15%';
+  const session=await getModel();
+  $('bar').style.width='40%';
+  const name=session.inputNames[0];
+  const tensor=new ort.Tensor('float32',input,[1,4,h,w]);
+  const outputs=await session.run({[name]:tensor});
+  const out=outputs[session.outputNames[0]];
+  const od=out.data, oc=document.createElement('canvas');oc.width=w;oc.height=h;
+  const oi=oc.getContext('2d').createImageData(w,h);
+
+  // Model output is RGB float [0,1].
+  for(let i=0;i<N;i++){
+   oi.data[i*4]=Math.max(0,Math.min(255,od[i]*255));
+   oi.data[i*4+1]=Math.max(0,Math.min(255,od[N+i]*255));
+   oi.data[i*4+2]=Math.max(0,Math.min(255,od[2*N+i]*255));
+   oi.data[i*4+3]=255;
+  }
+  oc.getContext('2d').putImageData(oi,0,0);
+
+  result=document.createElement('canvas');result.width=cv.width;result.height=cv.height;
+  result.getContext('2d').drawImage(oc,0,0,cv.width,cv.height);
+  $('bar').style.width='100%';showMask=false;draw();$('save').disabled=false;
+  msg('AI repair complete. Review the result and save it as PNG.');
+ }catch(e){
+  console.error(e);
+  $('bar').style.width='0%';
+  msg('Repair failed: '+(e&&e.message?e.message:e)+' — try a smaller photo or add/refine the mask with Brush.');
+ }
+ $('auto').disabled=false;
+}
+</script>
+</body>
+</html>
