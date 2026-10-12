@@ -159,6 +159,16 @@ $('#t-search').onclick = () => tab('search');
 $('#t-dl').onclick = () => tab('dl');
 
 /* ---------- Internet Archive search (free, no key) ---------- */
+async function iaFetch(id, path) {
+  const enc = path.split('/').map(encodeURIComponent).join('/');
+  try { const r = await fetch(`https://archive.org/download/${encodeURIComponent(id)}/${enc}`); if (r.ok) return r; } catch (e) {}
+  const m = await (await fetch('https://archive.org/metadata/' + encodeURIComponent(id))).json();
+  if (!m.d1 || !m.dir) throw new Error('Item not found on Archive');
+  const r2 = await fetch(`https://${m.d1}${m.dir}/${enc}`);
+  if (!r2.ok) throw new Error('HTTP ' + r2.status);
+  return r2;
+}
+const JUNK = /(_meta\.xml|_files\.xml|_reviews\.xml|_meta\.sqlite|\.torrent|__ia_thumb\.jpg)$/i;
 let page = 1, shown = 0;
 async function search(more) {
   const q = $('#q').value.trim();
@@ -185,12 +195,30 @@ async function search(more) {
 }
 function resultCard(d) {
   const title = Array.isArray(d.title) ? d.title[0] : d.title || d.identifier;
+  const box = h('div', { class: 'files', hidden: '' });
   return h('div', { class: 'card' },
     h('h3', {}, title),
     h('div', { class: 'meta' }, `${d.mediatype || 'item'} · ${d.item_size ? bytes(d.item_size) : 'size unknown'} · ${(d.downloads || 0).toLocaleString()} downloads`),
     h('div', { class: 'acts' },
-      h('button', { class: 'btn sm pri', onclick: () => addArchive(d.identifier) }, 'Download'),
-      h('a', { class: 'btn sm', href: 'https://archive.org/details/' + encodeURIComponent(d.identifier), target: '_blank', rel: 'noopener', style: 'text-decoration:none;display:inline-flex;align-items:center' }, 'View on Archive')));
+      h('button', { class: 'btn sm pri', onclick: () => browse(d.identifier, box) }, 'Browse files'),
+      h('button', { class: 'btn sm', onclick: () => addArchive(d.identifier) }, 'Torrent'),
+      h('a', { class: 'btn sm', href: 'https://archive.org/details/' + encodeURIComponent(d.identifier), target: '_blank', rel: 'noopener', style: 'text-decoration:none;display:inline-flex;align-items:center' }, 'View on Archive')),
+    box);
+}
+async function browse(id, box) {
+  if (!box.hidden) { box.hidden = true; return; }
+  box.hidden = false; box.replaceChildren(h('p', { class: 'meta' }, 'Loading files…'));
+  try {
+    const m = await (await fetch('https://archive.org/metadata/' + encodeURIComponent(id))).json();
+    const fl = (m.files || []).filter(x => !JUNK.test(x.name)).sort((a, b) => /\.pdf$/i.test(b.name) - /\.pdf$/i.test(a.name)).slice(0, 60);
+    box.replaceChildren(...(fl.length ? fl.map(x => {
+      const st = h('span', { class: 'meta' }, bytes(+x.size));
+      const lnk = h('a', { class: 'btn sm', href: `https://archive.org/download/${encodeURIComponent(id)}/${x.name.split('/').map(encodeURIComponent).join('/')}`, target: '_blank', rel: 'noopener', hidden: '', style: 'text-decoration:none;display:inline-flex;align-items:center' }, 'Open direct link');
+      const f = { name: x.name.split('/').pop(), length: +x.size || 0, _lnk: lnk, get _msg() { return ''; }, set _msg(v) { if (v) st.textContent = v; } };
+      return h('div', { class: 'file' }, h('span', {}, x.name), st,
+        h('div', { class: 'acts' }, h('button', { class: 'btn sm pri', onclick: () => httpSave(id, x.name, f) }, 'Download'), lnk));
+    }) : [h('p', { class: 'meta' }, 'No downloadable files found.')]));
+  } catch (e) { box.replaceChildren(h('p', { class: 'meta' }, 'Could not load the file list: ' + e.message)); }
 }
 $('#sf').onsubmit = e => { e.preventDefault(); search(false); };
 $('#more').onclick = () => search(true);
@@ -206,14 +234,13 @@ async function addArchive(id) {
   if (added.has(id)) { tab('dl'); return toast('Already in downloads'); }
   toast('Fetching torrent…');
   try {
-    const r = await fetch(`https://archive.org/download/${encodeURIComponent(id)}/${encodeURIComponent(id)}_archive.torrent`);
-    if (!r.ok) throw new Error('No torrent file for this item (' + r.status + ')');
+    const r = await iaFetch(id, id + '_archive.torrent');
     const blob = await r.blob(); // WebTorrent accepts Blob/File, not a bare Uint8Array
     added.add(id);
     start(blob);
     tab('dl');
   } catch (e) {
-    toast(e.message === 'Failed to fetch' ? 'Blocked by the browser. Open the item on Archive, save its .torrent, then use “Open .torrent file”.' : e.message);
+    toast(e.message === 'Failed to fetch' ? 'The browser blocked the torrent request. Use Browse files instead.' : e.message);
   }
 }
 function start(src) {
@@ -253,7 +280,7 @@ const idb = () => new Promise((ok, bad) => { const r = indexedDB.open('sangrah',
 const kv = async (m, k, v) => { const d = await idb(); return new Promise((ok, bad) => { const st = d.transaction('kv', m === 'get' ? 'readonly' : 'readwrite').objectStore('kv'), q = m === 'get' ? st.get(k) : st.put(v, k); q.onsuccess = () => ok(q.result); q.onerror = () => bad(q.error); }); };
 function locText() {
   $('#locT').textContent = dirHandle ? 'Saving to folder: ' + dirHandle.name
-    : canPick ? 'No folder chosen. Files go to your browser Downloads folder.' : 'Files save to your device Downloads folder.';
+    : canPick ? 'No folder chosen, so files go to your browser Downloads folder. To pick a folder, create a new one such as Downloads\\Sangrah: browsers block Downloads, Documents and Desktop themselves.' : 'Files save to your device Downloads folder.';
 }
 async function perm() {
   if (!dirHandle) return false;
@@ -266,7 +293,7 @@ if (canPick) {
   $('#pick').hidden = false;
   $('#pick').onclick = async () => {
     try { dirHandle = await showDirectoryPicker({ id: 'sangrah', mode: 'readwrite' }); kv('put', 'dir', dirHandle).catch(() => {}); locText(); }
-    catch (e) { if (e.name !== 'AbortError') toast(e.message); }
+    catch (e) { if (e.name !== 'AbortError') toast('The browser refused that folder. Create a new subfolder and choose it.'); }
   };
   kv('get', 'dir').then(d => { if (d) { dirHandle = d; locText(); } }).catch(() => {});
 }
@@ -292,11 +319,11 @@ async function save(f) {
   if (await perm()) return toFolder(f).catch(e => toast(e.message));
   f.getBlob((err, b) => err ? toast(err.message) : blobSave(b, f.name));
 }
-async function httpSave(url, f) {
+async function httpSave(id, rel, f) {
   let w = null;
+  if (f._lnk) f._lnk.hidden = true;
   try {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const r = await iaFetch(id, rel);
     const total = +r.headers.get('content-length') || f.length, rd = r.body.getReader(), parts = [];
     let got = 0;
     if (await perm()) w = await (await dirHandle.getFileHandle(f.name, { create: true })).createWritable();
@@ -305,14 +332,14 @@ async function httpSave(url, f) {
       if (done) break;
       got += value.length;
       if (w) await w.write(value); else parts.push(value);
-      f._msg = `${bytes(got)} of ${bytes(total)} · direct`;
+      f._msg = `${bytes(got)} of ${bytes(total)}`;
     }
     if (w) { await w.close(); toast('Saved to ' + dirHandle.name + ': ' + f.name); }
     else { blobSave(new Blob(parts, { type: 'application/octet-stream' }), f.name); toast('Saved to Downloads: ' + f.name); }
   } catch (e) {
     if (w) try { await w.abort(); } catch (x) {}
-    toast('Direct download blocked. Opening the link instead.');
-    window.open(url, '_blank', 'noopener');
+    if (f._lnk) f._lnk.hidden = false;
+    toast('The browser blocked the in-app download. Tap Open direct link and save from the new tab.');
   } finally { f._msg = ''; }
 }
 function makeCard(t) {
@@ -330,8 +357,7 @@ function makeCard(t) {
       : `${(t.progress * 100).toFixed(1)}% of ${bytes(t.length)} · ↓ ${bytes(t.downloadSpeed)}/s · ↑ ${bytes(t.uploadSpeed)}/s · ${t.numPeers} peers · ETA ${eta(t.timeRemaining)}`;
     if (t.files && t.files.length && !built) {
       built = true; files.hidden = false;
-      const junk = /(_meta\.xml|_files\.xml|_reviews\.xml|_meta\.sqlite|\.torrent|__ia_thumb\.jpg)$/i;
-      const rank = f => junk.test(f.name) ? 3 : /\.pdf$/i.test(f.name) ? 0 : MEDIA.test(f.name) ? 1 : 2;
+      const rank = f => JUNK.test(f.name) ? 3 : /\.pdf$/i.test(f.name) ? 0 : MEDIA.test(f.name) ? 1 : 2;
       list = [...t.files].sort((x, y) => rank(x) - rank(y)).slice(0, 100);
       files.append(h('p', { class: 'meta' }, 'Choose the file you want. Only selected files are downloaded.'));
       list.forEach(f => {
@@ -345,7 +371,9 @@ function makeCard(t) {
         const acts = h('div', { class: 'acts' }, f._btn);
         if (MEDIA.test(f.name)) acts.append(h('button', { class: 'btn sm', onclick: () => { f.select(); play(f); } }, 'Play'));
         const direct = 'https://archive.org/download/' + encodeURIComponent(t.name) + '/' + f.path.split('/').slice(1).map(encodeURIComponent).join('/');
-        acts.append(h('button', { class: 'btn sm', onclick: () => httpSave(direct, f) }, 'Direct download'));
+        const rel = f.path.split('/').slice(1).join('/');
+        f._lnk = h('a', { class: 'btn sm', href: direct, target: '_blank', rel: 'noopener', hidden: '', style: 'text-decoration:none;display:inline-flex;align-items:center' }, 'Open direct link');
+        acts.append(h('button', { class: 'btn sm', onclick: () => httpSave(t.name, rel, f) }, 'Direct download'), f._lnk);
         files.append(h('div', { class: 'file' }, h('span', {}, f.name), f._pr, acts));
       });
       if (t.files.length > 100) files.append(h('p', { class: 'meta' }, `+ ${t.files.length - 100} more files not listed`));
