@@ -3,499 +3,422 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Lumori — Photo Editor</title>
+<title>Multi-Engine OCR Scanner</title>
+<script type="importmap">
+{"imports":{
+"@paddleocr/paddleocr-js":"https://cdn.jsdelivr.net/npm/@paddleocr/paddleocr-js@0.4.2/dist/index.mjs",
+"onnxruntime-web":"https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.3/dist/ort.bundle.min.mjs",
+"js-yaml":"https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/+esm",
+"clipper-lib":"https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/+esm",
+"@techstark/opencv-js":"https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/+esm"
+}}
+</script>
 <style>
-:root{--bg:#1e1e1e;--pn:#252526;--tx:#d4d4d4;--mu:#8a8a8a;--ac:#4fa3e0;--on:#0b0b0b;--bd:#3c3c3c;--ok:#4ec9b0;--er:#f48771;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-:root[data-theme=light]{--bg:#fff;--pn:#f3f3f3;--tx:#1f1f1f;--mu:#616161;--ac:#0066b8;--on:#fff;--bd:#d0d0d0;--ok:#107c10;--er:#c4314b}
-:root[data-theme=oled]{--bg:#000;--pn:#0a0a0a;--tx:#e8e8e8;--mu:#8a8a8a;--ac:#4fc1ff;--on:#000;--bd:#222}
-:root[data-theme=hc]{--bg:#000;--pn:#000;--tx:#fff;--mu:#fff;--ac:#ffff00;--on:#000;--bd:#fff;--ok:#00ff88;--er:#ff6b6b}
-html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);color-scheme:dark}
-:root[data-theme=light]{color-scheme:light}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;min-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));justify-content:center;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;align-items:center}
-main,header{width:100%;max-width:880px;padding:10px 14px}
-header{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
-.theme-btn{position:absolute;top:10px;right:14px;width:42px;height:42px;border-radius:50%;border:1px solid var(--bd);background:var(--pn);color:var(--ac);font-size:1.2rem;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
-.theme-btn:hover{border-color:var(--ac)}
-#crop{position:absolute;border:2px solid var(--ac);background:linear-gradient(#fff5,#fff5) 33.33% 0/1px 100% no-repeat,linear-gradient(#fff5,#fff5) 66.66% 0/1px 100% no-repeat,linear-gradient(#fff5,#fff5) 0 33.33%/100% 1px no-repeat,linear-gradient(#fff5,#fff5) 0 66.66%/100% 1px no-repeat;box-shadow:0 0 0 9999px rgba(0,0,0,.55);touch-action:none;cursor:move;z-index:2}
-#crop[hidden]{display:none}
-#crop i{position:absolute;width:26px;height:26px;margin:-13px;border-radius:50%;background:var(--ac);border:2px solid var(--on)}
-#crop i[data-h=n],#crop i[data-h=s]{width:34px;height:18px;margin:-9px -17px;border-radius:9px}#crop i[data-h=w],#crop i[data-h=e]{width:18px;height:34px;margin:-17px -9px;border-radius:9px}
-#crop i[data-h=n]{top:0;left:50%;cursor:ns-resize}#crop i[data-h=s]{top:100%;left:50%;cursor:ns-resize}#crop i[data-h=w]{top:50%;left:0;cursor:ew-resize}#crop i[data-h=e]{top:50%;left:100%;cursor:ew-resize}
-#cnum label{font-size:.75rem;color:var(--mu);display:flex;flex-direction:column;gap:2px}#cnum input{width:100%;min-width:0;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px;font:inherit}
-#crop i[data-h=nw]{top:0;left:0;cursor:nwse-resize}#crop i[data-h=ne]{top:0;left:100%;cursor:nesw-resize}#crop i[data-h=sw]{top:100%;left:0;cursor:nesw-resize}#crop i[data-h=se]{top:100%;left:100%;cursor:nwse-resize}
-h1{margin:0;font-size:1.35rem;letter-spacing:.3px}h1 span{color:var(--ac)}
-.seg{display:flex;border:1px solid var(--bd);border-radius:10px;overflow:hidden}
-.seg button{background:var(--pn);color:var(--tx);border:0;border-right:1px solid var(--bd);padding:8px 12px;font:inherit;font-size:.85rem;cursor:pointer;min-height:40px}
-.seg button:last-child{border:0}.seg button.on{background:var(--ac);color:var(--on);font-weight:700}
-.chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-.chip{font-size:.72rem;padding:3px 9px;border:1px solid var(--bd);border-radius:20px;color:var(--mu)}
-.chip[data-s=ready]{color:var(--ok);border-color:var(--ok)}.chip[data-s=fallback]{color:var(--er);border-color:var(--er)}
-.stage{background:var(--pn);border:1px solid var(--bd);border-radius:12px;display:flex;align-items:center;justify-content:center;min-height:240px;max-height:52vh;overflow:hidden;position:relative;padding:6px}
-canvas{max-width:100%;max-height:calc(52vh - 14px);object-fit:contain;touch-action:none;background:repeating-conic-gradient(#8883 0 25%,transparent 0 50%) 0 0/16px 16px}
-#empty{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:var(--mu);padding:20px}#empty p{margin:0}#empty[hidden],canvas[hidden]{display:none}#dim{position:absolute;right:8px;bottom:6px;font-size:.7rem;color:var(--mu)}
-.panel{background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-top:10px}
-.panel[hidden]{display:none}
-#p-adj,#p-fil,#p-tool,#p-fx,#p-bg,#p-face,#p-exp{min-height:330px}
-#tabs button{border-bottom:1px solid var(--bd)}#tabs button:nth-child(4n){border-right:0}#tabs button:nth-last-child(-n+3){border-bottom:0}
-.row{display:grid;grid-template-columns:96px 1fr 40px;align-items:center;gap:8px;margin:6px 0}
-.row label{font-size:.85rem}.row output{font-size:.8rem;color:var(--mu);text-align:right}
-input[type=range]{width:100%;accent-color:var(--ac);height:28px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
-.btn{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:10px;font:inherit;font-size:.88rem;cursor:pointer;min-height:44px}
-.btn:hover,.btn.on{border-color:var(--ac)}.btn:disabled{opacity:.4;cursor:default}.btn.on{color:var(--ac);font-weight:700}
-.btn.pri{background:var(--ac);color:var(--on);border-color:var(--ac);font-weight:700}
-select{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px;font:inherit}
-footer{margin-top:0;padding:22px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;color:var(--mu);font-size:.8rem;width:100%}
-#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ac);color:var(--on);padding:8px 16px;border-radius:20px;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .2s}
-#toast.show{opacity:1}
-:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+:root{--bg:#12141a;--card:#1b1e27;--text:#e8eaf0;--mute:#9aa1b2;--line:#2c3040;--acc:#6ea8ff;--onacc:#06101f;--ok:#4ade80;--err:#f87171;--r:14px}
+[data-theme=light]{--bg:#f3f5f9;--card:#fff;--text:#161a23;--mute:#5b6475;--line:#d9dee8;--acc:#1f5fd6;--onacc:#fff;--ok:#15803d;--err:#b91c1c}
+[data-theme=oled]{--bg:#000;--card:#000;--text:#f2f2f2;--mute:#8c8c8c;--line:#262626;--acc:#5aa2ff;--onacc:#000;--ok:#4ade80;--err:#f87171}
+[data-theme=hc]{--bg:#000;--card:#000;--text:#fff;--mute:#fff;--line:#fff;--acc:#ffff00;--onacc:#000;--ok:#00ff66;--err:#ff6b6b}
+*{box-sizing:border-box;margin:0}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);transition:background .2s}
+header,main,footer{width:100%;max-width:760px;padding:14px}
+header{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
+h1{font-size:1.4rem}
+.sub{color:var(--mute);font-size:.9rem}
+.themes{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+button,select,input[type=text]{font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-height:44px}
+button{cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,.drop:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.themes button[aria-pressed=true]{background:var(--acc);color:var(--onacc);border-color:var(--acc);font-weight:600}
+.primary{background:var(--acc);color:var(--onacc);border-color:var(--acc);font-weight:700}
+.primary:disabled{opacity:.5;cursor:not-allowed}
+[data-theme=hc] button,[data-theme=hc] select,[data-theme=hc] .card,[data-theme=hc] .drop{border-width:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;display:flex;flex-direction:column;gap:12px}
+h2{font-size:1rem}
+.drop{border:2px dashed var(--line);border-radius:var(--r);padding:26px 14px;text-align:center;cursor:pointer;color:var(--mute)}
+.drop.over{border-color:var(--acc);color:var(--text)}
+.row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.row>*{flex:1 1 140px}
+#preview{max-width:100%;max-height:300px;object-fit:contain;border-radius:10px;align-self:center;display:none}
+.engines{display:flex;flex-direction:column;gap:8px}
+.engines label,.opt{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 8px;border:1px solid var(--line);border-radius:10px}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--acc)}
+.engines small{color:var(--mute);display:block}
+details summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+.cfg{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.cfg label{font-size:.85rem;color:var(--mute)}
+.cfg input{width:100%}
+.bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;display:none}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+#status{text-align:center;color:var(--mute);font-size:.9rem;min-height:1.4em}
+.tabs{display:flex;gap:6px;overflow-x:auto}
+.tabs button{flex:0 0 auto}
+.tabs button[aria-selected=true]{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+textarea{width:100%;min-height:220px;resize:vertical;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px;font:15px/1.5 ui-monospace,Menlo,Consolas,monospace}
+.meta{font-size:.85rem;color:var(--mute);text-align:center}
+.ok{color:var(--ok)}.err{color:var(--err)}
+footer{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;color:var(--mute);font-size:.85rem;margin-top:auto;padding-top:20px;padding-bottom:24px}
+@media(min-width:700px){h1{font-size:1.8rem}.engines{flex-direction:row}.engines label{flex:1}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <header>
-  <h1>Lum<span>ori</span></h1>
-  <button id="themeBtn" class="theme-btn" aria-label="Change theme"></button>
-</header>
-<main>
-  <div class="stage" id="stage"><div id="empty"><p>Open a photo to start editing</p><button class="btn pri" id="openBtn">Open photo</button><small>or drop an image here</small></div><canvas id="cv" aria-label="Photo preview" hidden></canvas><div id="crop" hidden><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i><i data-h="n"></i><i data-h="s"></i><i data-h="w"></i><i data-h="e"></i></div><span id="dim"></span></div>
-  <div class="panel" id="cropbar" hidden><div class="grid" id="cnum" style="grid-template-columns:repeat(4,1fr)"><label>X<input type="number" id="cx" inputmode="numeric" min="0"></label><label>Y<input type="number" id="cy" inputmode="numeric" min="0"></label><label>W<input type="number" id="cw" inputmode="numeric" min="8"></label><label>H<input type="number" id="ch" inputmode="numeric" min="8"></label></div><div class="grid" id="cacts" style="margin:8px 0"><button class="btn" data-a="full">Full</button><button class="btn" data-a="center">Center</button><button class="btn" data-a="swap">⇄ Swap</button></div><div class="grid" id="ratios"><button class="btn on" data-r="0">Free</button><button class="btn" data-r="1">1:1</button><button class="btn" data-r="1.3333">4:3</button><button class="btn" data-r="1.7778">16:9</button><button class="btn" data-r="0.75">3:4</button><button class="btn" data-r="0.5625">9:16</button></div><div class="grid" style="margin-top:8px"><button class="btn" id="cropCancel">Cancel</button><button class="btn pri" id="cropOk">Apply crop</button></div></div>
-  <div class="grid" id="urbar" style="margin-top:10px;grid-template-columns:1fr 1fr"><button class="btn" id="undoBtn" disabled>↶ Undo</button><button class="btn" id="redoBtn" disabled>↷ Redo</button></div>
-  <div class="seg" id="tabs" style="margin-top:10px;width:100%;display:grid;grid-template-columns:repeat(4,1fr)">
-    <button data-p="adj" class="on" style="flex:1;padding:8px 2px">Adjust</button><button data-p="fil" style="flex:1;padding:8px 2px">Filters</button><button data-p="tool" style="flex:1;padding:8px 2px">Tools</button><button data-p="fx" style="flex:1;padding:8px 2px">Effects</button><button data-p="bg" style="flex:1;padding:8px 2px">Background</button><button data-p="face" style="flex:1;padding:8px 2px">Face</button><button data-p="exp" style="flex:1;padding:8px 2px">Export</button>
+  <h1>Multi-Engine OCR Scanner</h1>
+  <div class="themes" role="group" aria-label="Theme">
+    <button data-t="dark" aria-pressed="true">Dark+</button>
+    <button data-t="light" aria-pressed="false">Light+</button>
+    <button data-t="oled" aria-pressed="false">OLED Black</button>
+    <button data-t="hc" aria-pressed="false">High Contrast</button>
   </div>
-  <section class="panel" id="p-adj"></section>
-  <section class="panel" id="p-fil" hidden><div class="grid" id="fgrid"></div><button class="btn" id="frst" style="margin-top:8px;width:100%">Reset</button></section>
-  <section class="panel" id="p-tool" hidden><div class="grid" id="tgrid"></div></section>
-  <section class="panel" id="p-fx" hidden>
-    <div class="row"><label for="fxs">Strength</label><input id="fxs" type="range" min="0" max="100" value="50"><output id="fxo">50</output></div>
-    <div class="row"><label for="fxa">Angle</label><input id="fxa" type="range" min="0" max="180" value="0"><output id="fxao">0</output></div>
-    <div class="row" style="grid-template-columns:96px 1fr"><label for="fxc">Splash colour</label><input id="fxc" type="color" value="#ff2d2d"></div>
-    <div class="grid" id="fxgrid" style="margin-top:8px"></div>
-    <button class="btn" id="fxrst" style="margin-top:8px;width:100%">Reset</button>
+</header>
+
+<main>
+  <section class="card">
+    <h2>1. Add an image</h2>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose or drop an image">
+      Tap to choose, drag &amp; drop, or paste an image
+    </div>
+    <div class="row">
+      <button id="btnPick">📁 Gallery</button>
+      <button id="btnCam">📷 Camera</button>
+      <button id="btnClear">✖ Clear</button>
+    </div>
+    <input type="file" id="file" accept="image/*" hidden>
+    <input type="file" id="cam" accept="image/*" capture="environment" hidden>
+    <img id="preview" alt="Selected image preview">
   </section>
-  <section class="panel" id="p-bg" hidden>
-    <div class="row"><label for="bgs">Strength</label><input id="bgs" type="range" min="0" max="100" value="50"><output id="bgo">50</output></div>
-    <div class="row"><label for="bga">Angle</label><input id="bga" type="range" min="0" max="180" value="0"><output id="bgao">0</output></div>
-    <div class="row" style="grid-template-columns:96px 1fr 1fr"><label>Colours</label><input id="bgc" type="color" value="#3b82f6"><input id="bgc2" type="color" value="#f472b6"></div>
-    <div class="grid" id="bggrid" style="margin-top:8px"></div>
-    <button class="btn" id="bgrst" style="margin-top:8px;width:100%">Reset</button>
+
+  <section class="card">
+    <h2>2. Engines</h2>
+    <div class="engines">
+      <label><input type="checkbox" id="eT" checked><span>Tesseract<small>In-browser (WASM)</small></span></label>
+      <label><input type="checkbox" id="eP"><span>PaddleOCR<small>In-browser (PP-OCR, ONNX)</small></span></label>
+      <label><input type="checkbox" id="eE"><span>EasyOCR<small>In-browser (CRAFT + CRNN, ONNX)</small></span></label>
+    </div>
+    <label class="opt"><span>Language (Tesseract)</span>
+      <select id="lang">
+        <option value="eng">English</option><option value="ben">Bengali</option><option value="hin">Hindi</option>
+        <option value="spa">Spanish</option><option value="fra">French</option><option value="deu">German</option>
+        <option value="ara">Arabic</option><option value="chi_sim">Chinese (Simpl.)</option><option value="jpn">Japanese</option>
+        <option value="eng+ben">English + Bengali</option>
+      </select>
+    </label>
+    <label class="opt"><input type="checkbox" id="enh" checked><span>Enhance image for Tesseract (grayscale + contrast)</span></label>
+    <p class="meta">Everything runs in your browser. First scan downloads the models (Paddle ~15 MB, EasyOCR ~100 MB) and caches them.</p>
+    <button class="primary" id="run" disabled>🔍 Scan text</button>
+    <div class="bar" id="bar"><i id="fill"></i></div>
+    <div id="status" role="status" aria-live="polite"></div>
   </section>
-  <section class="panel" id="p-face" hidden>
-    <div class="row"><label for="fas">Strength</label><input id="fas" type="range" min="0" max="100" value="50"><output id="fso">50</output></div>
-    <div class="row"><label for="faa">Angle / side</label><input id="faa" type="range" min="-30" max="30" value="10"><output id="fao">10</output></div>
-    <div class="grid" id="fagrid" style="margin-top:8px"></div>
-    <button class="btn" id="farst" style="margin-top:8px;width:100%">Reset</button>
+
+  <section class="card" id="out" hidden>
+    <h2>3. Results</h2>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <textarea id="txt" aria-label="Recognized text"></textarea>
+    <div class="meta" id="meta"></div>
+    <div class="row">
+      <button id="copy">📋 Copy</button>
+      <button id="dl">⬇ Download .txt</button>
+    </div>
   </section>
-  <section class="panel" id="p-exp" hidden>
-    <div class="row" style="grid-template-columns:96px 1fr"><label for="fmt">Format</label>
-      <select id="fmt"><option value="image/png">PNG</option><option value="image/jpeg">JPEG</option><option value="image/webp">WebP</option></select></div>
-    <div class="row"><label for="q">Quality</label><input id="q" type="range" min="40" max="100" value="92"><output id="qo">92</output></div>
-    <div class="grid" style="margin-top:8px"><button class="btn pri" id="save">⬇ Download</button><button class="btn" id="share">Share</button></div>
-  </section>
-  <input type="file" id="file" accept="image/*" hidden><input type="file" id="file2" accept="image/*" hidden><input type="file" id="file3" accept="image/*" hidden><input type="file" id="file4" accept="image/*" hidden>
 </main>
+
 <footer>
-  <span>© Manik Roy <span id="yr">2026</span>. All Rights Reserved.</span>
+  <span id="copyright"></span>
+  <span>Built with HTML, CSS &amp; JavaScript</span>
 </footer>
-<div id="toast" role="status"></div>
 
 <script>
-const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const CDN={cv:'https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js',
- vips:'https://cdn.jsdelivr.net/npm/wasm-vips@0.0.11/lib/',ck:'https://cdn.jsdelivr.net/npm/canvaskit-wasm@0.39.1/bin/'};
-const eng={cv:null,vips:null,ck:null},NAMES={cv:'OpenCV',vips:'libvips',ck:'Skia'};
-const cvEl=$('#cv'),ctx=cvEl.getContext('2d',{willReadFrequently:true});
-let base=null,orig=null,hist=[],redoS=[],preset='none',raf=0;
-const adj={b:0,c:0,s:0,blur:0,sharp:0,denoise:0};
-const MAXD=1600;
-
-/* ---------- utils ---------- */
-const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),1800)};
-const chip=()=>{};
-const mk=id=>{const c=document.createElement('canvas');c.width=id.width;c.height=id.height;c.getContext('2d').putImageData(id,0,0);return c};
-const loadScript=u=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=()=>no(new Error('script'));document.head.appendChild(s)});
-const timeout=(p,ms)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),ms))]);
-
-/* ---------- theme + footer year ---------- */
-const THEMES=[['dark','Dark+','☾'],['light','Light+','☀'],['oled','OLED','●'],['hc','HC','◐']];
-function setTheme(t){const x=THEMES.find(a=>a[0]===t)||THEMES[0],b=$('#themeBtn');document.documentElement.dataset.theme=x[0];b.textContent=x[2];b.title='Theme: '+x[1]+' (tap to change)';b.setAttribute('aria-label',b.title);try{localStorage.setItem('lumio-theme',x[0])}catch(e){}}
-let th=null;try{th=localStorage.getItem('lumio-theme')}catch(e){}
-setTheme(th||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));
-$('#themeBtn').onclick=()=>{const i=THEMES.findIndex(a=>a[0]===document.documentElement.dataset.theme),n=THEMES[(i+1)%THEMES.length];setTheme(n[0]);toast(n[1])};
-const year=()=>$('#yr').textContent=new Date().getFullYear();
-year();setInterval(year,3600e3);document.addEventListener('visibilitychange',year);
-
-/* ---------- engines (lazy, each falls back gracefully) ---------- */
-let cvP=null;
-async function initCV(){chip('cv','loading');try{
-  await timeout(loadScript(CDN.cv),60000);
-  const c=window.cv;if(c&&!c.Mat&&typeof c.then==='function')c.then(m=>{window.cv=m});
-  await timeout(new Promise(ok=>{const t=setInterval(()=>{if(window.cv&&window.cv.Mat){clearInterval(t);ok()}},150)}),60000);
-  eng.cv=window.cv;chip('cv','ready')}catch(e){chip('cv','fallback')}render()}
-async function initVips(){try{
-  await timeout(loadScript(CDN.vips+'vips.js'),40000);
-  eng.vips=await timeout(window.Vips({dynamicLibraries:[],locateFile:f=>CDN.vips+f}),40000);chip('vips','ready')}catch(e){chip('vips','fallback')}}
-async function initCK(){try{
-  await timeout(loadScript(CDN.ck+'canvaskit.js'),40000);
-  eng.ck=await timeout(window.CanvasKitInit({locateFile:f=>CDN.ck+f}),40000);chip('ck','ready')}catch(e){chip('ck','fallback')}render()}
-
-/* ---------- Skia / JS colour matrix ---------- */
-const sat=s=>{const[l,g,b]=[.2126,.7152,.0722];return[[l*(1-s)+s,g*(1-s),b*(1-s)],[l*(1-s),g*(1-s)+s,b*(1-s)],[l*(1-s),g*(1-s),b*(1-s)+s]]};
-const mul=(A,B)=>A.map(r=>[0,1,2].map(j=>r[0]*B[0][j]+r[1]*B[1][j]+r[2]*B[2][j]));
-const ID=[[1,0,0],[0,1,0],[0,0,1]];
-const PRE={none:ID,bw:sat(0),sepia:[[.393,.769,.189],[.349,.686,.168],[.272,.534,.131]],vivid:sat(1.6),warm:[[1.1,0,0],[0,1,0],[0,0,.88]],cool:[[.88,0,0],[0,1,0],[0,0,1.12]],edges:ID};
-function matrix(){
-  const k=1+adj.c/100,M=mul(PRE[preset],sat(1+adj.s/100)),off=.5*(1-k)+adj.b/100,m=[];
-  M.forEach(r=>m.push(r[0]*k,r[1]*k,r[2]*k,0,off));m.push(0,0,0,1,0);return m}
-function skia(id,m){
-  const K=eng.ck,w=id.width,h=id.height,img=K.MakeImageFromCanvasImageSource(mk(id)),sf=K.MakeSurface(w,h),p=new K.Paint();
-  p.setColorFilter(K.ColorFilter.MakeMatrix(m));sf.getCanvas().drawImage(img,0,0,p);sf.flush();
-  const px=sf.makeImageSnapshot().readPixels(0,0,{width:w,height:h,colorType:K.ColorType.RGBA_8888,alphaType:K.AlphaType.Unpremul,colorSpace:K.ColorSpace.SRGB});
-  img.delete();sf.delete();p.delete();return new ImageData(new Uint8ClampedArray(px),w,h)}
-function jsColor(id,m){
-  const o=new ImageData(new Uint8ClampedArray(id.data),id.width,id.height),d=o.data,c=v=>v<0?0:v>255?255:v;
-  for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2];
-    d[i]=c(m[0]*r+m[1]*g+m[2]*b+m[4]*255);d[i+1]=c(m[5]*r+m[6]*g+m[7]*b+m[9]*255);d[i+2]=c(m[10]*r+m[11]*g+m[12]*b+m[14]*255)}
-  return o}
-function color(id){const m=matrix();if(eng.ck){try{return skia(id,m)}catch(e){}}return jsColor(id,m)}
-
-/* ---------- OpenCV stage ---------- */
-function cvStage(id){
-  if(!(adj.blur||adj.sharp||adj.denoise||preset==='edges'))return id;
-  if(!eng.cv){if(!cvP)cvP=initCV();return id}
-  const c=eng.cv,del=[],M=()=>{const m=new c.Mat();del.push(m);return m};
-  try{
-    let cur=c.matFromImageData(id);del.push(cur);c.cvtColor(cur,cur,c.COLOR_RGBA2RGB);
-    if(adj.denoise){const o=M();c.bilateralFilter(cur,o,7,adj.denoise*1.5,adj.denoise*1.5);cur=o}
-    if(adj.blur){const o=M(),k=adj.blur*2+1;c.GaussianBlur(cur,o,new c.Size(k,k),0);cur=o}
-    if(adj.sharp){const o=M(),bl=M(),a=adj.sharp/50;c.GaussianBlur(cur,bl,new c.Size(0,0),1.5);c.addWeighted(cur,1+a,bl,-a,0,o);cur=o}
-    if(preset==='edges'){const g=M(),e=M();c.cvtColor(cur,g,c.COLOR_RGB2GRAY);c.Canny(g,e,60,140);c.bitwise_not(e,e);c.cvtColor(e,e,c.COLOR_GRAY2RGB);cur=e}
-    const rgba=M();c.cvtColor(cur,rgba,c.COLOR_RGB2RGBA);
-    return new ImageData(new Uint8ClampedArray(rgba.data),id.width,id.height)
-  }catch(e){return id}finally{del.forEach(m=>{try{m.delete()}catch(e){}})}}
-
-/* ---------- render ---------- */
-function process(){return color(cvStage(base))}
-function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
-  if(!base)return;$('#cv').hidden=false;$('#empty').hidden=true;const id=process();cvEl.width=id.width;cvEl.height=id.height;ctx.putImageData(id,0,0);$('#dim').textContent=id.width+'×'+id.height;if(crop)cropShow()})}
-
-/* ---------- geometry (libvips, canvas fallback) ---------- */
-function geoCanvas(op){
-  const w=base.width,h=base.height,s=mk(base),c=document.createElement('canvas'),g=c.getContext('2d');
-  if(op==='r90'||op==='r270'){c.width=h;c.height=w;g.translate(h/2,w/2);g.rotate(op==='r90'?Math.PI/2:-Math.PI/2);g.drawImage(s,-w/2,-h/2)}
-  else if(op==='fh'||op==='fv'){c.width=w;c.height=h;g.translate(op==='fh'?w:0,op==='fv'?h:0);g.scale(op==='fh'?-1:1,op==='fv'?-1:1);g.drawImage(s,0,0)}
-  else if(op==='sq'){const m=Math.min(w,h);c.width=c.height=m;g.drawImage(s,(w-m)/2,(h-m)/2,m,m,0,0,m,m)}
-  else if(op==='crop'){const q=cropPx;c.width=q.w;c.height=q.h;g.drawImage(s,q.x,q.y,q.w,q.h,0,0,q.w,q.h)}
-  else{c.width=Math.max(1,w>>1);c.height=Math.max(1,h>>1);g.drawImage(s,0,0,c.width,c.height)}
-  return g.getImageData(0,0,c.width,c.height)}
-function geoVips(op){
-  const v=eng.vips;let im=v.Image.newFromMemory(new Uint8Array(base.data.buffer.slice(0)),base.width,base.height,4,v.BandFormat.uchar),n;
-  if(op==='r90')n=im.rot('d90');else if(op==='r270')n=im.rot('d270');
-  else if(op==='fh')n=im.flip('horizontal');else if(op==='fv')n=im.flip('vertical');
-  else if(op==='sq'){const m=Math.min(im.width,im.height);n=im.extractArea((im.width-m)>>1,(im.height-m)>>1,m,m)}
-  else if(op==='crop')n=im.extractArea(cropPx.x,cropPx.y,cropPx.w,cropPx.h);
-  else n=im.resize(.5);
-  const o=n.writeToMemory(),r=new ImageData(new Uint8ClampedArray(o),n.width,n.height);n.delete();im.delete();return r}
-function geo(op){
-  if(!base)return;let r;
-  if(eng.vips){try{r=geoVips(op)}catch(e){r=null}}
-  if(!r)r=geoCanvas(op);
-  mc=null;fxSnap=null;push();base=r;render()}
-const snap=()=>({b:base,a:{...adj},p:preset});
-function push(){if(!base)return;hist.push(snap());if(hist.length>15)hist.shift();redoS.length=0;updateUR()}
-function applyState(st){base=st.b;Object.assign(adj,st.a);Object.keys(adj).forEach(k=>{$('#s-'+k).value=adj[k];$('#o-'+k).textContent=adj[k]});setPreset(st.p);mc=null;fxSnap=null;endCrop();render();updateUR()}
-function undo(){if(!hist.length){toast('Nothing to undo');return}redoS.push(snap());applyState(hist.pop())}
-function redo(){if(!redoS.length){toast('Nothing to redo');return}hist.push(snap());applyState(redoS.pop())}
-function updateUR(){const u=$('#undoBtn'),r=$('#redoBtn');if(!u)return;u.disabled=!hist.length;r.disabled=!redoS.length;u.textContent='\u21b6 Undo'+(hist.length?' ('+hist.length+')':'');r.textContent='\u21b7 Redo'+(redoS.length?' ('+redoS.length+')':'')}
-function bake(){if(!base)return;push();base=process();resetAdj();render();toast('Edits applied')}
-
-/* ---------- loading images ---------- */
-function setImage(src){
-  const k=Math.min(1,MAXD/Math.max(src.width,src.height)),w=Math.round(src.width*k),h=Math.round(src.height*k),c=document.createElement('canvas');
-  c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(src,0,0,w,h);
-  base=orig=g.getImageData(0,0,w,h);hist=[];redoS=[];mc=null;fxSnap=null;updateUR();resetAdj();render()}
-function openFile(f){if(!f)return;endCrop();const u=URL.createObjectURL(f),i=new Image();
-  i.onload=()=>{setImage(i);URL.revokeObjectURL(u)};i.onerror=()=>toast('Could not open image');i.src=u}
-
-/* ---------- crop ---------- */
-let crop=null,ratio=0,cropPx=null,drag=null;const cropEl=$('#crop'),cl=(v,a,b)=>Math.min(b,Math.max(a,v));
-function cropShow(){if(!crop)return;const st=$('#stage'),s=st.getBoundingClientRect(),r=cvEl.getBoundingClientRect(),S=cropEl.style;
-  S.left=r.left-s.left-st.clientLeft+crop.x*r.width+'px';S.top=r.top-s.top-st.clientTop+crop.y*r.height+'px';S.width=crop.w*r.width+'px';S.height=crop.h*r.height+'px';numSync()}
-function setRatio(r){ratio=r;$$('#ratios .btn').forEach(b=>b.classList.toggle('on',Math.abs(+b.dataset.r-r)<.001));
-  if(!r||!crop)return;const W=base.width,H=base.height;crop.h=crop.w*W/(r*H);
-  if(crop.y+crop.h>1){crop.h=1-crop.y;crop.w=crop.h*r*H/W}
-  if(crop.x+crop.w>1){crop.w=1-crop.x;crop.h=crop.w*W/(r*H)}cropShow()}
-function startCrop(){if(!base){toast('Open a photo first');return}crop={x:.1,y:.1,w:.8,h:.8};cropEl.hidden=false;$('#cropbar').hidden=false;setRatio(0);cropShow()}
-function endCrop(){crop=null;cropEl.hidden=true;$('#cropbar').hidden=true}
-cropEl.onpointerdown=e=>{e.preventDefault();cropEl.setPointerCapture(e.pointerId);drag={h:e.target.dataset.h||'move',x:e.clientX,y:e.clientY,c:{...crop}}};
-cropEl.onpointermove=e=>{if(!drag)return;const r=cvEl.getBoundingClientRect(),dx=(e.clientX-drag.x)/r.width,dy=(e.clientY-drag.y)/r.height,c=drag.c,h=drag.h;
-  if(h==='move'){crop.x=cl(c.x+dx,0,1-c.w);crop.y=cl(c.y+dy,0,1-c.h)}
-  else{let L=c.x,T=c.y,R=c.x+c.w,B=c.y+c.h;const mn=.05,W=base.width,H=base.height;
-    const hasW=h.includes('w'),hasE=h.includes('e'),hasN=h.includes('n'),hasS=h.includes('s');
-    if(hasW)L=cl(L+dx,0,R-mn);if(hasE)R=cl(R+dx,L+mn,1);
-    if(hasN)T=cl(T+dy,0,B-mn);if(hasS)B=cl(B+dy,T+mn,1);
-    if(ratio){const k=ratio*H/W;
-      if((hasW||hasE)&&(hasN||hasS)){let nw=R-L,nh=nw/k;if(hasN)T=B-nh;else B=T+nh;
-        if(T<0){T=0;nh=B-T;nw=nh*k;if(hasW)L=R-nw;else R=L+nw}
-        if(B>1){B=1;nh=B-T;nw=nh*k;if(hasW)L=R-nw;else R=L+nw}}
-      else if(hasN||hasS){let nh=B-T,nw=nh*k;const cx=(L+R)/2,mx=Math.min(cx,1-cx)*2;if(nw>mx){nw=mx;nh=nw/k;if(hasN)T=B-nh;else B=T+nh}L=cx-nw/2;R=cx+nw/2}
-      else{let nw=R-L,nh=nw/k;const cy=(T+B)/2,my=Math.min(cy,1-cy)*2;if(nh>my){nh=my;nw=nh*k;if(hasW)L=R-nw;else R=L+nw}T=cy-nh/2;B=cy+nh/2}}
-    crop={x:L,y:T,w:R-L,h:B-T}}
-  cropShow()};
-cropEl.onpointerup=cropEl.onpointercancel=()=>{drag=null};
-$('#ratios').onclick=e=>{if(e.target.dataset.r!==undefined)setRatio(+e.target.dataset.r)};
-$('#cropCancel').onclick=endCrop;
-$('#cropOk').onclick=()=>{if(!crop)return;const W=base.width,H=base.height,x=Math.round(crop.x*W),y=Math.round(crop.y*H);
-  cropPx={x,y,w:Math.max(1,Math.min(W-x,Math.round(crop.w*W))),h:Math.max(1,Math.min(H-y,Math.round(crop.h*H)))};endCrop();geo('crop')};
-function numSync(){const W=base.width,H=base.height,v={cx:crop.x*W,cy:crop.y*H,cw:crop.w*W,ch:crop.h*H};for(const k in v){const el=$('#'+k);if(document.activeElement!==el)el.value=Math.round(v[k])}}
-function swapCrop(){const W=base.width,H=base.height;let pw=crop.h*H,ph=crop.w*W;const cx=crop.x+crop.w/2,cy=crop.y+crop.h/2,s=Math.min(1,W/pw,H/ph);pw*=s;ph*=s;
-  crop={x:cl(cx-pw/2/W,0,1-pw/W),y:cl(cy-ph/2/H,0,1-ph/H),w:pw/W,h:ph/H};if(ratio)setRatio(1/ratio);cropShow()}
-$('#cnum').oninput=e=>{if(!crop||e.target.value==='')return;const W=base.width,H=base.height,v=+e.target.value,id=e.target.id;if(!(v>=0))return;
-  let x=crop.x*W,y=crop.y*H,w=crop.w*W,h=crop.h*H;
-  if(id==='cx')x=v;else if(id==='cy')y=v;else if(id==='cw'){w=cl(v,8,W);if(ratio)h=w/ratio}else{h=cl(v,8,H);if(ratio)w=h*ratio}
-  if(w>W){w=W;if(ratio)h=w/ratio}if(h>H){h=H;if(ratio)w=h*ratio}
-  crop={x:cl(x,0,W-w)/W,y:cl(y,0,H-h)/H,w:w/W,h:h/H};cropShow()};
-$('#cacts').onclick=e=>{const a=e.target.dataset.a;if(!a||!crop)return;
-  if(a==='full'){crop={x:0,y:0,w:1,h:1};if(ratio)setRatio(ratio);cropShow()}
-  else if(a==='center'){crop.x=(1-crop.w)/2;crop.y=(1-crop.h)/2;cropShow()}else swapCrop()};
-addEventListener('resize',cropShow);
-
-/* ---------- effects ---------- */
-const S=()=>+$('#fxs').value/100,cv2=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c},cp=id=>new ImageData(new Uint8ClampedArray(id.data),id.width,id.height);
-const gd=c=>c.getContext('2d').getImageData(0,0,c.width,c.height);
-function blurC(src,k){k=Math.max(1,k);const w=src.width,h=src.height,s=cv2(Math.max(1,w/k|0),Math.max(1,h/k|0)),g=s.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(src,0,0,s.width,s.height);
-  const o=cv2(w,h),q=o.getContext('2d');q.imageSmoothingQuality='high';q.drawImage(s,0,0,w,h);return o}
-const hue=(r,g,b)=>{const m=Math.max(r,g,b),n=Math.min(r,g,b),d=m-n;if(!d)return[0,0];let h=m===r?((g-b)/d)%6:m===g?(b-r)/d+2:(r-g)/d+4;return[(h*60+360)%360,d/m]};
-let fxSnap=null;const commit=r=>{if(!fxSnap)fxSnap=base;push();base=r;render()};
-function fxUndo(){if(fxSnap){push();base=fxSnap;fxSnap=null;mc=null;render()}}
-const FX={
-relight(){const w=base.width,h=base.height,c=mk(base),g=c.getContext('2d'),s=S(),a=+$('#fxa').value*Math.PI/180,x=w/2+Math.cos(a)*w*.4,y=h/2-Math.sin(a)*h*.4,R=Math.max(w,h)*.9;
-  let gr=g.createRadialGradient(x,y,0,x,y,R);gr.addColorStop(0,`rgba(255,235,200,${.45*s})`);gr.addColorStop(1,'rgba(255,235,200,0)');g.globalCompositeOperation='screen';g.fillStyle=gr;g.fillRect(0,0,w,h);
-  gr=g.createRadialGradient(w-x,h-y,0,w-x,h-y,R);gr.addColorStop(0,`rgba(0,0,0,${.5*s})`);gr.addColorStop(1,'rgba(0,0,0,0)');g.globalCompositeOperation='multiply';g.fillStyle=gr;g.fillRect(0,0,w,h);return gd(c)},
-async bg(){const m=await subj(),o=mk(base),g=o.getContext('2d');g.globalCompositeOperation='destination-in';g.drawImage(m,0,0);return gd(o)},
-bokeh(){const w=base.width,h=base.height,s=mk(base),b=blurC(s,Math.round(6+S()*20)),g=b.getContext('2d'),m=cv2(w,h),q=m.getContext('2d'),gr=q.createRadialGradient(w/2,h/2,Math.min(w,h)*.2,w/2,h/2,Math.max(w,h)*.55);
-  gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(1,'rgba(0,0,0,0)');q.drawImage(s,0,0);q.globalCompositeOperation='destination-in';q.fillStyle=gr;q.fillRect(0,0,w,h);g.drawImage(m,0,0);return gd(b)},
-shadow(){const w=base.width,h=base.height,p=Math.round(Math.max(w,h)*.07),c=cv2(w+2*p,h+2*p),g=c.getContext('2d');g.shadowColor='rgba(0,0,0,.65)';g.shadowBlur=6+p*S()*1.4;g.shadowOffsetX=g.shadowOffsetY=p*.3;g.drawImage(mk(base),p,p);return gd(c)},
-glow(){const w=base.width,h=base.height,p=Math.round(Math.max(w,h)*.07),c=cv2(w+2*p,h+2*p),g=c.getContext('2d'),im=mk(base);g.shadowColor='rgba(120,210,255,1)';g.shadowBlur=6+p*S()*1.6;g.drawImage(im,p,p);g.drawImage(im,p,p);return gd(c)},
-splash(){const hx=$('#fxc').value,h0=hue(parseInt(hx.slice(1,3),16),parseInt(hx.slice(3,5),16),parseInt(hx.slice(5,7),16))[0],tol=15+S()*60,o=cp(base),d=o.data;
-  for(let i=0;i<d.length;i+=4){const[h,s]=hue(d[i],d[i+1],d[i+2]);let dh=Math.abs(h-h0);dh=Math.min(dh,360-dh);if(s<.18||dh>tol){d[i]=d[i+1]=d[i+2]=.299*d[i]+.587*d[i+1]+.114*d[i+2]}}return o},
-grain(){const o=cp(base),d=o.data,a=10+S()*70;for(let i=0;i<d.length;i+=4){const n=(Math.random()+Math.random()-1)*a;d[i]+=n;d[i+1]+=n;d[i+2]+=n}return o},
-motion(){const w=base.width,h=base.height,s=mk(base),c=cv2(w,h),g=c.getContext('2d'),n=14,L=Math.max(w,h)*.1*S()+2,a=+$('#fxa').value*Math.PI/180;g.drawImage(s,0,0);
-  for(let i=0;i<n;i++){const t=(i/(n-1)-.5)*L;g.globalAlpha=1/(i+2);g.drawImage(s,Math.cos(a)*t,-Math.sin(a)*t)}return gd(c)},
-skin(){const W=base.width,H=base.height,bl=gd(blurC(mk(base),Math.round(3+S()*7))).data,o=cp(base),d=o.data,k=.4+S()*.55;
-  for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2],y=.299*r+.587*g+.114*b,cr=(r-y)*.713+128,cb=(b-y)*.564+128;
-    if(cr>133&&cr<178&&cb>77&&cb<128){d[i]=r+(bl[i]-r)*k;d[i+1]=g+(bl[i+1]-g)*k;d[i+2]=b+(bl[i+2]-b)*k}}return o},
-flare(){const w=base.width,h=base.height,c=mk(base),g=c.getContext('2d'),x=w*.78,y=h*.22,s=S(),M=Math.max(w,h);g.globalCompositeOperation='screen';
-  const gr=g.createRadialGradient(x,y,0,x,y,M*.4*(.4+s));gr.addColorStop(0,'rgba(255,250,230,.95)');gr.addColorStop(.15,'rgba(255,200,120,.45)');gr.addColorStop(1,'rgba(255,150,50,0)');g.fillStyle=gr;g.fillRect(0,0,w,h);
-  [[.55,.06,'rgba(120,200,255,.35)'],[.3,.1,'rgba(255,120,200,.3)'],[.1,.05,'rgba(160,255,160,.3)'],[-.2,.14,'rgba(255,220,120,.25)']].forEach(([t,r,col])=>{g.beginPath();g.arc(x+(w/2-x)*2*t,y+(h/2-y)*2*t,M*r,0,7);g.fillStyle=col;g.fill()});return gd(c)},
-up(){const sc=Math.min(2,4096/Math.max(base.width,base.height));if(sc<1.05){toast('Already at maximum size');return null}
-  if(eng.vips){try{const v=eng.vips,im=v.Image.newFromMemory(new Uint8Array(base.data.buffer.slice(0)),base.width,base.height,4,v.BandFormat.uchar),n=im.resize(sc,{kernel:'lanczos3'}),o=n.writeToMemory(),r=new ImageData(new Uint8ClampedArray(o),n.width,n.height);n.delete();im.delete();return r}catch(e){}}
-  const c=cv2(Math.round(base.width*sc),Math.round(base.height*sc)),g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(mk(base),0,0,c.width,c.height);return gd(c)}
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 };
-function dbl(i){const w=base.width,h=base.height,c=mk(base),g=c.getContext('2d'),k=Math.max(w/i.width,h/i.height);g.globalAlpha=.3+S()*.6;g.globalCompositeOperation='screen';g.drawImage(i,(w-i.width*k)/2,(h-i.height*k)/2,i.width*k,i.height*k);commit(gd(c))}
-let liq=false,lq=null;
-function liquifyOn(){liq=!liq;$('#fxgrid [data-x=liquify]').classList.toggle('on',liq);cvEl.style.cursor=liq?'crosshair':'';toast(liq?'Drag on the photo to push pixels':'Liquify off')}
-cvEl.addEventListener('pointerdown',e=>{if(!liq||!base)return;cvEl.setPointerCapture(e.pointerId);if(!fxSnap)fxSnap=base;push();base=cp(base);lq={x:e.clientX,y:e.clientY}});
-cvEl.addEventListener('pointermove',e=>{if(!liq||!lq)return;const r=cvEl.getBoundingClientRect(),sx=base.width/r.width,sy=base.height/r.height,dx=(e.clientX-lq.x)*sx,dy=(e.clientY-lq.y)*sy,cx=(e.clientX-r.left)*sx,cy=(e.clientY-r.top)*sy;lq={x:e.clientX,y:e.clientY};
-  const W=base.width,H=base.height,R=Math.max(W,H)*(.04+S()*.08),d=base.data,x0=Math.max(0,cx-R|0),x1=Math.min(W-1,cx+R|0),y0=Math.max(0,cy-R|0),y1=Math.min(H-1,cy+R|0),w2=x1-x0+1,h2=y1-y0+1;if(w2<2||h2<2)return;
-  const t=new Uint8ClampedArray(w2*h2*4);for(let y=0;y<h2;y++){const o=((y+y0)*W+x0)*4;t.set(d.subarray(o,o+w2*4),y*w2*4)}
-  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const dist=Math.hypot(x-cx,y-cy);if(dist>R)continue;const f=(1-dist/R)**2,px=Math.min(x1,Math.max(x0,Math.round(x-dx*f))),py=Math.min(y1,Math.max(y0,Math.round(y-dy*f))),ti=((py-y0)*w2+(px-x0))*4,di=(y*W+x)*4;d[di]=t[ti];d[di+1]=t[ti+1];d[di+2]=t[ti+2];d[di+3]=t[ti+3]}
-  render()});
-cvEl.addEventListener('pointerup',()=>{lq=null});
-$('#fxgrid').innerHTML=[['relight','Face Relighting'],['bg','Background Removal'],['bokeh','Portrait Bokeh'],['shadow','Drop Shadow'],['glow','Outer Glow'],['splash','Color Splash'],['grain','Film Grain'],['liquify','Liquify'],['motion','Motion Blur'],['skin','Skin Smoothing'],['flare','Lens Flare'],['double','Double Exposure'],['up','Image Upscaling 2×']].map(([k,l])=>`<button class="btn" data-x="${k}">${l}</button>`).join('');
-$('#fxgrid').onclick=async e=>{const k=e.target.dataset.x;if(!k)return;if(!base){toast('Open a photo first');return}endCrop();
-  if(k==='liquify'){liquifyOn();return}if(liq)liquifyOn();if(k==='double'){$('#file2').click();return}
-  toast('Working…');await new Promise(r=>setTimeout(r,30));
-  try{const r=await FX[k]();if(r){commit(r);toast('Done')}}catch(err){toast('Effect failed')}};
-$('#file2').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const u=URL.createObjectURL(f),i=new Image();i.onload=()=>{dbl(i);URL.revokeObjectURL(u)};i.src=u};
-$('#fxrst').onclick=()=>{fxUndo();$('#fxs').value=50;$('#fxo').textContent=50;$('#fxa').value=0;$('#fxao').textContent=0;$('#fxc').value='#ff2d2d';if(liq)liquifyOn();toast('Effects reset')};
-$('#p-fx').addEventListener('input',e=>{if(e.target.id==='fxs')$('#fxo').textContent=e.target.value;if(e.target.id==='fxa')$('#fxao').textContent=e.target.value});
 
-/* ---------- background ---------- */
-let mc=null;const SB=()=>+$('#bgs').value/100;
-let mpP=null;
-async function mpLoad(){if(mpP)return mpP;const B='https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/';
-  mpP=(async()=>{await timeout(loadScript(B+'selfie_segmentation.js'),30000);const s=new window.SelfieSegmentation({locateFile:f=>B+f});s.setOptions({modelSelection:0});await timeout(s.initialize(),60000);return s})().catch(()=>null);return mpP}
-async function mlMask(){const s=await mpLoad();if(!s)return null;try{return await timeout(new Promise((ok,no)=>{s.onResults(r=>ok(r.segmentationMask));s.send({image:mk(base)}).catch(no)}),30000)}catch(e){return null}}
-const smooth=(v,a,b)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return Math.round(255*t*t*(3-2*t))};
-async function cutMask(){const W=base.width,H=base.height,k=Math.min(1,720/Math.max(W,H)),w=Math.round(W*k),h=Math.round(H*k),sm=cv2(w,h);sm.getContext('2d').drawImage(mk(base),0,0,w,h);
-  toast('Finding the subject\u2026');const ml=await mlMask();let p=null;
-  if(ml){const q=cv2(w,h).getContext('2d');q.drawImage(ml,0,0,w,h);const d=q.getImageData(0,0,w,h).data;let ua=false;for(let i=3;i<d.length;i+=4)if(d[i]<250){ua=true;break}
-    p=new Uint8Array(w*h);for(let i=0;i<w*h;i++)p[i]=d[i*4+(ua?3:0)]}
-  if(!eng.cv){if(!cvP)cvP=initCV();await cvP}
-  const c=eng.cv;let al=null;
-  if(c&&c.grabCut){const src=c.matFromImageData(gd(sm)),rgb=new c.Mat(),mask=p?c.Mat.zeros(h,w,c.CV_8UC1):new c.Mat(),bgd=new c.Mat(),fgd=new c.Mat();
-    try{c.cvtColor(src,rgb,c.COLOR_RGBA2RGB);
-      if(p){for(let i=0;i<w*h;i++)mask.data[i]=p[i]>205?1:p[i]>128?3:p[i]>40?2:0;c.grabCut(rgb,mask,new c.Rect(0,0,w,h),bgd,fgd,3,c.GC_INIT_WITH_MASK)}
-      else c.grabCut(rgb,mask,new c.Rect(Math.round(w*.05),Math.round(h*.05),Math.round(w*.9),Math.round(h*.9)),bgd,fgd,4,c.GC_INIT_WITH_RECT);
-      al=new Uint8Array(w*h);for(let i=0;i<w*h;i++)al[i]=mask.data[i]===1||mask.data[i]===3?255:0}
-    catch(e){al=null}finally{[src,rgb,mask,bgd,fgd].forEach(m=>m.delete())}}
-  if(!al&&p)al=p.map(v=>smooth(v,80,175));
-  if(!al)return null;
-  const am=cv2(w,h),ag=am.getContext('2d'),mi=ag.createImageData(w,h);for(let i=0;i<w*h;i++)mi.data[i*4+3]=al[i];ag.putImageData(mi,0,0);
-  const out=cv2(W,H),g=out.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(blurC(am,1),0,0,W,H);
-  const fm=g.getImageData(0,0,W,H),fd=fm.data;for(let i=3;i<fd.length;i+=4)fd[i]=smooth(fd[i],100,200);g.putImageData(fm,0,0);return out}
-async function subj(){if(mc&&mc.width===base.width&&mc.height===base.height)return mc;
-  let m=null;try{m=await cutMask()}catch(e){}const W=base.width,H=base.height;
-  if(!m){m=cv2(W,H);const g=m.getContext('2d'),gr=g.createRadialGradient(W/2,H/2,Math.min(W,H)*.2,W/2,H/2,Math.min(W,H)*.5);gr.addColorStop(0,'#fff');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,W,H);toast('Could not find the subject: using a centre mask')}
-  return mc=m}
-async function bgFx(fn){const m=await subj(),W=base.width,H=base.height,src=mk(base),sub=cv2(W,H),sg=sub.getContext('2d');sg.drawImage(src,0,0);sg.globalCompositeOperation='destination-in';sg.drawImage(m,0,0);
-  const o=cv2(W,H),g=o.getContext('2d');fn(g,src,W,H,m);g.globalAlpha=1;g.globalCompositeOperation='source-over';g.drawImage(sub,0,0);return gd(o)}
-function skyMask(){const W=base.width,H=base.height,d=base.data,N=W*H,ok=new Uint8Array(N),lim=Math.floor(H*.8);
-  for(let y=0;y<lim;y++)for(let x=0;x<W;x++){const p=y*W+x,i=p*4,r=d[i],g=d[i+1],b=d[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),v=mx/255,s=mx?(mx-mn)/mx:0;
-    if((b>=r&&b>=g-8&&s>.16&&v>.35)||(s<.2&&v>.6)||(s<.12&&v>.45))ok[p]=1}
-  const vis=new Uint8Array(N),st=new Int32Array(N);let sp=0,n=0;
-  for(let x=0;x<W;x++)if(ok[x]){vis[x]=1;st[sp++]=x}
-  while(sp){const p=st[--sp],x=p%W,y=p/W|0;n++;
-    if(x>0&&ok[p-1]&&!vis[p-1]){vis[p-1]=1;st[sp++]=p-1}
-    if(x<W-1&&ok[p+1]&&!vis[p+1]){vis[p+1]=1;st[sp++]=p+1}
-    if(y>0&&ok[p-W]&&!vis[p-W]){vis[p-W]=1;st[sp++]=p-W}
-    if(y<H-1&&ok[p+W]&&!vis[p+W]){vis[p+W]=1;st[sp++]=p+W}}
-  if(n/N<.02)return null;
-  const m=cv2(W,H),g=m.getContext('2d'),mi=g.createImageData(W,H);for(let p=0;p<N;p++)if(vis[p])mi.data[p*4+3]=255;g.putImageData(mi,0,0);return blurC(m,2)}
-function skyGen(k,W,H){const c=cv2(W,H),g=c.getContext('2d'),gr=g.createLinearGradient(0,0,0,H*.75),R=Math.random;
-  ({blue:[['#1f6fd0',0],['#9fd2ff',1]],sunset:[['#2a2a72',0],['#b5446e',.55],['#ff9a3c',1]],night:[['#01020c',0],['#0a1540',1]]})[k].forEach(([col,o])=>gr.addColorStop(o,col));g.fillStyle=gr;g.fillRect(0,0,W,H);
-  if(k==='blue'){g.fillStyle='rgba(255,255,255,.35)';for(let i=0;i<16;i++){g.beginPath();g.ellipse(R()*W,R()*H*.5,W*(.06+R()*.1),H*(.02+R()*.04),0,0,7);g.fill()}}
-  if(k==='sunset'){const x=W*.3+R()*W*.4,y=H*.55,r=g.createRadialGradient(x,y,0,x,y,W*.35);r.addColorStop(0,'rgba(255,230,150,.95)');r.addColorStop(1,'rgba(255,160,60,0)');g.fillStyle=r;g.fillRect(0,0,W,H)}
-  if(k==='night'){for(let i=0;i<260;i++){g.beginPath();g.arc(R()*W,R()*H*.75,.5+R()*1.6*Math.max(1,W/1200),0,7);g.fillStyle=`rgba(255,255,255,${.4+R()*.6})`;g.fill()}}
-  return c}
-function skyFx(k){const m=skyMask();if(!m){toast('No sky found in this photo');return null}const W=base.width,H=base.height,o=mk(base),g=o.getContext('2d'),l=skyGen(k,W,H),q=l.getContext('2d');
-  q.globalCompositeOperation='destination-in';q.drawImage(m,0,0);if(k!=='blue'){g.globalCompositeOperation='multiply';g.fillStyle=k==='night'?'rgba(40,50,110,.55)':'rgba(255,170,120,.35)';g.fillRect(0,0,W,H);g.globalCompositeOperation='source-over'}g.drawImage(l,0,0);return gd(o)}
-const fillR=(g,W,H,gr)=>{g.fillStyle=gr;g.fillRect(0,0,W,H)};
-const BG={
-b_blur:()=>bgFx((g,s)=>g.drawImage(blurC(s,6+SB()*26),0,0)),
-b_bokeh:()=>bgFx((g,s,W,H)=>{g.drawImage(blurC(s,10+SB()*20),0,0);g.globalCompositeOperation='screen';for(let i=0;i<28;i++){g.beginPath();g.arc(Math.random()*W,Math.random()*H,Math.min(W,H)*(.02+Math.random()*.05),0,7);g.fillStyle=`rgba(255,${200+Math.random()*55|0},${150+Math.random()*80|0},${.08+Math.random()*.18})`;g.fill()}}),
-b_defocus:()=>bgFx((g,s)=>{const b=blurC(s,12+SB()*34);g.drawImage(b,0,0);g.globalCompositeOperation='screen';g.globalAlpha=.25;g.drawImage(b,0,0)}),
-b_color:()=>bgFx((g,s,W,H)=>{g.drawImage(s,0,0);g.globalCompositeOperation='color';g.globalAlpha=.35+SB()*.65;fillR(g,W,H,$('#bgc').value)}),
-b_desat:()=>bgFx((g,s,W,H)=>{g.drawImage(s,0,0);g.globalCompositeOperation='saturation';g.globalAlpha=.3+SB()*.7;fillR(g,W,H,'#808080')}),
-b_light:()=>bgFx((g,s,W,H)=>{g.drawImage(s,0,0);const a=+$('#bga').value*Math.PI/180,x=W/2+Math.cos(a)*W*.4,y=H/2-Math.sin(a)*H*.4,gr=g.createRadialGradient(x,y,0,x,y,Math.max(W,H)*.8);gr.addColorStop(0,`rgba(255,235,200,${.1+.6*SB()})`);gr.addColorStop(1,'rgba(255,235,200,0)');g.globalCompositeOperation='screen';fillR(g,W,H,gr)}),
-b_ext(){const W=base.width,H=base.height,p=Math.round(Math.min(W,H)*(.1+SB()*.5)),NW=W+2*p,NH=H+2*p,s=mk(base),c=cv2(NW,NH),g=c.getContext('2d');
-  const R=(sx,sy,dx,dy)=>{g.save();g.translate(dx,dy);g.scale(sx,sy);g.drawImage(s,0,0);g.restore()};
-  R(-1,1,p,p);R(-1,1,p+2*W,p);R(1,-1,p,p);R(1,-1,p,p+2*H);R(-1,-1,p,p);R(-1,-1,p+2*W,p);R(-1,-1,p,p+2*H);R(-1,-1,p+2*W,p+2*H);
-  const b=blurC(c,3),o=cv2(NW,NH),q=o.getContext('2d');q.drawImage(b,0,0);q.drawImage(s,p,p);mc=null;return gd(o)},
-b_remove:()=>FX.bg(),
-b_grad:()=>bgFx((g,s,W,H)=>{const a=+$('#bga').value*Math.PI/180,gr=g.createLinearGradient(W/2-Math.cos(a)*W/2,H/2+Math.sin(a)*H/2,W/2+Math.cos(a)*W/2,H/2-Math.sin(a)*H/2);gr.addColorStop(0,$('#bgc').value);gr.addColorStop(1,$('#bgc2').value);fillR(g,W,H,gr)}),
-b_studio:()=>bgFx((g,s,W,H)=>{fillR(g,W,H,$('#bgc').value);let gr=g.createRadialGradient(W/2,H*.4,0,W/2,H*.4,Math.max(W,H)*.7);gr.addColorStop(0,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,0)');fillR(g,W,H,gr);
-  gr=g.createRadialGradient(W/2,H/2,Math.min(W,H)*.3,W/2,H/2,Math.max(W,H)*.8);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,`rgba(0,0,0,${.35+SB()*.4})`);fillR(g,W,H,gr)}),
-b_sky:()=>skyFx('blue'),b_sunset:()=>skyFx('sunset'),b_night:()=>skyFx('night'),
-b_depth:()=>bgFx((g,s,W,H,m)=>{const k=SB(),T=[gd(s).data,...[blurC(s,5+k*8),blurC(s,12+k*18),blurC(s,24+k*36)].map(c=>gd(c).data)],D=gd(blurC(m,Math.max(12,W/18|0))).data,o=g.createImageData(W,H),od=o.data;
-  for(let i=0;i<W*H;i++){const t=Math.min(1,Math.max(0,(.5-D[i*4+3]/255)*2.4)),pos=t*3,lo=Math.min(2,pos|0),fr=pos-lo,j=i*4;for(let c=0;c<4;c++)od[j+c]=T[lo][j+c]*(1-fr)+T[lo+1][j+c]*fr}
-  g.putImageData(o,0,0)})
+/* ---------- Footer (auto-updating year) ---------- */
+$('copyright').textContent = '© Manik Roy ' + new Date().getFullYear() + '. All Rights Reserved.';
+
+/* ---------- Theme ---------- */
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  document.querySelectorAll('.themes button').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === t));
+  store.set('ocr-theme', t);
+}
+document.querySelectorAll('.themes button').forEach(b => b.onclick = () => setTheme(b.dataset.t));
+setTheme(store.get('ocr-theme', matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
+
+/* ---------- Image input ---------- */
+let current = null;
+function setImage(f) {
+  if (!f || !f.type.startsWith('image/')) return status('Please choose an image file.', 'err');
+  current = f;
+  const p = $('preview');
+  p.src = URL.createObjectURL(f);
+  p.style.display = 'block';
+  $('run').disabled = false;
+  status('Image ready: ' + f.name + ' (' + Math.round(f.size / 1024) + ' KB)');
+}
+function clearAll() {
+  current = null; results = {};
+  $('preview').style.display = 'none'; $('preview').removeAttribute('src');
+  $('run').disabled = true; $('out').hidden = true; $('file').value = ''; $('cam').value = '';
+  status('');
+}
+$('btnPick').onclick = () => $('file').click();
+$('btnCam').onclick = () => $('cam').click();
+$('btnClear').onclick = clearAll;
+$('drop').onclick = () => $('file').click();
+$('drop').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } };
+$('file').onchange = e => setImage(e.target.files[0]);
+$('cam').onchange = e => setImage(e.target.files[0]);
+['dragover', 'dragenter'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.remove('over'); }));
+$('drop').addEventListener('drop', e => setImage(e.dataTransfer.files[0]));
+document.addEventListener('paste', e => {
+  const it = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+  if (it) setImage(it.getAsFile());
+});
+
+/* ---------- UI helpers ---------- */
+function status(msg, cls) { const s = $('status'); s.textContent = msg; s.className = cls || ''; }
+function progress(p) { $('bar').style.display = p == null ? 'none' : 'block'; $('fill').style.width = (p || 0) + '%'; }
+
+/* ---------- Preprocessing ---------- */
+async function prepare(file, enhance) {
+  const bmp = await createImageBitmap(file);
+  const max = 2200, k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+  x.drawImage(bmp, 0, 0, c.width, c.height);
+  if (enhance) {
+    const d = x.getImageData(0, 0, c.width, c.height), p = d.data, f = 1.35;
+    for (let i = 0; i < p.length; i += 4) {
+      let g = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2];
+      g = Math.max(0, Math.min(255, (g - 128) * f + 128));
+      p[i] = p[i + 1] = p[i + 2] = g;
+    }
+    x.putImageData(d, 0, 0);
+  }
+  return new Promise(r => c.toBlob(b => r(new File([b], 'scan.png', { type: 'image/png' })), 'image/png'));
+}
+
+/* ---------- Engine: Tesseract (browser) ---------- */
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    if (window.Tesseract) return res();
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = () => rej(new Error('Could not load Tesseract.js (check connection)'));
+    document.head.appendChild(s);
+  });
+}
+async function runTesseract(img, onP) {
+  await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+  const r = await Tesseract.recognize(img, $('lang').value, {
+    logger: m => { if (m.status === 'recognizing text') onP(Math.round(m.progress * 100)); }
+  });
+  return { text: r.data.text.trim(), conf: Math.round(r.data.confidence) };
+}
+
+/* ---------- Shared ---------- */
+const ORT = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.3/dist/';
+const sel = () => $('lang').value.split('+')[0];
+function groupLines(bx) {            // bx: {x,y,w,h,t}
+  bx.sort((a, b) => (a.y + a.h / 2) - (b.y + b.h / 2));
+  const lines = [];
+  for (const b of bx) {
+    const cy = b.y + b.h / 2, L = lines.find(l => Math.abs(cy - l.cy) < 0.6 * l.h);
+    if (L) { L.items.push(b); L.cy = (L.cy * (L.items.length - 1) + cy) / L.items.length; L.h = Math.max(L.h, b.h); }
+    else lines.push({ cy, h: b.h, items: [b] });
+  }
+  return lines.sort((a, b) => a.cy - b.cy).map(l => l.items.sort((a, b) => a.x - b.x).map(i => i.t).join(' ')).join('\n');
+}
+
+/* ---------- Engine: PaddleOCR (PP-OCRv5 via PaddleOCR.js, in-browser) ---------- */
+const PLANG = { eng: 'en', fra: 'fr', deu: 'de', spa: 'es', chi_sim: 'ch', jpn: 'japan' };
+const paddle = {};
+async function runPaddle(img, onP) {
+  const lang = PLANG[sel()] || 'ch';
+  if (!paddle[lang]) {
+    status('Loading PaddleOCR engine & models (first run only)…');
+    const { PaddleOCR } = await import('@paddleocr/paddleocr-js');
+    const opts = { ocrVersion: 'PP-OCRv5', ortOptions: { backend: 'wasm', wasmPaths: ORT, numThreads: 1 } };
+    try { paddle[lang] = await PaddleOCR.create({ ...opts, lang }); }
+    catch (e) { if (lang === 'ch') throw e; paddle[lang] = await PaddleOCR.create({ ...opts, lang: 'ch' }); }
+  }
+  onP(40); status('Running PaddleOCR…');
+  const [res] = await paddle[lang].predict(img);
+  const pt = p => Array.isArray(p) ? p : [p.x, p.y];
+  const bx = [], sc = [];
+  for (const it of res.items || []) {
+    let poly = it.poly || []; if (typeof poly[0] === 'number') poly = poly.reduce((a, v, i) => (i % 2 ? a[a.length - 1].push(v) : a.push([v]), a), []);
+    const xs = poly.map(p => pt(p)[0]), ys = poly.map(p => pt(p)[1]);
+    const x = Math.min(...xs), y = Math.min(...ys);
+    bx.push({ x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y, t: it.text }); sc.push(it.score);
+  }
+  return { text: groupLines(bx), conf: sc.length ? (sc.reduce((a, b) => a + b, 0) / sc.length) * 100 : null };
+}
+
+/* ---------- Engine: EasyOCR (official CRAFT + CRNN models as ONNX, in-browser) ---------- */
+const EGROUP = { eng: 'english', spa: 'latin', fra: 'latin', deu: 'latin', ara: 'arabic', hin: 'devanagari', chi_sim: 'zh_sim', jpn: 'japanese' };
+const HF = 'https://huggingface.co/runemic-ai/easyocr-onnx/resolve/main/';
+const easy = {}; let ortP;
+function getOrt() {
+  return ortP || (ortP = import('onnxruntime-web').then(m => {
+    const o = m.InferenceSession ? m : m.default;
+    o.env.wasm.wasmPaths = ORT; o.env.wasm.numThreads = 1; return o;
+  }));
+}
+async function loadModel(ort, url, label) {
+  const r = await fetch(url); if (!r.ok) throw new Error('Download failed: ' + label);
+  const total = +r.headers.get('content-length') || 0, rd = r.body.getReader(), parts = []; let got = 0;
+  for (;;) {
+    const { done, value } = await rd.read(); if (done) break;
+    parts.push(value); got += value.length;
+    status('Downloading ' + label + ' ' + (total ? Math.round(got / total * 100) + '%' : (got / 1048576).toFixed(0) + ' MB'));
+  }
+  const buf = new Uint8Array(got); let o = 0; for (const p of parts) { buf.set(p, o); o += p.length; }
+  return ort.InferenceSession.create(buf, { executionProviders: ['wasm'] });
+}
+async function runEasy(img, onP) {
+  const grp = EGROUP[sel()] || 'english', ort = await getOrt();
+  if (!easy.craft) easy.craft = await loadModel(ort, HF + 'craft.onnx', 'EasyOCR detector');
+  if (!easy[grp]) {
+    const meta = await (await fetch(HF + 'rec_' + grp + '.json')).json();
+    easy[grp] = { meta, s: await loadModel(ort, HF + 'rec_' + grp + '.onnx', 'EasyOCR ' + grp + ' model') };
+  }
+  status('Running EasyOCR…'); onP(20);
+  const bmp = await createImageBitmap(img), k = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
+  const W = Math.max(64, Math.ceil(bmp.width * k / 32) * 32), H = Math.max(64, Math.ceil(bmp.height * k / 32) * 32);
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.fillStyle = 'rgb(124,116,104)'; x.fillRect(0, 0, W, H);
+  x.drawImage(bmp, 0, 0, Math.round(bmp.width * k), Math.round(bmp.height * k));
+  const px = x.getImageData(0, 0, W, H).data, inp = new Float32Array(3 * W * H), mean = [123.675, 116.28, 103.53], std = [58.395, 57.12, 57.375];
+  for (let i = 0; i < W * H; i++) for (let ch = 0; ch < 3; ch++) inp[ch * W * H + i] = (px[i * 4 + ch] - mean[ch]) / std[ch];
+  const dout = await easy.craft.run({ [easy.craft.inputNames[0]]: new ort.Tensor('float32', inp, [1, 3, H, W]) });
+  const sc = dout[easy.craft.outputNames[0]].data, w = W / 2, h = H / 2, N = w * h;
+  const T = i => sc[2 * i], Lk = i => sc[2 * i + 1], seen = new Uint8Array(N), boxes = [];
+  for (let s0 = 0; s0 < N; s0++) {                       // connected components over text|link maps
+    if (seen[s0] || !(T(s0) > 0.4 || Lk(s0) > 0.4)) continue;
+    const st = [s0]; seen[s0] = 1; let size = 0, mt = 0, x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
+    while (st.length) {
+      const i = st.pop(), cx = i % w, cy = (i / w) | 0; size++;
+      if (T(i) > mt) mt = T(i);
+      if (T(i) > 0.4) { if (cx < x0) x0 = cx; if (cx > x1) x1 = cx; if (cy < y0) y0 = cy; if (cy > y1) y1 = cy; }
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = cx + dx, ny = cy + dy; if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        const j = ny * w + nx; if (!seen[j] && (T(j) > 0.4 || Lk(j) > 0.4)) { seen[j] = 1; st.push(j); }
+      }
+    }
+    if (size < 10 || mt < 0.7 || x1 < 0) continue;
+    const bw = x1 - x0 + 1, bh = y1 - y0 + 1, pad = Math.floor(Math.sqrt(size * Math.min(bw, bh) / (bw * bh)) * 2);
+    boxes.push({ x: Math.max(0, x0 - pad) * 2 / k, y: Math.max(0, y0 - pad) * 2 / k, w: (bw + 2 * pad) * 2 / k, h: (bh + 2 * pad) * 2 / k });
+  }
+  const { meta, s } = easy[grp], chars = meta.characters, out = [], confs = [];
+  for (let n = 0; n < boxes.length; n++) {
+    onP(20 + 70 * n / boxes.length);
+    const b = boxes[n], mx = b.h * 0.1, bx = Math.max(0, b.x - mx), by = Math.max(0, b.y - 2);
+    const bw = Math.min(bmp.width - bx, b.w + 2 * mx), bh = Math.min(bmp.height - by, b.h + 4);
+    if (bw < 4 || bh < 4) continue;
+    const Wc = Math.min(1024, Math.max(32, Math.round(64 * bw / bh / 4) * 4)), rc = document.createElement('canvas');
+    rc.width = Wc; rc.height = 64;
+    const rx = rc.getContext('2d', { willReadFrequently: true });
+    rx.fillStyle = '#fff'; rx.fillRect(0, 0, Wc, 64); rx.drawImage(bmp, bx, by, bw, bh, 0, 0, Wc, 64);
+    const d = rx.getImageData(0, 0, Wc, 64).data, g = new Float32Array(Wc * 64);
+    for (let i = 0; i < g.length; i++) g[i] = (0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]) / 255 * 2 - 1;
+    const r = await s.run({ [s.inputNames[0]]: new ort.Tensor('float32', g, [1, 1, 64, Wc]) });
+    const lg = r[s.outputNames[0]], [, Tn, C] = lg.dims, ld = lg.data; let prev = 0, txt = '';
+    for (let t = 0; t < Tn; t++) {                       // greedy CTC decode
+      let best = 0, bv = -1e9, sum = 0;
+      for (let q = 0; q < C; q++) { const v = ld[t * C + q]; if (v > bv) { bv = v; best = q; } }
+      if (best !== 0 && best !== prev) {
+        for (let q = 0; q < C; q++) sum += Math.exp(ld[t * C + q] - bv);
+        confs.push(1 / sum); txt += chars[best] ?? '';
+      }
+      prev = best;
+    }
+    if (txt.trim()) out.push({ ...b, t: txt.trim() });
+  }
+  return { text: groupLines(out), conf: confs.length ? confs.reduce((a, b) => a + b, 0) / confs.length * 100 : null };
+}
+
+/* ---------- Run ---------- */
+let results = {}, active = null, imgs = {};
+$('run').onclick = async () => {
+  if (!current) return;
+  const jobs = [];
+  if ($('eT').checked) jobs.push(['Tesseract', (i, p) => runTesseract(imgs.enh, p)]);
+  if ($('eP').checked) jobs.push(['PaddleOCR', (i, p) => runPaddle(i, p)]);
+  if ($('eE').checked) jobs.push(['EasyOCR', (i, p) => runEasy(i, p)]);
+  if (!jobs.length) return status('Select at least one engine.', 'err');
+
+  $('run').disabled = true; results = {}; progress(0);
+  try {
+    status('Preparing image…');
+    const img = await prepare(current, false);
+    imgs = { plain: img, enh: $('enh').checked ? await prepare(current, true) : img };
+    let done = 0;
+    for (const [name, fn] of jobs) {
+      status('Running ' + name + ' (' + (done + 1) + '/' + jobs.length + ')…');
+      const t0 = performance.now();
+      try {
+        const r = await fn(img, p => progress(((done + p / 100) / jobs.length) * 100));
+        results[name] = { ...r, ms: Math.round(performance.now() - t0) };
+      } catch (e) {
+        results[name] = { text: '', error: e.message || String(e), ms: Math.round(performance.now() - t0) };
+      }
+      progress(((++done) / jobs.length) * 100);
+    }
+    const okCount = Object.values(results).filter(r => !r.error).length;
+    status(okCount + ' of ' + jobs.length + ' engine(s) finished.', okCount ? 'ok' : 'err');
+    showResults();
+  } catch (e) {
+    status('Error: ' + e.message, 'err');
+  } finally {
+    $('run').disabled = false;
+    setTimeout(() => progress(null), 600);
+  }
 };
-$('#bggrid').innerHTML=[['b_replace','Background Replacement'],['b_blur','Background Blur'],['b_bokeh','Portrait Bokeh'],['b_defocus','Background Defocus'],['b_color','Background Color Change'],['b_desat','Background Desaturation'],['b_light','Background Relighting'],['b_ext','Background Extension'],['b_remove','Background Removal'],['b_grad','Gradient Background'],['b_studio','Studio Backdrop'],['b_sky','Sky Replacement'],['b_sunset','Sunset Sky'],['b_night','Starry Night Sky'],['b_depth','Depth-Based Blur']].map(([k,l])=>`<button class="btn" data-x="${k}">${l}</button>`).join('');
-$('#bggrid').onclick=async e=>{const k=e.target.dataset.x;if(!k)return;if(!base){toast('Open a photo first');return}endCrop();if(liq)liquifyOn();if(k==='b_replace'){$('#file3').click();return}
-  toast('Working…');await new Promise(r=>setTimeout(r,30));try{const r=await BG[k]();if(r){commit(r);toast('Done')}}catch(err){toast('Effect failed')}};
-$('#file3').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const u=URL.createObjectURL(f),i=new Image();
-  i.onload=()=>{URL.revokeObjectURL(u);toast('Working…');bgFx((g,s,W,H)=>{const k=Math.max(W/i.width,H/i.height);g.drawImage(i,(W-i.width*k)/2,(H-i.height*k)/2,i.width*k,i.height*k)}).then(r=>{commit(r);toast('Done')}).catch(()=>toast('Effect failed'))};i.src=u};
-$('#bgrst').onclick=()=>{fxUndo();$('#bgs').value=50;$('#bgo').textContent=50;$('#bga').value=0;$('#bgao').textContent=0;$('#bgc').value='#3b82f6';$('#bgc2').value='#f472b6';toast('Effects reset')};
-$('#p-bg').addEventListener('input',e=>{if(e.target.id==='bgs')$('#bgo').textContent=e.target.value;if(e.target.id==='bga')$('#bgao').textContent=e.target.value});
 
-/* ---------- face ---------- */
-const AF=()=>+$('#faa').value,SF=()=>+$('#fas').value/100,S2=()=>Math.min(1,SF()*2);
-let fmP=null;
-async function fmLoad(){if(fmP)return fmP;const B='https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/';
-  fmP=(async()=>{await timeout(loadScript(B+'face_mesh.js'),30000);const f=new window.FaceMesh({locateFile:n=>B+n});f.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:.4});await timeout(f.initialize(),60000);return f})().catch(()=>null);return fmP}
-async function faceLM(img){const f=await fmLoad();if(!f)return null;try{return await timeout(new Promise((ok,no)=>{f.onResults(r=>ok(r.multiFaceLandmarks&&r.multiFaceLandmarks[0]||null));f.send({image:img}).catch(no)}),30000)}catch(e){return null}}
-async function face(){const L=await faceLM(mk(base));if(!L){toast('No face found, or the face model could not load');return null}
-  const W=base.width,H=base.height,P=i=>({x:L[i].x*W,y:L[i].y*H}),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);return{L,W,H,P,dist,fw:dist(P(234),P(454)),fh:dist(P(10),P(152))}}
-function warp(pts){const W=base.width,H=base.height,o=cp(base),sd=base.data,d=o.data;let x0=W,y0=H,x1=0,y1=0;
-  pts.forEach(p=>{x0=Math.min(x0,p.x-p.r);y0=Math.min(y0,p.y-p.r);x1=Math.max(x1,p.x+p.r);y1=Math.max(y1,p.y+p.r)});
-  x0=Math.max(0,x0|0);y0=Math.max(0,y0|0);x1=Math.min(W-1,Math.ceil(x1));y1=Math.min(H-1,Math.ceil(y1));
-  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){let ux=0,uy=0;for(const p of pts){const dx=x-p.x,dy=y-p.y,q=(dx*dx+dy*dy)/(p.r*p.r);if(q<1){const f=(1-q)*(1-q);ux+=p.dx*f;uy+=p.dy*f}}
-    if(!ux&&!uy)continue;const sx=Math.min(W-1.001,Math.max(0,x-ux)),sy=Math.min(H-1.001,Math.max(0,y-uy)),ix=sx|0,iy=sy|0,fx=sx-ix,fy=sy-iy,i=(iy*W+ix)*4,j=i+W*4,k=(y*W+x)*4;
-    for(let c=0;c<4;c++)d[k+c]=(sd[i+c]*(1-fx)+sd[i+4+c]*fx)*(1-fy)+(sd[j+c]*(1-fx)+sd[j+4+c]*fx)*fy}
-  return o}
-const OV=[10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
-function oval(f,fe){const m=cv2(f.W,f.H),g=m.getContext('2d');g.beginPath();OV.forEach((i,k)=>{const p=f.P(i);k?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y)});g.closePath();g.fillStyle='#000';g.fill();return blurC(m,Math.max(2,fe|0))}
-async function turn(sg){const f=await face();if(!f)return null;const{P,fw}=f,s=SF()*2*.12*fw*sg,r=fw*.7,pts=[1,168,6].map(i=>({...P(i),dx:s,dy:0,r}));
-  [33,263,159,386,145,374,61,291,13,14].forEach(i=>pts.push({...P(i),dx:s*.8,dy:0,r:fw*.4}));
-  const far=Math.abs(s)*.9,near=Math.abs(s)*.4;if(sg>0)pts.push({...P(454),dx:-far,dy:0,r:fw*.4},{...P(234),dx:-near,dy:0,r:fw*.4});else pts.push({...P(234),dx:far,dy:0,r:fw*.4},{...P(454),dx:near,dy:0,r:fw*.4});
-  return warp(pts)}
-async function roll(chin){const f=await face();if(!f)return null;const{P,W,H}=f,c=chin?P(152):P(1),a=AF()*S2()*Math.PI/180,s=mk(base),t=cv2(W,H),g=t.getContext('2d');
-  g.translate(c.x,c.y);g.rotate(a);g.translate(-c.x,-c.y);g.drawImage(s,0,0);g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='destination-in';
-  const m={x:(P(10).x+P(152).x)/2,y:(P(10).y+P(152).y)/2},R=f.fh*.8,gr=g.createRadialGradient(m.x,m.y,R*.55,m.x,m.y,R);gr.addColorStop(0,'#000');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,W,H);
-  const o=mk(base),q=o.getContext('2d');q.drawImage(t,0,0);return gd(o)}
-async function gaze(contact){const f=await face();if(!f)return null;const{P,dist}=f,pts=[];
-  [[468,33,133],[473,362,263]].forEach(([ic,a,b])=>{const I=P(ic),A=P(a),B=P(b),cx=(A.x+B.x)/2,cy=(A.y+B.y)/2,ew=dist(A,B);
-    pts.push({x:I.x,y:I.y,dx:contact?(cx-I.x)*S2():AF()/30*ew*.22*S2()*2,dy:contact?(cy-I.y)*S2():0,r:ew*.32})});
-  return warp(pts)}
-async function expr(k){const f=await face();if(!f)return null;const{P,dist,fh}=f,s=S2(),A=P(61),B=P(291),mw=dist(A,B),sg=AF()<0?-1:1,pts=[];
-  if(k==='smile')pts.push({...A,dx:-mw*.05*s,dy:-mw*.14*s,r:mw*.45},{...B,dx:mw*.05*s,dy:-mw*.14*s,r:mw*.45},{...P(205),dx:0,dy:-mw*.04*s,r:mw*.4},{...P(425),dx:0,dy:-mw*.04*s,r:mw*.4});
-  else if(k==='brow')[105,66,334,296].forEach(i=>pts.push({...P(i),dx:0,dy:-fh*.07*s*sg,r:fh*.2}));
-  else if(sg>0)pts.push({...P(14),dx:0,dy:mw*.3*s,r:mw*.5},{...P(13),dx:0,dy:-mw*.06*s,r:mw*.35});
-  else pts.push({...A,dx:mw*.03*s,dy:mw*.14*s,r:mw*.4},{...B,dx:-mw*.03*s,dy:mw*.14*s,r:mw*.4});
-  return warp(pts)}
-async function xfer(img){const f=await face();if(!f)return null;const L2=await faceLM(img);if(!L2){toast('No face found in the second photo');return null}
-  const{L,W,H,P,dist}=f,w2=img.width,h2=img.height,Q=i=>({x:L2[i].x*w2,y:L2[i].y*h2}),k=f.fw/dist(Q(234),Q(454)),c1=P(168),c2=Q(168),pts=[];
-  [61,291,13,14,17,0,78,308,105,334,66,296,107,336,159,145,386,374].forEach(i=>{const a=P(i),b=Q(i),tx=c1.x+(b.x-c2.x)*k,ty=c1.y+(b.y-c2.y)*k;pts.push({...a,dx:(tx-a.x)*S2(),dy:(ty-a.y)*S2(),r:f.fw*.12})});
-  return warp(pts)}
-const FA={
-fa_rev(){geo('fh');return null},fa_l2r:()=>turn(1),fa_r2l:()=>turn(-1),fa_tilt:()=>roll(true),fa_rot:()=>roll(false),fa_dir:()=>turn(AF()<0?-1:1),
-fa_gaze:()=>gaze(false),fa_contact:()=>gaze(true),fa_smile:()=>expr('smile'),fa_brow:()=>expr('brow'),fa_mouth:()=>expr('mouth'),
-async fa_blink(){const f=await face();if(!f)return null;const{P,dist,W,H}=f,c=mk(base),g=c.getContext('2d'),s=S2();
-  [[33,7,163,144,145,153,154,155,133,173,157,158,159,160,161,246],[362,382,381,380,374,373,390,249,263,466,388,387,386,385,384,398]].forEach(poly=>{
-    const pts=poly.map(P),eh=dist(P(poly[12]),P(poly[4])),t=P(poly[12]),px=g.getImageData(Math.min(W-1,t.x|0),Math.max(0,(t.y-eh*.8)|0),1,1).data,col=`rgb(${px[0]},${px[1]},${px[2]})`;
-    g.save();g.beginPath();pts.forEach((q,i)=>i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y));g.closePath();g.shadowColor=col;g.shadowBlur=eh*.5;g.fillStyle=col;g.globalAlpha=Math.min(1,s);g.fill();g.restore();
-    g.save();g.beginPath();[0,1,2,3,4,5,6,7,8].forEach((i,k)=>k?g.lineTo(pts[i].x,pts[i].y):g.moveTo(pts[i].x,pts[i].y));g.strokeStyle='rgba(30,20,20,.55)';g.lineWidth=Math.max(1.5,eh*.12);g.globalAlpha=Math.min(1,s);g.stroke();g.restore()});
-  return gd(c)},
-async fa_sym(){const f=await face();if(!f)return null;const{P,W,H}=f,ax=(P(10).x+P(168).x+P(1).x+P(152).x)/4,s=mk(base),mir=cv2(W,H),q=mir.getContext('2d');
-  q.translate(2*ax,0);q.scale(-1,1);q.drawImage(s,0,0);q.setTransform(1,0,0,1,0,0);q.globalCompositeOperation='destination-in';q.drawImage(oval(f,f.fw/12),0,0);
-  const o=mk(base),g=o.getContext('2d');g.globalAlpha=.5*S2();g.drawImage(mir,0,0);return gd(o)},
-async fa_depth(){const f=await face();if(!f)return null;const{L,W,H,fw,fh}=f,xs=L.map(p=>p.x*W),ys=L.map(p=>p.y*H),zs=L.map(p=>-p.z*W),
-  x0=Math.max(0,Math.min(...xs)-fw*.1),x1=Math.min(W,Math.max(...xs)+fw*.1),y0=Math.max(0,Math.min(...ys)-fh*.1),y1=Math.min(H,Math.max(...ys)+fh*.1),G=4,gw=Math.ceil((x1-x0)/G),gh=Math.ceil((y1-y0)/G),Z=new Float32Array(gw*gh);
-  for(let j=0;j<gh;j++)for(let i=0;i<gw;i++){const x=x0+i*G,y=y0+j*G;let a=0,b=0;for(let k=0;k<L.length;k+=2){const dx=x-xs[k],dy=y-ys[k],w=1/(dx*dx+dy*dy+G*G*4);a+=w*zs[k];b+=w}Z[j*gw+i]=a/b}
-  const an=(AF()+30)/60*Math.PI,lx=Math.cos(an),ly=-Math.sin(an),sm=cv2(gw,gh),sg=sm.getContext('2d'),im=sg.createImageData(gw,gh);
-  for(let j=1;j<gh-1;j++)for(let i=1;i<gw-1;i++){const gx=(Z[j*gw+i+1]-Z[j*gw+i-1])/(2*G),gy=(Z[(j+1)*gw+i]-Z[(j-1)*gw+i])/(2*G),v=128+255*Math.max(-.5,Math.min(.5,-(gx*lx+gy*ly)*1.4*S2())),k=(j*gw+i)*4;im.data[k]=im.data[k+1]=im.data[k+2]=v;im.data[k+3]=255}
-  sg.putImageData(im,0,0);const lay=cv2(W,H),lg=lay.getContext('2d');lg.imageSmoothingQuality='high';lg.drawImage(sm,x0,y0,gw*G,gh*G);lg.globalCompositeOperation='destination-in';lg.drawImage(oval(f,fw/12),0,0);
-  const o=mk(base),g=o.getContext('2d');g.globalCompositeOperation='soft-light';g.drawImage(lay,0,0);g.drawImage(lay,0,0);return gd(o)}
+/* ---------- Results ---------- */
+function showResults() {
+  const names = Object.keys(results);
+  $('out').hidden = !names.length;
+  const tabs = $('tabs'); tabs.innerHTML = '';
+  names.forEach(n => {
+    const b = document.createElement('button');
+    b.textContent = n + (results[n].error ? ' ⚠' : '');
+    b.setAttribute('role', 'tab');
+    b.onclick = () => select(n);
+    tabs.appendChild(b);
+  });
+  const best = names.find(n => !results[n].error && results[n].text) || names[0];
+  if (best) select(best);
+}
+function select(n) {
+  active = n;
+  [...$('tabs').children].forEach(b => b.setAttribute('aria-selected', b.textContent.startsWith(n)));
+  const r = results[n];
+  $('txt').value = r.error ? '' : (r.text || '(No text detected)');
+  $('meta').className = 'meta' + (r.error ? ' err' : '');
+  $('meta').textContent = r.error
+    ? n + ' failed: ' + r.error
+    : n + ' · ' + (r.text ? r.text.split(/\s+/).length : 0) + ' words · ' + (r.ms / 1000).toFixed(1) + 's' +
+      (r.conf != null ? ' · confidence ' + r.conf + '%' : '');
+}
+$('copy').onclick = async () => {
+  try { await navigator.clipboard.writeText($('txt').value); }
+  catch (e) { $('txt').select(); document.execCommand('copy'); }
+  status('Copied to clipboard.', 'ok');
 };
-$('#fagrid').innerHTML=[['fa_rev','Reverse Head Movement'],['fa_l2r','Left-to-Right Head Turn'],['fa_r2l','Right-to-Left Head Turn'],['fa_tilt','Head Tilt'],['fa_rot','Face Rotation'],['fa_dir','Face Direction Changer'],['fa_gaze','Eye Gaze Direction'],['fa_contact','Eye Contact Correction'],['fa_smile','Smile'],['fa_brow','Eyebrow Movement'],['fa_mouth','Mouth Expression Change'],['fa_blink','Blink Effect'],['fa_sym','Face Symmetry Adjustment'],['fa_xfer','Facial Expression Transfer'],['fa_depth','Portrait Depth Reconstruction']].map(([k,l])=>`<button class="btn" data-x="${k}">${l}</button>`).join('');
-$('#fagrid').onclick=async e=>{const k=e.target.dataset.x;if(!k)return;if(!base){toast('Open a photo first');return}endCrop();if(liq)liquifyOn();if(k==='fa_xfer'){toast('Choose a photo with the expression to copy');$('#file4').click();return}
-  toast('Working\u2026');await new Promise(r=>setTimeout(r,30));try{const r=await FA[k]();if(r){commit(r);toast('Done')}}catch(err){toast('Effect failed')}};
-$('#file4').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const u=URL.createObjectURL(f),i=new Image();
-  i.onload=async()=>{URL.revokeObjectURL(u);toast('Working\u2026');try{const r=await xfer(i);if(r){commit(r);toast('Done')}}catch(err){toast('Effect failed')}};i.src=u};
-$('#farst').onclick=()=>{fxUndo();$('#fas').value=50;$('#fso').textContent=50;$('#faa').value=10;$('#fao').textContent=10;toast('Face effects reset')};
-$('#p-face').addEventListener('input',e=>{if(e.target.id==='fas')$('#fso').textContent=e.target.value;if(e.target.id==='faa')$('#fao').textContent=e.target.value});
-
-/* ---------- UI ---------- */
-const SL=[['b','Brightness',-100,100],['c','Contrast',-60,100],['s','Saturation',-100,100],['blur','Blur',0,10],['sharp','Sharpen',0,100],['denoise','Denoise',0,50]];
-$('#p-adj').innerHTML=SL.map(([k,l,a,b])=>`<div class="row"><label for="s-${k}">${l}</label><input id="s-${k}" data-k="${k}" type="range" min="${a}" max="${b}" value="0"><output id="o-${k}">0</output></div>`).join('')+
- '<div class="grid" style="margin-top:8px"><button class="btn" id="rst">Reset</button><button class="btn pri" id="bake">Apply edits</button></div>';
-$('#p-adj').oninput=e=>{const k=e.target.dataset.k;if(!k)return;adj[k]=+e.target.value;$('#o-'+k).textContent=e.target.value;render()};
-function resetSliders(){Object.keys(adj).forEach(k=>{adj[k]=0;$('#s-'+k).value=0;$('#o-'+k).textContent=0})}
-function resetAdj(){resetSliders();setPreset('none')}
-function setPreset(p){preset=p;$$('#fgrid .btn').forEach(b=>b.classList.toggle('on',b.dataset.f===p))}
-$('#fgrid').innerHTML=[['none','Original'],['bw','B&W'],['sepia','Sepia'],['vivid','Vivid'],['warm','Warm'],['cool','Cool'],['edges','Edges']].map(([k,l])=>`<button class="btn" data-f="${k}">${l}</button>`).join('');
-$('#fgrid').onclick=e=>{if(e.target.dataset.f){push();setPreset(e.target.dataset.f);render()}};
-$('#frst').onclick=()=>{push();setPreset('none');render()};
-$('#tgrid').innerHTML=[['r270','⟲ Rotate left'],['r90','⟳ Rotate right'],['fh','↔ Reverse Head Movement'],['fv','⇅ Flip V'],['crop','✂ Crop'],['sq','Square crop'],['half','Half size'],['undo','Undo'],['reset','Reset'],['open','Open photo']].map(([k,l])=>`<button class="btn" data-o="${k}">${l}</button>`).join('');
-$('#tgrid').onclick=e=>{const o=e.target.dataset.o;if(!o)return;if(o!=='crop')endCrop();
-  if(o==='undo'){undo();}
-  else if(o==='reset'){if(liq)liquifyOn();if(orig){push();base=orig;mc=null;fxSnap=null;resetAdj();render()}}
-  else if(o==='open')$('#file').click();else if(o==='crop')startCrop();else geo(o)};
-let adjDirty=false;
-$('#p-adj').addEventListener('input',e=>{if(e.target.dataset.k&&!adjDirty){push();adjDirty=true}},true);
-$('#p-adj').addEventListener('change',()=>{adjDirty=false});
-$('#p-adj').addEventListener('click',e=>{if(e.target.id==='rst'){push();resetSliders();render()}if(e.target.id==='bake')bake()});
-$('#openBtn').onclick=()=>$('#file').click();
-$('#file').onchange=e=>openFile(e.target.files[0]);
-document.addEventListener('dragover',e=>e.preventDefault());
-document.addEventListener('drop',e=>{e.preventDefault();openFile(e.dataTransfer.files[0])});
-$('#tabs').onclick=e=>{const p=e.target.dataset.p;if(!p)return;$$('#tabs button').forEach(b=>b.classList.toggle('on',b===e.target));$$('.panel[id^=p-]').forEach(x=>x.hidden=x.id!=='p-'+p)};
-$('#q').oninput=e=>$('#qo').textContent=e.target.value;
-function flat(){const c=cv2(cvEl.width,cvEl.height),g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(cvEl,0,0);return c}
-function save(share){
-  if(!base)return;const f=$('#fmt').value,q=$('#q').value/100;
-  (f==='image/jpeg'?flat():cvEl).toBlob(async b=>{const file=new File([b],'lumori.'+f.split('/')[1],{type:f});
-    if(share){if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]})}catch(e){}}else toast('Sharing not supported here');return}
-    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('Downloaded')},f,q)}
-$('#save').onclick=()=>save(false);$('#share').onclick=()=>save(true);
-
-$('#undoBtn').onclick=undo;$('#redoBtn').onclick=redo;
-document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||/INPUT|SELECT/.test(e.target.tagName)&&e.target.type!=='range')return;const k=e.key.toLowerCase();if(k==='z'){e.preventDefault();e.shiftKey?redo():undo()}else if(k==='y'){e.preventDefault();redo()}});
-initCK();initVips();
+$('dl').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([$('txt').value], { type: 'text/plain' }));
+  a.download = 'ocr-' + (active || 'result').toLowerCase() + '.txt';
+  a.click(); URL.revokeObjectURL(a.href);
+};
 </script>
 </body>
 </html>
