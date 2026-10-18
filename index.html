@@ -84,6 +84,12 @@ footer{margin-top:auto;min-height:110px;padding:16px 16px calc(16px + env(safe-a
   <p class="hint">Your own receiver, read from its aircraft.json. It must allow CORS and be reachable from this device.</p>
 </div>
 
+<details id="pxbox" class="hint">
+  <summary>Feed blocked? Use your own proxy</summary>
+  <div class="row" style="padding:6px 0"><input id="px" type="url" placeholder="https://your-worker.workers.dev/?url=" aria-label="CORS proxy URL"><button class="b" id="pxs" type="button">Save</button></div>
+  <p>A free Cloudflare Worker that forwards the request and adds Access-Control-Allow-Origin: * works best.</p>
+</details>
+
 <form class="row" id="sf">
   <input id="q" placeholder="Callsign or hex" aria-label="Find aircraft" autocomplete="off" autocapitalize="characters">
   <button class="b">Find</button>
@@ -156,12 +162,32 @@ function setSrc(s){
   S.src=s;LS.set('rd.src',s);S.rx=null;S.rxTried=null;S.q='';S.mode='point';S.ac=[];
   $('#q').value='';$('#mil').setAttribute('aria-pressed','false');
   $$('#src button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===s));
-  const loc=s!=='adsblol';$('#local').hidden=!loc;$('#mil').hidden=loc;
+  const loc=s!=='adsblol';$('#local').hidden=!loc;$('#mil').hidden=loc;$('#pxbox').hidden=loc;
   $('#url').value=S.urls[s]||'';$('#url').placeholder=PH[s]||'';
   draw();load();
 }
 
-/* Data */
+/* Data: api.adsb.lol sends no CORS headers for arbitrary origins, so try direct, then your own proxy, then public proxies */
+const PX=[u=>'https://corsproxy.io/?url='+encodeURIComponent(u),u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)];
+async function getJSON(url,remote){
+  const cu=LS.get('rd.proxy',''),c=[];
+  if(remote&&cu)c.push({id:'c',u:cu.includes('{url}')?cu.replace('{url}',encodeURIComponent(url)):cu+encodeURIComponent(url)});
+  c.push({id:'d',u:url});
+  if(remote)PX.forEach((f,i)=>c.push({id:'p'+i,u:f(url)}));
+  c.sort((a,b)=>(b.id===S.ok)-(a.id===S.ok));
+  let err;
+  for(const x of c){
+    try{
+      const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),9000);
+      const r=await fetch(x.u,{cache:'no-store',signal:ctl.signal});clearTimeout(t);
+      if(!r.ok)throw Error('HTTP '+r.status);
+      const j=await r.json();
+      if(remote)S.ok=x.id;
+      return j;
+    }catch(e){err=e}
+  }
+  throw err;
+}
 async function load(){
   if(S.busy)return;S.busy=true;
   try{
@@ -174,9 +200,7 @@ async function load(){
       if(!url){stat('Enter your receiver URL','warn');return}
       if(location.protocol==='https:'&&/^http:\/\//i.test(url)&&!/\/\/(localhost|127\.)/.test(url)){stat('https pages cannot read http receivers','warn');return}
     }
-    const r=await fetch(url,{cache:'no-store'});
-    if(!r.ok)throw Error('HTTP '+r.status);
-    const j=await r.json();
+    const j=await getJSON(url,S.src==='adsblol');
     if(S.src!=='adsblol'&&S.rxTried!==url){
       S.rxTried=url;
       fetch(url.replace(/aircraft\.json.*$/,'receiver.json')).then(x=>x.json()).then(x=>{if(typeof x.lat==='number'){S.rx=[x.lat,x.lon];map.setView(S.rx,8)}}).catch(()=>{});
@@ -185,7 +209,10 @@ async function load(){
     stat(S.ac.length+' aircraft');
     draw();
     if(S.fit){S.fit=false;if(S.ac.length)map.fitBounds(S.ac.map(a=>[a.lat,a.lon]),{maxZoom:9,padding:[30,30]})}
-  }catch(e){stat('Feed unavailable: '+e.message,'warn')}
+  }catch(e){
+    if(S.src==='adsblol'){stat('Feed blocked by CORS or network','warn');$('#pxbox').open=true}
+    else stat('Feed unavailable: '+e.message,'warn');
+  }
   finally{S.busy=false}
 }
 
@@ -245,6 +272,8 @@ function pick(h){
 $('#themes').onclick=e=>{const t=e.target.dataset.t;if(t)setTheme(t)};
 $('#src').onclick=e=>{const s=e.target.dataset.s;if(s&&s!==S.src)setSrc(s)};
 $('#un').onclick=()=>setUn(S.un==='av'?'mt':'av');
+$('#px').value=LS.get('rd.proxy','');
+$('#pxs').onclick=()=>{LS.set('rd.proxy',$('#px').value.trim());S.ok=null;load()};
 $('#list').onclick=e=>{const b=e.target.closest('button');if(b)pick(b.dataset.h)};
 $('#sheet').onclick=e=>{if(e.target.id==='x'){S.sel=null;draw()}};
 $('#conn').onclick=()=>{S.urls[S.src]=$('#url').value.trim();LS.set('rd.urls',S.urls);S.rx=null;S.rxTried=null;S.fit=true;S.ac=[];load()};
