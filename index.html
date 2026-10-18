@@ -2,419 +2,272 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Article Writer – Local AI</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Article Studio</title>
 <style>
-:root{--bg:#1e1e1e;--panel:#252526;--panel2:#2d2d30;--text:#d4d4d4;--muted:#9da0a6;--accent:#569cd6;--accent-t:#0b1a2a;--ok:#4ec9b0;--bad:#f48771;--border:#3c3c3c;--radius:12px}
-[data-theme=light]{--bg:#ffffff;--panel:#f3f3f3;--panel2:#e8e8e8;--text:#1f1f1f;--muted:#616161;--accent:#0066b8;--accent-t:#ffffff;--ok:#107c10;--bad:#c42b1c;--border:#cfcfcf}
-[data-theme=oled]{--bg:#000;--panel:#0a0a0a;--panel2:#141414;--text:#e6e6e6;--muted:#8a8a8a;--accent:#4fc1ff;--accent-t:#000;--ok:#4ec9b0;--bad:#f48771;--border:#222}
-[data-theme=hc]{--bg:#000;--panel:#000;--panel2:#000;--text:#fff;--muted:#fff;--accent:#ffff00;--accent-t:#000;--ok:#00ff00;--bad:#ff5050;--border:#fff}
+:root{--bg:#1e1e1e;--sf:#252526;--sf2:#2d2d30;--tx:#d4d4d4;--mu:#9da0a6;--ac:#569cd6;--on:#101010;--bd:#3c3c3c;--ok:#6a9955;--er:#f48771;--bw:1px;--r:10px}
+[data-theme=light]{--bg:#ffffff;--sf:#f3f3f3;--sf2:#e8e8e8;--tx:#1f1f1f;--mu:#5c5f66;--ac:#0066b8;--on:#ffffff;--bd:#cfcfcf;--ok:#107c10;--er:#c4314b}
+[data-theme=oled]{--bg:#000;--sf:#0a0a0a;--sf2:#141414;--tx:#e6e6e6;--mu:#8b8f96;--ac:#4fc1ff;--on:#000;--bd:#222;--ok:#7ec269;--er:#ff8a78}
+[data-theme=hc]{--bg:#000;--sf:#000;--sf2:#000;--tx:#fff;--mu:#fff;--ac:#ffff00;--on:#000;--bd:#fff;--ok:#00ff00;--er:#ff6b6b;--bw:2px}
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;color-scheme:dark}
-[data-theme=light]{color-scheme:light}
-body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
-header{position:sticky;top:0;z-index:10;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:10px 12px}
-header h1{font-size:1.05rem;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-main{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:12px;display:grid;gap:12px;grid-template-columns:1fr}
-section{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;min-width:0}
-h2{font-size:.95rem;margin:0 0 10px;color:var(--accent)}
-label{display:block;font-size:.8rem;color:var(--muted);margin:10px 0 4px}
-input,select,textarea,button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;width:100%;min-height:44px}
-textarea{resize:vertical;min-height:70px}
-input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-button{cursor:pointer;width:auto;font-weight:600}
-button.primary{background:var(--accent);color:var(--accent-t);border-color:var(--accent)}
-button:disabled{opacity:.5;cursor:not-allowed}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.btns button{flex:1 1 120px}
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:var(--panel2);border:1px solid var(--border);cursor:pointer;font-size:.85rem;min-height:44px}
-.chip.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
-.dot{width:10px;height:10px;border-radius:50%;background:var(--bad);flex:none}
-.dot.on{background:var(--ok)}
-.hint{font-size:.78rem;color:var(--muted);margin-top:8px}
-#status{font-size:.82rem;color:var(--muted);margin-top:8px;min-height:1.2em}
-#article{min-height:200px;overflow-wrap:anywhere}
-#article h1,#article h2,#article h3{color:var(--accent);line-height:1.25;margin:1.1em 0 .4em}
-#article h1{font-size:1.5rem;margin-top:.2em}
-#article pre{background:var(--panel2);padding:10px;border-radius:8px;overflow-x:auto}
-#article code{background:var(--panel2);padding:1px 5px;border-radius:4px}
-#article blockquote{margin:.8em 0;padding-left:12px;border-left:3px solid var(--accent);color:var(--muted)}
-.meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:.8rem;color:var(--muted);margin-bottom:8px}
-.cur::after{content:"▍";color:var(--accent);animation:b 1s steps(2) infinite}
-@keyframes b{50%{opacity:0}}
-.hist{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
-.hist span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
-.hist button{min-height:36px;padding:4px 10px}
-details summary{cursor:pointer;color:var(--accent);min-height:32px}
-footer{background:var(--panel);border-top:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;font-size:.85rem;color:var(--muted)}
-@media(min-width:860px){main{grid-template-columns:380px 1fr}.wide{grid-column:1/-1}}
-@media(prefers-reduced-motion:reduce){.cur::after{animation:none}}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+header,main,footer{width:100%;max-width:880px;margin:0 auto;padding:0 14px}
+header{padding-top:16px}
+h1{font:700 1.5rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mu);margin:0 0 12px;font-size:.92rem}
+.themes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+button,select,input,textarea{font:inherit;color:var(--tx)}
+.themes button,.btn,.sm{min-height:44px;border:var(--bw) solid var(--bd);background:var(--sf);border-radius:var(--r);cursor:pointer;padding:0 10px}
+.themes button[aria-pressed=true]{background:var(--ac);color:var(--on);border-color:var(--ac);font-weight:700}
+main{flex:1;padding-top:14px;padding-bottom:18px;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--sf);border:var(--bw) solid var(--bd);border-radius:var(--r);padding:14px}
+.grid{display:grid;gap:12px;grid-template-columns:1fr}
+label{display:flex;flex-direction:column;gap:4px;font-size:.88rem;color:var(--mu)}
+input,select,textarea{width:100%;min-height:44px;padding:9px 11px;background:var(--bg);border:var(--bw) solid var(--bd);border-radius:8px;font-size:16px}
+textarea{resize:vertical;min-height:84px}
+.btn{background:var(--ac);color:var(--on);border-color:var(--ac);font-weight:700;width:100%;margin-top:12px}
+.btn.stop{background:var(--er);border-color:var(--er)}
+.sm{background:var(--sf2);color:var(--tx)}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+[data-theme=hc] :focus-visible{outline-color:#fff}
+[data-theme=hc] a{text-decoration:underline}
+.hint{font-size:.8rem;color:var(--mu);margin:8px 0 0}
+.eng{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:0;padding:0;border:0}
+.eng label{flex-direction:row;align-items:center;gap:8px;min-height:44px;padding:0 10px;border:var(--bw) solid var(--bd);border-radius:8px;color:var(--tx);background:var(--bg);cursor:pointer}
+.eng input{width:18px;min-height:0;accent-color:var(--ac)}
+.eng .wide{grid-column:1/-1}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px;padding:0;list-style:none}
+.steps li{flex:1 1 90px;padding:8px;border:var(--bw) solid var(--bd);border-radius:8px;font-size:.82rem;color:var(--mu)}
+.steps li b{display:block;color:var(--tx)}
+.steps li.run{border-color:var(--ac);color:var(--tx)}
+.steps li.done{border-color:var(--ok)}
+.steps li.err{border-color:var(--er)}
+#log{margin:0;padding:0;list-style:none;font:.8rem/1.6 ui-monospace,Consolas,monospace;color:var(--mu);max-height:150px;overflow:auto}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.bar span{flex:1 1 100%;font-size:.85rem;color:var(--mu)}
+.bar .sm{flex:1 1 40%}
+#out{overflow-wrap:anywhere;max-width:68ch}
+#out h1{font-size:1.6rem}#out h2{font:700 1.25rem Georgia,serif;margin:1.4em 0 .3em}#out h3{font-size:1.05rem}
+#out p{margin:.7em 0}#out ul{padding-left:1.3em}
+.empty{color:var(--mu);margin:0}
+details{margin-bottom:10px}summary{cursor:pointer;min-height:36px;display:flex;align-items:center;color:var(--mu)}
+footer{padding-top:14px;padding-bottom:14px;margin-top:auto;border-top:var(--bw) solid var(--bd);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:72px;font-size:.88rem;color:var(--mu);max-width:none}
+@media(min-width:640px){h1{font-size:1.9rem}.grid{grid-template-columns:1fr 1fr}.grid .full{grid-column:1/-1}.eng{grid-template-columns:repeat(4,1fr)}.eng .wide{grid-column:auto}.themes{max-width:420px}.btn{width:auto;min-width:200px}.bar span{flex:1}.bar .sm{flex:0 0 auto}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <header>
-  <h1>✍️ Article Writer</h1>
-  <select id="theme" aria-label="Theme" style="width:auto">
-    <option value="dark">Dark+</option>
-    <option value="light">Light+</option>
-    <option value="oled">OLED Black</option>
-    <option value="hc">High Contrast</option>
-  </select>
-  <button id="themeBtn" aria-label="Toggle theme" title="Cycle theme">🌓</button>
+  <h1>Article Studio</h1>
+  <p class="sub">Write a full article from a topic. Semantic Kernel, LangChain and Haystack run the steps.</p>
+  <div class="themes" role="group" aria-label="Theme">
+    <button data-t="dark">Dark+</button><button data-t="light">Light+</button><button data-t="oled">OLED</button><button data-t="hc">HC</button>
+  </div>
 </header>
 
 <main>
-  <div>
-    <section>
-      <h2>1 · Local AI backend (auto-detected)</h2>
-      <div class="chips" id="chips"></div>
-      <label for="url">Server URL</label>
-      <input id="url" inputmode="url" autocapitalize="off" spellcheck="false">
-      <label for="model">Model</label>
-      <select id="model"></select>
-      <div class="btns"><button id="scan">🔄 Rescan</button></div>
-      <div id="status"></div>
-      <details class="hint"><summary>Connection help (CORS)</summary>
-        <p>You only need <b>one</b> engine. If none of your local engines run, the keyless <b>Free Cloud</b> chip works over the internet (best-effort, one request at a time).</p>
-        <p>No API key or sign-up is needed. If a chip stays red although the server is running, allow browser access:</p>
-        <p><b>Ollama:</b> set <code>OLLAMA_ORIGINS=*</code> then restart.<br>
-        <b>llama.cpp:</b> <code>winget install llama.cpp</code>, then <code>llama-server -hf ggml-org/gemma-3-1b-it-GGUF --port 8080</code>.<br>
-        <b>LM Studio:</b> Developer → Start Server, tick "Enable CORS" (port 1234).<br>
-        <b>GPT4All:</b> Settings → enable "Local API Server" (port 4891).<br>
-        <b>KoboldCpp:</b> launch a model; API on port 5001.</p>
-      </details>
-    </section>
-
-    <section style="margin-top:12px">
-      <h2>2 · Article settings</h2>
-      <label for="topic">Topic / title</label>
-      <textarea id="topic" placeholder="e.g. Benefits of running AI models locally"></textarea>
-      <label for="kw">Keywords (optional, comma separated)</label>
-      <input id="kw" placeholder="privacy, offline, GGUF">
-      <div class="row">
-        <div><label for="type">Type</label>
-          <select id="type"><option>Blog post</option><option>News article</option><option>Essay</option><option>How-to guide</option><option>Listicle</option><option>Product review</option><option>Opinion piece</option></select></div>
-        <div><label for="tone">Tone</label>
-          <select id="tone"><option>Professional</option><option>Friendly</option><option>Persuasive</option><option>Academic</option><option>Humorous</option><option>Neutral</option></select></div>
-      </div>
-      <div class="row">
-        <div><label for="len">Length</label>
-          <select id="len"><option value="400">Short (~400)</option><option value="800" selected>Medium (~800)</option><option value="1500">Long (~1500)</option><option value="2500">Deep (~2500)</option></select></div>
-        <div><label for="lang">Language</label>
-          <input id="lang" value="English"></div>
-      </div>
-      <label for="aud">Audience</label>
-      <input id="aud" placeholder="General readers" value="General readers">
-      <label for="temp">Creativity: <span id="tv">0.7</span></label>
-      <input id="temp" type="range" min="0" max="1.5" step="0.1" value="0.7" style="padding:0">
-      <div class="btns">
-        <button id="go" class="primary">✨ Generate</button>
-        <button id="stop" disabled>⏹ Stop</button>
-      </div>
-    </section>
-  </div>
-
-  <section>
-    <h2>3 · Your article</h2>
-    <div class="meta"><span id="wc">0 words</span><span id="rt">0 min read</span></div>
-    <article id="article"><p style="color:var(--muted)">Your article will appear here…</p></article>
-    <div class="btns">
-      <button id="copy">📋 Copy</button>
-      <button id="dlmd">⬇ .md</button>
-      <button id="dltxt">⬇ .txt</button>
-      <button id="regen">🔁 Regenerate</button>
+  <section class="card" aria-label="Article settings">
+    <div class="grid">
+      <label class="full">Topic<textarea id="topic" placeholder="e.g. How small teams can cut meeting time in half">The future of remote work</textarea></label>
+      <label>Tone<select id="tone"><option>Professional</option><option>Conversational</option><option>Persuasive</option><option>Academic</option><option>Humorous</option><option>Inspirational</option></select></label>
+      <label>Length<select id="len"><option value="300">Short, about 300 words</option><option value="600" selected>Medium, about 600 words</option><option value="1000">Long, about 1000 words</option><option value="1500">In-depth, about 1500 words</option></select></label>
+      <label>Audience<input id="aud" value="General readers"></label>
+      <label>Language<input id="lang" value="English"></label>
+      <fieldset class="eng full" style="border:0;padding:0;margin:0">
+        <label class="wide"><input type="radio" name="eng" value="hybrid" checked>All three</label>
+        <label><input type="radio" name="eng" value="sk">Semantic Kernel</label>
+        <label><input type="radio" name="eng" value="lc">LangChain</label>
+        <label><input type="radio" name="eng" value="hs">Haystack</label>
+      </fieldset>
+      <label>Free API<select id="prov"><option value="poll">Pollinations (free, no key)</option><option value="ollama">Ollama (local)</option><option value="lms">LM Studio (local)</option></select></label>
+      <label>Model<input id="model" placeholder="openai" autocomplete="off"></label>
+      <label class="full">Creativity <input id="temp" type="range" min="0" max="1.2" step="0.1" value="0.7"></label>
     </div>
+    <button class="btn" id="go">Generate article</button>
+    <p class="hint" id="hint">All three: Semantic Kernel plans the outline, LangChain drafts it, Haystack polishes it. No API key or sign-up.</p>
   </section>
 
-  <section class="wide">
-    <h2>History</h2>
-    <div id="hist"></div>
-    <div class="btns"><button id="clr">🗑 Clear history</button></div>
+  <section class="card" aria-label="Progress" aria-live="polite">
+    <ol class="steps" id="steps">
+      <li id="s-outline"><b>Outline</b><span>waiting</span></li>
+      <li id="s-draft"><b>Draft</b><span>waiting</span></li>
+      <li id="s-polish"><b>Polish</b><span>waiting</span></li>
+    </ol>
+    <ol id="log"></ol>
+  </section>
+
+  <section class="card" aria-label="Article">
+    <div class="bar"><span id="meta">No article yet</span><button class="sm" id="copy">Copy</button><button class="sm" id="dl">Download .md</button></div>
+    <details id="od" hidden><summary>Outline</summary><div id="outline"></div></details>
+    <article id="out"><p class="empty">Enter a topic and choose Generate article. Your article will appear here.</p></article>
   </section>
 </main>
 
-<footer>
-  <div>© Manik Roy <span id="yr">2026</span>. All Rights Reserved.</div>
-</footer>
+<footer><span>&copy; Manik Roy <span id="yr">2026</span>. All Rights Reserved.</span></footer>
 
 <script>
-"use strict";
-const $ = id => document.getElementById(id);
-const store = {
-  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
-  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+const $=s=>document.querySelector(s);
+let ac=null,article='';
+
+/* ---------- Theme ---------- */
+function setTheme(t){document.documentElement.dataset.theme=t;document.querySelectorAll('.themes button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===t));try{localStorage.setItem('as-theme',t)}catch(e){}}
+document.querySelectorAll('.themes button').forEach(b=>b.onclick=()=>setTheme(b.dataset.t));
+let saved=null;try{saved=localStorage.getItem('as-theme')}catch(e){}
+setTheme(saved||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));
+
+/* ---------- Footer year (auto-updates) ---------- */
+const START=2026;
+function year(){const y=new Date().getFullYear();$('#yr').textContent=y>START?START+'\u2013'+y:START}
+year();setInterval(year,60000);
+
+/* ---------- Free keyless API layer ---------- */
+const PROV={
+  poll:{url:'https://text.pollinations.ai/openai',model:'openai',hint:'Pollinations needs no key or registration.'},
+  ollama:{url:'http://localhost:11434/v1/chat/completions',model:'llama3.2',hint:'Ollama must be running. If the browser blocks it, start Ollama with OLLAMA_ORIGINS=*'},
+  lms:{url:'http://localhost:1234/v1/chat/completions',model:'local-model',hint:'In LM Studio, load a model, start the local server and turn on CORS.'}
 };
+$('#prov').onchange=()=>{const p=PROV[$('#prov').value];$('#model').placeholder=p.model;$('#hint').textContent=p.hint};
+const sleep=(ms,sig)=>new Promise((res,rej)=>{const t=setTimeout(res,ms);sig?.addEventListener('abort',()=>{clearTimeout(t);rej(new DOMException('Stopped','AbortError'))})});
 
-/* ---------- Footer: auto-updating year ---------- */
-const setYear = () => { $("yr").textContent = new Date().getFullYear(); };
-setYear(); setInterval(setYear, 60 * 60 * 1000);
-
-/* ---------- Themes ---------- */
-const THEMES = ["dark", "light", "oled", "hc"];
-function applyTheme(t){
-  if(!THEMES.includes(t)) t = "dark";
-  document.documentElement.dataset.theme = t;
-  $("theme").value = t; store.set("theme", t);
-}
-applyTheme(store.get("theme", matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
-$("theme").onchange = e => applyTheme(e.target.value);
-$("themeBtn").onclick = () => applyTheme(THEMES[(THEMES.indexOf(document.documentElement.dataset.theme) + 1) % THEMES.length]);
-
-/* ---------- Providers (all keyless, OpenAI-compatible /v1) ---------- */
-const PROV = {
-  ollama:   { name: "Ollama",    url: "http://localhost:11434" },
-  llamacpp: { name: "llama.cpp", url: "http://localhost:8080"  },
-  lmstudio: { name: "LM Studio", url: "http://localhost:1234"  },
-  gpt4all:  { name: "GPT4All",   url: "http://localhost:4891", hint: "In GPT4All: Settings → Application → Advanced → tick “Enable Local API Server”, then load a model in a chat." },
-  kobold:   { name: "KoboldCpp", url: "http://localhost:5001"  },
-  cloud:    { name: "Free Cloud", url: "https://text.pollinations.ai", path: "/openai" }
-};
-const S = {
-  prov: PROV[store.get("prov", "ollama")] ? store.get("prov", "ollama") : "ollama",
-  urls: Object.assign(Object.fromEntries(Object.entries(PROV).map(([k, v]) => [k, v.url])), store.get("urls", {})),
-  models: {}, online: {}, pick: store.get("pick", {})
-};
-const base = k => (S.urls[k] || "").trim().replace(/\/+$/, "").replace(/\/v1$/, "");
-
-async function getJSON(url, ms = 2500){
-  const c = new AbortController(), t = setTimeout(() => c.abort(), ms);
-  try{
-    const r = await fetch(url, { signal: c.signal });
-    if(!r.ok) throw new Error(r.status);
-    return await r.json();
-  } finally { clearTimeout(t); }
-}
-
-async function probe(k){
-  if(k === "cloud"){ S.models[k] = ["openai"]; S.online[k] = navigator.onLine; return; }
-  try{
-    const j = await getJSON(base(k) + "/v1/models");
-    const list = (j.data || j.models || []).map(m => m.id || m.name || m.model).filter(Boolean);
-    S.models[k] = list; S.online[k] = true;
-  }catch(e){
-    if(k === "ollama"){
-      try{
-        const j = await getJSON(base(k) + "/api/tags");
-        S.models[k] = (j.models || []).map(m => m.name); S.online[k] = true; return;
-      }catch(_){}
+async function llm(prompt,system='You are an expert article writer. Reply with the requested text only.'){
+  const key=$('#prov').value,p=PROV[key],sig=ac.signal;
+  const body=JSON.stringify({model:$('#model').value.trim()||p.model,temperature:+$('#temp').value,messages:[{role:'system',content:system},{role:'user',content:prompt}]});
+  let last;
+  for(let i=0;i<3;i++){
+    try{
+      const r=await fetch(p.url,{method:'POST',headers:{'Content-Type':'application/json'},body,signal:sig});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const j=await r.json(),t=j.choices?.[0]?.message?.content;
+      if(t)return t.trim();
+      throw new Error('Empty reply');
+    }catch(e){
+      if(e.name==='AbortError')throw e;
+      last=e;
+      if(key==='poll'&&i===1){ // plain GET fallback of the same free service
+        try{const r=await fetch('https://text.pollinations.ai/'+encodeURIComponent(prompt.slice(0,5000))+'?model=openai&system='+encodeURIComponent(system),{signal:sig});if(r.ok){const t=(await r.text()).trim();if(t)return t}}catch(g){if(g.name==='AbortError')throw g}
+      }
+      await sleep(1500*(i+1),sig);
     }
-    S.models[k] = []; S.online[k] = false;
   }
+  throw new Error(key==='poll'?'The free API did not answer ('+last.message+'). Check your connection and try again.':'Could not reach the local server ('+last.message+'). '+p.hint);
 }
 
-function renderChips(){
-  $("chips").innerHTML = "";
-  Object.keys(PROV).forEach(k => {
-    const d = document.createElement("div");
-    d.className = "chip" + (k === S.prov ? " sel" : "");
-    d.setAttribute("role", "button"); d.tabIndex = 0;
-    d.innerHTML = `<span class="dot ${S.online[k] ? "on" : ""}"></span>${PROV[k].name}`;
-    const go = () => { S.prov = k; store.set("prov", k); renderAll(); };
-    d.onclick = go; d.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); go(); } };
-    $("chips").appendChild(d);
-  });
-}
+/* ---------- Shared prompt templates ---------- */
+const T={
+  outline:'Create a detailed outline for a {{length}}-word {{tone}} article about "{{topic}}" for {{audience}}. Write in {{lang}}. Use a "# " title, then "## " section headings, each followed by one line of notes.',
+  draft:'Write the full article in markdown (# title, ## sections) from this outline. About {{length}} words, {{tone}} tone, for {{audience}}, in {{lang}}.\n\nOutline:\n{{outline}}',
+  polish:'Edit this article for clarity, flow and grammar. Keep the markdown structure and the length. Return only the final article.\n\n{{draft}}'
+};
+const render=(t,v)=>t.replace(/\{\{\s*\$?(\w+)\s*\}\}/g,(_,k)=>{const x=v[k];return Array.isArray(x)?x.join('\n'):(x??'')});
+let log=()=>{};
 
-function renderModels(){
-  const k = S.prov, sel = $("model"), list = S.models[k] || [];
-  sel.innerHTML = "";
-  if(!list.length){
-    const o = document.createElement("option");
-    o.value = ""; o.textContent = S.online[k] ? "Default (server-loaded model)" : "— no models found —";
-    sel.appendChild(o);
-  }
-  list.forEach(m => { const o = document.createElement("option"); o.value = o.textContent = m; sel.appendChild(o); });
-  if(S.pick[k] && list.includes(S.pick[k])) sel.value = S.pick[k];
+/* ---------- Semantic Kernel style: Kernel + Plugin + semantic functions ---------- */
+class Kernel{
+  constructor(){this.plugins={}}
+  importPlugin(name,fns){this.plugins[name]=fns;return this}
+  createSemanticFunction(tpl){return ctx=>llm(render(tpl,ctx))}
+  async invoke(path,ctx){const[p,f]=path.split('.');log('Semantic Kernel \u203a '+path);return this.plugins[p][f](ctx)}
 }
+const kernel=new Kernel().importPlugin('Writer',Object.fromEntries(Object.entries(T).map(([k,t])=>[k,null])));
+for(const k of Object.keys(T))kernel.plugins.Writer[k]=kernel.createSemanticFunction(T[k]);
+const SK=(step,v)=>kernel.invoke('Writer.'+step,v);
 
-function renderAll(){
-  renderChips();
-  $("url").value = S.urls[S.prov];
-  renderModels();
-  const k = S.prov;
-  $("status").textContent = S.online[k]
-    ? `✅ ${PROV[k].name} online · ${(S.models[k] || []).length} model(s)`
-    : `⚠️ ${PROV[k].name} not reachable at ${base(k)} – ${PROV[k].hint || "pick a green engine (you only need one)."}`;
+/* ---------- LangChain style: Runnables composed with pipe() (LCEL) ---------- */
+class Runnable{
+  constructor(fn,name){this.fn=fn;this.name=name}
+  invoke(x){return this.fn(x)}
+  pipe(next){return new Runnable(async x=>next.invoke(await this.invoke(x)),this.name+' | '+next.name)}
 }
+const PromptTemplate=t=>new Runnable(v=>render(t,v),'PromptTemplate');
+const ChatModel=()=>new Runnable(p=>llm(p),'ChatModel');
+const StrOutputParser=()=>new Runnable(s=>String(s).trim(),'StrOutputParser');
+const LC=(step,v)=>{const chain=PromptTemplate(T[step]).pipe(ChatModel()).pipe(StrOutputParser());log('LangChain \u203a '+chain.name);return chain.invoke(v)};
 
-async function scan(){
-  $("status").textContent = "Scanning local AI servers…";
-  await Promise.all(Object.keys(PROV).map(probe));
-  if(!S.online[S.prov]){
-    const first = Object.keys(PROV).find(k => S.online[k]);
-    if(first){ S.prov = first; store.set("prov", first); }
-  }
-  renderAll();
-}
-
-$("url").onchange = e => { S.urls[S.prov] = e.target.value; store.set("urls", S.urls); probe(S.prov).then(renderAll); };
-$("model").onchange = e => { S.pick[S.prov] = e.target.value; store.set("pick", S.pick); };
-$("scan").onclick = scan;
-
-/* ---------- Markdown (small, safe) ---------- */
-const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-function inline(s){
-  return esc(s)
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
-    .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>");
-}
-function md(src){
-  const out = []; let list = null, code = false, buf = [], para = [];
-  const flushP = () => { if(para.length){ out.push("<p>" + inline(para.join(" ")) + "</p>"); para = []; } };
-  const flushL = () => { if(list){ out.push(`</${list}>`); list = null; } };
-  for(const line of src.split("\n")){
-    if(/^```/.test(line)){
-      if(code){ out.push("<pre><code>" + esc(buf.join("\n")) + "</code></pre>"); buf = []; code = false; }
-      else { flushP(); flushL(); code = true; }
-      continue;
+/* ---------- Haystack style: Pipeline of components wired with connect() ---------- */
+class Pipeline{
+  constructor(){this.c={};this.edges=[]}
+  add_component(name,fn){this.c[name]=fn;return this}
+  connect(from,to){this.edges.push([from.split('.'),to.split('.')]);return this}
+  async run(data){
+    const out={},done=new Set(),names=Object.keys(this.c);
+    while(done.size<names.length){
+      const n=names.find(x=>!done.has(x)&&this.edges.filter(e=>e[1][0]===x).every(e=>done.has(e[0][0])));
+      if(!n)throw new Error('Pipeline has a cycle');
+      const inp={...(data[n]||{})};
+      this.edges.filter(e=>e[1][0]===n).forEach(([a,b])=>inp[b[1]]=out[a[0]][a[1]]);
+      log('Haystack \u203a '+n);out[n]=await this.c[n](inp);done.add(n);
     }
-    if(code){ buf.push(line); continue; }
-    let m;
-    if((m = line.match(/^(#{1,3})\s+(.*)/))){ flushP(); flushL(); out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); }
-    else if((m = line.match(/^\s*[-*+]\s+(.*)/))){ flushP(); if(list !== "ul"){ flushL(); out.push("<ul>"); list = "ul"; } out.push("<li>" + inline(m[1]) + "</li>"); }
-    else if((m = line.match(/^\s*\d+[.)]\s+(.*)/))){ flushP(); if(list !== "ol"){ flushL(); out.push("<ol>"); list = "ol"; } out.push("<li>" + inline(m[1]) + "</li>"); }
-    else if((m = line.match(/^>\s?(.*)/))){ flushP(); flushL(); out.push("<blockquote>" + inline(m[1]) + "</blockquote>"); }
-    else if(/^\s*$/.test(line)){ flushP(); flushL(); }
-    else { flushL(); para.push(line.trim()); }
+    return out;
   }
-  if(code) out.push("<pre><code>" + esc(buf.join("\n")) + "</code></pre>");
-  flushP(); flushL();
-  return out.join("\n");
 }
+const HS=async(step,v)=>{
+  const p=new Pipeline()
+    .add_component(step+'_prompt_builder',async i=>({prompt:render(T[step],i)}))
+    .add_component(step+'_generator',async i=>({replies:[await llm(i.prompt)]}))
+    .connect(step+'_prompt_builder.prompt',step+'_generator.prompt');
+  const r=await p.run({[step+'_prompt_builder']:v});
+  return r[step+'_generator'].replies[0];
+};
 
-/* ---------- Generation ---------- */
-let text = "", ctrl = null, raf = 0;
+/* ---------- Orchestration ---------- */
+const ENG={sk:SK,lc:LC,hs:HS};
+const PLAN={hybrid:{outline:'sk',draft:'lc',polish:'hs'}};
+const LABEL={sk:'Semantic Kernel',lc:'LangChain',hs:'Haystack'};
+const STEPS=[['outline','outline'],['draft','draft'],['polish','final']];
+function mark(step,cls,txt){const el=$('#s-'+step);el.className=cls;el.lastElementChild.textContent=txt}
+function say(t){const li=document.createElement('li');li.textContent=new Date().toLocaleTimeString()+'  '+t;const l=$('#log');l.append(li);l.scrollTop=l.scrollHeight}
+const clean=s=>s.replace(/^```(?:markdown|md)?\s*/i,'').replace(/```\s*$/,'').trim();
 
-function stats(){
-  const w = (text.trim().match(/\S+/g) || []).length;
-  $("wc").textContent = w + " words";
-  $("rt").textContent = Math.max(1, Math.round(w / 220)) + " min read";
-}
-function paint(streaming){
-  cancelAnimationFrame(raf);
-  raf = requestAnimationFrame(() => {
-    $("article").innerHTML = md(text) || "<p style='color:var(--muted)'>…</p>";
-    $("article").classList.toggle("cur", !!streaming);
-    stats();
-  });
-}
-
-function buildMessages(){
-  const topic = $("topic").value.trim(), kw = $("kw").value.trim();
-  const sys = "You are an expert article writer and editor. Write original, well-structured, accurate articles in Markdown. Start with a single # title, use ## sections, a strong intro and a clear conclusion. Output only the article.";
-  const usr = `Write a ${$("type").value.toLowerCase()} about: ${topic}\n` +
-    `Tone: ${$("tone").value}\nTarget length: about ${$("len").value} words\nLanguage: ${$("lang").value || "English"}\n` +
-    `Audience: ${$("aud").value || "General readers"}` + (kw ? `\nNaturally include these keywords: ${kw}` : "");
-  return [{ role: "system", content: sys }, { role: "user", content: usr }];
+function md(s){
+  const e=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const inl=t=>e(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\*(.+?)\*/g,'<i>$1</i>');
+  let h='',ul=false;
+  for(const l of s.split('\n')){
+    const m=l.match(/^(#{1,4})\s+(.*)/),li=l.match(/^\s*[-*]\s+(.*)/);
+    if(ul&&!li){h+='</ul>';ul=false}
+    if(m)h+=`<h${m[1].length}>${inl(m[2])}</h${m[1].length}>`;
+    else if(li){if(!ul){h+='<ul>';ul=true}h+=`<li>${inl(li[1])}</li>`}
+    else if(l.trim())h+=`<p>${inl(l)}</p>`;
+  }
+  return h+(ul?'</ul>':'');
 }
 
 async function generate(){
-  const topic = $("topic").value.trim();
-  if(!topic){ $("status").textContent = "⚠️ Please enter a topic first."; $("topic").focus(); return; }
-  if(!S.online[S.prov]) await probe(S.prov);
-  if(!S.online[S.prov]){ renderAll(); return; }
-  const k = S.prov, words = +$("len").value;
-  text = ""; paint(true);
-  $("go").disabled = true; $("stop").disabled = false;
-  $("status").textContent = `✍️ Writing with ${PROV[k].name}…`;
-  ctrl = new AbortController();
+  if(ac){ac.abort();return}
+  const topic=$('#topic').value.trim();
+  if(!topic){$('#topic').focus();return}
+  ac=new AbortController();log=say;
+  const btn=$('#go');btn.textContent='Stop';btn.classList.add('stop');
+  $('#log').innerHTML='';$('#od').hidden=true;
+  STEPS.forEach(([s])=>mark(s,'','waiting'));
+  const eng=document.querySelector('input[name=eng]:checked').value;
+  const v={topic,tone:$('#tone').value.toLowerCase(),length:$('#len').value,audience:$('#aud').value||'General readers',lang:$('#lang').value||'English'};
+  let cur='outline';
   try{
-    const res = await fetch(base(k) + (PROV[k].path || "/v1/chat/completions"), {
-      method: "POST", signal: ctrl.signal,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: $("model").value || "default",
-        messages: buildMessages(), stream: true,
-        temperature: +$("temp").value,
-        max_tokens: Math.round(words * 2.2) + 300
-      })
-    });
-    if(!res.ok) throw new Error("HTTP " + res.status + " " + (await res.text()).slice(0, 120));
-    if((res.headers.get("content-type") || "").includes("application/json")){
-      const j = await res.json(), c = j.choices && j.choices[0];
-      text = c ? ((c.message && c.message.content) || c.text || "") : "";
-      paint(false); $("status").textContent = "✅ Done."; saveHistory(); return;
+    for(const[step,key]of STEPS){
+      cur=step;const id=PLAN[eng]?.[step]||eng;
+      mark(step,'run',LABEL[id]+' working');
+      v[key]=clean(await ENG[id](step,v));
+      mark(step,'done',LABEL[id]+' done');
+      if(step==='outline'){$('#outline').innerHTML=md(v.outline);$('#od').hidden=false}
+      if(step==='draft'){show(v.draft)}
     }
-    const rd = res.body.getReader(), dec = new TextDecoder();
-    let buf = "";
-    for(;;){
-      const { done, value } = await rd.read();
-      if(done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split("\n"); buf = lines.pop();
-      for(const l of lines){
-        const s = l.replace(/^data:\s*/, "").trim();
-        if(!s || s === "[DONE]" || s.startsWith("event:")) continue;
-        try{
-          const j = JSON.parse(s), c = j.choices && j.choices[0];
-          const d = c ? ((c.delta && c.delta.content) || (c.message && c.message.content) || c.text || "") : "";
-          if(d){ text += d; paint(true); }
-        }catch(_){}
-      }
-    }
-    $("status").textContent = "✅ Done.";
-    saveHistory();
+    show(v.final);say('Finished.');
   }catch(e){
-    $("status").textContent = e.name === "AbortError" ? "⏹ Stopped." : "❌ " + e.message;
-    if(text) saveHistory();
-  }finally{
-    ctrl = null; $("go").disabled = false; $("stop").disabled = true; paint(false);
-  }
+    if(e.name==='AbortError'){mark(cur,'err','stopped');say('Stopped.')}
+    else{mark(cur,'err','failed');say('Error: '+e.message);if(!article)$('#out').innerHTML='<p class="empty">'+e.message.replace(/</g,'&lt;')+'</p>'}
+  }finally{ac=null;btn.textContent='Generate article';btn.classList.remove('stop')}
 }
-$("go").onclick = generate;
-$("regen").onclick = generate;
-$("stop").onclick = () => ctrl && ctrl.abort();
-$("temp").oninput = e => { $("tv").textContent = e.target.value; };
+function show(t){
+  article=t;$('#out').innerHTML=md(t);
+  const w=t.split(/\s+/).filter(Boolean).length;
+  $('#meta').textContent=w+' words, about '+Math.max(1,Math.round(w/220))+' min read';
+}
 
-/* ---------- Export ---------- */
-function title(){ const m = text.match(/^#\s+(.+)/m); return (m ? m[1] : $("topic").value || "article").trim(); }
-function slug(){ return title().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "article"; }
-function download(ext, mime, body){
-  if(!text){ $("status").textContent = "Nothing to export yet."; return; }
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([body], { type: mime }));
-  a.download = slug() + "." + ext; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
-$("dlmd").onclick = () => download("md", "text/markdown", text);
-$("dltxt").onclick = () => download("txt", "text/plain", text.replace(/^#+\s*/gm, "").replace(/\*\*|`/g, ""));
-$("copy").onclick = async () => {
-  if(!text) return;
-  try{ await navigator.clipboard.writeText(text); }
-  catch(e){ const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); }
-  $("status").textContent = "📋 Copied to clipboard.";
-};
-
-/* ---------- History ---------- */
-let hist = store.get("hist", []);
-function saveHistory(){
-  if(!text.trim()) return;
-  hist.unshift({ t: title(), md: text, ts: Date.now() });
-  hist = hist.slice(0, 20); store.set("hist", hist); renderHist();
-}
-function renderHist(){
-  const box = $("hist"); box.innerHTML = "";
-  if(!hist.length){ box.innerHTML = "<div class='hint'>No saved articles yet.</div>"; return; }
-  hist.forEach((h, i) => {
-    const d = document.createElement("div"); d.className = "hist";
-    const s = document.createElement("span");
-    s.textContent = h.t + " · " + new Date(h.ts).toLocaleDateString();
-    s.onclick = () => { text = h.md; paint(false); scrollTo({ top: 0, behavior: "smooth" }); };
-    const b = document.createElement("button"); b.textContent = "✕"; b.setAttribute("aria-label", "Delete");
-    b.onclick = () => { hist.splice(i, 1); store.set("hist", hist); renderHist(); };
-    d.append(s, b); box.appendChild(d);
-  });
-}
-$("clr").onclick = () => { hist = []; store.set("hist", hist); renderHist(); };
-renderHist();
-
-/* ---------- Boot: auto-detect everything, no manual steps ---------- */
-renderAll();
-scan();
-setInterval(() => { if(!ctrl) Promise.all(Object.keys(PROV).map(probe)).then(renderAll); }, 30000);
+$('#go').onclick=generate;
+$('#copy').onclick=async()=>{if(!article)return;try{await navigator.clipboard.writeText(article);$('#copy').textContent='Copied'}catch(e){$('#copy').textContent='Copy failed'}setTimeout(()=>$('#copy').textContent='Copy',1500)};
+$('#dl').onclick=()=>{if(!article)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([article],{type:'text/markdown'}));a.download=($('#topic').value.trim().slice(0,40).replace(/[^\w]+/g,'-')||'article')+'.md';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
 </script>
 </body>
 </html>
