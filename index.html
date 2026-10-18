@@ -1,367 +1,70 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1e1e1e">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>Radome – Live Flight Tracker</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<style>
-:root{--bg:#1e1e1e;--pn:#252526;--ln:#3c3c3c;--tx:#d4d4d4;--mu:#9a9a9a;--ac:#4fc1ff;--wr:#f48771;--bw:1px;--r:10px}
-[data-theme=light]{--bg:#fff;--pn:#f3f3f3;--ln:#d0d0d0;--tx:#1f1f1f;--mu:#5c5c5c;--ac:#0066b8;--wr:#c72e0f}
-[data-theme=oled]{--bg:#000;--pn:#0b0b0b;--ln:#2a2a2a;--tx:#e6e6e6;--mu:#8c8c8c}
-[data-theme=hc]{--bg:#000;--pn:#000;--ln:#fff;--tx:#fff;--mu:#fff;--ac:#ffd700;--wr:#ff6b6b;--bw:2px}
-*{box-sizing:border-box;margin:0}
-[hidden]{display:none!important}
-html,body{min-height:100%}
-body{background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;justify-content:center;-webkit-text-size-adjust:100%}
-.app{width:100%;max-width:480px;min-height:100vh;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
-header{padding:12px 14px 6px;display:flex;align-items:center;gap:10px}
-h1{font-size:24px;font-weight:800;letter-spacing:.02em}
-#stat{font-size:13px;color:var(--mu);display:flex;align-items:center;gap:7px;margin-left:auto;text-align:right}
-.dot{width:9px;height:9px;border-radius:50%;background:var(--ac);flex:none;animation:p 2s infinite}
-.dot.warn{background:var(--wr);animation:none}
-@keyframes p{50%{box-shadow:0 0 0 6px transparent;opacity:.5}0%{box-shadow:0 0 0 0 var(--ac)}}
-@media(prefers-reduced-motion:reduce){.dot{animation:none}}
-.row{display:flex;gap:8px;padding:6px 14px}
-.seg{display:flex;flex:1;border:var(--bw) solid var(--ln);border-radius:8px;overflow:hidden}
-.seg button{flex:1;min-height:40px;padding:6px;background:none;color:var(--tx);border:0;font:inherit;font-size:13px;cursor:pointer}
-.seg button+button{border-left:var(--bw) solid var(--ln)}
-.seg [aria-pressed=true]{background:var(--ac);color:var(--bg);font-weight:700}
-input{flex:1;min-width:0;min-height:40px;padding:8px 10px;border:var(--bw) solid var(--ln);background:var(--pn);color:var(--tx);border-radius:8px;font:inherit}
-.b{min-height:40px;padding:8px 12px;border:var(--bw) solid var(--ln);background:var(--pn);color:var(--tx);border-radius:8px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
-.b[aria-pressed=true]{border-color:var(--ac);color:var(--ac);font-weight:700}
-:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
-.hint{padding:0 14px 6px;font-size:12px;color:var(--mu)}
-#map{height:48vh;min-height:300px;margin-top:6px;border-block:var(--bw) solid var(--ln)}
-.leaflet-container{background:var(--pn);font:inherit}
-[data-theme=dark] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)}
-[data-theme=oled] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.6) contrast(.9)}
-[data-theme=hc] .leaflet-tile-pane{filter:grayscale(1) invert(1) contrast(1.4)}
-.pl{background:none;border:0}
-.pl svg{width:26px;height:26px;display:block;filter:drop-shadow(0 0 2px rgba(0,0,0,.7))}
-#leg{margin:10px 14px 4px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mu)}
-#leg i{flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,hsl(0,90%,55%),hsl(60,90%,50%),hsl(120,80%,45%),hsl(180,85%,50%),hsl(240,90%,62%))}
-#alert{display:block;width:calc(100% - 28px);margin:8px 14px 0;padding:10px;border:var(--bw) solid var(--wr);background:var(--pn);color:var(--wr);border-radius:8px;font:inherit;font-weight:700;text-align:left;cursor:pointer}
-#sheet{margin:10px 14px 0;padding:12px;border:var(--bw) solid var(--ac);border-radius:var(--r);background:var(--pn)}
-.sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.sh h2{font-size:20px}
-.sh button{min-width:40px;min-height:40px;border:0;background:none;color:var(--tx);font-size:18px;cursor:pointer}
-dl{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-bottom:10px}
-dt{font-size:12px;color:var(--mu)}
-dd{font-weight:600;font-variant-numeric:tabular-nums}
-#sheet a{color:var(--ac);font-size:14px}
-#list{list-style:none;padding:10px 14px 14px}
-#list li+li{margin-top:6px}
-#list button{width:100%;display:grid;grid-template-columns:1fr auto;gap:2px 10px;text-align:left;padding:10px 12px;min-height:56px;border:var(--bw) solid var(--ln);background:var(--pn);color:var(--tx);border-radius:var(--r);font:inherit;cursor:pointer}
-#list button.on{border-color:var(--ac)}
-#list span,#list small{font-variant-numeric:tabular-nums}
-#list span{text-align:right;font-weight:600}
-#list small{color:var(--mu);font-size:12.5px}
-#list small:last-child{text-align:right}
-.empty{padding:16px;text-align:center;color:var(--mu)}
-footer{margin-top:auto;min-height:110px;padding:16px 16px calc(16px + env(safe-area-inset-bottom));border-top:var(--bw) solid var(--ln);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;color:var(--mu);font-size:13px}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AeroTrack Resilient — Live Aircraft</title>
+  <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.127/Build/Cesium/Widgets/widgets.css">
+  <style>
+    :root{color-scheme:dark;--bg:#07111f;--panel:#0d1b2b;--line:#203b53;--text:#eaf4ff;--muted:#91a9bf;--cyan:#4cc9f0;--green:#53df9a;--red:#ff7b83}
+    *{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.4 "Segoe UI",Arial,sans-serif}body{display:flex;flex-direction:column;overflow:hidden}
+    header{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);background:#0a1726;flex-wrap:wrap}
+    .brand{font-size:17px;font-weight:750;letter-spacing:.08em}.brand span{color:var(--cyan)}.subtitle{color:var(--muted);font-size:12px;margin-top:2px}
+    .status{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--muted)}.dot{width:8px;height:8px;border-radius:50%;background:#77899a}.dot.live{background:var(--green);box-shadow:0 0 10px #53df9a77}.dot.bad{background:var(--red)}
+    button,input{font:inherit;color:var(--text);background:#102338;border:1px solid #2a4b65;border-radius:7px;padding:8px 10px}button{cursor:pointer}button:hover{border-color:var(--cyan)}
+    main{min-height:0;flex:1;display:grid;grid-template-columns:minmax(0,1fr) 370px}.mapwrap{position:relative;min-height:280px;border-right:1px solid var(--line)}#cesiumContainer{position:absolute;inset:0}.cesium-viewer-bottom{display:none}
+    .mapbadge{position:absolute;z-index:2;top:14px;left:14px;background:#0b1929e8;border:1px solid var(--line);padding:10px 12px;border-radius:9px;pointer-events:none}.mapbadge b{color:var(--cyan);display:block;letter-spacing:.08em}.mapbadge small{color:var(--muted)}
+    aside{min-height:0;display:flex;flex-direction:column;background:var(--panel)}.panelhead{padding:14px;border-bottom:1px solid var(--line)}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.metric{background:#102338;border:1px solid var(--line);padding:10px;border-radius:8px}.metric small{display:block;color:var(--muted)}.metric strong{font-size:21px}.controls{display:flex;gap:7px}.controls input{min-width:0;flex:1}
+    .tablewrap{overflow:auto;min-height:0;flex:1}table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}thead{position:sticky;top:0;background:#102338;z-index:1}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid #1b344a}th{color:var(--muted);font-weight:600}tbody tr{cursor:pointer}tbody tr:hover{background:#15304a}.callsign{color:var(--cyan);font-weight:650}.empty{padding:22px;color:var(--muted);text-align:center}
+    footer{border-top:1px solid var(--line);padding:8px 14px;color:var(--muted);font-size:11px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    @media(max-width:850px){body{overflow:auto}main{grid-template-columns:1fr;grid-template-rows:minmax(380px,55vh) 420px}.mapwrap{border-right:0;border-bottom:1px solid var(--line)}.status{margin-left:0}}
+  </style>
 </head>
 <body>
-<div class="app">
-<header>
-  <h1>Radome</h1>
-  <div id="stat"><span class="dot" id="dot"></span><span id="msg">Connecting</span></div>
-</header>
-
-<div class="row"><div class="seg" id="themes" role="group" aria-label="Theme">
-  <button data-t="dark">Dark+</button><button data-t="light">Light+</button><button data-t="oled">OLED</button><button data-t="hc">HC</button>
-</div></div>
-
-<div class="row"><div class="seg" id="src" role="group" aria-label="Data source">
-  <button data-s="adsblol">ADSB.lol</button><button data-s="readsb">readsb</button><button data-s="d1090">dump1090</button>
-</div></div>
-
-<div id="local" hidden>
-  <div class="row"><input id="url" type="url" inputmode="url" aria-label="Receiver aircraft.json URL" autocomplete="off"><button class="b" id="conn">Connect</button></div>
-  <p class="hint">Your own receiver, read from its aircraft.json. It must allow CORS and be reachable from this device.</p>
-</div>
-
-<details id="pxbox" class="hint">
-  <summary>Feed blocked? Use your own proxy</summary>
-  <div class="row" style="padding:6px 0"><input id="px" type="url" placeholder="https://your-worker.workers.dev/?url=" aria-label="CORS proxy URL"><button class="b" id="pxs" type="button">Save</button></div>
-  <p>A free Cloudflare Worker that forwards the request and adds Access-Control-Allow-Origin: * works best.</p>
-</details>
-
-<form class="row" id="sf">
-  <input id="q" placeholder="Callsign or hex" aria-label="Find aircraft" autocomplete="off" autocapitalize="characters">
-  <button class="b">Find</button>
-</form>
-<div class="row">
-  <button class="b" id="mil" type="button" aria-pressed="false">Military</button>
-  <button class="b" id="loc" type="button">My location</button>
-  <button class="b" id="un" type="button"></button>
-</div>
-
-<div id="map" role="application" aria-label="Live aircraft map"></div>
-<div id="leg"><span>Low</span><i></i><span>High</span></div>
-<button id="alert" hidden></button>
-<section id="sheet" hidden></section>
-<ul id="list" aria-label="Aircraft nearby"></ul>
-
-<footer>
-  <div>© <span id="yr">2026</span> Manik Roy</div>
-  <div>All Rights Reserved.</div>
-</footer>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script>
-const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const LS={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-const S={src:LS.get('rd.src','adsblol'),theme:LS.get('rd.theme','dark'),un:LS.get('rd.un','av'),urls:LS.get('rd.urls',{}),mode:'point',q:'',sel:null,ac:[],rx:null,rxTried:null,hist:{},busy:false,fit:false};
-const PH={readsb:'http://<receiver>/tar1090/data/aircraft.json',d1090:'http://<receiver>/dump1090/data/aircraft.json'};
-const U={av:{alt:['ft',1],spd:['kt',1],vr:['fpm',1],dist:['nm',1]},mt:{alt:['m',.3048],spd:['km/h',1.852],vr:['m/s',.00508],dist:['km',1.852]}};
-const fm=(v,k,d=0)=>v==null?'—':(v*U[S.un][k][1]).toLocaleString(undefined,{maximumFractionDigits:d})+' '+U[S.un][k][0];
-const arrow=v=>v==null||Math.abs(v)<100?'':v>0?'▲':'▼';
-const rad=Math.PI/180;
-const dnm=(a,b,c,d)=>6371/1.852*2*Math.asin(Math.sqrt(Math.sin((c-a)*rad/2)**2+Math.cos(a*rad)*Math.cos(c*rad)*Math.sin((d-b)*rad/2)**2));
-
-/* Normalise ADSB.lol / readsb (alt_baro, gs, baro_rate) and dump1090-mutability (altitude, speed, vert_rate) */
-function norm(a){
-  const g=a.alt_baro==='ground'||a.altitude==='ground';
-  return{hex:String(a.hex||''),cs:(a.flight||'').trim(),reg:a.r||'',type:a.t||'',
-    alt:g?0:(a.alt_baro!=null?a.alt_baro:a.altitude!=null?a.altitude:null),gnd:g,
-    gs:a.gs!=null?a.gs:a.speed!=null?a.speed:null,trk:a.track!=null?a.track:null,
-    vr:a.baro_rate!=null?a.baro_rate:a.vert_rate!=null?a.vert_rate:null,
-    sq:a.squawk||'',lat:a.lat,lon:a.lon,seen:a.seen_pos!=null?a.seen_pos:(a.seen||0),
-    em:a.emergency&&a.emergency!=='none'?a.emergency:''};
-}
-
-/* Map */
-const map=L.map('map',{zoomControl:false}).setView(LS.get('rd.view',[22.6,79]),LS.get('rd.zoom',6));
-L.control.zoom({position:'bottomright'}).addTo(map);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
-const mk=new Map();let tl=null;
-const radius=()=>{const b=map.getBounds();return Math.min(250,Math.max(10,Math.ceil(map.distance(b.getCenter(),b.getNorthEast())/1852)))};
-const col=a=>a.gnd?'#888':`hsl(${Math.min(Math.max(a.alt||0,0)/40000,1)*240},90%,${S.theme==='light'?42:58}%)`;
-function icon(a){
-  const sc=a.hex===S.sel?1.4:1;
-  return L.divIcon({className:'pl',iconSize:[26,26],iconAnchor:[13,13],
-    html:`<svg viewBox="0 0 24 24" style="transform:rotate(${a.trk||0}deg) scale(${sc})"><path d="M12 1l2 8 8 5v2l-8-2-1 6 3 2v1l-5-1-5 1v-1l3-2-1-6-8 2v-2l8-5z" fill="${col(a)}" stroke="${a.hex===S.sel?'#fff':'#000'}" stroke-width="1"/></svg>`});
-}
-
-/* UI state */
-function stat(m,c){$('#msg').textContent=m;$('#dot').className='dot'+(c?' '+c:'')}
-function setTheme(t){
-  S.theme=t;document.documentElement.dataset.theme=t;LS.set('rd.theme',t);
-  $$('#themes button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===t));
-  $('meta[name=theme-color]').content={dark:'#1e1e1e',light:'#ffffff',oled:'#000000',hc:'#000000'}[t];
-  draw();
-}
-function setUn(u){S.un=u;LS.set('rd.un',u);$('#un').textContent=u==='av'?'ft · kt':'m · km/h';draw()}
-function setSrc(s){
-  S.src=s;LS.set('rd.src',s);S.rx=null;S.rxTried=null;S.q='';S.mode='point';S.ac=[];
-  $('#q').value='';$('#mil').setAttribute('aria-pressed','false');
-  $$('#src button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===s));
-  const loc=s!=='adsblol';$('#local').hidden=!loc;$('#mil').hidden=loc;$('#pxbox').hidden=loc;
-  $('#url').value=S.urls[s]||'';$('#url').placeholder=PH[s]||'';
-  draw();load();
-}
-
-/* Data access: direct API, optional custom proxy, then optional public proxies. */
-const PX=[
-  u=>'https://corsproxy.io/?url='+encodeURIComponent(u),
-  u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
-  u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)
-];
-async function getJSON(url,remote){
-  const customProxy=LS.get('rd.proxy','').trim();
-  const candidates=[];
-  if(remote&&customProxy){
-    candidates.push({id:'custom proxy',url:customProxy.includes('{url}')
-      ?customProxy.replace('{url}',encodeURIComponent(url))
-      :customProxy+encodeURIComponent(url)});
-  }
-  candidates.push({id:'direct',url});
-  if(remote)PX.forEach((fn,i)=>candidates.push({id:'public proxy '+(i+1),url:fn(url)}));
-  // Prefer the last successful route on later refreshes.
-  candidates.sort((a,b)=>(b.id===S.ok)-(a.id===S.ok));
-  const errors=[];
-  for(const candidate of candidates){
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),10000);
-    try{
-      const response=await fetch(candidate.url,{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});
-      if(!response.ok)throw new Error('HTTP '+response.status);
-      const body=await response.text();
-      let data;
-      try{data=JSON.parse(body)}catch{throw new Error('response was not valid JSON')}
-      if(!data||typeof data!=='object')throw new Error('unexpected API response');
-      if(remote)S.ok=candidate.id;
-      S.lastFeedError='';
-      return data;
-    }catch(error){
-      errors.push(candidate.id+': '+(error.name==='AbortError'?'timeout':(error.message||'network error')));
-    }finally{clearTimeout(timer)}
-  }
-  S.lastFeedError=errors.join(' | ');
-  throw new Error(S.lastFeedError||'No feed available');
-}
-/* OpenSky (keyless, CORS-enabled): convert state vectors to readsb-style fields */
-async function openSky(){
-  const b=map.getBounds();
-  const j=await getJSON(`https://opensky-network.org/api/states/all?lamin=${b.getSouth().toFixed(2)}&lomin=${b.getWest().toFixed(2)}&lamax=${b.getNorth().toFixed(2)}&lomax=${b.getEast().toFixed(2)}`,false);
-  return{ac:(j.states||[]).map(s=>({hex:s[0],flight:s[1],lon:s[5],lat:s[6],
-    alt_baro:s[8]?'ground':s[7]!=null?s[7]/.3048:null,gs:s[9]!=null?s[9]*1.94384:null,track:s[10],
-    baro_rate:s[11]!=null?s[11]*196.85:null,squawk:s[14],seen_pos:s[3]?Math.max(0,Date.now()/1000-s[3]):0}))};
-}
-async function load(){
-  if(S.busy)return;S.busy=true;
-  try{
-    let url;
-    if(S.src==='adsblol'){
-      const c=map.getCenter(),B='https://api.adsb.lol/v2/';
-      url=S.mode==='mil'?B+'mil':S.mode==='hex'?B+'hex/'+S.q:S.mode==='cs'?B+'callsign/'+encodeURIComponent(S.q):`${B}lat/${c.lat.toFixed(3)}/lon/${c.lng.toFixed(3)}/dist/${radius()}`;
-    }else{
-      url=(S.urls[S.src]||'').trim();
-      if(!url){stat('Enter your receiver URL','warn');return}
-      if(location.protocol==='https:'&&/^http:\/\//i.test(url)&&!/\/\/(localhost|127\.)/.test(url)){stat('https pages cannot read http receivers','warn');return}
-    }
-    let j;
-    try{j=await getJSON(url,S.src==='adsblol');S.via=''}
-    catch(primaryError){
-      if(S.src!=='adsblol')throw primaryError;
-      const c=map.getCenter();
-      const fallbackErrors=[];
-      // Keep the current search mode when switching to airplanes.live.
-      const AB='https://api.airplanes.live/v2/';
-      let fallbackUrl;
-      if(S.mode==='mil')fallbackUrl=AB+'mil';
-      else if(S.mode==='hex')fallbackUrl=AB+'hex/'+encodeURIComponent(S.q);
-      else if(S.mode==='cs')fallbackUrl=AB+'callsign/'+encodeURIComponent(S.q);
-      else fallbackUrl=`${AB}point/${c.lat.toFixed(3)}/${c.lng.toFixed(3)}/${Math.min(radius(),250)}`;
+  <header>
+    <div><div class="brand">AERO<span>TRACK</span> RESILIENT</div><div class="subtitle">Global aircraft monitoring · 3D globe</div></div>
+    <div class="status"><span id="dot" class="dot"></span><span id="statusText">Starting…</span></div>
+    <button id="refreshBtn" type="button">Refresh now</button>
+  </header>
+  <main>
+    <section class="mapwrap" aria-label="3D aircraft map">
+      <div id="cesiumContainer"></div>
+      <div class="mapbadge"><b>LIVE AIRSPACE</b><small id="mapStatus">Loading 3D globe…</small></div>
+    </section>
+    <aside>
+      <div class="panelhead">
+        <div class="metrics"><div class="metric"><small>Aircraft received</small><strong id="count">—</strong></div><div class="metric"><small>Last successful update</small><strong id="updated" style="font-size:14px">—</strong></div></div>
+        <div class="controls"><input id="search" type="search" placeholder="Search callsign or ICAO…" aria-label="Search aircraft"><button id="clearBtn" type="button">Clear</button></div>
+      </div>
+      <div class="tablewrap"><table><thead><tr><th>Flight / ICAO</th><th>Altitude</th><th>Speed</th></tr></thead><tbody id="aircraftRows"><tr><td colspan="3" class="empty">Connecting to aircraft feed…</td></tr></tbody></table></div>
+    </aside>
+  </main>
+  <footer><span id="feedNote">Data source: ADSB.lol public API. Coverage and update frequency vary.</span><span>Internet required · Auto-retry enabled</span></footer>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.127/Build/Cesium/Cesium.js"></script>
+  <script>
+  (() => {
+    const $ = id => document.getElementById(id);
+    const statusText=$('statusText'), dot=$('dot'), mapStatus=$('mapStatus'), rows=$('aircraftRows');
+    const regions=[[-35,0,2500],[20,20,2500],[50,30,2500],[10,50,2500],[-100,40,2500],[-75,-10,2500],[135,-25,2500],[105,20,2500],[80,22,2500],[10,-25,2500]];
+    const aircraft=new Map(); let viewer=null, retryMs=5000, timer=null, busy=false, lastSuccess=0;
+    const fmt=(v,d=0)=>Number.isFinite(Number(v))?Number(v).toLocaleString(undefined,{maximumFractionDigits:d}):'—';
+    function setStatus(text,kind=''){statusText.textContent=text;dot.className='dot'+(kind?' '+kind:'');}
+    function initGlobe(){
+      if(!window.Cesium){mapStatus.textContent='3D library unavailable — check internet.';return;}
       try{
-        j=await getJSON(fallbackUrl,false);
-        S.via=' via airplanes.live';
-      }catch(e2){
-        fallbackErrors.push('airplanes.live: '+e2.message);
-        // OpenSky's states endpoint supports bounding boxes, not callsign/hex/military filters.
-        if(S.mode!=='point')throw new Error('ADSB.lol failed: '+primaryError.message+'; '+fallbackErrors.join('; ')+'. Pan the map to use the OpenSky nearby-aircraft fallback.');
-        try{j=await openSky();S.via=' via OpenSky'}
-        catch(e3){throw new Error('ADSB.lol failed: '+primaryError.message+'; '+fallbackErrors.join('; ')+'; OpenSky: '+e3.message)}
-      }
+        viewer=new Cesium.Viewer('cesiumContainer',{animation:false,timeline:false,baseLayerPicker:false,geocoder:false,homeButton:true,sceneModePicker:false,navigationHelpButton:false,fullscreenButton:false,imageryProvider:new Cesium.TileMapServiceImageryProvider({url:Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')}),terrainProvider:new Cesium.EllipsoidTerrainProvider()});
+        viewer.scene.globe.enableLighting=true;
+        viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(10,20,24000000),duration:1.2});
+      }catch(e){mapStatus.textContent='Could not start globe: '+e.message;}
     }
-    if(S.src!=='adsblol'&&S.rxTried!==url){
-      S.rxTried=url;
-      fetch(url.replace(/aircraft\.json.*$/,'receiver.json')).then(x=>x.json()).then(x=>{if(typeof x.lat==='number'){S.rx=[x.lat,x.lon];map.setView(S.rx,8)}}).catch(()=>{});
-    }
-    S.ac=(j.ac||j.aircraft||[]).map(norm).filter(a=>typeof a.lat==='number'&&typeof a.lon==='number'&&a.hex);
-    stat(S.ac.length+' aircraft'+(S.via||''));
-    draw();
-    if(S.fit){S.fit=false;if(S.ac.length)map.fitBounds(S.ac.map(a=>[a.lat,a.lon]),{maxZoom:9,padding:[30,30]})}
-  }catch(e){
-    console.error('Radome feed error:',e);
-    if(S.src==='adsblol'){
-      stat('Feed failed — inspect connection details','warn');
-      $('#pxbox').open=true;
-      $('#alert').hidden=false;
-      $('#alert').textContent='Connection failed. Open F12 → Console for details; check internet, API access, and proxy settings.';
-      $('#alert').onclick=()=>{$('#pxbox').open=true;$('#px').focus()};
-    }else stat('Receiver feed failed: '+e.message,'warn');
-  }
-  finally{S.busy=false}
-}
-
-/* Render */
-function draw(){
-  const c=map.getCenter(),ref=S.rx||[c.lat,c.lng],q=S.q.toLowerCase();
-  const l=S.ac.filter(a=>S.src==='adsblol'||!q||(a.cs+a.hex+a.reg).toLowerCase().includes(q));
-  l.forEach(a=>{
-    a.d=dnm(ref[0],ref[1],a.lat,a.lon);
-    const h=S.hist[a.hex]=S.hist[a.hex]||[],p=h[h.length-1];
-    if(!p||p[0]!==a.lat||p[1]!==a.lon){h.push([a.lat,a.lon]);if(h.length>40)h.shift()}
-  });
-  l.sort((a,b)=>a.d-b.d);
-  const seen=new Set();
-  l.slice(0,350).forEach(a=>{
-    seen.add(a.hex);
-    let m=mk.get(a.hex);const ic=icon(a);
-    if(m){m.setLatLng([a.lat,a.lon]);m.setIcon(ic)}
-    else{m=L.marker([a.lat,a.lon],{icon:ic,keyboard:false}).on('click',()=>pick(a.hex)).addTo(map);mk.set(a.hex,m)}
-  });
-  for(const[h,m]of mk)if(!seen.has(h)){m.remove();mk.delete(h)}
-  for(const h in S.hist)if(!seen.has(h))delete S.hist[h];
-  if(tl){tl.remove();tl=null}
-  const hh=S.hist[S.sel];
-  if(hh&&hh.length>1)tl=L.polyline(hh,{color:getComputedStyle(document.documentElement).getPropertyValue('--ac').trim(),weight:3,opacity:.85}).addTo(map);
-  renderList(l);renderSheet(l);renderAlert(l);
-}
-function renderList(l){
-  $('#list').innerHTML=l.slice(0,40).map(a=>`<li><button data-h="${esc(a.hex)}" class="${a.hex===S.sel?'on':''}"><b>${esc(a.cs||a.hex.toUpperCase())}</b><span>${a.gnd?'Ground':fm(a.alt,'alt')}</span><small>${esc(a.type)} ${esc(a.reg)}</small><small>${fm(a.gs,'spd')} ${arrow(a.vr)}</small></button></li>`).join('')
-    ||'<li class="empty">No aircraft reported in this area. Pan or zoom the map.</li>';
-}
-function renderSheet(l){
-  const a=l.find(x=>x.hex===S.sel),e=$('#sheet');
-  if(!a){e.hidden=true;return}
-  const rows=[['Aircraft',[a.type,a.reg].filter(Boolean).join(' ')||'—'],['ICAO hex',a.hex.toUpperCase()],
-    ['Altitude',a.gnd?'On ground':fm(a.alt,'alt')],['Ground speed',fm(a.gs,'spd')],
-    ['Heading',a.trk==null?'—':Math.round(a.trk)+'°'],['Vertical rate',fm(a.vr,'vr')],
-    ['Squawk',a.sq||'—'],['Position',a.lat.toFixed(3)+', '+a.lon.toFixed(3)],
-    ['Distance',fm(a.d,'dist',1)],['Last update',Math.round(a.seen)+' s ago']];
-  e.hidden=false;
-  e.innerHTML=`<div class="sh"><h2>${esc(a.cs||a.hex.toUpperCase())}</h2><button id="x" aria-label="Close details">✕</button></div><dl>${rows.map(([k,v])=>`<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl><a href="https://globe.adsb.lol/?icao=${encodeURIComponent(a.hex)}" target="_blank" rel="noopener">Open on the adsb.lol globe</a>`;
-}
-function renderAlert(l){
-  const e=l.find(a=>['7500','7600','7700'].includes(a.sq)||a.em),b=$('#alert');
-  if(!e){b.hidden=true;return}
-  const n={7500:'Hijack',7600:'Radio failure',7700:'General emergency'}[e.sq]||e.em;
-  b.hidden=false;b.textContent=`Squawk ${e.sq||''} ${n}: ${e.cs||e.hex.toUpperCase()}`;
-  b.onclick=()=>pick(e.hex);
-}
-function pick(h){
-  S.sel=h;const a=S.ac.find(x=>x.hex===h);
-  if(a)map.panTo([a.lat,a.lon]);
-  draw();$('#sheet').scrollIntoView({block:'nearest',behavior:'smooth'});
-}
-
-/* Events */
-$('#themes').onclick=e=>{const t=e.target.dataset.t;if(t)setTheme(t)};
-$('#src').onclick=e=>{const s=e.target.dataset.s;if(s&&s!==S.src)setSrc(s)};
-$('#un').onclick=()=>setUn(S.un==='av'?'mt':'av');
-$('#px').value=LS.get('rd.proxy','');
-$('#pxs').onclick=()=>{LS.set('rd.proxy',$('#px').value.trim());S.ok=null;load()};
-$('#list').onclick=e=>{const b=e.target.closest('button');if(b)pick(b.dataset.h)};
-$('#sheet').onclick=e=>{if(e.target.id==='x'){S.sel=null;draw()}};
-$('#conn').onclick=()=>{S.urls[S.src]=$('#url').value.trim();LS.set('rd.urls',S.urls);S.rx=null;S.rxTried=null;S.fit=true;S.ac=[];load()};
-$('#sf').onsubmit=e=>{
-  e.preventDefault();
-  const q=$('#q').value.trim();
-  S.q=q;S.mode=!q?'point':/^[0-9a-f]{6}$/i.test(q)?'hex':'cs';S.fit=!!q;S.ac=[];
-  $('#mil').setAttribute('aria-pressed','false');
-  S.src==='adsblol'?load():draw();
-};
-$('#mil').onclick=()=>{
-  const on=S.mode!=='mil';S.mode=on?'mil':'point';S.q='';$('#q').value='';S.fit=on;S.ac=[];
-  $('#mil').setAttribute('aria-pressed',on);load();
-};
-$('#loc').onclick=()=>{
-  if(!navigator.geolocation)return stat('Location not supported','warn');
-  navigator.geolocation.getCurrentPosition(p=>map.setView([p.coords.latitude,p.coords.longitude],8),()=>stat('Location permission denied','warn'),{timeout:8000});
-};
-let dt;
-map.on('moveend',()=>{
-  const c=map.getCenter();LS.set('rd.view',[c.lat,c.lng]);LS.set('rd.zoom',map.getZoom());
-  clearTimeout(dt);
-  dt=setTimeout(()=>S.src==='adsblol'&&S.mode==='point'?load():draw(),500);
-});
-setInterval(()=>{if(!document.hidden)load()},6000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){yr();load()}});
-
-/* Footer year */
-const yr=()=>{$('#yr').textContent=new Date().getFullYear()};
-yr();setInterval(yr,36e5);
-
-/* Init */
-setUn(S.un);setTheme(S.theme);setSrc(S.src);
-</script>
+    function normalize(a){return {icao:String(a.hex||a.icao||'').toUpperCase(),callsign:String(a.flight||a.callsign||'').trim()||String(a.hex||'Unknown').toUpperCase(),latitude:Number(a.lat),longitude:Number(a.lon),altitudeFeet:Number(a.alt_baro??a.alt_geom),speedKnots:Number(a.gs),track:Number(a.track),seen:Number(a.seen??0)};}
+    function paint(a){if(!viewer||!Number.isFinite(a.latitude)||!Number.isFinite(a.longitude)||!a.icao)return;const id=a.icao;const pos=Cesium.Cartesian3.fromDegrees(a.longitude,a.latitude,Math.max(0,(Number.isFinite(a.altitudeFeet)?a.altitudeFeet:0)*.3048));let ent=viewer.entities.getById(id);const desc=`Flight: ${a.callsign}<br>ICAO: ${id}<br>Latitude: ${a.latitude.toFixed(4)}<br>Longitude: ${a.longitude.toFixed(4)}<br>Altitude (ft): ${fmt(a.altitudeFeet)}<br>Ground speed (kt): ${fmt(a.speedKnots)}`;if(!ent){ent=viewer.entities.add({id,position:pos,point:{pixelSize:6,color:Cesium.Color.fromCssColorString('#4cc9f0'),outlineColor:Cesium.Color.WHITE,outlineWidth:1},label:{text:a.callsign,font:'10px sans-serif',fillColor:Cesium.Color.WHITE,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(.72),pixelOffset:new Cesium.Cartesian2(0,-12),scaleByDistance:new Cesium.NearFarScalar(1e5,1,1e7,.4)},description:desc});}else{ent.position=pos;ent.label.text=a.callsign;ent.description=desc;}}
+    function render(){const q=$('search').value.trim().toLowerCase();const list=[...aircraft.values()].filter(a=>(a.callsign+' '+a.icao).toLowerCase().includes(q)).sort((a,b)=>a.callsign.localeCompare(b.callsign));$('count').textContent=fmt(aircraft.size);rows.innerHTML='';if(!list.length){rows.innerHTML=`<tr><td colspan="3" class="empty">${aircraft.size?'No aircraft match your search.':'No aircraft data received yet.'}</td></tr>`;return;}const frag=document.createDocumentFragment();for(const a of list.slice(0,1500)){const tr=document.createElement('tr');tr.innerHTML=`<td><span class="callsign"></span><br><span style="color:var(--muted)"></span></td><td></td><td></td>`;tr.children[0].children[0].textContent=a.callsign;tr.children[0].children[1].textContent=a.icao;tr.children[1].textContent=fmt(a.altitudeFeet)+' ft';tr.children[2].textContent=fmt(a.speedKnots)+' kt';tr.addEventListener('click',()=>{if(viewer&&Number.isFinite(a.latitude)&&Number.isFinite(a.longitude))viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(a.longitude,a.latitude,Math.max(1500000,(a.altitudeFeet||0)*.3048+500000)),duration:.8});});frag.appendChild(tr);}rows.appendChild(frag);}
+    async function fetchRegion(region){const [lon,lat,dist]=region;const url=`https://api.adsb.lol/v2/lat/${lat}/lon/${lon}/dist/${dist}`;const res=await fetch(url,{headers:{accept:'application/json'},cache:'no-store'});if(!res.ok)throw new Error(`Feed returned HTTP ${res.status}`);const data=await res.json();return Array.isArray(data.ac)?data.ac:[];}
+    async function update(){if(busy)return;busy=true;setStatus(lastSuccess?'Updating…':'Connecting…');try{const results=await Promise.allSettled(regions.map(fetchRegion));let good=0;for(const result of results){if(result.status!=='fulfilled')continue;good++;for(const raw of result.value){const a=normalize(raw);if(a.icao&&Number.isFinite(a.latitude)&&Number.isFinite(a.longitude)){aircraft.set(a.icao,a);paint(a);}}}if(!good)throw new Error('All regional feed requests failed');lastSuccess=Date.now();$('updated').textContent=new Date(lastSuccess).toLocaleTimeString();mapStatus.textContent=`${fmt(aircraft.size)} aircraft received · regional samples`;setStatus(`Connected · ${good}/${regions.length} regions`,'live');render();retryMs=15000;}catch(e){setStatus('Feed unavailable · retrying','bad');mapStatus.textContent='Waiting for aircraft feed…';$('feedNote').textContent=`Feed error: ${e.message}. The app will retry automatically; data coverage is not guaranteed.`;retryMs=Math.min(Math.max(retryMs*1.7,5000),60000);}finally{busy=false;if(timer)clearTimeout(timer);timer=setTimeout(update,retryMs);}}
+    $('refreshBtn').addEventListener('click',()=>{if(timer)clearTimeout(timer);update();});$('search').addEventListener('input',render);$('clearBtn').addEventListener('click',()=>{$('search').value='';render();$('search').focus();});
+    initGlobe();update();
+  })();
+  </script>
 </body>
 </html>
