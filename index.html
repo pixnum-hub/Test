@@ -194,23 +194,31 @@ async function load(){
     let url;
     if(S.src==='adsblol'){
       const c=map.getCenter(),B='https://api.adsb.lol/v2/';
-      url=S.mode==='mil'?B+'mil':S.mode==='hex'?B+'hex/'+S.q:S.mode==='cs'?B+'callsign/'+encodeURIComponent(S.q):`${B}point/${c.lat.toFixed(3)}/${c.lng.toFixed(3)}/${radius()}`;
+      url=S.mode==='mil'?B+'mil':S.mode==='hex'?B+'hex/'+S.q:S.mode==='cs'?B+'callsign/'+encodeURIComponent(S.q):`${B}lat/${c.lat.toFixed(3)}/lon/${c.lng.toFixed(3)}/dist/${radius()}`;
     }else{
       url=(S.urls[S.src]||'').trim();
       if(!url){stat('Enter your receiver URL','warn');return}
       if(location.protocol==='https:'&&/^http:\/\//i.test(url)&&!/\/\/(localhost|127\.)/.test(url)){stat('https pages cannot read http receivers','warn');return}
     }
-    const j=await getJSON(url,S.src==='adsblol');
+    let j;
+    try{j=await getJSON(url,S.src==='adsblol');S.via=''}
+    catch(e){
+      if(S.src==='adsblol'&&S.mode==='point'){
+        const c=map.getCenter();
+        j=await getJSON(`https://api.airplanes.live/v2/point/${c.lat.toFixed(3)}/${c.lng.toFixed(3)}/${Math.min(radius(),250)}`,false);
+        S.via=' via airplanes.live';
+      }else throw e;
+    }
     if(S.src!=='adsblol'&&S.rxTried!==url){
       S.rxTried=url;
       fetch(url.replace(/aircraft\.json.*$/,'receiver.json')).then(x=>x.json()).then(x=>{if(typeof x.lat==='number'){S.rx=[x.lat,x.lon];map.setView(S.rx,8)}}).catch(()=>{});
     }
     S.ac=(j.ac||j.aircraft||[]).map(norm).filter(a=>typeof a.lat==='number'&&typeof a.lon==='number'&&a.hex);
-    stat(S.ac.length+' aircraft');
+    stat(S.ac.length+' aircraft'+(S.via||''));
     draw();
     if(S.fit){S.fit=false;if(S.ac.length)map.fitBounds(S.ac.map(a=>[a.lat,a.lon]),{maxZoom:9,padding:[30,30]})}
   }catch(e){
-    if(S.src==='adsblol'){stat('Feed blocked by CORS or network','warn');$('#pxbox').open=true}
+    if(S.src==='adsblol'){stat('Feed blocked ('+e.message+')','warn');$('#pxbox').open=true}
     else stat('Feed unavailable: '+e.message,'warn');
   }
   finally{S.busy=false}
