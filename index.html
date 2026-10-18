@@ -77,11 +77,12 @@ footer{background:var(--panel);border-top:1px solid var(--border);padding:16px 1
       <div class="btns"><button id="scan">🔄 Rescan</button></div>
       <div id="status"></div>
       <details class="hint"><summary>Connection help (CORS)</summary>
+        <p>You only need <b>one</b> engine. If none of your local engines run, the keyless <b>Free Cloud</b> chip works over the internet (best-effort, one request at a time).</p>
         <p>No API key or sign-up is needed. If a chip stays red although the server is running, allow browser access:</p>
         <p><b>Ollama:</b> set <code>OLLAMA_ORIGINS=*</code> then restart.<br>
-        <b>llama.cpp:</b> <code>llama-server -m model.gguf --port 8080</code> (CORS on by default).<br>
-        <b>LocalAI:</b> run with <code>CORS=true</code> on port 8081 (or edit URL).<br>
-        <b>Jan:</b> Settings → Local API Server → start, enable CORS (port 1337).<br>
+        <b>llama.cpp:</b> <code>winget install llama.cpp</code>, then <code>llama-server -hf ggml-org/gemma-3-1b-it-GGUF --port 8080</code>.<br>
+        <b>LM Studio:</b> Developer → Start Server, tick "Enable CORS" (port 1234).<br>
+        <b>GPT4All:</b> Settings → enable "Local API Server" (port 4891).<br>
         <b>KoboldCpp:</b> launch a model; API on port 5001.</p>
       </details>
     </section>
@@ -165,12 +166,13 @@ $("themeBtn").onclick = () => applyTheme(THEMES[(THEMES.indexOf(document.documen
 const PROV = {
   ollama:   { name: "Ollama",    url: "http://localhost:11434" },
   llamacpp: { name: "llama.cpp", url: "http://localhost:8080"  },
-  localai:  { name: "LocalAI",   url: "http://localhost:8081"  },
-  jan:      { name: "Jan",       url: "http://localhost:1337"  },
-  kobold:   { name: "KoboldCpp", url: "http://localhost:5001"  }
+  lmstudio: { name: "LM Studio", url: "http://localhost:1234"  },
+  gpt4all:  { name: "GPT4All",   url: "http://localhost:4891", hint: "In GPT4All: Settings → Application → Advanced → tick “Enable Local API Server”, then load a model in a chat." },
+  kobold:   { name: "KoboldCpp", url: "http://localhost:5001"  },
+  cloud:    { name: "Free Cloud", url: "https://text.pollinations.ai", path: "/openai" }
 };
 const S = {
-  prov: store.get("prov", "ollama"),
+  prov: PROV[store.get("prov", "ollama")] ? store.get("prov", "ollama") : "ollama",
   urls: Object.assign(Object.fromEntries(Object.entries(PROV).map(([k, v]) => [k, v.url])), store.get("urls", {})),
   models: {}, online: {}, pick: store.get("pick", {})
 };
@@ -186,6 +188,7 @@ async function getJSON(url, ms = 2500){
 }
 
 async function probe(k){
+  if(k === "cloud"){ S.models[k] = ["openai"]; S.online[k] = navigator.onLine; return; }
   try{
     const j = await getJSON(base(k) + "/v1/models");
     const list = (j.data || j.models || []).map(m => m.id || m.name || m.model).filter(Boolean);
@@ -233,7 +236,7 @@ function renderAll(){
   const k = S.prov;
   $("status").textContent = S.online[k]
     ? `✅ ${PROV[k].name} online · ${(S.models[k] || []).length} model(s)`
-    : `⚠️ ${PROV[k].name} not reachable at ${base(k)}`;
+    : `⚠️ ${PROV[k].name} not reachable at ${base(k)} – ${PROV[k].hint || "pick a green engine (you only need one)."}`;
 }
 
 async function scan(){
@@ -319,7 +322,7 @@ async function generate(){
   $("status").textContent = `✍️ Writing with ${PROV[k].name}…`;
   ctrl = new AbortController();
   try{
-    const res = await fetch(base(k) + "/v1/chat/completions", {
+    const res = await fetch(base(k) + (PROV[k].path || "/v1/chat/completions"), {
       method: "POST", signal: ctrl.signal,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -330,6 +333,11 @@ async function generate(){
       })
     });
     if(!res.ok) throw new Error("HTTP " + res.status + " " + (await res.text()).slice(0, 120));
+    if((res.headers.get("content-type") || "").includes("application/json")){
+      const j = await res.json(), c = j.choices && j.choices[0];
+      text = c ? ((c.message && c.message.content) || c.text || "") : "";
+      paint(false); $("status").textContent = "✅ Done."; saveHistory(); return;
+    }
     const rd = res.body.getReader(), dec = new TextDecoder();
     let buf = "";
     for(;;){
