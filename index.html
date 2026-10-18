@@ -167,26 +167,44 @@ function setSrc(s){
   draw();load();
 }
 
-/* Data: api.adsb.lol sends no CORS headers for arbitrary origins, so try direct, then your own proxy, then public proxies */
-const PX=[u=>'https://corsproxy.io/?url='+encodeURIComponent(u),u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)];
+/* Data access: direct API, optional custom proxy, then optional public proxies. */
+const PX=[
+  u=>'https://corsproxy.io/?url='+encodeURIComponent(u),
+  u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+  u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)
+];
 async function getJSON(url,remote){
-  const cu=LS.get('rd.proxy',''),c=[];
-  if(remote&&cu)c.push({id:'c',u:cu.includes('{url}')?cu.replace('{url}',encodeURIComponent(url)):cu+encodeURIComponent(url)});
-  c.push({id:'d',u:url});
-  if(remote)PX.forEach((f,i)=>c.push({id:'p'+i,u:f(url)}));
-  c.sort((a,b)=>(b.id===S.ok)-(a.id===S.ok));
-  let err;
-  for(const x of c){
-    try{
-      const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),9000);
-      const r=await fetch(x.u,{cache:'no-store',signal:ctl.signal});clearTimeout(t);
-      if(!r.ok)throw Error('HTTP '+r.status);
-      const j=await r.json();
-      if(remote)S.ok=x.id;
-      return j;
-    }catch(e){err=e}
+  const customProxy=LS.get('rd.proxy','').trim();
+  const candidates=[];
+  if(remote&&customProxy){
+    candidates.push({id:'custom proxy',url:customProxy.includes('{url}')
+      ?customProxy.replace('{url}',encodeURIComponent(url))
+      :customProxy+encodeURIComponent(url)});
   }
-  throw err;
+  candidates.push({id:'direct',url});
+  if(remote)PX.forEach((fn,i)=>candidates.push({id:'public proxy '+(i+1),url:fn(url)}));
+  // Prefer the last successful route on later refreshes.
+  candidates.sort((a,b)=>(b.id===S.ok)-(a.id===S.ok));
+  const errors=[];
+  for(const candidate of candidates){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),10000);
+    try{
+      const response=await fetch(candidate.url,{cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});
+      if(!response.ok)throw new Error('HTTP '+response.status);
+      const body=await response.text();
+      let data;
+      try{data=JSON.parse(body)}catch{throw new Error('response was not valid JSON')}
+      if(!data||typeof data!=='object')throw new Error('unexpected API response');
+      if(remote)S.ok=candidate.id;
+      S.lastFeedError='';
+      return data;
+    }catch(error){
+      errors.push(candidate.id+': '+(error.name==='AbortError'?'timeout':(error.message||'network error')));
+    }finally{clearTimeout(timer)}
+  }
+  S.lastFeedError=errors.join(' | ');
+  throw new Error(S.lastFeedError||'No feed available');
 }
 /* OpenSky (keyless, CORS-enabled): convert state vectors to readsb-style fields */
 async function openSky(){
@@ -210,14 +228,27 @@ async function load(){
     }
     let j;
     try{j=await getJSON(url,S.src==='adsblol');S.via=''}
-    catch(e){
-      if(S.src==='adsblol'&&S.mode==='point'){
-        const c=map.getCenter();
-        try{
-          j=await getJSON(`https://api.airplanes.live/v2/point/${c.lat.toFixed(3)}/${c.lng.toFixed(3)}/${Math.min(radius(),250)}`,false);
-          S.via=' via airplanes.live';
-        }catch(e2){j=await openSky();S.via=' via OpenSky'}
-      }else throw e;
+    catch(primaryError){
+      if(S.src!=='adsblol')throw primaryError;
+      const c=map.getCenter();
+      const fallbackErrors=[];
+      // Keep the current search mode when switching to airplanes.live.
+      const AB='https://api.airplanes.live/v2/';
+      let fallbackUrl;
+      if(S.mode==='mil')fallbackUrl=AB+'mil';
+      else if(S.mode==='hex')fallbackUrl=AB+'hex/'+encodeURIComponent(S.q);
+      else if(S.mode==='cs')fallbackUrl=AB+'callsign/'+encodeURIComponent(S.q);
+      else fallbackUrl=`${AB}point/${c.lat.toFixed(3)}/${c.lng.toFixed(3)}/${Math.min(radius(),250)}`;
+      try{
+        j=await getJSON(fallbackUrl,false);
+        S.via=' via airplanes.live';
+      }catch(e2){
+        fallbackErrors.push('airplanes.live: '+e2.message);
+        // OpenSky's states endpoint supports bounding boxes, not callsign/hex/military filters.
+        if(S.mode!=='point')throw new Error('ADSB.lol failed: '+primaryError.message+'; '+fallbackErrors.join('; ')+'. Pan the map to use the OpenSky nearby-aircraft fallback.');
+        try{j=await openSky();S.via=' via OpenSky'}
+        catch(e3){throw new Error('ADSB.lol failed: '+primaryError.message+'; '+fallbackErrors.join('; ')+'; OpenSky: '+e3.message)}
+      }
     }
     if(S.src!=='adsblol'&&S.rxTried!==url){
       S.rxTried=url;
@@ -228,8 +259,14 @@ async function load(){
     draw();
     if(S.fit){S.fit=false;if(S.ac.length)map.fitBounds(S.ac.map(a=>[a.lat,a.lon]),{maxZoom:9,padding:[30,30]})}
   }catch(e){
-    if(S.src==='adsblol'){stat('Feed blocked ('+e.message+')','warn');$('#pxbox').open=true}
-    else stat('Feed unavailable: '+e.message,'warn');
+    console.error('Radome feed error:',e);
+    if(S.src==='adsblol'){
+      stat('Feed failed — inspect connection details','warn');
+      $('#pxbox').open=true;
+      $('#alert').hidden=false;
+      $('#alert').textContent='Connection failed. Open F12 → Console for details; check internet, API access, and proxy settings.';
+      $('#alert').onclick=()=>{$('#pxbox').open=true;$('#px').focus()};
+    }else stat('Receiver feed failed: '+e.message,'warn');
   }
   finally{S.busy=false}
 }
