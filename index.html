@@ -43,6 +43,10 @@ textarea{width:100%;min-height:170px;resize:vertical;background:var(--bg);color:
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--er);margin-right:6px}
 .dot.up{background:var(--ok)}
 .note{font-size:.8rem;color:var(--mu);margin:8px 0 0}
+input{width:100%;background:var(--bg);color:var(--tx);border:var(--bw) solid var(--bd);border-radius:10px;padding:10px;font:inherit;min-height:44px;margin-top:6px}
+label{font-size:.8rem;color:var(--mu);display:block;margin-top:8px}
+.solo .svc{display:none}
+#qr{display:flex;justify-content:center;margin-top:12px}#qr img,#qr canvas{background:#fff;padding:10px;border-radius:10px;max-width:100%}
 footer{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;padding:18px 16px;border-top:var(--bw) solid var(--bd);color:var(--mu);font-size:.85rem}
 </style>
 </head>
@@ -55,7 +59,7 @@ footer{width:100%;display:flex;flex-direction:column;align-items:center;justify-
     <button data-t="dark">Dark+</button><button data-t="light">Light+</button><button data-t="oled">OLED</button><button data-t="hc">HC</button>
   </div></div>
 
-  <section class="card hero" aria-live="polite">
+  <section class="card hero svc" aria-live="polite">
     <button id="pwr" aria-label="Connect or disconnect"><svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/></svg></button>
     <div id="state">Disconnected</div>
     <div id="msg"></div>
@@ -72,7 +76,7 @@ footer{width:100%;display:flex;flex-direction:column;align-items:center;justify-
     <div class="row"><button id="rf">Refresh IP</button></div>
   </section>
 
-  <section class="card">
+  <section class="card svc">
     <h2>Tunnel stats</h2>
     <div class="grid">
       <div class="kv"><small>Download</small><b id="rx">—</b></div>
@@ -83,7 +87,24 @@ footer{width:100%;display:flex;flex-direction:column;align-items:center;justify-
   </section>
 
   <section class="card">
-    <h2>WireGuard config</h2>
+    <h2>1 · Build your config</h2>
+    <label for="f_ep">Server address and port</label><input id="f_ep" placeholder="vpn.example.com:51820" autocapitalize="off" autocomplete="off">
+    <label for="f_pk">Server public key</label><input id="f_pk" placeholder="From your VPN provider or server" autocapitalize="off" autocomplete="off">
+    <label for="f_ad">Your tunnel address</label><input id="f_ad" value="10.0.0.2/32" autocomplete="off">
+    <label for="f_dn">DNS</label><input id="f_dn" value="1.1.1.1" autocomplete="off">
+    <div class="row"><button class="pri" id="build">Build config</button></div>
+    <p class="note">A new private key is made in your browser and never uploaded. Ask your provider to allow your public key (shown below after building).</p>
+  </section>
+
+  <section class="card">
+    <h2>2 · Add it to the WireGuard app</h2>
+    <div class="row"><button class="pri" id="qrb">Show QR code</button><button id="dl">Download .conf</button></div>
+    <div id="qr"></div>
+    <p class="note">Install the free <b>WireGuard</b> app, tap <b>+</b>, then <b>Scan from QR code</b> or <b>Import from file</b>. Turn the tunnel on there. Come back and tap <b>Refresh IP</b> to check it worked.</p>
+  </section>
+
+  <section class="card">
+    <h2>Advanced · config text</h2>
     <textarea id="cfg" spellcheck="false" autocomplete="off" placeholder="[Interface]&#10;PrivateKey = …&#10;Address = 10.0.0.2/32&#10;DNS = 1.1.1.1&#10;&#10;[Peer]&#10;PublicKey = …&#10;Endpoint = vpn.example.com:51820&#10;AllowedIPs = 0.0.0.0/0, ::/0&#10;PersistentKeepalive = 25"></textarea>
     <div class="row">
       <button id="imp">Import .conf</button><button id="gen">Generate keys</button><button id="clr">Clear</button>
@@ -99,6 +120,7 @@ footer{width:100%;display:flex;flex-direction:column;align-items:center;justify-
   <div>Veilon · WireGuard + C#/.NET</div>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const T=new URLSearchParams(location.search).get('t');
@@ -114,7 +136,8 @@ theme((()=>{try{return localStorage.vth}catch{}})()||(matchMedia('(prefers-color
 // ---- helpers ----
 async function api(p,body){
   const r=await fetch('/api/'+p,{method:body!==undefined?'POST':'GET',headers:{'X-Veilon-Token':sessionStorage.vt||'','Content-Type':'application/json'},body:body!==undefined?JSON.stringify(body):undefined});
-  const j=await r.json().catch(()=>({}));
+  const j=await r.json().catch(()=>null);
+  if(!j)throw new Error('This page is not served by the Veilon service (HTTP '+r.status+' from '+location.origin+'). Run "dotnet run" and open http://127.0.0.1:5810/?t=… instead.');
   if(!r.ok)throw new Error(j.error||('HTTP '+r.status));
   return j}
 const fmt=n=>{if(!n)return'0 B';const u=['B','KB','MB','GB','TB'];let i=Math.min(4,Math.floor(Math.log(n)/Math.log(1024)));return(n/1024**i).toFixed(i?1:0)+' '+u[i]};
@@ -143,7 +166,7 @@ function paint(){
 }
 async function poll(){
   try{
-    const s=await api('status');svcUp=true;
+    const s=await api('status');if(s.svc!=='veilon')throw 0;svcUp=true;document.body.classList.remove('solo');
     $('#svc').textContent='Service online';
     if(!busy)on=!!s.connected;
     if(s.connected&&s.rx!==undefined){
@@ -154,7 +177,7 @@ async function poll(){
       const age=s.handshake?Math.max(0,Math.floor(Date.now()/1000-s.handshake)):null;
       $('#hs').textContent=age===null?'Waiting…':age<60?age+'s ago':Math.floor(age/60)+'m ago';
     }else{last=null;['rx','tx','sp','hs'].forEach(i=>$('#'+i).textContent='—')}
-  }catch(e){svcUp=false;on=false;$('#svc').textContent=sessionStorage.vt?'Service offline — start Veilon.exe':'Open the link printed by the service'}
+  }catch(e){svcUp=false;on=false;document.body.classList.add('solo');$('#svc').textContent=location.port==='5810'?(sessionStorage.vt?'Service offline — restart dotnet run':'Open the link printed by the service'):'Standalone mode — no service needed'}
   paint();
 }
 
@@ -176,8 +199,14 @@ cfg.oninput=()=>{try{sessionStorage.vc=cfg.value}catch{}};
 $('#imp').onclick=()=>$('#file').click();
 $('#file').onchange=async e=>{const f=e.target.files[0];if(f){cfg.value=await f.text();cfg.oninput()}e.target.value=''};
 $('#clr').onclick=()=>{cfg.value='';cfg.oninput();$('#keys').textContent=''};
+const b64=u=>btoa(String.fromCharCode(...u));
+async function keys(){
+  try{const k=await crypto.subtle.generateKey({name:'X25519'},true,['deriveBits']);
+    const pv=new Uint8Array(await crypto.subtle.exportKey('pkcs8',k.privateKey)),pb=new Uint8Array(await crypto.subtle.exportKey('spki',k.publicKey));
+    return{priv:b64(pv.slice(-32)),pub:b64(pb.slice(-32))}}
+  catch{const k=await api('keys',{});return k}}
 $('#gen').onclick=async()=>{
-  try{const k=await api('keys',{});
+  try{const k=await keys();
     $('#keys').innerHTML='Public key (give this to your server): <b></b><br>Private key is placed in your config.';
     $('#keys b').textContent=k.pub;
     const pk='PrivateKey = '+k.priv;
@@ -186,6 +215,23 @@ $('#gen').onclick=async()=>{
   }catch(e){say(e.message,'er')}
 };
 
+$('#build').onclick=async()=>{
+  const ep=$('#f_ep').value.trim(),pk=$('#f_pk').value.trim();
+  if(!/^\S+:\d+$/.test(ep)||!/^[A-Za-z0-9+\/]{43}=$/.test(pk)){say('Enter the server address (host:port) and its 44-character public key','er');return}
+  try{const k=await keys();
+    cfg.value=`[Interface]\nPrivateKey = ${k.priv}\nAddress = ${$('#f_ad').value.trim()}\nDNS = ${$('#f_dn').value.trim()}\n\n[Peer]\nPublicKey = ${pk}\nEndpoint = ${ep}\nAllowedIPs = 0.0.0.0/0, ::/0\nPersistentKeepalive = 25\n`;
+    cfg.oninput();$('#keys').innerHTML='Your public key (give to your provider): <b></b>';$('#keys b').textContent=k.pub;
+    say('Config ready — see step 2','ok')}catch(e){say('This browser cannot make keys. Use a recent Chrome, Edge, Safari or Firefox.','er')}
+};
+$('#qrb').onclick=()=>{
+  if(!cfg.value.trim()){say('Build or paste a config first','er');return}
+  const q=$('#qr');q.innerHTML='';
+  try{new QRCode(q,{text:cfg.value,width:260,height:260,correctLevel:QRCode.CorrectLevel.L})}catch{say('QR could not load — use Download .conf','er')}
+};
+$('#dl').onclick=()=>{
+  if(!cfg.value.trim()){say('Build or paste a config first','er');return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([cfg.value],{type:'text/plain'}));a.download='veilon.conf';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)
+};
 poll();lookup();setInterval(poll,2000);
 </script>
 </body>
